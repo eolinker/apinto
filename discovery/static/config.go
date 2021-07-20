@@ -1,5 +1,6 @@
-package discovery_static
+package static
 
+//Config 静态服务发现配置
 type Config struct {
 	Name     string            `json:"name"`
 	Driver   string            `json:"driver"`
@@ -8,15 +9,17 @@ type Config struct {
 	HealthOn bool              `json:"health_on"`
 }
 
+//AccessConfig 接入地址配置
 type AccessConfig struct {
 	Address []string          `json:"address"`
 	Params  map[string]string `json:"params"`
 }
 
+//HealthConfig 健康检查配置
 type HealthConfig struct {
 	Protocol    string `json:"protocol"`
 	Method      string `json:"method"`
-	Url         string `json:"url"`
+	URL         string `json:"url"`
 	SuccessCode int    `json:"success_code"`
 	Period      int    `json:"period"`
 	Timeout     int    `json:"timeout"`

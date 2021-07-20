@@ -1,4 +1,4 @@
-package discovery_nacos
+package nacos
 
 import (
 	"encoding/json"
@@ -11,12 +11,12 @@ import (
 // nacos 实例结构
 type Instance struct {
 	Hosts []struct {
-		Valid      bool                   `json:"valid"`
-		Marked     bool                   `json:"marked"`
-		InstanceId string                 `json:"instanceId"`
-		Port       int                    `json:"port"`
-		Ip         string                 `json:"ip"`
-		Weight     float64                `json:"weight"`
+		Valid      bool    `json:"valid"`
+		Marked     bool    `json:"marked"`
+		InstanceId string  `json:"instanceId"`
+		Port       int     `json:"port"`
+		Ip         string  `json:"ip"`
+		Weight     float64 `json:"weight"`
 	}
 }
 
@@ -58,6 +58,7 @@ func SendRequest(method string, request string, query map[string]string, body ma
 	}
 	return response, nil
 }
+
 // get nacos query parameters
 func (n *nacos) getParams(serviceName string) map[string]string {
 	query := n.params
@@ -67,4 +68,3 @@ func (n *nacos) getParams(serviceName string) map[string]string {
 	}
 	return query
 }
-

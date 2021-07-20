@@ -1,4 +1,4 @@
-package discovery_consul
+package consul
 
 import (
 	"github.com/eolinker/eosc/log"
@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// getConsulClient 创建并返回consul客户端
+//getConsulClient 创建并返回consul客户端
 func getConsulClient(addr string, param map[string]string) (*api.Client, error) {
 	defaultConfig := api.DefaultConfig()
 	//配置信息写入进defaultConfig里
@@ -26,12 +26,10 @@ func getConsulClient(addr string, param map[string]string) (*api.Client, error) 
 	return client, nil
 }
 
-// getNodesFromClient 从连接的客户端返回健康的节点信息
+//getNodesFromClient 从连接的客户端返回健康的节点信息
 func getNodesFromClient(client *api.Client, service string) []discovery.INode {
 	queryOptions := &api.QueryOptions{}
 	serviceEntryArr, _, err := client.Health().Service(service, "", true, queryOptions)
-	//log.Info(serviceEntryArr)
-	//catalogService, _, err := client.Catalog().Service(service, "", queryOptions)
 	if err != nil {
 		return nil
 	}
@@ -57,7 +55,7 @@ func getNodesFromClient(client *api.Client, service string) []discovery.INode {
 	return nodes
 }
 
-// validAddr 判断地址是否合法
+//validAddr 判断地址是否合法
 func validAddr(addr string) bool {
 	c := strings.Split(addr, ":")
 	if len(c) < 2 {

@@ -1,4 +1,4 @@
-package discovery_consul
+package consul
 
 import (
 	"github.com/eolinker/eosc/log"
@@ -24,6 +24,8 @@ func TestConsulGetNodes(t *testing.T) {
 	APP, _ := newConsul.GetApp("consul")
 
 	log.Infof("%s", APP)
+
+	_, _ = newConsul.GetApp("redis")
 
 	select {}
 }

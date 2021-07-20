@@ -1,4 +1,4 @@
-package discovery_eureka
+package eureka
 
 import (
 	"fmt"
@@ -18,17 +18,17 @@ func TestGetApp(t *testing.T) {
 			"username": "test",
 			"password": "test",
 		},
-		labels:       nil,
-		services:     discovery.NewServices(),
-		context:      nil,
-		cancelFunc:   nil,
+		labels:     nil,
+		services:   discovery.NewServices(),
+		context:    nil,
+		cancelFunc: nil,
 	}
 
 	app, err := e.GetApp(serviceName)
-	if err!=nil {
+	if err != nil {
 		fmt.Println("error:", err)
 	}
-	for _, node := range app.Nodes(){
-		fmt.Println(node.Id())
+	for _, node := range app.Nodes() {
+		fmt.Println(node.ID())
 	}
 }

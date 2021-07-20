@@ -1,4 +1,4 @@
-package discovery_consul
+package consul
 
 import (
 	"context"
@@ -21,7 +21,7 @@ type consul struct {
 	cancelFunc context.CancelFunc
 }
 
-// Start 开始服务发现
+//Start 开始服务发现
 func (c *consul) Start() error {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	c.context = ctx
@@ -37,6 +37,7 @@ func (c *consul) Start() error {
 				break EXIT
 			case <-ticker.C:
 				{
+					//获取现有服务app的服务名名称列表，并从注册中心获取目标服务名的节点列表
 					keys := c.services.AppKeys()
 					for _, serviceName := range keys {
 						nodeSet, err := c.getNodes(serviceName)
@@ -49,6 +50,7 @@ func (c *consul) Start() error {
 						for _, node := range nodeSet {
 							nodes = append(nodes, node)
 						}
+						//更新目标服务的节点列表
 						c.services.Update(serviceName, nodes)
 					}
 				}
@@ -61,7 +63,7 @@ func (c *consul) Start() error {
 	return nil
 }
 
-// Reset 重置服务发现配置
+//Reset 重置consul实例配置
 func (c *consul) Reset(config interface{}, workers map[eosc.RequireId]interface{}) error {
 	workerConfig, ok := config.(*Config)
 	if !ok {
@@ -75,17 +77,18 @@ func (c *consul) Reset(config interface{}, workers map[eosc.RequireId]interface{
 	return nil
 }
 
-// Stop 停止服务发现
+//Stop 停止服务发现
 func (c *consul) Stop() error {
 	c.cancelFunc()
 	return nil
 }
 
+//Remove 从所有服务app中移除目标app
 func (c *consul) Remove(id string) error {
 	return c.services.Remove(id)
 }
 
-// GetApp 获取服务发现应用
+//GetApp 获取服务发现中目标服务的app
 func (c *consul) GetApp(serviceName string) (discovery.IApp, error) {
 	nodes, err := c.getNodes(serviceName)
 	if err != nil {
@@ -96,28 +99,28 @@ func (c *consul) GetApp(serviceName string) (discovery.IApp, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.services.Set(serviceName, app.Id(), app)
+	//将生成的app存入目标服务的app列表
+	c.services.Set(serviceName, app.ID(), app)
 	return app, nil
 }
 
-// Create 创建服务发现应用
+//Create 创建目标服务的app
 func (c *consul) Create(serviceName string, attrs map[string]string, nodes map[string]discovery.INode) (discovery.IApp, error) {
 	return discovery.NewApp(nil, c, attrs, nodes), nil
 }
 
-// Id 返回 worker id
-func (n *consul) Id() string {
-	return n.id
+//Id 返回 worker id
+func (c *consul) Id() string {
+	return c.id
 }
 
-func (n *consul) CheckSkill(skill string) bool {
+//CheckSkill 检查目标能力是否存在
+func (c *consul) CheckSkill(skill string) bool {
 	return discovery.CheckSkill(skill)
 }
 
 //getNodes 通过接入地址获取节点信息
 func (c *consul) getNodes(service string) (map[string]discovery.INode, error) {
-	//TODO Labels怎么处理
-
 	nodeSet := make(map[string]discovery.INode)
 
 	for _, addr := range c.address {
@@ -133,8 +136,8 @@ func (c *consul) getNodes(service string) (map[string]discovery.INode, error) {
 
 		clientNodes := getNodesFromClient(client, service)
 		for _, node := range clientNodes {
-			if _, has := nodeSet[node.Id()]; !has {
-				nodeSet[node.Id()] = node
+			if _, has := nodeSet[node.ID()]; !has {
+				nodeSet[node.ID()] = node
 			}
 		}
 	}

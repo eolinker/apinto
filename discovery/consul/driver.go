@@ -1,4 +1,4 @@
-package discovery_consul
+package consul
 
 import (
 	"fmt"
@@ -22,14 +22,12 @@ type driver struct {
 	params     map[string]string
 }
 
-func NewDriver() *driver {
-	return &driver{configType: reflect.TypeOf(new(Config))}
-}
-
+//ConfigType 返回consul驱动配置的反射类型
 func (d *driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
+//Create 创建consul驱动实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	workerConfig, ok := v.(*Config)
 	if !ok {

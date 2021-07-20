@@ -1,4 +1,4 @@
-package discovery_eureka
+package eureka
 
 import (
 	"context"
@@ -13,27 +13,31 @@ import (
 )
 
 type eureka struct {
-	id           string
-	name         string
-	address      []string
-	params       map[string]string
-	labels       map[string]string
-	services     discovery.IServices
-	context      context.Context
-	cancelFunc   context.CancelFunc
+	id         string
+	name       string
+	address    []string
+	params     map[string]string
+	labels     map[string]string
+	services   discovery.IServices
+	context    context.Context
+	cancelFunc context.CancelFunc
 }
 
+//GetApp 获取服务发现中目标服务的app
 func (e *eureka) GetApp(serviceName string) (discovery.IApp, error) {
 	app, err := e.Create(serviceName)
 	if err != nil {
 		return nil, err
 	}
-	err = e.services.Set(serviceName, app.Id(), app)
+	//将生成的app存入目标服务的app列表
+	err = e.services.Set(serviceName, app.ID(), app)
 	if err != nil {
 		return nil, err
 	}
 	return app, nil
 }
+
+//Create 创建目标服务的app
 func (e *eureka) Create(serviceName string) (discovery.IApp, error) {
 	nodes, err := e.GetNodeList(serviceName)
 	if err != nil {
@@ -44,14 +48,17 @@ func (e *eureka) Create(serviceName string) (discovery.IApp, error) {
 	return app, nil
 }
 
+//Remove 从所有服务app中移除目标app
 func (e *eureka) Remove(id string) error {
 	return e.services.Remove(id)
 }
 
+//Id 返回 worker id
 func (e *eureka) Id() string {
 	return e.id
 }
 
+//Start 开始服务发现
 func (e *eureka) Start() error {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	e.context = ctx
@@ -66,6 +73,7 @@ func (e *eureka) Start() error {
 				break EXIT
 			case <-ticker.C:
 				{
+					//获取现有服务app的服务名名称列表，并从注册中心获取目标服务名的节点列表
 					keys := e.services.AppKeys()
 					for _, serviceName := range keys {
 						res, err := e.GetNodeList(serviceName)
@@ -76,6 +84,7 @@ func (e *eureka) Start() error {
 						for _, v := range res {
 							nodes = append(nodes, v)
 						}
+						//更新目标服务的节点列表
 						e.services.Update(serviceName, nodes)
 					}
 				}
@@ -86,6 +95,7 @@ func (e *eureka) Start() error {
 	return nil
 }
 
+//Reset 重置eureka实例配置
 func (e *eureka) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
@@ -97,25 +107,27 @@ func (e *eureka) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	return nil
 }
 
+//Stop 停止服务发现
 func (e *eureka) Stop() error {
 	e.cancelFunc()
 	return nil
 }
 
+//CheckSkill 检查目标能力是否存在
 func (e *eureka) CheckSkill(skill string) bool {
 	return discovery.CheckSkill(skill)
 }
 
+//GetNodeList 从eureka接入地址中获取对应服务的节点列表
 func (e *eureka) GetNodeList(serviceName string) (map[string]discovery.INode, error) {
 	nodes := make(map[string]discovery.INode)
 	for _, addr := range e.address {
-		// 获取每个ip中指定服务名的实例列表
 		app, err := e.GetApplication(addr, serviceName)
 		if err != nil {
 			return nil, err
 		}
 		for _, ins := range app.Instances {
-			if ins.Status != EurekaStatusUp {
+			if ins.Status != eurekaStatusUp {
 				continue
 			}
 			port := 0
@@ -132,15 +144,16 @@ func (e *eureka) GetNodeList(serviceName string) (map[string]discovery.INode, er
 			//	label[k] = v
 			//}
 			node := discovery.NewNode(label, ins.InstanceID, ins.IPAddr, port)
-			if _, ok := nodes[node.Id()]; ok {
+			if _, ok := nodes[node.ID()]; ok {
 				continue
 			}
-			nodes[node.Id()] = node
+			nodes[node.ID()] = node
 		}
 	}
 	return nodes, nil
 }
 
+//GetApplication 获取每个ip中指定服务名的实例列表
 func (e *eureka) GetApplication(addr, serviceName string) (*Application, error) {
 
 	if !strings.Contains(addr, "http://") && !strings.Contains(addr, "https://") {
