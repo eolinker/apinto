@@ -1,6 +1,6 @@
-package discovery_eureka
+package eureka
 
-
+//Config eureka驱动配置
 type Config struct {
 	Name   string `json:"name"`
 	Driver string `json:"driver"`
@@ -8,6 +8,7 @@ type Config struct {
 	Config AccessConfig `json:"config"`
 }
 
+//AccessConfig 接入地址配置
 type AccessConfig struct {
 	Address []string
 	Params  map[string]string

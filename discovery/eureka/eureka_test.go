@@ -1,4 +1,4 @@
-package discovery_eureka
+package eureka
 
 import (
 	"fmt"

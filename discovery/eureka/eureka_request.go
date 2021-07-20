@@ -1,5 +1,6 @@
-package discovery_eureka
-const EurekaStatusUp = "UP"
+package eureka
+
+const eurekaStatusUp = "UP"
 
 //Application application
 type Application struct {
@@ -37,8 +38,6 @@ type InstanceInfo struct {
 	AppName                       string          `xml:"appName,omitempty" json:"appName,omitempty"`
 	AppGroupName                  string          `xml:"appGroupName,omitempty" json:"appGroupName,omitempty"`
 }
-
-
 
 //Port port
 type Port struct {

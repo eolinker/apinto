@@ -1,10 +1,11 @@
-package discovery_eureka
+package eureka
 
 import (
 	"github.com/eolinker/eosc"
 	"reflect"
 )
 
+//Register 注册eureka驱动工厂
 func Register() {
 	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:discover_eureka", NewFactory())
 }
@@ -17,10 +18,12 @@ type factory struct {
 	params     map[string]string
 }
 
-func NewFactory() *factory {
+//NewFactory 创建eureka驱动工厂
+func NewFactory() eosc.IProfessionDriverFactory {
 	return &factory{}
 }
 
+//ExtendInfo 返回eureka驱动工厂信息
 func (f *factory) ExtendInfo() eosc.ExtendInfo {
 	return eosc.ExtendInfo{
 		ID:      "eolinker:goku:discover_eureka",
@@ -30,6 +33,7 @@ func (f *factory) ExtendInfo() eosc.ExtendInfo {
 	}
 }
 
+//Create 创建eureka驱动
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
 	return &driver{
 		profession: profession,

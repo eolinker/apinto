@@ -21,7 +21,7 @@ type consul struct {
 	cancelFunc context.CancelFunc
 }
 
-// Start 开始服务发现
+//Start 开始服务发现
 func (c *consul) Start() error {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	c.context = ctx
@@ -61,7 +61,7 @@ func (c *consul) Start() error {
 	return nil
 }
 
-// Reset 重置consul实例配置
+//Reset 重置consul实例配置
 func (c *consul) Reset(config interface{}, workers map[eosc.RequireId]interface{}) error {
 	workerConfig, ok := config.(*Config)
 	if !ok {
@@ -75,7 +75,7 @@ func (c *consul) Reset(config interface{}, workers map[eosc.RequireId]interface{
 	return nil
 }
 
-// Stop 停止服务发现
+//Stop 停止服务发现
 func (c *consul) Stop() error {
 	c.cancelFunc()
 	return nil
@@ -86,7 +86,7 @@ func (c *consul) Remove(id string) error {
 	return c.services.Remove(id)
 }
 
-// GetApp 获取服务发现中对应服务的应用
+//GetApp 获取服务发现中对应服务的应用
 func (c *consul) GetApp(serviceName string) (discovery.IApp, error) {
 	nodes, err := c.getNodes(serviceName)
 	if err != nil {
@@ -101,12 +101,12 @@ func (c *consul) GetApp(serviceName string) (discovery.IApp, error) {
 	return app, nil
 }
 
-// Create 创建对应服务的应用
+//Create 创建对应服务的应用
 func (c *consul) Create(serviceName string, attrs map[string]string, nodes map[string]discovery.INode) (discovery.IApp, error) {
 	return discovery.NewApp(nil, c, attrs, nodes), nil
 }
 
-// Id 返回 worker id
+//Id 返回 worker id
 func (c *consul) Id() string {
 	return c.id
 }
