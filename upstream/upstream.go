@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/eolinker/goku-eosc/service"
-	http_context "github.com/eolinker/eosc/node/http-context"
+	http_context "github.com/eolinker/goku-eosc/node/http-context"
 )
 
 func CheckSkill(skill string) bool {
