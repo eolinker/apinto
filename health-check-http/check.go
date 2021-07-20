@@ -57,7 +57,7 @@ package health_check_http
 //
 //func (c *checker) check() error {
 //	for _, checkNode := range c.nodes {
-//		uri := fmt.Sprintf("%s://%s/%s", c.config.Protocol, strings.TrimSuffix(checkNode.checkNode.Addr(), "/"), strings.TrimPrefix(c.config.Url, "/"))
+//		uri := fmt.Sprintf("%s://%s/%s", c.config.Protocol, strings.TrimSuffix(checkNode.checkNode.Addr(), "/"), strings.TrimPrefix(c.config.URL, "/"))
 //		c.client.Timeout = c.config.Timeout
 //		request, err := http.NewRequest(c.config.Method, uri, nil)
 //		if err != nil {

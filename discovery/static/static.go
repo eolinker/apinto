@@ -1,4 +1,4 @@
-package discovery_static
+package static
 
 import (
 	"context"
@@ -30,16 +30,19 @@ type static struct {
 	cancelFunc context.CancelFunc
 }
 
+//Id 返回 worker id
 func (s *static) Id() string {
 	return s.id
 }
 
+//Start 开始服务发现
 func (s *static) Start() error {
 	s.context, s.cancelFunc = context.WithCancel(context.Background())
 
 	return nil
 }
 
+//Reset 重置静态服务发现实例配置
 func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
@@ -59,7 +62,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 				health_check_http.Config{
 					Protocol:    cfg.Health.Protocol,
 					Method:      cfg.Health.Method,
-					Url:         cfg.Health.Url,
+					Url:         cfg.Health.URL,
 					SuccessCode: cfg.Health.SuccessCode,
 					Period:      time.Duration(cfg.Health.Period) * time.Second,
 					Timeout:     time.Duration(cfg.Health.Timeout) * time.Millisecond,
@@ -69,7 +72,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 				health_check_http.Config{
 					Protocol:    cfg.Health.Protocol,
 					Method:      cfg.Health.Method,
-					Url:         cfg.Health.Url,
+					Url:         cfg.Health.URL,
 					SuccessCode: cfg.Health.SuccessCode,
 					Period:      time.Duration(cfg.Health.Period) * time.Second,
 					Timeout:     time.Duration(cfg.Health.Timeout) * time.Millisecond,
@@ -86,6 +89,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	return nil
 }
 
+//Stop 停止服务发现
 func (s *static) Stop() error {
 	for _, a := range s.apps {
 		a.Close()
@@ -93,10 +97,12 @@ func (s *static) Stop() error {
 	return nil
 }
 
+//CheckSkill 检查目标能力是否存在
 func (s *static) CheckSkill(skill string) bool {
 	return discovery.CheckSkill(skill)
 }
 
+//GetApp 获取服务发现中目标服务的app
 func (s *static) GetApp(config string) (discovery.IApp, error) {
 	app, err := s.decode(config)
 	if err != nil {
@@ -108,6 +114,7 @@ func (s *static) GetApp(config string) (discovery.IApp, error) {
 	return app, nil
 }
 
+//Remove 从所有服务app中移除目标app
 func (s *static) Remove(id string) error {
 	s.locker.Lock()
 	delete(s.apps, id)
@@ -115,12 +122,14 @@ func (s *static) Remove(id string) error {
 	return nil
 }
 
+//Node 静态服务发现的节点类型
 type Node struct {
 	labels map[string]string
 	ip     string
 	port   int
 }
 
+//decode 通过配置生成app
 func (s *static) decode(config string) (discovery.IApp, error) {
 	words := fields(config)
 
@@ -185,6 +194,8 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 			index++
 		}
 	}
+
+	//若开启了健康检查，则为app分配一个健康检查agent
 	agent := (discovery.IHealthChecker)(nil)
 	if s.checker != nil {
 		agent, _ = s.checker.Agent()
@@ -195,7 +206,6 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 }
 
 func fields(str string) []string {
-
 	words := strings.FieldsFunc(strings.Join(strings.Split(str, ";"), " ; "), func(r rune) bool {
 		return unicode.IsSpace(r)
 	})
