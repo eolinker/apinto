@@ -25,5 +25,7 @@ func TestConsulGetNodes(t *testing.T) {
 
 	log.Infof("%s", APP)
 
+	_, _ = newConsul.GetApp("redis")
+
 	select {}
 }

@@ -1,4 +1,4 @@
-package discovery_nacos
+package nacos
 
 import (
 	"context"
@@ -28,17 +28,17 @@ type nacos struct {
 	cancelFunc context.CancelFunc
 }
 
-// return worker id
+//Id 返回 worker id
 func (n *nacos) Id() string {
 	return n.id
 }
 
-// check worker skill
+//CheckSkill 检查目标能力是否存在
 func (n *nacos) CheckSkill(skill string) bool {
 	return discovery.CheckSkill(skill)
 }
 
-// start worker
+//Start 开始服务发现
 func (n *nacos) Start() error {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	n.context = ctx
@@ -53,6 +53,7 @@ func (n *nacos) Start() error {
 				break EXIT
 			case <-ticker.C:
 				{
+					//获取现有服务app的服务名名称列表，并从注册中心获取目标服务名的节点列表
 					keys := n.services.AppKeys()
 					for _, serviceName := range keys {
 						query := n.getParams(serviceName)
@@ -64,6 +65,7 @@ func (n *nacos) Start() error {
 						for _, v := range res {
 							nodes = append(nodes, v)
 						}
+						//更新目标服务的节点列表
 						n.services.Update(serviceName, nodes)
 					}
 				}
@@ -74,7 +76,7 @@ func (n *nacos) Start() error {
 	return nil
 }
 
-// update worker config
+//Reset 重置nacos实例配置
 func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
@@ -86,28 +88,29 @@ func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) 
 	return nil
 }
 
-// stop worker
+//Stop 停止服务发现
 func (n *nacos) Stop() error {
 	n.cancelFunc()
 	return nil
 }
 
-// remove app by app_id
+//Remove 从所有服务app中移除目标app
 func (n *nacos) Remove(id string) error {
 	return n.services.Remove(id)
 }
 
-// new app according to serviceName
+//GetApp 获取服务发现中目标服务的app
 func (n *nacos) GetApp(serviceName string) (discovery.IApp, error) {
 	app, err := n.Create(serviceName)
 	if err != nil {
 		return nil, err
 	}
+	//将生成的app存入目标服务的app列表
 	n.services.Set(serviceName, app.ID(), app)
 	return app, nil
 }
 
-// create nacos app
+//Create 创建目标服务的app
 func (n *nacos) Create(serviceName string) (discovery.IApp, error) {
 	query := n.getParams(serviceName)
 	nodes, err := n.GetNodeList(query)
@@ -118,11 +121,10 @@ func (n *nacos) Create(serviceName string) (discovery.IApp, error) {
 	return app, nil
 }
 
-// get app node list
+//GetNodeList 从nacos接入地址中获取对应服务的节点列表
 func (n *nacos) GetNodeList(query map[string]string) (map[string]discovery.INode, error) {
 	nodes := make(map[string]discovery.INode)
 	for _, addr := range n.address {
-		// 获取每个ip中指定服务名的实例列表
 		ins, err := n.GetInstanceList(addr, query)
 		if err != nil {
 			return nil, err
@@ -144,7 +146,7 @@ func (n *nacos) GetNodeList(query map[string]string) (map[string]discovery.INode
 	return nodes, nil
 }
 
-// get app instance list
+//GetInstanceList 获取目标地址指定服务名的实例列表
 func (n *nacos) GetInstanceList(addr string, query map[string]string) (*Instance, error) {
 	addr = addr + instancePath
 	if !strings.HasPrefix(addr, "http://") && !strings.HasPrefix(addr, "https://") {

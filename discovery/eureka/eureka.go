@@ -23,12 +23,13 @@ type eureka struct {
 	cancelFunc context.CancelFunc
 }
 
-//GetApp 获取服务发现中对应服务的应用
+//GetApp 获取服务发现中目标服务的app
 func (e *eureka) GetApp(serviceName string) (discovery.IApp, error) {
 	app, err := e.Create(serviceName)
 	if err != nil {
 		return nil, err
 	}
+	//将生成的app存入目标服务的app列表
 	err = e.services.Set(serviceName, app.ID(), app)
 	if err != nil {
 		return nil, err
@@ -36,7 +37,7 @@ func (e *eureka) GetApp(serviceName string) (discovery.IApp, error) {
 	return app, nil
 }
 
-//Create 创建对应服务的应用
+//Create 创建目标服务的app
 func (e *eureka) Create(serviceName string) (discovery.IApp, error) {
 	nodes, err := e.GetNodeList(serviceName)
 	if err != nil {
@@ -47,7 +48,7 @@ func (e *eureka) Create(serviceName string) (discovery.IApp, error) {
 	return app, nil
 }
 
-//Remove 从所有服务应用中移除目标应用
+//Remove 从所有服务app中移除目标app
 func (e *eureka) Remove(id string) error {
 	return e.services.Remove(id)
 }
@@ -72,6 +73,7 @@ func (e *eureka) Start() error {
 				break EXIT
 			case <-ticker.C:
 				{
+					//获取现有服务app的服务名名称列表，并从注册中心获取目标服务名的节点列表
 					keys := e.services.AppKeys()
 					for _, serviceName := range keys {
 						res, err := e.GetNodeList(serviceName)
@@ -82,6 +84,7 @@ func (e *eureka) Start() error {
 						for _, v := range res {
 							nodes = append(nodes, v)
 						}
+						//更新目标服务的节点列表
 						e.services.Update(serviceName, nodes)
 					}
 				}

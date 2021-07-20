@@ -1,4 +1,4 @@
-package discovery_nacos
+package nacos
 
 import (
 	"fmt"

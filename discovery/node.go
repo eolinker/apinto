@@ -4,11 +4,12 @@ import (
 	"fmt"
 )
 
-func NewNode(labels map[string]string, id string, ip string, port int) *Node {
-	return &Node{labels: labels, id: id, ip: ip, port: port, status: Running}
+//NewNode 创建新节点
+func NewNode(labels map[string]string, id string, ip string, port int) INode {
+	return &node{labels: labels, id: id, ip: ip, port: port, status: Running}
 }
 
-type Node struct {
+type node struct {
 	labels Attrs
 	id     string
 	ip     string
@@ -16,50 +17,61 @@ type Node struct {
 	status NodeStatus
 }
 
-func (n *Node) GetAttrs() Attrs {
+//GetAttrs 获取节点属性集合
+func (n *node) GetAttrs() Attrs {
 	return n.labels
 }
 
-func (n *Node) GetAttrByName(name string) (string, bool) {
+//GetAttrByName 通过属性名获取节点属性
+func (n *node) GetAttrByName(name string) (string, bool) {
 	v, ok := n.labels[name]
 	return v, ok
 }
 
-func (n *Node) Ip() string {
+//IP 返回节点IP
+func (n *node) IP() string {
 	return n.ip
 }
 
-func (n *Node) Port() int {
+//Port 返回节点端口
+func (n *node) Port() int {
 	return n.port
 }
 
-func (n *Node) ID() string {
+//ID 返回节点ID
+func (n *node) ID() string {
 	return n.id
 }
 
-func (n *Node) Status() NodeStatus {
+//Status 返回节点状态
+func (n *node) Status() NodeStatus {
 	return n.status
 }
 
-func (n *Node) Labels() map[string]string {
+//Labels 返回节点标签集合
+func (n *node) Labels() map[string]string {
 	return n.labels
 }
 
-func (n *Node) Addr() string {
+//Addr 返回节点地址
+func (n *node) Addr() string {
 	if n.port == 0 {
 		return n.ip
 	}
 	return fmt.Sprintf("%s:%d", n.ip, n.port)
 }
 
-func (n *Node) Up() {
+//Up 将节点状态置为运行中
+func (n *node) Up() {
 	n.status = Running
 }
 
-func (n *Node) Down() {
+//Down 将节点状态置为不可用
+func (n *node) Down() {
 	n.status = Down
 }
 
-func (n *Node) Leave() {
+//Leave 将节点状态置为离开
+func (n *node) Leave() {
 	n.status = Leave
 }
