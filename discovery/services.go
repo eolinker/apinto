@@ -1,22 +1,22 @@
 package discovery
 
-import "github.com/eolinker/eosc/internal"
+import "github.com/eolinker/eosc"
 
 type Services struct {
-	apps        internal.IUntyped
-	appNameOfId internal.IUntyped
+	apps        eosc.IUntyped
+	appNameOfId eosc.IUntyped
 }
 
 func NewServices() *Services {
-	return &Services{apps: internal.NewUntyped(), appNameOfId: internal.NewUntyped()}
+	return &Services{apps: eosc.NewUntyped(), appNameOfId: eosc.NewUntyped()}
 }
 
-func (n *Services) get(namespace string) (internal.IUntyped, bool) {
+func (n *Services) get(namespace string) (eosc.IUntyped, bool) {
 	v, ok := n.apps.Get(namespace)
 	if !ok {
 		return nil, ok
 	}
-	apps, ok := v.(internal.IUntyped)
+	apps, ok := v.(eosc.IUntyped)
 	return apps, ok
 }
 
@@ -26,7 +26,7 @@ func (s *Services) Set(serviceName string, id string, app IApp) error {
 		apps.Set(id, app)
 		return nil
 	}
-	apps := internal.NewUntyped()
+	apps := eosc.NewUntyped()
 	apps.Set(id, app)
 	s.apps.Set(serviceName, apps)
 	return nil
