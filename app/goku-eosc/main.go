@@ -5,16 +5,15 @@ import (
 	"github.com/eolinker/eosc/log"
 	admin_html "github.com/eolinker/eosc/modules/admin-html"
 	admin_open_api "github.com/eolinker/eosc/modules/admin-open-api"
-	store_memory_yaml "github.com/eolinker/eosc/modules/store-memory-yaml"
-	"github.com/eolinker/eosc/modules/store-yaml"
-	http_router "github.com/eolinker/goku-eosc/http-router"
 	"net/http"
+	"path/filepath"
 )
 
+
 func main() {
-	store.Register()
-	store_memory_yaml.Register()
-	http_router.Register()
+	Register()
+	pluginPath,_:= filepath.Abs("./plugins")
+	loadPlugins(pluginPath)
  	storeName := "memory-yaml"
 	file := "profession.yml"
 
