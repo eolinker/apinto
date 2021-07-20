@@ -16,12 +16,12 @@ func TestNacos_GetApp(t *testing.T) {
 			"username": "test",
 			"password": "test",
 		},
-		services:       discovery.NewServices(),
-		context:        nil,
-		cancelFunc:     nil,
+		services:   discovery.NewServices(),
+		context:    nil,
+		cancelFunc: nil,
 	}
 	app, _ := n.GetApp(serviceName)
-	for _, node := range app.Nodes(){
-		fmt.Println(node.Id())
+	for _, node := range app.Nodes() {
+		fmt.Println(node.ID())
 	}
 }

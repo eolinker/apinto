@@ -33,7 +33,7 @@ func (n *Node) Port() int {
 	return n.port
 }
 
-func (n *Node) Id() string {
+func (n *Node) ID() string {
 	return n.id
 }
 

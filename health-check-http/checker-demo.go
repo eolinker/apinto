@@ -77,7 +77,7 @@ package health_check_http
 //		from:      c.id,
 //	}
 //	c.ch <- n
-//	c.nodes[checkNode.Id()] = n
+//	c.nodes[checkNode.ID()] = n
 //	return nil
 //}
 //

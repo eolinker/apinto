@@ -57,7 +57,7 @@ func (h *HttpCheck) doCheckLoop() {
 					if _, ok := nodes[node.agentId]; !ok {
 						nodes[node.agentId] = make(map[string]*checkNode)
 					}
-					nodes[node.agentId][node.node.Id()] = node
+					nodes[node.agentId][node.node.ID()] = node
 				}
 			}
 		case id, ok := <-h.delCh:
@@ -130,7 +130,7 @@ func (h *HttpCheck) check(nodes map[string]map[string]*checkNode) map[string]map
 		}
 		for _, n := range ns {
 			n.node.Up()
-			delete(nodes[n.agentId], n.node.Id())
+			delete(nodes[n.agentId], n.node.ID())
 		}
 	}
 	return nodes

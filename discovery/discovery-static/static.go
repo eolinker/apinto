@@ -103,7 +103,7 @@ func (s *static) GetApp(config string) (discovery.IApp, error) {
 		return nil, err
 	}
 	s.locker.Lock()
-	s.apps[app.Id()] = app
+	s.apps[app.ID()] = app
 	s.locker.Unlock()
 	return app, nil
 }
@@ -178,7 +178,7 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 
 		if word[l-1] == ';' {
 			n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port)
-			nodes[n.Id()] = n
+			nodes[n.ID()] = n
 			index = 0
 			node = nil
 		} else {

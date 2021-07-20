@@ -18,14 +18,14 @@ const (
 )
 
 type nacos struct {
-	id             string
-	name			string
-	address        []string
-	params         map[string]string
-	labels		 	map[string]string
-	services       discovery.IServices
-	context        context.Context
-	cancelFunc     context.CancelFunc
+	id         string
+	name       string
+	address    []string
+	params     map[string]string
+	labels     map[string]string
+	services   discovery.IServices
+	context    context.Context
+	cancelFunc context.CancelFunc
 }
 
 // return worker id
@@ -103,7 +103,7 @@ func (n *nacos) GetApp(serviceName string) (discovery.IApp, error) {
 	if err != nil {
 		return nil, err
 	}
-	n.services.Set(serviceName, app.Id(), app)
+	n.services.Set(serviceName, app.ID(), app)
 	return app, nil
 }
 
@@ -130,15 +130,15 @@ func (n *nacos) GetNodeList(query map[string]string) (map[string]discovery.INode
 
 		for _, host := range ins.Hosts {
 			label := map[string]string{
-				"valid":    strconv.FormatBool(host.Valid),
-				"marked":   strconv.FormatBool(host.Marked),
-				"weight":   strconv.FormatFloat(host.Weight, 'f', -1, 64),
+				"valid":  strconv.FormatBool(host.Valid),
+				"marked": strconv.FormatBool(host.Marked),
+				"weight": strconv.FormatFloat(host.Weight, 'f', -1, 64),
 			}
 			node := discovery.NewNode(label, host.InstanceId, host.Ip, host.Port)
-			if _, ok := nodes[node.Id()]; ok {
+			if _, ok := nodes[node.ID()]; ok {
 				continue
 			}
-			nodes[node.Id()] = node
+			nodes[node.ID()] = node
 		}
 	}
 	return nodes, nil
@@ -149,7 +149,7 @@ func (n *nacos) GetInstanceList(addr string, query map[string]string) (*Instance
 	addr = addr + instancePath
 	if !strings.HasPrefix(addr, "http://") && !strings.HasPrefix(addr, "https://") {
 		addr = fmt.Sprintf("http://%s", addr)
-		if v,ok := n.labels["schema"]; ok {
+		if v, ok := n.labels["schema"]; ok {
 			if v == "https" {
 				addr = fmt.Sprintf("https://%s", addr)
 			}

@@ -101,7 +101,7 @@ func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.ISe
 			if response == nil {
 				node.Down()
 			}
-			h.app.NodeError(node.Id())
+			h.app.NodeError(node.ID())
 			node, err = h.balanceHandler.Next()
 			if err != nil {
 				return nil, err

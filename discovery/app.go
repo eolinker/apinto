@@ -20,10 +20,10 @@ func (s *app) Reset(nodes []INode) {
 
 	for _, node := range nodes {
 
-		if n, has := s.nodes[node.Id()]; has {
+		if n, has := s.nodes[node.ID()]; has {
 			n.Leave()
 		}
-		tmp[node.Id()] = node
+		tmp[node.ID()] = node
 
 	}
 	s.locker.Lock()
@@ -40,6 +40,7 @@ func (s *app) GetAttrByName(name string) (string, bool) {
 	return attr, ok
 }
 
+//NewApp 创建服务发现应用
 func NewApp(checker IHealthChecker, container IAppContainer, attrs Attrs, nodes map[string]INode) IApp {
 	return &app{
 		attrs:         attrs,
@@ -51,7 +52,8 @@ func NewApp(checker IHealthChecker, container IAppContainer, attrs Attrs, nodes 
 	}
 }
 
-func (s *app) Id() string {
+//ID 返回服务发现应用的id
+func (s *app) ID() string {
 	return s.id
 }
 
@@ -83,7 +85,9 @@ func (s *app) NodeError(id string) error {
 	return nil
 }
 
+//Close 关闭服务发现的应用
 func (s *app) Close() error {
+	//
 	s.container.Remove(s.id)
 	return s.healthChecker.Stop()
 }

@@ -12,7 +12,7 @@ type IDiscovery interface {
 //IApp app接口
 type IApp interface {
 	IAttributes
-	Id() string
+	ID() string
 	Nodes() []INode
 	Reset([]INode)
 	NodeError(id string) error
@@ -27,7 +27,7 @@ type IAppContainer interface {
 //INode 节点接口
 type INode interface {
 	IAttributes
-	Id() string
+	ID() string
 	Ip() string
 	Port() int
 	Addr() string

@@ -1,4 +1,4 @@
-package discovery_consul
+package consul
 
 import (
 	"github.com/eolinker/eosc/log"

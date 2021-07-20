@@ -13,14 +13,14 @@ import (
 )
 
 type eureka struct {
-	id           string
-	name         string
-	address      []string
-	params       map[string]string
-	labels       map[string]string
-	services     discovery.IServices
-	context      context.Context
-	cancelFunc   context.CancelFunc
+	id         string
+	name       string
+	address    []string
+	params     map[string]string
+	labels     map[string]string
+	services   discovery.IServices
+	context    context.Context
+	cancelFunc context.CancelFunc
 }
 
 func (e *eureka) GetApp(serviceName string) (discovery.IApp, error) {
@@ -28,7 +28,7 @@ func (e *eureka) GetApp(serviceName string) (discovery.IApp, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = e.services.Set(serviceName, app.Id(), app)
+	err = e.services.Set(serviceName, app.ID(), app)
 	if err != nil {
 		return nil, err
 	}
@@ -132,10 +132,10 @@ func (e *eureka) GetNodeList(serviceName string) (map[string]discovery.INode, er
 			//	label[k] = v
 			//}
 			node := discovery.NewNode(label, ins.InstanceID, ins.IPAddr, port)
-			if _, ok := nodes[node.Id()]; ok {
+			if _, ok := nodes[node.ID()]; ok {
 				continue
 			}
-			nodes[node.Id()] = node
+			nodes[node.ID()] = node
 		}
 	}
 	return nodes, nil
