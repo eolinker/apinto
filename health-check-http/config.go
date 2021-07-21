@@ -1,4 +1,4 @@
-package healthcheckhttp
+package health_check_http
 
 import "time"
 

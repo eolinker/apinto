@@ -21,13 +21,14 @@ type serviceWorker struct {
 	driver     string
 	desc       string
 	timeout    time.Duration
-	rewriteUrl string
+	rewriteURL string
 	retry      int
 	scheme     string
 	proxyAddr  string
 	upstream   upstream.IUpstream
 }
 
+//Id 返回服务实例 worker id
 func (s *serviceWorker) Id() string {
 	return s.id
 }
@@ -36,15 +37,16 @@ func (s *serviceWorker) Start() error {
 	return nil
 }
 
+//Reset 重置服务实例的配置
 func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	data, ok := conf.(*Config)
 	if !ok {
-		return errors.New(fmt.Sprintf(ErrorStructType, eosc.TypeNameOf(conf), eosc.TypeNameOf((*Config)(nil))))
+		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), eosc.ErrorStructType)
 	}
 	if worker, has := workers[data.Upstream]; has {
 		s.desc = data.Desc
 		s.timeout = time.Duration(data.Timeout) * time.Millisecond
-		s.rewriteUrl = data.RewriteUrl
+		s.rewriteURL = data.RewriteURL
 		s.retry = data.Retry
 		s.scheme = data.Scheme
 		u, ok := worker.(upstream.IUpstream)
@@ -57,7 +59,7 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 		if has {
 			s.desc = data.Desc
 			s.timeout = time.Duration(data.Timeout) * time.Millisecond
-			s.rewriteUrl = data.RewriteUrl
+			s.rewriteURL = data.RewriteURL
 			s.retry = data.Retry
 			s.scheme = data.Scheme
 			u, ok := worker.(upstream.IUpstream)
@@ -76,44 +78,53 @@ func (s *serviceWorker) Stop() error {
 	return nil
 }
 
+//CheckSkill 检查目标能力是否存在
 func (s *serviceWorker) CheckSkill(skill string) bool {
 	return service.CheckSkill(skill)
 }
 
+//Name 返回服务名
 func (s *serviceWorker) Name() string {
 	return s.name
 }
 
+//Desc 返回服务的描述
 func (s *serviceWorker) Desc() string {
 	return s.desc
 }
 
+//Retry 返回服务的重试次数
 func (s *serviceWorker) Retry() int {
 	return s.retry
 }
 
+//Timeout 返回服务的超时时间
 func (s *serviceWorker) Timeout() time.Duration {
 	return s.timeout
 }
 
+//Scheme 返回服务的scheme
 func (s *serviceWorker) Scheme() string {
 	return s.scheme
 }
 
+//ProxyAddr 返回服务的代理地址
 func (s *serviceWorker) ProxyAddr() string {
 	return s.proxyAddr
 }
 
+//Handle 将服务发送到负载
 func (s *serviceWorker) Handle(w http.ResponseWriter, r *http.Request, router service.IRouterRule) error {
 	// 构造context
 	ctx := http_context.NewContext(r, w)
 	// 设置目标URL
-	ctx.ProxyRequest.SetTargetURL(recombinePath(r.URL.Path, router.Location(), s.rewriteUrl))
+	ctx.ProxyRequest.SetTargetURL(recombinePath(r.URL.Path, router.Location(), s.rewriteURL))
 	s.upstream.Send(ctx, s)
 	return nil
 }
 
+//recombinePath 生成新的目标URL
 func recombinePath(requestURL, location, targetURL string) string {
-	new := strings.Replace(requestURL, location, "", 1)
-	return fmt.Sprintf("%s/%s", strings.TrimSuffix(targetURL, "/"), strings.TrimPrefix(new, "/"))
+	newRequestURL := strings.Replace(requestURL, location, "", 1)
+	return fmt.Sprintf("%s/%s", strings.TrimSuffix(targetURL, "/"), strings.TrimPrefix(newRequestURL, "/"))
 }
