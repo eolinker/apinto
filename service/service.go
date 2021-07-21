@@ -11,7 +11,7 @@ func CheckSkill(skill string) bool {
 	return skill == "github.com/eolinker/goku-eosc/service.service.IService"
 }
 
-// IService github.com/eolinker/goku-eosc/service.service.IService
+//IService github.com/eolinker/goku-eosc/service.service.IService
 type IService interface {
 	Handle(w http.ResponseWriter, r *http.Request, router IRouterRule) error
 }

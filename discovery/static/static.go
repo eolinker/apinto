@@ -11,7 +11,7 @@ import (
 	"time"
 	"unicode"
 
-	health_check_http "github.com/eolinker/goku-eosc/healthcheckhttp"
+	health_check_http "github.com/eolinker/goku-eosc/health-check-http"
 
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/goku-eosc/discovery"

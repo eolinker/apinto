@@ -1,4 +1,4 @@
-package servicehttp
+package service_http
 
 import (
 	"reflect"

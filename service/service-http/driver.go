@@ -1,4 +1,4 @@
-package servicehttp
+package service_http
 
 import (
 	"errors"
@@ -44,7 +44,7 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 			driver:     cfg.Driver,
 			desc:       cfg.Desc,
 			timeout:    time.Duration(cfg.Timeout) * time.Millisecond,
-			rewriteUrl: cfg.RewriteURL,
+			rewriteURL: cfg.RewriteURL,
 			retry:      cfg.Retry,
 			scheme:     cfg.Scheme,
 			upstream:   work.(upstream.IUpstream),
@@ -59,7 +59,7 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 			driver:     cfg.Driver,
 			desc:       cfg.Desc,
 			timeout:    time.Duration(cfg.Timeout) * time.Millisecond,
-			rewriteUrl: cfg.RewriteURL,
+			rewriteURL: cfg.RewriteURL,
 			retry:      cfg.Retry,
 			scheme:     cfg.Scheme,
 			upstream:   work.(upstream.IUpstream),
