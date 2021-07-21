@@ -1,9 +1,10 @@
-package service_http
+package servicehttp
 
 import (
 	"github.com/eolinker/eosc"
 )
 
+//Config service_http驱动配置
 type Config struct {
 	id         string
 	Name       string         `json:"name"`
@@ -12,6 +13,6 @@ type Config struct {
 	Timeout    int64          `json:"timeout"`
 	Retry      int            `json:"retry"`
 	Scheme     string         `json:"scheme"`
-	RewriteUrl string         `json:"rewrite_url"`
+	RewriteURL string         `json:"rewrite_url"`
 	Upstream   eosc.RequireId `json:"upstream" skill:"github.com/eolinker/goku-eosc/upstream.upstream.IUpstream"`
 }

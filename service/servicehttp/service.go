@@ -1,4 +1,4 @@
-package service_http
+package servicehttp
 
 import (
 	"errors"
@@ -39,12 +39,12 @@ func (s *serviceWorker) Start() error {
 func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	data, ok := conf.(*Config)
 	if !ok {
-		return errors.New(fmt.Sprintf(ErrorStructType, eosc.TypeNameOf(conf), eosc.TypeNameOf((*Config)(nil))))
+		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), eosc.ErrorStructType)
 	}
 	if worker, has := workers[data.Upstream]; has {
 		s.desc = data.Desc
 		s.timeout = time.Duration(data.Timeout) * time.Millisecond
-		s.rewriteUrl = data.RewriteUrl
+		s.rewriteUrl = data.RewriteURL
 		s.retry = data.Retry
 		s.scheme = data.Scheme
 		u, ok := worker.(upstream.IUpstream)
@@ -57,7 +57,7 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 		if has {
 			s.desc = data.Desc
 			s.timeout = time.Duration(data.Timeout) * time.Millisecond
-			s.rewriteUrl = data.RewriteUrl
+			s.rewriteUrl = data.RewriteURL
 			s.retry = data.Retry
 			s.scheme = data.Scheme
 			u, ok := worker.(upstream.IUpstream)
