@@ -67,7 +67,7 @@ func Keys() []string {
 	return defaultDriverRegister.Keys()
 }
 
-func GetDriver(name string, app discovery.IApp) (IBalanceHandler, error) {
+func GetFactory(name string) (IBalanceFactory, error) {
 	factory, ok := Get(name)
 	if !ok {
 		for _, key := range Keys() {
@@ -80,5 +80,5 @@ func GetDriver(name string, app discovery.IApp) (IBalanceHandler, error) {
 			return nil, errors.New("no valid balance handler")
 		}
 	}
-	return factory.Create(app)
+	return factory, nil
 }

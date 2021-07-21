@@ -2,6 +2,7 @@ package discovery_static
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -17,6 +18,10 @@ import (
 )
 
 const name = "static"
+
+var (
+	ErrorStructType = errors.New("error struct type")
+)
 
 type static struct {
 	id         string
@@ -43,7 +48,7 @@ func (s *static) Start() error {
 func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), eosc.ErrorStructType)
+		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), ErrorStructType)
 	}
 	s.locker.Lock()
 	s.labels = cfg.Labels
@@ -132,21 +137,23 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 	for _, word := range words {
 
 		if word == ";" {
+			n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port)
+			nodes[n.Id()] = n
 			index = 0
 			node = nil
 			continue
 		}
-		l := len(word)
-		value := word
-		if word[l-1] == ';' {
-			value = word[:l-1]
-		}
+
 		switch index {
 		case 0:
 			{
 				// 域名+端口
-				node = new(Node)
-				vs := strings.Split(value, ":")
+				node = &Node{
+					labels: map[string]string{},
+					ip:     "",
+					port:   0,
+				}
+				vs := strings.Split(word, ":")
 				// 先判断是否是IP端口模式
 				if !validIP(vs[0]) {
 					// 若不是IP端口模式，则计入全局的属性
@@ -157,7 +164,7 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 					break
 				}
 				if len(vs) > 2 {
-					return nil, fmt.Errorf("decode ip:port failt for[%s]", value)
+					return nil, fmt.Errorf("decode ip:port failt for[%s]", word)
 				}
 				node.ip = vs[0]
 				if len(vs) == 2 {
@@ -169,22 +176,19 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 		default:
 			{
 				// label集合
-				args := strings.Split(value, "=")
+				args := strings.Split(word, "=")
 				if len(args) > 1 {
 					node.labels[args[0]] = args[1]
 				}
 			}
 		}
-
-		if word[l-1] == ';' {
-			n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port)
-			nodes[n.Id()] = n
-			index = 0
-			node = nil
-		} else {
-			index++
-		}
+		index++
 	}
+	n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port)
+	nodes[n.Id()] = n
+	index = 0
+	node = nil
+
 	agent := (discovery.IHealthChecker)(nil)
 	if s.checker != nil {
 		agent, _ = s.checker.Agent()

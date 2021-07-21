@@ -22,6 +22,7 @@ func NewHttpCheck(config Config) *HttpCheck {
 		ctx:    ctx,
 		cancel: cancel,
 		ch:     make(chan *checkNode, 10),
+		delCh:  make(chan string, 10),
 		client: &http.Client{},
 		locker: sync.RWMutex{},
 	}
@@ -71,7 +72,7 @@ func (h *HttpCheck) doCheckLoop() {
 }
 
 func (h *HttpCheck) Agent() (discovery.IHealthChecker, error) {
-	return NewAgent(uuid.New()), nil
+	return NewAgent(uuid.New(), h), nil
 }
 
 func (h *HttpCheck) Reset(conf Config) error {

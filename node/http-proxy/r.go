@@ -42,7 +42,7 @@ func DoRequest(ctx *http_context.Context, uri string, timeout time.Duration) (*h
 	body, _ := ctx.ProxyRequest.RawBody()
 	req.SetRawBody(body)
 	if timeout != 0 {
-		req.SetTimeout(timeout * time.Millisecond)
+		req.SetTimeout(timeout)
 	}
 	err = req.ParseBody()
 	if err != nil {

@@ -7,8 +7,8 @@ type Agent struct {
 	*HttpCheck
 }
 
-func NewAgent(agentId string) *Agent {
-	return &Agent{agentId: agentId}
+func NewAgent(agentId string, h *HttpCheck) *Agent {
+	return &Agent{agentId: agentId, HttpCheck: h}
 }
 
 func (a *Agent) AddToCheck(node discovery.INode) error {
