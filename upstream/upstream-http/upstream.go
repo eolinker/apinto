@@ -33,6 +33,7 @@ type httpUpstream struct {
 	handler     balance.IBalanceHandler
 }
 
+//Id 返回worker id
 func (h *httpUpstream) Id() string {
 	return h.id
 }
@@ -41,10 +42,11 @@ func (h *httpUpstream) Start() error {
 	return nil
 }
 
+//Reset 重新设置http_proxy负载的配置
 func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return errors.New(fmt.Sprintf(ErrorStructType, eosc.TypeNameOf(conf), eosc.TypeNameOf((*Config)(nil))))
+		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), eosc.ErrorStructType)
 	}
 	if factory, has := workers[cfg.Discovery]; has {
 		f, ok := factory.(discovery.IDiscovery)
@@ -75,16 +77,18 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 	return errors.New("fail to create upstream worker")
 }
 
+//Stop 停止http_proxy负载，并关闭相应的app
 func (h *httpUpstream) Stop() error {
 	h.app.Close()
 	return nil
 }
 
+//CheckSkill 检查目标能力是否存在
 func (h *httpUpstream) CheckSkill(skill string) bool {
 	return upstream.CheckSkill(skill)
 }
 
-//send 请求发送，忽略重试
+//Send 请求发送，忽略重试
 func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (*http.Response, error) {
 
 	var response *http.Response
@@ -103,6 +107,7 @@ func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.ISe
 			if response == nil {
 				node.Down()
 			}
+			//处理不可用节点
 			h.app.NodeError(node.ID())
 			node, err = h.handler.Next()
 			if err != nil {

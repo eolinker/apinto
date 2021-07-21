@@ -6,6 +6,7 @@ import (
 	"github.com/eolinker/eosc"
 )
 
+//Register 注册匿名http_proxy驱动工厂
 func Register() {
 	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:http_proxy", NewFactory())
 }
@@ -18,10 +19,12 @@ type factory struct {
 	params     map[string]string
 }
 
-func NewFactory() *factory {
+//NewFactory 创建匿名http_proxy驱动工厂
+func NewFactory() eosc.IProfessionDriverFactory {
 	return &factory{}
 }
 
+//ExtendInfo 返回匿名http_proxy驱动工厂的信息
 func (f *factory) ExtendInfo() eosc.ExtendInfo {
 	return eosc.ExtendInfo{
 		ID:      "eolinker:goku:upstream_http_proxy",
@@ -31,6 +34,7 @@ func (f *factory) ExtendInfo() eosc.ExtendInfo {
 	}
 }
 
+//Create 创建匿名http_proxy驱动
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
 	return &driver{
 		profession: profession,
