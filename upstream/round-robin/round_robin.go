@@ -45,22 +45,25 @@ type roundRobin struct {
 	gcdWeight int
 	// maxWeight 权重最大值
 	maxWeight int
+	cw        int
 }
 
 func (r *roundRobin) Next() (discovery.INode, error) {
-	cw := 0
 	for {
 		r.index = (r.index + 1) % r.size
 		if r.index == 0 {
-			cw = cw - r.gcdWeight
-			if cw <= 0 {
-				cw = r.maxWeight
-				if cw == 0 {
+			r.cw = r.cw - r.gcdWeight
+			if r.cw <= 0 {
+				r.cw = r.maxWeight
+				if r.cw == 0 {
 					return nil, errors.New("")
 				}
 			}
 		}
-		if r.nodes[r.index].weight >= cw {
+		if r.nodes[r.index].weight >= r.cw {
+			if r.nodes[r.index].Status() == discovery.Down {
+				continue
+			}
 			return r.nodes[r.index], nil
 		}
 	}
@@ -72,8 +75,9 @@ func newRoundRobin(nodes []discovery.INode) *roundRobin {
 		nodes: make([]node, 0, size),
 		size:  size,
 	}
-	for i, n := range r.nodes {
-		weight, _ := r.nodes[r.index].GetAttrByName("weight")
+	for i, n := range nodes {
+
+		weight, _ := n.GetAttrByName("weight")
 		w, _ := strconv.Atoi(weight)
 		if w == 0 {
 			w = 1
@@ -87,6 +91,7 @@ func newRoundRobin(nodes []discovery.INode) *roundRobin {
 		}
 		r.gcdWeight = gcd(w, r.gcdWeight)
 		r.maxWeight = max(w, r.maxWeight)
+
 	}
 	return r
 }

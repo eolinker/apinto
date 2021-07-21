@@ -30,7 +30,7 @@ func (f *factory) ExtendInfo() eosc.ExtendInfo {
 		ID:      "eolinker:goku:discovery_static",
 		Group:   "eolinker",
 		Project: "goku",
-		Name:    "consul",
+		Name:    "static",
 	}
 }
 

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
 
 	"github.com/eolinker/goku-eosc/upstream"
 
@@ -31,7 +30,7 @@ type httpUpstream struct {
 	scheme         string
 	balanceType    string
 	app            discovery.IApp
-	balanceHandler balance.IBalanceHandler
+	balanceFactory balance.IBalanceFactory
 }
 
 func (h *httpUpstream) Id() string {
@@ -39,11 +38,6 @@ func (h *httpUpstream) Id() string {
 }
 
 func (h *httpUpstream) Start() error {
-	handler, err := balance.GetDriver(h.balanceType, h.app)
-	if err != nil {
-		return err
-	}
-	h.balanceHandler = handler
 	return nil
 }
 
@@ -63,11 +57,14 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 			h.scheme = cfg.Scheme
 			h.balanceType = cfg.Type
 			h.app = app
-			handler, err := balance.GetDriver(h.balanceType, h.app)
+
 			if err != nil {
 				return err
 			}
-			h.balanceHandler = handler
+			h.balanceFactory, err = balance.GetFactory(h.balanceType)
+			if err != nil {
+				return err
+			}
 			return nil
 		}
 	}
@@ -85,15 +82,19 @@ func (h *httpUpstream) CheckSkill(skill string) bool {
 
 //send 请求发送，忽略重试
 func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (*http.Response, error) {
+	handler, err := h.balanceFactory.Create(h.app)
+	if err != nil {
+		return nil, err
+	}
 	var response *http.Response
-	var err error
 	path := utils.TrimPrefixAll(ctx.ProxyRequest.TargetURL(), "/")
-	node, err := h.balanceHandler.Next()
+
+	node, err := handler.Next()
 	if err != nil {
 		return nil, err
 	}
 	for doTrice := serviceDetail.Retry() + 1; doTrice > 0; doTrice-- {
-
+		fmt.Println("addr is:", node.Addr())
 		u := fmt.Sprintf("%s://%s/%s", h.scheme, node.Addr(), path)
 		response, err = http_proxy.DoRequest(ctx, u, serviceDetail.Timeout())
 
@@ -102,7 +103,7 @@ func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.ISe
 				node.Down()
 			}
 			h.app.NodeError(node.ID())
-			node, err = h.balanceHandler.Next()
+			node, err = handler.Next()
 			if err != nil {
 				return nil, err
 			}
@@ -113,8 +114,4 @@ func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.ISe
 	}
 
 	return response, err
-}
-
-func GetType() reflect.Type {
-	return reflect.TypeOf((*httpUpstream)(nil))
 }
