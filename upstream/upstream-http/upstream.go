@@ -23,14 +23,14 @@ import (
 
 //Http org
 type httpUpstream struct {
-	id             string
-	name           string
-	driver         string
-	desc           string
-	scheme         string
-	balanceType    string
-	app            discovery.IApp
-	balanceFactory balance.IBalanceFactory
+	id          string
+	name        string
+	driver      string
+	desc        string
+	scheme      string
+	balanceType string
+	app         discovery.IApp
+	handler     balance.IBalanceHandler
 }
 
 func (h *httpUpstream) Id() string {
@@ -61,7 +61,11 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 			if err != nil {
 				return err
 			}
-			h.balanceFactory, err = balance.GetFactory(h.balanceType)
+			f, err := balance.GetFactory(h.balanceType)
+			if err != nil {
+				return err
+			}
+			h.handler, err = f.Create(h.app)
 			if err != nil {
 				return err
 			}
@@ -82,14 +86,11 @@ func (h *httpUpstream) CheckSkill(skill string) bool {
 
 //send 请求发送，忽略重试
 func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (*http.Response, error) {
-	handler, err := h.balanceFactory.Create(h.app)
-	if err != nil {
-		return nil, err
-	}
+
 	var response *http.Response
 	path := utils.TrimPrefixAll(ctx.ProxyRequest.TargetURL(), "/")
 
-	node, err := handler.Next()
+	node, err := h.handler.Next()
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +104,7 @@ func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.ISe
 				node.Down()
 			}
 			h.app.NodeError(node.ID())
-			node, err = handler.Next()
+			node, err = h.handler.Next()
 			if err != nil {
 				return nil, err
 			}
