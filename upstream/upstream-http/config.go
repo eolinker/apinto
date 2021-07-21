@@ -4,6 +4,7 @@ import (
 	"github.com/eolinker/eosc"
 )
 
+//Config http-proxy驱动配置结构体
 type Config struct {
 	id        string
 	Name      string         `json:"name"`

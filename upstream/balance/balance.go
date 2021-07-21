@@ -8,36 +8,42 @@ import (
 )
 
 var (
-	defaultDriverRegister iDriverRegister = newDriverManager()
+	defaultBalanceFactoryRegister IBalanceFactoryRegister = newBalanceFactoryManager()
 )
 
+//IBalanceFactory 实现了负载均衡算法工厂
 type IBalanceFactory interface {
 	Create(app discovery.IApp) (IBalanceHandler, error)
 }
 
+//IBalanceHandler 实现了负载均衡算法
 type IBalanceHandler interface {
 	Next() (discovery.INode, error)
 }
 
-type iDriverRegister interface {
-	RegisterDriverByKey(key string, factory IBalanceFactory)
-	GetDriverByKey(key string) (IBalanceFactory, bool)
+//IBalanceFactoryRegister 实现了负载均衡算法工厂管理器
+type IBalanceFactoryRegister interface {
+	RegisterFactoryByKey(key string, factory IBalanceFactory)
+	GetFactoryByKey(key string) (IBalanceFactory, bool)
 	Keys() []string
 }
 
-type DriverRegister struct {
+//driverRegister 实现了IBalanceFactoryRegister接口
+type driverRegister struct {
 	register eosc.IRegister
 	keys     []string
 }
 
-func newDriverManager() *DriverRegister {
-	return &DriverRegister{
+//newBalanceFactoryManager 创建负载均衡算法工厂管理器
+func newBalanceFactoryManager() IBalanceFactoryRegister {
+	return &driverRegister{
 		register: eosc.NewRegister(),
 		keys:     make([]string, 0, 10),
 	}
 }
 
-func (dm *DriverRegister) GetDriverByKey(key string) (IBalanceFactory, bool) {
+//GetFactoryByKey 获取指定balance工厂
+func (dm *driverRegister) GetFactoryByKey(key string) (IBalanceFactory, bool) {
 	o, has := dm.register.Get(key)
 	if has {
 		f, ok := o.(IBalanceFactory)
@@ -46,27 +52,33 @@ func (dm *DriverRegister) GetDriverByKey(key string) (IBalanceFactory, bool) {
 	return nil, false
 }
 
-func (dm *DriverRegister) RegisterDriverByKey(key string, factory IBalanceFactory) {
+//RegisterFactoryByKey 注册balance工厂
+func (dm *driverRegister) RegisterFactoryByKey(key string, factory IBalanceFactory) {
 	dm.register.Register(key, factory, true)
 	dm.keys = append(dm.keys, key)
 }
 
-func (dm *DriverRegister) Keys() []string {
+//Keys 返回所有已注册的key
+func (dm *driverRegister) Keys() []string {
 	return dm.keys
 }
 
+//Register 注册balance工厂到默认balanceFactory注册器
 func Register(key string, factory IBalanceFactory) {
-	defaultDriverRegister.RegisterDriverByKey(key, factory)
+	defaultBalanceFactoryRegister.RegisterFactoryByKey(key, factory)
 }
 
+//Get 从默认balanceFactory注册器中获取balance工厂
 func Get(key string) (IBalanceFactory, bool) {
-	return defaultDriverRegister.GetDriverByKey(key)
+	return defaultBalanceFactoryRegister.GetFactoryByKey(key)
 }
 
+//Keys 返回默认的balanceFactory注册器中所有已注册的key
 func Keys() []string {
-	return defaultDriverRegister.Keys()
+	return defaultBalanceFactoryRegister.Keys()
 }
 
+//GetFactory 获取指定负载均衡算法工厂，若指定的不存在则返回一个已注册的工厂
 func GetFactory(name string) (IBalanceFactory, error) {
 	factory, ok := Get(name)
 	if !ok {
