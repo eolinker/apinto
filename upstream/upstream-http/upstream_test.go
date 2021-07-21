@@ -17,7 +17,7 @@ import (
 
 	"github.com/eolinker/goku-eosc/upstream"
 
-	discovery_static "github.com/eolinker/goku-eosc/discovery/discovery-static"
+	discovery_static "github.com/eolinker/goku-eosc/discovery/static"
 
 	"github.com/eolinker/eosc"
 )
@@ -95,7 +95,7 @@ func TestSend(t *testing.T) {
 		Health: &discovery_static.HealthConfig{
 			Protocol:    "http",
 			Method:      "GET",
-			Url:         "/",
+			URL:         "/",
 			SuccessCode: 404,
 			Period:      30,
 			Timeout:     3000,

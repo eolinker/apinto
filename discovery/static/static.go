@@ -147,7 +147,7 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 
 		if word == ";" {
 			n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port)
-			nodes[n.Id()] = n
+			nodes[n.ID()] = n
 			index = 0
 			node = nil
 			continue
@@ -194,7 +194,7 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 		index++
 	}
 	n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port)
-	nodes[n.Id()] = n
+	nodes[n.ID()] = n
 	index = 0
 	node = nil
 
