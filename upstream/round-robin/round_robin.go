@@ -57,6 +57,9 @@ func (r *roundRobin) Next() (discovery.INode, error) {
 		// 当上次节点更新时间与当前时间间隔超过30s，则重新设置节点
 		r.set()
 	}
+	if r.size < 1 {
+		return nil, errors.New("no valid node")
+	}
 	for {
 		r.index = (r.index + 1) % r.size
 		if r.index == 0 {

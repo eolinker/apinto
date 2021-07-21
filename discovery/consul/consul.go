@@ -3,9 +3,10 @@ package consul
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/log"
-	"time"
 
 	"github.com/eolinker/goku-eosc/discovery"
 )
@@ -67,7 +68,7 @@ func (c *consul) Start() error {
 func (c *consul) Reset(config interface{}, workers map[eosc.RequireId]interface{}) error {
 	workerConfig, ok := config.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(config), eosc.ErrorStructType)
+		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(config))
 	}
 
 	c.address = workerConfig.Config.Address
