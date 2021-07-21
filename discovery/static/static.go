@@ -10,7 +10,7 @@ import (
 	"time"
 	"unicode"
 
-	health_check_http "github.com/eolinker/goku-eosc/health-check-http"
+	health_check_http "github.com/eolinker/goku-eosc/healthcheckhttp"
 
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/goku-eosc/discovery"
@@ -25,7 +25,7 @@ type static struct {
 	apps       map[string]discovery.IApp
 	locker     sync.RWMutex
 	healthOn   bool
-	checker    *health_check_http.HttpCheck
+	checker    *health_check_http.HTTPCheck
 	context    context.Context
 	cancelFunc context.CancelFunc
 }
@@ -58,11 +58,11 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	}
 	if s.healthOn {
 		if s.checker == nil {
-			s.checker = health_check_http.NewHttpCheck(
+			s.checker = health_check_http.NewHTTPCheck(
 				health_check_http.Config{
 					Protocol:    cfg.Health.Protocol,
 					Method:      cfg.Health.Method,
-					Url:         cfg.Health.URL,
+					URL:         cfg.Health.URL,
 					SuccessCode: cfg.Health.SuccessCode,
 					Period:      time.Duration(cfg.Health.Period) * time.Second,
 					Timeout:     time.Duration(cfg.Health.Timeout) * time.Millisecond,
@@ -72,7 +72,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 				health_check_http.Config{
 					Protocol:    cfg.Health.Protocol,
 					Method:      cfg.Health.Method,
-					Url:         cfg.Health.URL,
+					URL:         cfg.Health.URL,
 					SuccessCode: cfg.Health.SuccessCode,
 					Period:      time.Duration(cfg.Health.Period) * time.Second,
 					Timeout:     time.Duration(cfg.Health.Timeout) * time.Millisecond,
