@@ -13,6 +13,7 @@ const (
 	name = "round-robin"
 )
 
+//Register 注册round-robin算法
 func Register() {
 	balance.Register(name, newRoundRobinFactory())
 }
@@ -24,6 +25,7 @@ func newRoundRobinFactory() *roundRobinFactory {
 type roundRobinFactory struct {
 }
 
+//Create 创建一个round-Robin算法处理器
 func (r *roundRobinFactory) Create(app discovery.IApp) (balance.IBalanceHandler, error) {
 	rr := newRoundRobin(app.Nodes())
 	return rr, nil
@@ -48,6 +50,7 @@ type roundRobin struct {
 	cw        int
 }
 
+//Next 由现有节点根据round_Robin决策出一个可用节点
 func (r *roundRobin) Next() (discovery.INode, error) {
 	for {
 		r.index = (r.index + 1) % r.size
