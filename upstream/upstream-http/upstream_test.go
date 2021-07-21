@@ -22,6 +22,10 @@ import (
 	"github.com/eolinker/eosc"
 )
 
+var (
+	ErrorStructType = "error struct type: %s, need struct type: %s"
+)
+
 type Service struct {
 	name    string
 	desc    string

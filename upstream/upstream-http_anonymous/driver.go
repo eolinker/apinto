@@ -10,10 +10,6 @@ const (
 	driverName = "http_proxy_anonymous"
 )
 
-var (
-	ErrorStructType = "error struct type: %s, need struct type: %s"
-)
-
 //driver 实现github.com/eolinker/eosc.eosc.IProfessionDriver接口
 type driver struct {
 	profession string
@@ -25,10 +21,12 @@ type driver struct {
 	params     map[string]string
 }
 
+//ConfigType 返回匿名http_proxy驱动配置的反射类型
 func (d *driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
+//Create 创建匿名http_proxy驱动的实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	w := &httpUpstream{
 		id:     id,
