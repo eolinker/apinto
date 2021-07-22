@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eolinker/goku-eosc/discovery/nacos"
-
 	round_robin "github.com/eolinker/goku-eosc/upstream/round-robin"
+
+	"github.com/eolinker/goku-eosc/discovery/static"
 
 	http_context "github.com/eolinker/goku-eosc/node/http-context"
 
@@ -19,41 +19,39 @@ import (
 	"github.com/eolinker/eosc"
 )
 
-func TestNacos(t *testing.T) {
+func TestStatic(t *testing.T) {
 	round_robin.Register()
-	nacosConfig := &Config{
+	staticConfig := &Config{
 		Name:      "product-user",
 		Driver:    "http_proxy",
 		Desc:      "生产环境-用户模块",
 		Scheme:    "http",
 		Type:      "round-robin",
-		Config:    "nacos.naming.serviceName",
-		Discovery: "nacos_1@discovery",
+		Config:    "127.0.0.1:8580 weight=10;10.1.1.1:8080 weight=20",
+		Discovery: "static_1@discovery",
 	}
 
-	nacosWorker, err := getWorker(nacos.NewFactory(), &nacos.Config{
-		Name:   "nacos_1",
-		Driver: "nacos",
-		Labels: map[string]string{
-			"scheme": "http",
+	staticWorker, err := getWorker(static.NewFactory(), &static.Config{
+		Name:   "static_1",
+		Driver: "static",
+		Labels: nil,
+		Health: &static.HealthConfig{
+			Protocol:    "http",
+			Method:      "POST",
+			URL:         "/Web/Test/params/print",
+			SuccessCode: 200,
+			Period:      30,
+			Timeout:     3000,
 		},
-		Config: nacos.AccessConfig{
-			Address: []string{"39.108.94.48:8848"},
-			Params: map[string]string{
-				"username":   "test",
-				"password":   "test",
-				"healthOnly": "false",
-			},
-		},
-	}, "discovery", "nacos", "", "nacos", nil, "", "nacos_1", nil)
+		HealthOn: true,
+	}, "discovery", "static", "", "静态服务发现", nil, "", "static_1", nil)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	nacosWorker.Start()
 	allWorker := make(map[eosc.RequireId]interface{})
-	allWorker["nacos_1@discovery"] = nacosWorker
-	worker, err := getWorker(NewFactory(), nacosConfig, "upstream", "http_proxy", "", "http转发驱动", nil, "", "product-user", allWorker)
+	allWorker["static_1@discovery"] = staticWorker
+	worker, err := getWorker(NewFactory(), staticConfig, "upstream", "http_proxy", "", "http转发驱动", nil, "", "product-user", allWorker)
 	if err != nil {
 		t.Error(err)
 		return

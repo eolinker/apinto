@@ -38,7 +38,7 @@ func TestNacos(t *testing.T) {
 			"scheme": "http",
 		},
 		Config: nacos.AccessConfig{
-			Address: []string{"39.108.94.48:8848"},
+			Address: []string{"10.1.94.48:8848"},
 			Params: map[string]string{
 				"username":   "test",
 				"password":   "test",

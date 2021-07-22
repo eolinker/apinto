@@ -1,9 +1,8 @@
 package upstream
 
 import (
-	"net/http"
-
 	http_context "github.com/eolinker/goku-eosc/node/http-context"
+	"github.com/eolinker/goku-eosc/node/http-proxy/backend"
 	"github.com/eolinker/goku-eosc/service"
 )
 
@@ -14,5 +13,5 @@ func CheckSkill(skill string) bool {
 
 //IUpstream 实现了负载发送请求方法
 type IUpstream interface {
-	Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (*http.Response, error)
+	Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (backend.IResponse, error)
 }

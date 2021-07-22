@@ -9,6 +9,7 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/eolinker/eosc v0.0.0-20210719112509-35868a3fa3ed h1:ohyziPArYFDUmaMkjfmy7h7v1vZKxmhERBwb1Vup39U=
 github.com/eolinker/eosc v0.0.1 h1:xRDaWSomXpn9E6wVZXE1fQYBpGOeQ2liCwpV4+l+QSc=
 github.com/eolinker/eosc v0.0.1/go.mod h1:h9RyDaBnWKeg6fxQu8faG8TQq/sdG+ipaePTTVTEqqA=
+github.com/eolinker/goku-api-gateway v2.1.1+incompatible h1:D5Jhrng6Z67vklr8LOGGT0hHN1y2vvIa/NENfAQMoEk=
 github.com/eolinker/goku-standard-plugin v0.1.5 h1:0ydlgjaWsbeQi0le1I7cDrEWTramh5hMdTM7ifG78HM=
 github.com/eolinker/goku-standard-plugin v0.1.5/go.mod h1:KX5n+WS9Sfobjft13BY5E8S5AWD8H0hhMLNN0d1p7F4=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=

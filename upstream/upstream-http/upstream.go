@@ -3,7 +3,8 @@ package upstream_http
 import (
 	"errors"
 	"fmt"
-	"net/http"
+
+	"github.com/eolinker/goku-eosc/node/http-proxy/backend"
 
 	"github.com/eolinker/goku-eosc/upstream"
 
@@ -89,9 +90,9 @@ func (h *httpUpstream) CheckSkill(skill string) bool {
 }
 
 //Send 请求发送，忽略重试
-func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (*http.Response, error) {
+func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (backend.IResponse, error) {
 
-	var response *http.Response
+	var response backend.IResponse
 	var err error
 
 	path := utils.TrimPrefixAll(ctx.ProxyRequest.TargetURL(), "/")
