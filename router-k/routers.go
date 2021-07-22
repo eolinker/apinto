@@ -1,7 +1,7 @@
 package router
 
 import (
-	"github.com/eolinker/eosc/internal"
+	"github.com/eolinker/eosc"
 	"strconv"
 )
 
@@ -13,7 +13,7 @@ type IRouters interface {
 	Del(port int, id string) (IRouter, bool)
 }
 type Routers struct {
-	data internal.IUntyped
+	data eosc.IUntyped
 }
 
 func (rs *Routers) Set(port int, id string, conf *Config) (IRouter, bool, error) {

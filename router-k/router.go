@@ -1,7 +1,7 @@
 package router
 
 import (
-	"github.com/eolinker/eosc/internal"
+	"github.com/eolinker/eosc"
 	"net/http"
 	"sync"
 )
@@ -17,7 +17,7 @@ type IRouter interface {
 
 type Router struct {
 	locker sync.Locker
-	data   internal.IUntyped
+	data   eosc.IUntyped
 	match  IMatcher
 }
 

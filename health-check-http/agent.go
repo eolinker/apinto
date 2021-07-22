@@ -2,24 +2,28 @@ package health_check_http
 
 import "github.com/eolinker/goku-eosc/discovery"
 
-type Agent struct {
-	agentId string
-	*HttpCheck
+//agent 从属于HTTPCheck,实现了IHealthChecker接口
+type agent struct {
+	agentID string
+	checker *HTTPCheck
 }
 
-func NewAgent(agentId string) *Agent {
-	return &Agent{agentId: agentId}
+//NewAgent 创建agent
+func NewAgent(agentID string, checker *HTTPCheck) discovery.IHealthChecker {
+	return &agent{agentID: agentID, checker: checker}
 }
 
-func (a *Agent) AddToCheck(node discovery.INode) error {
-	a.addToCheck(&checkNode{
+//AddToCheck 将节点添加进HTTPCheck的检查列表
+func (a *agent) AddToCheck(node discovery.INode) error {
+	a.checker.addToCheck(&checkNode{
 		node:    node,
-		agentId: a.agentId,
+		agentID: a.agentID,
 	})
 	return nil
 }
 
-func (a *Agent) Stop() error {
-	a.stop(a.agentId)
+//Stop 停止agent并且将HTTPCheck中属于该agent的正在检查的所有节点都移除
+func (a *agent) Stop() error {
+	a.checker.stop(a.agentID)
 	return nil
 }
