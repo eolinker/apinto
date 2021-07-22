@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku-eosc/discovery"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/goku-eosc/discovery"
 )
 
 type eureka struct {
@@ -80,7 +81,7 @@ func (e *eureka) Start() error {
 						if err != nil {
 							continue
 						}
-						nodes := make([]discovery.INode, len(res))
+						nodes := make([]discovery.INode, 0, len(res))
 						for _, v := range res {
 							nodes = append(nodes, v)
 						}
@@ -99,7 +100,7 @@ func (e *eureka) Start() error {
 func (e *eureka) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), eosc.ErrorStructType)
+		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
 	e.address = cfg.Config.Address
 	e.params = cfg.Config.Params
