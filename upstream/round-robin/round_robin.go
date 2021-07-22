@@ -52,6 +52,8 @@ type roundRobin struct {
 	cw int
 
 	updateTime time.Time
+
+	downNodes map[int]discovery.INode
 }
 
 //Next 由现有节点根据round_Robin决策出一个可用节点
@@ -64,18 +66,22 @@ func (r *roundRobin) Next() (discovery.INode, error) {
 		return nil, errors.New("no valid node")
 	}
 	for {
+		if len(r.downNodes) >= r.size {
+			return nil, errors.New("no valid node")
+		}
 		r.index = (r.index + 1) % r.size
 		if r.index == 0 {
 			r.cw = r.cw - r.gcdWeight
 			if r.cw <= 0 {
 				r.cw = r.maxWeight
 				if r.cw == 0 {
-					return nil, errors.New("")
+					return nil, errors.New("no valid node")
 				}
 			}
 		}
 		if r.nodes[r.index].weight >= r.cw {
 			if r.nodes[r.index].Status() == discovery.Down {
+				r.downNodes[r.index] = r.nodes[r.index]
 				continue
 			}
 			return r.nodes[r.index], nil
@@ -84,6 +90,7 @@ func (r *roundRobin) Next() (discovery.INode, error) {
 }
 
 func (r *roundRobin) set() {
+	r.downNodes = make(map[int]discovery.INode)
 	nodes := r.app.Nodes()
 	r.size = len(nodes)
 	ns := make([]node, 0, r.size)

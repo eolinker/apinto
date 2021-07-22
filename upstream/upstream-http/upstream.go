@@ -46,7 +46,7 @@ func (h *httpUpstream) Start() error {
 func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), eosc.ErrorStructType)
+		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
 	if factory, has := workers[cfg.Discovery]; has {
 		f, ok := factory.(discovery.IDiscovery)
@@ -92,13 +92,16 @@ func (h *httpUpstream) CheckSkill(skill string) bool {
 func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (*http.Response, error) {
 
 	var response *http.Response
+	var err error
+
 	path := utils.TrimPrefixAll(ctx.ProxyRequest.TargetURL(), "/")
 
-	node, err := h.handler.Next()
-	if err != nil {
-		return nil, err
-	}
 	for doTrice := serviceDetail.Retry() + 1; doTrice > 0; doTrice-- {
+		var node discovery.INode
+		node, err = h.handler.Next()
+		if err != nil {
+			return nil, err
+		}
 		fmt.Println("addr is:", node.Addr())
 		u := fmt.Sprintf("%s://%s/%s", h.scheme, node.Addr(), path)
 		response, err = http_proxy.DoRequest(ctx, u, serviceDetail.Timeout())
@@ -109,13 +112,9 @@ func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.ISe
 			}
 			//处理不可用节点
 			h.app.NodeError(node.ID())
-			node, err = h.handler.Next()
-			if err != nil {
-				return nil, err
-			}
 			continue
 		} else {
-			return response, err
+			return response, nil
 		}
 	}
 
