@@ -1,49 +1,54 @@
 package discovery
 
-import "github.com/eolinker/eosc/internal"
+import "github.com/eolinker/eosc"
 
-type Services struct {
-	apps        internal.IUntyped
-	appNameOfId internal.IUntyped
+type services struct {
+	apps        eosc.IUntyped
+	appNameOfID eosc.IUntyped
 }
 
-func NewServices() *Services {
-	return &Services{apps: internal.NewUntyped(), appNameOfId: internal.NewUntyped()}
+//NewServices 创建服务发现的服务app集合
+func NewServices() IServices {
+	return &services{apps: eosc.NewUntyped(), appNameOfID: eosc.NewUntyped()}
 }
 
-func (n *Services) get(namespace string) (internal.IUntyped, bool) {
-	v, ok := n.apps.Get(namespace)
+//get 获取对应服务名的节点列表
+func (s *services) get(serviceName string) (eosc.IUntyped, bool) {
+	v, ok := s.apps.Get(serviceName)
 	if !ok {
 		return nil, ok
 	}
-	apps, ok := v.(internal.IUntyped)
+	apps, ok := v.(eosc.IUntyped)
 	return apps, ok
 }
 
-func (s *Services) Set(serviceName string, id string, app IApp) error {
-	s.appNameOfId.Set(id, serviceName)
+//Set 将app存入其对应服务的节点列表
+func (s *services) Set(serviceName string, id string, app IApp) error {
+	s.appNameOfID.Set(id, serviceName)
 	if apps, ok := s.get(serviceName); ok {
 		apps.Set(id, app)
 		return nil
 	}
-	apps := internal.NewUntyped()
+	apps := eosc.NewUntyped()
 	apps.Set(id, app)
 	s.apps.Set(serviceName, apps)
 	return nil
 }
 
-func (s *Services) Remove(id string) error {
-	v, has := s.appNameOfId.Del(id)
+//Remove 将目标app从其对应服务的app列表中删除，传入值为目标app的id
+func (s *services) Remove(appID string) error {
+	v, has := s.appNameOfID.Del(appID)
 	if has {
 		apps, ok := s.get(v.(string))
 		if ok {
-			apps.Del(id)
+			apps.Del(appID)
 		}
 	}
 	return nil
 }
 
-func (s *Services) Update(serviceName string, nodes []INode) error {
+//Update 更新目标服务所有app的节点列表
+func (s *services) Update(serviceName string, nodes []INode) error {
 	if apps, ok := s.get(serviceName); ok {
 		for _, r := range apps.List() {
 			v, ok := r.(IApp)
@@ -55,10 +60,12 @@ func (s *Services) Update(serviceName string, nodes []INode) error {
 	return nil
 }
 
-func (s *Services) AppKeys() []string {
+//AppKeys 获取现有服务app的服务名列表
+func (s *services) AppKeys() []string {
 	return s.apps.Keys()
 }
 
+//IServices 服务app集合接口
 type IServices interface {
 	Set(serviceName string, id string, app IApp) error
 	Remove(id string) error

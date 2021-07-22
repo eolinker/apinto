@@ -15,15 +15,16 @@ type app struct {
 	container     IAppContainer
 }
 
+//Reset 重置app的节点列表
 func (s *app) Reset(nodes []INode) {
 	tmp := make(map[string]INode)
 
 	for _, node := range nodes {
 
-		if n, has := s.nodes[node.Id()]; has {
+		if n, has := s.nodes[node.ID()]; has {
 			n.Leave()
 		}
-		tmp[node.Id()] = node
+		tmp[node.ID()] = node
 
 	}
 	s.locker.Lock()
@@ -31,15 +32,18 @@ func (s *app) Reset(nodes []INode) {
 	s.locker.Unlock()
 }
 
+//GetAttrs 获取app的属性集合
 func (s *app) GetAttrs() Attrs {
 	return s.attrs
 }
 
+//GetAttrByName 通过属性名获取app对应属性
 func (s *app) GetAttrByName(name string) (string, bool) {
 	attr, ok := s.attrs[name]
 	return attr, ok
 }
 
+//NewApp 创建服务发现app
 func NewApp(checker IHealthChecker, container IAppContainer, attrs Attrs, nodes map[string]INode) IApp {
 	return &app{
 		attrs:         attrs,
@@ -51,7 +55,8 @@ func NewApp(checker IHealthChecker, container IAppContainer, attrs Attrs, nodes 
 	}
 }
 
-func (s *app) Id() string {
+//ID 返回app的id
+func (s *app) ID() string {
 	return s.id
 }
 
@@ -83,7 +88,9 @@ func (s *app) NodeError(id string) error {
 	return nil
 }
 
+//Close 关闭服务发现的app
 func (s *app) Close() error {
+	//
 	s.container.Remove(s.id)
 	return s.healthChecker.Stop()
 }
