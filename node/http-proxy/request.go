@@ -2,16 +2,17 @@ package http_proxy
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/eolinker/goku-eosc/node/http-proxy/backend"
 
 	http_context "github.com/eolinker/goku-eosc/node/http-context"
 	http_proxy_request "github.com/eolinker/goku-eosc/node/http-proxy/http-proxy-request"
 )
 
 //DoRequest 构造请求
-func DoRequest(ctx *http_context.Context, uri string, timeout time.Duration) (*http.Response, error) {
+func DoRequest(ctx *http_context.Context, uri string, timeout time.Duration) (backend.IResponse, error) {
 	if uri == "" {
 		return nil, fmt.Errorf("invaild url")
 	}
@@ -42,7 +43,7 @@ func DoRequest(ctx *http_context.Context, uri string, timeout time.Duration) (*h
 	body, _ := ctx.ProxyRequest.RawBody()
 	req.SetRawBody(body)
 	if timeout != 0 {
-		req.SetTimeout(timeout)
+		req.SetTimeout(timeout * time.Millisecond)
 	}
 	err = req.ParseBody()
 	if err != nil {
@@ -53,5 +54,5 @@ func DoRequest(ctx *http_context.Context, uri string, timeout time.Duration) (*h
 		return nil, err
 	}
 
-	return response, err
+	return NewResponse(response)
 }

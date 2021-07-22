@@ -77,7 +77,7 @@ func (h *HTTPCheck) doCheckLoop() {
 
 //Agent 生成一个agent
 func (h *HTTPCheck) Agent() (discovery.IHealthChecker, error) {
-	return NewAgent(uuid.New()), nil
+	return NewAgent(uuid.New(), h), nil
 }
 
 //Reset 重置HTTPCheck的配置

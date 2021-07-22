@@ -38,7 +38,7 @@ func TestConsul(t *testing.T) {
 			"scheme": "http",
 		},
 		Config: consul.AccessConfig{
-			Address: []string{"39.108.94.48:8500", "39.108.94.48:8501"},
+			Address: []string{"10.1.94.48:8500", "10.1.94.48:8501"},
 			Params:  map[string]string{"token": "a92316d8-5c99-4fa0-b4cd-30b9e66718aa"},
 		},
 	}, "discovery", "consul", "", "consul", nil, "", "consul_1", nil)

@@ -15,6 +15,10 @@ import (
 	"github.com/eolinker/goku-eosc/service"
 )
 
+var (
+	ErrorStructType = errors.New("error struct type")
+)
+
 type serviceWorker struct {
 	id         string
 	name       string
@@ -41,7 +45,7 @@ func (s *serviceWorker) Start() error {
 func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	data, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), eosc.ErrorStructType)
+		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
 	if worker, has := workers[data.Upstream]; has {
 		s.desc = data.Desc
@@ -119,7 +123,11 @@ func (s *serviceWorker) Handle(w http.ResponseWriter, r *http.Request, router se
 	ctx := http_context.NewContext(r, w)
 	// 设置目标URL
 	ctx.ProxyRequest.SetTargetURL(recombinePath(r.URL.Path, router.Location(), s.rewriteURL))
-	s.upstream.Send(ctx, s)
+	response, err := s.upstream.Send(ctx, s)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(response.Body()))
 	return nil
 }
 

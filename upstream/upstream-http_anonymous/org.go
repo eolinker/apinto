@@ -2,8 +2,9 @@ package upstream_http_anonymous
 
 import (
 	"fmt"
-	"net/http"
 	"reflect"
+
+	"github.com/eolinker/goku-eosc/node/http-proxy/backend"
 
 	"github.com/eolinker/goku-eosc/upstream"
 
@@ -47,8 +48,8 @@ func (h *httpUpstream) CheckSkill(skill string) bool {
 }
 
 //send 请求发送，忽略重试
-func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (*http.Response, error) {
-	var response *http.Response
+func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (backend.IResponse, error) {
+	var response backend.IResponse
 	var err error
 	path := utils.TrimPrefixAll(ctx.ProxyRequest.TargetURL(), "/")
 	for doTrice := serviceDetail.Retry() + 1; doTrice > 0; doTrice-- {
