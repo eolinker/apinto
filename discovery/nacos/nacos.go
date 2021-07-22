@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku-eosc/discovery"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/goku-eosc/discovery"
 )
 
 const (
@@ -61,7 +62,7 @@ func (n *nacos) Start() error {
 						if err != nil {
 							continue
 						}
-						nodes := make([]discovery.INode, len(res))
+						nodes := make([]discovery.INode, 0, len(res))
 						for _, v := range res {
 							nodes = append(nodes, v)
 						}
@@ -80,7 +81,7 @@ func (n *nacos) Start() error {
 func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), eosc.ErrorStructType)
+		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
 	n.address = cfg.Config.Address
 	n.params = cfg.Config.Params

@@ -2,9 +2,10 @@ package nacos
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/goku-eosc/discovery"
-	"reflect"
 )
 
 const (
@@ -31,7 +32,7 @@ func (d *driver) ConfigType() reflect.Type {
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	cfg, ok := v.(*Config)
 	if !ok {
-		return nil, fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(v), eosc.ErrorStructType)
+		return nil, fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(v))
 	}
 	return &nacos{
 		id:         id,
