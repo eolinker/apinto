@@ -26,6 +26,7 @@ func init() {
 type iManager interface {
 	Add(port int, id string, config *Config) error
 	Del(port int, id string) error
+	Cancel()
 }
 
 var manager = NewManager()
@@ -35,6 +36,23 @@ type Manager struct {
 	routers   IRouters
 	servers   map[int]*http.Server
 	listeners map[int]net.Listener
+
+
+}
+
+func (m *Manager) Cancel() {
+	m.locker.Lock()
+	defer m.locker.Unlock()
+	ctx:=context.Background()
+ 	for p,s:=range m.servers{
+ 		s.Shutdown(ctx)
+		delete(m.servers, p)
+	}
+
+	for k,l:=range m.listeners{
+		l.Close()
+		delete(m.listeners, k)
+	}
 }
 
 func NewManager() *Manager {
@@ -54,12 +72,14 @@ func (m *Manager) Add(port int, id string, config *Config) error {
 		s, has := m.servers[port]
 		if !has {
 			s = &http.Server{}
+
 			s.Handler = router
 			l, err := listener.ListenTCP(port, sign)
 			if err != nil {
 				return err
 			}
 			go s.Serve(l)
+
 			m.servers[port] = s
 			m.listeners[port] = l
 		}

@@ -9,6 +9,8 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/eolinker/eosc v0.0.0-20210719112509-35868a3fa3ed h1:ohyziPArYFDUmaMkjfmy7h7v1vZKxmhERBwb1Vup39U=
 github.com/eolinker/eosc v0.0.1 h1:xRDaWSomXpn9E6wVZXE1fQYBpGOeQ2liCwpV4+l+QSc=
 github.com/eolinker/eosc v0.0.1/go.mod h1:h9RyDaBnWKeg6fxQu8faG8TQq/sdG+ipaePTTVTEqqA=
+github.com/eolinker/eosc v0.0.2 h1:PKSutO9OemDcGyJifNX8EsfOyS73E2ORZmaSJqv4f0M=
+github.com/eolinker/eosc v0.0.2/go.mod h1:h9RyDaBnWKeg6fxQu8faG8TQq/sdG+ipaePTTVTEqqA=
 github.com/eolinker/goku-standard-plugin v0.1.5 h1:0ydlgjaWsbeQi0le1I7cDrEWTramh5hMdTM7ifG78HM=
 github.com/eolinker/goku-standard-plugin v0.1.5/go.mod h1:KX5n+WS9Sfobjft13BY5E8S5AWD8H0hhMLNN0d1p7F4=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
@@ -46,6 +48,7 @@ github.com/hashicorp/mdns v1.0.1/go.mod h1:4gW7WsVCke5TE7EPeYliwHlRUyBtfCwuFwuMg
 github.com/hashicorp/memberlist v0.2.2/go.mod h1:MS2lj3INKhZjWNqd3N0m3J+Jxf3DAOnAH9VT3Sh9MUE=
 github.com/hashicorp/serf v0.9.5 h1:EBWvyu9tcRszt3Bxp3KNssBMP1KuHWyO51lz9+786iM=
 github.com/hashicorp/serf v0.9.5/go.mod h1:UWDWwZeL5cuWDJdl0C6wrvrUwEqtQ4ZKBKKENpqIUyk=
+github.com/julienschmidt/httprouter v1.3.0 h1:U0609e9tgbseu3rBINet9P48AI/D3oJs4dN7jwJOQ1U=
 github.com/julienschmidt/httprouter v1.3.0/go.mod h1:JR6WtHb+2LUe8TCKY3cZOxFyyO8IZAc4RVcycCCAKdM=
 github.com/kr/fs v0.1.0 h1:Jskdu9ieNAYnjxsi0LbQp1ulIKZV1LAFgK1tWhpZgl8=
 github.com/kr/fs v0.1.0/go.mod h1:FFnZGqtBN9Gxj7eW1uZ42v5BccTP0vu6NEaFoC2HwRg=

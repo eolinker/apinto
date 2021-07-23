@@ -14,10 +14,11 @@ import (
 	"github.com/go-basic/uuid"
 )
 
-func NewHttpCheck(config Config) *HttpCheck {
+//NewHTTPCheck 创建HTTPCheck
+func NewHTTPCheck(config Config) *HTTPCheck {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	checker := &HttpCheck{
+	checker := &HTTPCheck{
 		config: &config,
 		ctx:    ctx,
 		cancel: cancel,
@@ -29,7 +30,8 @@ func NewHttpCheck(config Config) *HttpCheck {
 	return checker
 }
 
-type HttpCheck struct {
+//HTTPCheck HTTP健康检查结构,实现了IHealthChecker接口
+type HTTPCheck struct {
 	config *Config
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -39,7 +41,8 @@ type HttpCheck struct {
 	locker sync.RWMutex
 }
 
-func (h *HttpCheck) doCheckLoop() {
+//doCheckLoop 定时检查，维护了一个待检测节点集合
+func (h *HTTPCheck) doCheckLoop() {
 	ticker := time.NewTicker(h.config.Period)
 	nodes := map[string]map[string]*checkNode{}
 	defer ticker.Stop()
@@ -51,57 +54,67 @@ func (h *HttpCheck) doCheckLoop() {
 			{
 				nodes = h.check(nodes)
 			}
+		//接收待检测节点并存入待检测节点集合
 		case node, ok := <-h.ch:
 			{
 				if ok {
-					if _, ok := nodes[node.agentId]; !ok {
-						nodes[node.agentId] = make(map[string]*checkNode)
+					if _, ok := nodes[node.agentID]; !ok {
+						nodes[node.agentID] = make(map[string]*checkNode)
 					}
-					nodes[node.agentId][node.node.Id()] = node
+					nodes[node.agentID][node.node.ID()] = node
 				}
 			}
-		case id, ok := <-h.delCh:
+		//接收agentID,并将待检测集合中属于该agent的所有节点移除
+		case agentID, ok := <-h.delCh:
 			{
 				if ok {
-					delete(nodes, id)
+					delete(nodes, agentID)
 				}
 			}
 		}
 	}
 }
 
-func (h *HttpCheck) Agent() (discovery.IHealthChecker, error) {
-	return NewAgent(uuid.New()), nil
+//Agent 生成一个agent
+func (h *HTTPCheck) Agent() (discovery.IHealthChecker, error) {
+	return NewAgent(uuid.New(), h), nil
 }
 
-func (h *HttpCheck) Reset(conf Config) error {
+//Reset 重置HTTPCheck的配置
+func (h *HTTPCheck) Reset(conf Config) error {
 	h.config = &conf
 	return nil
 }
 
-func (h *HttpCheck) AddToCheck(node discovery.INode) error {
+//AddToCheck 将节点添加进HTTPCheck的检查列表
+func (h *HTTPCheck) AddToCheck(node discovery.INode) error {
 	h.addToCheck(&checkNode{
 		node:    node,
-		agentId: "",
+		agentID: "",
 	})
 	return nil
 }
 
-func (h *HttpCheck) addToCheck(node *checkNode) error {
+//addToCheck 将节点传入HTTPCheck的检测Channel
+func (h *HTTPCheck) addToCheck(node *checkNode) error {
 	h.ch <- node
 	return nil
 }
 
-func (h *HttpCheck) Stop() error {
+//Stop 停止HTTPCheck，中止定时检查
+func (h *HTTPCheck) Stop() error {
 	h.cancel()
 	return nil
 }
 
-func (h *HttpCheck) stop(id string) {
-	h.delCh <- id
+//stop 停止从属该agentID的所有节点的健康检查
+func (h *HTTPCheck) stop(agentID string) {
+	h.delCh <- agentID
 }
 
-func (h *HttpCheck) check(nodes map[string]map[string]*checkNode) map[string]map[string]*checkNode {
+//check 对待检查的节点集合进行检测，入参：nodes map[agentID][nodeID]*checkNode
+func (h *HTTPCheck) check(nodes map[string]map[string]*checkNode) map[string]map[string]*checkNode {
+	//将待检测节点集合中地址相同的节点整合在一起，结构为：map[node.Addr][]*checkNode
 	newNodes := make(map[string][]*checkNode)
 	for _, ns := range nodes {
 		for _, n := range ns {
@@ -110,8 +123,13 @@ func (h *HttpCheck) check(nodes map[string]map[string]*checkNode) map[string]map
 			}
 		}
 	}
+
+	/*对每个节点地址进行检测
+	成功则将属于该地址的所有节点的状态都置于可运行，并从HTTPCheck维护的待检测节点列表中移除
+	失败则下次定时检查再进行检测
+	*/
 	for addr, ns := range newNodes {
-		uri := fmt.Sprintf("%s://%s/%s", h.config.Protocol, strings.TrimSuffix(addr, "/"), strings.TrimPrefix(h.config.Url, "/"))
+		uri := fmt.Sprintf("%s://%s/%s", h.config.Protocol, strings.TrimSuffix(addr, "/"), strings.TrimPrefix(h.config.URL, "/"))
 		h.client.Timeout = h.config.Timeout
 		request, err := http.NewRequest(h.config.Method, uri, nil)
 		if err != nil {
@@ -130,13 +148,14 @@ func (h *HttpCheck) check(nodes map[string]map[string]*checkNode) map[string]map
 		}
 		for _, n := range ns {
 			n.node.Up()
-			delete(nodes[n.agentId], n.node.Id())
+			delete(nodes[n.agentID], n.node.ID())
 		}
 	}
 	return nodes
 }
 
+//checkNode 进入检查channel的节点结构
 type checkNode struct {
 	node    discovery.INode
-	agentId string
+	agentID string
 }

@@ -31,6 +31,9 @@ func Parse(pattern string)(Checker,error)  {
 		case "$":
 			return newCheckerNone(),nil
 		default:
+			if len(p) == 0{
+				return newCheckerAll(),nil
+			}
 			return newCheckerEqual(p),nil
 		}
 	}
@@ -42,6 +45,9 @@ func Parse(pattern string)(Checker,error)  {
 	case "^":
 		return newCheckerPrefix(v),nil
 	case "":
+		if len(v) == 0{
+			return newCheckerAll(),nil
+		}
 		return newCheckerEqual(v),nil
 	case "!":
 		return newCheckerNotEqual(v),nil

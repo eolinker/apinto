@@ -3,8 +3,8 @@ package upstream_http
 import (
 	"errors"
 	"fmt"
-	"net/http"
-	"reflect"
+
+	"github.com/eolinker/goku-eosc/node/http-proxy/backend"
 
 	"github.com/eolinker/goku-eosc/upstream"
 
@@ -24,33 +24,30 @@ import (
 
 //Http org
 type httpUpstream struct {
-	id             string
-	name           string
-	driver         string
-	desc           string
-	scheme         string
-	balanceType    string
-	app            discovery.IApp
-	balanceHandler balance.IBalanceHandler
+	id          string
+	name        string
+	driver      string
+	desc        string
+	scheme      string
+	balanceType string
+	app         discovery.IApp
+	handler     balance.IBalanceHandler
 }
 
+//Id 返回worker id
 func (h *httpUpstream) Id() string {
 	return h.id
 }
 
 func (h *httpUpstream) Start() error {
-	handler, err := balance.GetDriver(h.balanceType, h.app)
-	if err != nil {
-		return err
-	}
-	h.balanceHandler = handler
 	return nil
 }
 
+//Reset 重新设置http_proxy负载的配置
 func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return errors.New(fmt.Sprintf(ErrorStructType, eosc.TypeNameOf(conf), eosc.TypeNameOf((*Config)(nil))))
+		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
 	if factory, has := workers[cfg.Discovery]; has {
 		f, ok := factory.(discovery.IDiscovery)
@@ -63,37 +60,50 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 			h.scheme = cfg.Scheme
 			h.balanceType = cfg.Type
 			h.app = app
-			handler, err := balance.GetDriver(h.balanceType, h.app)
+
 			if err != nil {
 				return err
 			}
-			h.balanceHandler = handler
+			f, err := balance.GetFactory(h.balanceType)
+			if err != nil {
+				return err
+			}
+			h.handler, err = f.Create(h.app)
+			if err != nil {
+				return err
+			}
 			return nil
 		}
 	}
 	return errors.New("fail to create upstream worker")
 }
 
+//Stop 停止http_proxy负载，并关闭相应的app
 func (h *httpUpstream) Stop() error {
 	h.app.Close()
 	return nil
 }
 
+//CheckSkill 检查目标能力是否存在
 func (h *httpUpstream) CheckSkill(skill string) bool {
 	return upstream.CheckSkill(skill)
 }
 
-//send 请求发送，忽略重试
-func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (*http.Response, error) {
-	var response *http.Response
-	var err error
-	path := utils.TrimPrefixAll(ctx.ProxyRequest.TargetURL(), "/")
-	node, err := h.balanceHandler.Next()
-	if err != nil {
-		return nil, err
-	}
-	for doTrice := serviceDetail.Retry() + 1; doTrice > 0; doTrice-- {
+//Send 请求发送，忽略重试
+func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (backend.IResponse, error) {
 
+	var response backend.IResponse
+	var err error
+
+	path := utils.TrimPrefixAll(ctx.ProxyRequest.TargetURL(), "/")
+
+	for doTrice := serviceDetail.Retry() + 1; doTrice > 0; doTrice-- {
+		var node discovery.INode
+		node, err = h.handler.Next()
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println("addr is:", node.Addr())
 		u := fmt.Sprintf("%s://%s/%s", h.scheme, node.Addr(), path)
 		response, err = http_proxy.DoRequest(ctx, u, serviceDetail.Timeout())
 
@@ -101,20 +111,13 @@ func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.ISe
 			if response == nil {
 				node.Down()
 			}
-			h.app.NodeError(node.Id())
-			node, err = h.balanceHandler.Next()
-			if err != nil {
-				return nil, err
-			}
+			//处理不可用节点
+			h.app.NodeError(node.ID())
 			continue
 		} else {
-			return response, err
+			return response, nil
 		}
 	}
 
 	return response, err
-}
-
-func GetType() reflect.Type {
-	return reflect.TypeOf((*httpUpstream)(nil))
 }

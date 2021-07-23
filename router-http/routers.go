@@ -9,8 +9,7 @@ var _ IRouters = (*Routers)(nil)
 
 type IRouters interface {
 	Set(port int, id string, conf *Config) (IRouter, bool, error)
-	Get(port int) (IRouter, bool)
-	Del(port int, id string) (IRouter, bool)
+ 	Del(port int, id string) (IRouter, bool)
 }
 type Routers struct {
 	data eosc.IUntyped
@@ -41,20 +40,20 @@ func (rs *Routers) Set(port int, id string, conf *Config) (IRouter, bool, error)
 
 func NewRouters() *Routers {
 	return &Routers{
-		data: internal.NewUntyped(),
+		data: eosc.NewUntyped(),
 	}
 }
 
-func (rs *Routers) Get(port int) (IRouter, bool) {
-	name := strconv.Itoa(port)
-	r, has := rs.data.Get(name)
-	if !has {
-		var router IRouter = NewRouter()
-		rs.data.Set(name, router)
-		return router, true
-	}
-	return r.(IRouter), false
-}
+//func (rs *Routers) Get(port int) (IRouter, bool) {
+//	name := strconv.Itoa(port)
+//	r, has := rs.data.Get(name)
+//	if !has {
+//		var router IRouter = NewRouter()
+//		rs.data.Set(name, router)
+//		return router, true
+//	}
+//	return r.(IRouter), false
+//}
 
 func (rs *Routers) Del(port int, id string) (IRouter, bool) {
 	name := strconv.Itoa(port)

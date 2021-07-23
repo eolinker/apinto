@@ -32,7 +32,7 @@ func SetCert(skip int, clientCerts []tls.Certificate) {
 	transport.TLSClientConfig = tlsConfig
 }
 
-//Request request
+//Request http-proxy 请求结构体
 type Request struct {
 	client  *http.Client
 	method  string
@@ -46,19 +46,23 @@ type Request struct {
 	httpRequest *http.Request
 }
 
+//SetQueryParams 替换Query参数
 func (r *Request) SetQueryParams(queryParams url.Values) {
 	r.queryParams = queryParams
 }
 
+//SetHeaders 替换header参数
 func (r *Request) SetHeaders(headers http.Header) {
 	r.headers = headers
 }
 
+//Body 返回请求的body参数
 func (r *Request) Body() []byte {
 	return r.body
 }
 
-func (r *Request) HttpRequest() *http.Request {
+//HTTPRequest 返回http请求结构体
+func (r *Request) HTTPRequest() *http.Request {
 	return r.httpRequest
 }
 
@@ -88,7 +92,6 @@ func newRequest(method string, URL *url.URL) (*Request, error) {
 	urlPath = URL.Scheme + "://" + URL.Host + URL.Path
 
 	r := &Request{
-
 		client:      httpClient,
 		method:      method,
 		url:         urlPath,
@@ -130,9 +133,9 @@ func (r *Request) SetTimeout(timeout time.Duration) {
 	r.timeout = timeout
 }
 
-//send 发送请求
+//Send 发送请求
 func (r *Request) Send(ctx *http_context.Context) (*http.Response, error) {
-	req := r.HttpRequest()
+	req := r.HTTPRequest()
 	req.Header.Set("Accept-Encoding", "gzip")
 	req.Header = parseHeaders(r.headers)
 
@@ -190,7 +193,7 @@ func parseHeaders(headers map[string][]string) http.Header {
 	return h
 }
 
-// 解析请求体
+//ParseBody 解析请求体
 func (r *Request) ParseBody() error {
 	if r.httpRequest == nil {
 		var body io.Reader = nil
