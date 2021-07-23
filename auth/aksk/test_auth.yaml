@@ -168,9 +168,9 @@ auth:
       -
         ak: admin1
         sk: 123456
+        hide_credential: true
         labels:
           name: test1
-          hide_credential: true
           remark: 测试人员1
         expire: 0
       -

@@ -7,8 +7,9 @@ type Config struct {
 }
 
 type AKSKConfig struct {
-	AK     string            `json:"ak"`
-	SK     string            `json:"sk"`
-	Labels map[string]string `json:"labels"`
-	Expire int64             `json:"expire"`
+	AK             string            `json:"ak"`
+	SK             string            `json:"sk"`
+	HideCredential bool              `json:"hide_credential"`
+	Labels         map[string]string `json:"labels"`
+	Expire         int64             `json:"expire"`
 }
