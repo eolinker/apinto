@@ -6,7 +6,7 @@
  * Vestibulum commodo. Ut rhoncus gravida arcu.
  */
 
-package router
+package router_http
 
 type HttpRouterHelper struct {
 

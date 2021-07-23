@@ -3,6 +3,7 @@ package service_http
 import (
 	"errors"
 	"fmt"
+	"github.com/eolinker/goku-eosc/router/checker"
 	"net/http"
 	"strings"
 	"time"
@@ -118,11 +119,15 @@ func (s *serviceWorker) ProxyAddr() string {
 }
 
 //Handle 将服务发送到负载
-func (s *serviceWorker) Handle(w http.ResponseWriter, r *http.Request, router service.IRouterRule) error {
+func (s *serviceWorker) Handle(w http.ResponseWriter, r *http.Request, router service.IRouterEndpoint) error {
 	// 构造context
 	ctx := http_context.NewContext(r, w)
 	// 设置目标URL
-	ctx.ProxyRequest.SetTargetURL(recombinePath(r.URL.Path, router.Location(), s.rewriteURL))
+	location,has:=router.Location()
+	if has && location.CheckType()== checker.CheckTypePrefix{
+		ctx.ProxyRequest.SetTargetURL(recombinePath(r.URL.Path,location.Value() , s.rewriteURL))
+	}
+
 	response, err := s.upstream.Send(ctx, s)
 	if err != nil {
 		return err

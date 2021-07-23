@@ -1,4 +1,4 @@
-package router
+package router_http
 
 import (
 	"github.com/eolinker/eosc"
@@ -32,11 +32,12 @@ func (r *Router) Count() int {
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	h, has := r.match.Match(req)
+	h,e, has := r.match.Match(req)
 	if !has {
 		http.NotFound(w, req)
 		return
 	}
+	h.Handle(w,req,nee)
 
 }
 

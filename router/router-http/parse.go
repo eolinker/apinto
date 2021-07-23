@@ -1,4 +1,4 @@
-package router
+package router_http
 
 import (
 	"github.com/eolinker/goku-eosc/router"

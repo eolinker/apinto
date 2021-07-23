@@ -1,27 +1,13 @@
-package router
+package router_http
 
 import (
 	"fmt"
 	"github.com/eolinker/goku-eosc/router"
 	"github.com/eolinker/goku-eosc/router/checker"
 	"github.com/eolinker/goku-eosc/service"
+	"net/textproto"
 )
 
-const (
-	cmdLocation="LOCATION"
-	cmdHeader = "HEADER"
-	cmdQuery = "QUERY"
-)
-func toLocation()string{
-	return cmdLocation
-}
-func toHeader(key string) string {
-	return fmt.Sprint(cmdHeader ,":",key)
-}
-func toQuery(key string) string {
-	return fmt.Sprint(cmdQuery ,":",key)
-
-}
 type  HeaderItem struct {
 	Name string
 	Pattern string
