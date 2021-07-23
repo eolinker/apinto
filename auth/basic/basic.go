@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/eolinker/eosc"
 
@@ -64,7 +65,10 @@ func (b *basic) Auth(ctx *http_context.Context) error {
 	}
 	for _, u := range b.users {
 		if u.Username == username && u.Password == password {
-			return nil
+			if u.Expire == 0 || time.Now().Unix() < u.Expire {
+				return nil
+			}
+			return errors.New("the user is expired")
 		}
 	}
 	return errors.New("invalid user")
