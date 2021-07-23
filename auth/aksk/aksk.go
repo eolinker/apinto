@@ -1,11 +1,23 @@
 package aksk
 
-import "github.com/eolinker/eosc"
+import (
+	"fmt"
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/goku-eosc/auth"
+	http_context "github.com/eolinker/goku-eosc/node/http-context"
+)
+
+//supportTypes 当前驱动支持的authorization type值
+var supportTypes = []string{
+	"ak/sk",
+	"aksk",
+}
 
 type aksk struct {
-	id     string
-	name   string
-	labels map[string]string
+	id         string
+	name       string
+	labels     map[string]string
+	akskConfig map[string]AKSKConfig
 }
 
 func (a *aksk) Id() string {
@@ -13,17 +25,30 @@ func (a *aksk) Id() string {
 }
 
 func (a *aksk) Start() error {
-	panic("implement me")
+	return nil
 }
 
 func (a *aksk) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	panic("implement me")
+	config, ok := conf.(*Config)
+	if !ok {
+		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
+	}
+
+	for _, c := range config.akskConfig {
+		a.akskConfig[c.AK] = c
+	}
+
+	return nil
 }
 
 func (a *aksk) Stop() error {
-	panic("implement me")
+	return nil
 }
 
 func (a *aksk) CheckSkill(skill string) bool {
-	panic("implement me")
+	return auth.CheckSkill(skill)
+}
+
+func (a *aksk) Auth(context *http_context.Context) error {
+	return nil
 }

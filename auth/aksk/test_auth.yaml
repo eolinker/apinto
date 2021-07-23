@@ -170,6 +170,7 @@ auth:
         sk: 123456
         labels:
           name: test1
+          hide_credential: true
           remark: 测试人员1
         expire: 0
       -
