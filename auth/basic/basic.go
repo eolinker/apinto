@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/eolinker/eosc"
 
@@ -64,10 +65,13 @@ func (b *basic) Auth(ctx *http_context.Context) error {
 	}
 	for _, u := range b.users {
 		if u.Username == username && u.Password == password {
-			return nil
+			if u.Expire == 0 || time.Now().Unix() < u.Expire {
+				return nil
+			}
+			return auth.ErrorExpireUser
 		}
 	}
-	return errors.New("invalid user")
+	return auth.ErrorInvalidUser
 }
 
 //retrieveCredentials 获取basicAuth认证信息

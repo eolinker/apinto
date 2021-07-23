@@ -13,8 +13,15 @@ const (
 	Authorization = "Authorization"
 )
 
-//ErrorInvalidType 非法的鉴权类型
-var ErrorInvalidType = errors.New("invalid authorization type")
+var (
+	//ErrorInvalidType 非法的鉴权类型
+	ErrorInvalidType = errors.New("invalid authorization type")
+	//ErrorInvalidUser 非法用户
+	ErrorInvalidUser = errors.New("invalid user")
+
+	//ErrorExpireUser 用户已过期
+	ErrorExpireUser = errors.New("the user is expired")
+)
 
 //CheckSkill 检查能力
 func CheckSkill(skill string) bool {
