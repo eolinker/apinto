@@ -254,7 +254,7 @@ var tests = []struct {
 				target: "demo3",
 			},
 		},
-		want:    []string{"demo"},
+		want:    []string{"demo","demo2"},
 		wantErr: false,
 	},
 	{
@@ -316,9 +316,13 @@ func TestParseRouter(t *testing.T) {
 				return
 			}
 
-			for i,s:=range testSourcesList{
-				target,_:=r.Router(s)
-				if (target == nil && tt.want[i]!= "") ||(target != nil && tt.want[i] != target.Target()){
+			for i,s:=range tt.testCase{
+				endpoint,h:=r.Router(s)
+				target := ""
+				if h{
+					target = endpoint.Target()
+				}
+				if tt.want[i] != target {
 					t.Errorf("router(sources[%d]) got = %v, want %s",i, target, tt.want[i])
 				}else {
 					t.Logf("router(sources[%d]) got = \"%v\", ok",i, target)
