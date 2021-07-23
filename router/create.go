@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"github.com/eolinker/goku-eosc/router/checker"
 	"sort"
-	"text/template/parse"
 )
 
 type RulePath struct {
@@ -34,7 +33,7 @@ func ParseRouter(rules []Rule,helper ICreateHelper)(IRouter,error)  {
 
 	for i:=range rules{
 		r:=rules[i]
-		err:=root.add(r.Path,r.Target)
+		err:=root.add(r.Path,NewEndpoint(r.Target,r.Path))
 		if err!= nil{
 			return nil,err
 		}
@@ -118,6 +117,10 @@ func (cr *createRoot) toRouter(helper ICreateHelper) IRouter {
 type Endpoint struct {
 	target string
 	path []RulePath
+}
+
+func NewEndpoint(target string, path []RulePath) *Endpoint {
+	return &Endpoint{target: target, path: path}
 }
 
 func (e *Endpoint) Router(source ISource) (endpoint *Endpoint, has bool) {
