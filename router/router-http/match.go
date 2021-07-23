@@ -1,7 +1,7 @@
 package router
 
 import (
-	 "github.com/eolinker/goku-eosc/router"
+	"github.com/eolinker/goku-eosc/router"
 	"github.com/eolinker/goku-eosc/service"
 	"net/http"
 )
