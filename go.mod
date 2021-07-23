@@ -3,9 +3,9 @@ module github.com/eolinker/goku-eosc
 go 1.15
 
 require (
-	github.com/eolinker/eosc v0.0.1
+	github.com/eolinker/eosc v0.0.2
 	github.com/eolinker/goku-standard-plugin v0.1.5
-	github.com/ghodss/yaml v1.0.0
+	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-basic/uuid v1.0.0
 	github.com/hashicorp/consul/api v1.9.1
 	github.com/pkg/sftp v1.13.2

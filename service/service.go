@@ -4,7 +4,6 @@ package service
 
 import (
 	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -19,9 +18,6 @@ type IService interface {
 
 type IRouterRule interface {
 	Location() string
-	Host() string
-	Header() map[string]string
-	Query() url.Values
 }
 
 type IServiceDetail interface {
