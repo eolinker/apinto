@@ -229,7 +229,7 @@ var tests = []struct {
 		wantErr: false,
 	},
 	{
-		name: "测试匹配类型优先级",
+		name: "测试匹配类型优先级1",
 		testCase: []testSource{
 			{
 				"location": "/abc",
@@ -238,6 +238,18 @@ var tests = []struct {
 			{
 				"location": "/abc",
 				"header:a": "A",
+			},
+			{
+				"location": "/abc",
+				"header:a": "aa",
+			},
+			{
+				"location": "/abc",
+				"header:a": "aA",
+			},
+			{
+				"location": "/abc",
+				"header:a": "Aa",
 			},
 		},
 		args: []*TestRule{
@@ -250,11 +262,93 @@ var tests = []struct {
 				target: "demo2",
 			},
 			{
-				paths:  []string{"location = /abc", "header:a ~= [a-z]{1}"},
+				paths:  []string{"location = /abc", "header:a ~= [a-z]{1,10}"},
+				target: "demo3",
+			},
+			{
+				paths:  []string{"location = /abc", "header:a ~*= [a-z]{1,10}"},
+				target: "demo4",
+			},
+		},
+		want:    []string{"demo", "demo2", "demo2", "demo2", "demo2"},
+		wantErr: false,
+	},
+	{
+		name: "测试匹配类型优先级2",
+		testCase: []testSource{
+			{
+				"location": "/abc",
+				"header:a": "a",
+			},
+			{
+				"location": "/abc",
+				"header:a": "A",
+			},
+			{
+				"location": "/abc",
+				"header:b": "a",
+			},
+			{
+				"location": "/abc",
+				"header:b": "aA",
+			},
+			{
+				"location": "/abc",
+				"header:b": "Aa",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"location = /abc", "header:a = a"},
+				target: "demo",
+			},
+			{
+				paths:  []string{"location = /abc", "header:a != a"},
+				target: "demo2",
+			},
+			{
+				paths:  []string{"location = /abc", "header:b ~= [a-z]{1,10}"},
+				target: "demo3",
+			},
+			{
+				paths:  []string{"location = /abc", "header:b ~*= [a-z]{1,10}"},
+				target: "demo4",
+			},
+		},
+		want:    []string{"demo", "demo2", "demo3", "demo4", "demo4"},
+		wantErr: false,
+	},
+	{
+		name: "存在和不存在互斥用例",
+		testCase: []testSource{
+			{
+				"location": "/abc",
+				"header:a": "a",
+			},
+			{
+				"location": "/abc",
+				"header:a": "A",
+			},
+			{
+				"location": "/abc",
+				"header:b": "a",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"location = /abc", "header:a **"},
+				target: "demo",
+			},
+			{
+				paths:  []string{"location = /abc", "header:a = A"},
+				target: "demo2",
+			},
+			{
+				paths:  []string{"location = /abc", "header:a !"},
 				target: "demo3",
 			},
 		},
-		want:    []string{"demo"},
+		want:    []string{"demo", "demo2", "demo3"},
 		wantErr: false,
 	},
 	{
