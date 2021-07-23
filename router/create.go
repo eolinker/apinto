@@ -43,7 +43,7 @@ func ParseRouter(rules []Rule,helper ICreateHelper)(IRouter,error)  {
 
 type createNodes map[string]*createNode
 
-func (cns createNodes)add(path []RulePath,endpoint *Endpoint)error  {
+func (cns createNodes)add(path []RulePath,endpoint *tEndpoint)error  {
 	p:=path[0]
 	node,has:=cns[p.CMD]
 	if !has{
@@ -114,20 +114,46 @@ func (cr *createRoot) toRouter(helper ICreateHelper) IRouter {
 	return cr.nexts.toRouter(helper)
 
 }
-type Endpoint struct {
+type IEndpoint interface {
+	CMDs()[]string
+	Get(CMD string)(checker.Checker,bool)
+	Target()string
+}
+type tEndpoint struct {
 	target string
-	path []RulePath
+	cmds []string
+	checkers map[string]checker.Checker
+
 }
 
-func NewEndpoint(target string, path []RulePath) *Endpoint {
-	return &Endpoint{target: target, path: path}
+func (e *tEndpoint) CMDs() []string {
+	return e.cmds
 }
 
-func (e *Endpoint) Router(source ISource) (endpoint *Endpoint, has bool) {
+func (e *tEndpoint) Get(CMD string) (checker.Checker,bool) {
+	c,h:=e.checkers[CMD]
+	return c,h
+}
+
+func (e *tEndpoint) Target() string {
+	return e.target
+}
+
+func NewEndpoint(target string, path []RulePath) *tEndpoint {
+	cs:=make(map[string]checker.Checker)
+	cmds:=make([]string,0,len(path))
+	for _,p:=range path{
+		cs[p.CMD] = p.Checker
+		cmds = append(cmds, p.CMD)
+	}
+	return &tEndpoint{target: target, checkers:cs,cmds:cmds}
+}
+
+func (e *tEndpoint) Router(source ISource) (endpoint IEndpoint, has bool) {
 	return e,e!= nil
 }
 
-func (cr *createRoot) add(path []RulePath,endpoint *Endpoint) error {
+func (cr *createRoot) add(path []RulePath,endpoint *tEndpoint) error {
 	if len(path) == 0 || endpoint == nil {
 		return fmt.Errorf("invalid router")
 	}
@@ -137,7 +163,7 @@ func (cr *createRoot) add(path []RulePath,endpoint *Endpoint) error {
 type createChecker struct {
 	checker checker.Checker
 	nexts createNodes
-	endpoint *Endpoint
+	endpoint *tEndpoint
 }
 
 func newCreateChecker(checker checker.Checker) *createChecker {
@@ -158,7 +184,7 @@ func (cc *createChecker) toRouter(helper ICreateHelper) IRouter {
 
 	return cc.nexts.toRouter(helper)
 }
-func (cc *createChecker) add(path []RulePath,endpoint *Endpoint) error {
+func (cc *createChecker) add(path []RulePath,endpoint *tEndpoint) error {
  	if len(path) == 0 {
 		if cc.endpoint != nil{
 			return fmt.Errorf("%s target %s: exist",cc.checker.Key(),endpoint.target)
@@ -213,7 +239,7 @@ func (cn *createNode) toRouter(helper ICreateHelper)IRouter  {
 		checkers:cs,
 	}
 }
-func (cn *createNode)add(checker checker.Checker,path []RulePath,endpoint *Endpoint)  error{
+func (cn *createNode)add(checker checker.Checker,path []RulePath,endpoint *tEndpoint)  error{
 
 	k:=checker.Key()
 	cc,has:=cn.checkers[k]
@@ -251,7 +277,7 @@ func (cks createCheckers) Less(i, j int) bool {
 		return ls > 0
 	}
 
-	return len(ci.endpoint.path) > len(cj.endpoint.path)
+	return len(ci.endpoint.cmds) > len(cj.endpoint.cmds)
 
 }
 

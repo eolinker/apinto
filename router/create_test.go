@@ -315,10 +315,10 @@ func TestParseRouter(t *testing.T) {
 				t.Errorf("ParseRouter() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
- 
+
 			for i,s:=range testSourcesList{
 				target,_:=r.Router(s)
-				if (target == nil && tt.want[i]!= "") ||(target != nil && tt.want[i] != target.target){
+				if (target == nil && tt.want[i]!= "") ||(target != nil && tt.want[i] != target.Target()){
 					t.Errorf("router(sources[%d]) got = %v, want %s",i, target, tt.want[i])
 				}else {
 					t.Logf("router(sources[%d]) got = \"%v\", ok",i, target)

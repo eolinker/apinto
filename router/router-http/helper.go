@@ -12,6 +12,10 @@ type HttpRouterHelper struct {
 
 }
 
+func NewHttpRouterHelper() *HttpRouterHelper {
+	return &HttpRouterHelper{}
+}
+
 func (h *HttpRouterHelper) Less(i, j string) bool {
 	panic("implement me")
 }
