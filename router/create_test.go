@@ -117,141 +117,164 @@ func (tr *TestRule) toRule() Rule {
 		Target: tr.target,
 	}
 }
+
+var tests = []struct {
+	name     string
+	args     []*TestRule
+	want     []string
+	testCase []testSource
+	wantErr  bool
+}{
+	{
+		name: "检测互斥",
+		testCase: []testSource{
+			{
+				"location": "/abc",
+				"header:a": "10",
+			},
+			{
+				"location": "/abc",
+				"header:a": "1",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"location = /abc", "header:a = 10"},
+				target: "demo",
+			},
+			{
+				paths:  []string{"location = /abc", "header:a != 10"},
+				target: "demo2",
+			},
+		},
+		want:    []string{"demo", "demo2"},
+		wantErr: false,
+	},
+	{
+		name: "路由树有多余节点2",
+		testCase: []testSource{
+			{
+				"location":    "/abc",
+				"header:a":    "1",
+				"query:name":  "liu",
+				"query:phone": "13312313412",
+			},
+			{
+				"location":    "/abc",
+				"header:a":    "1",
+				"query:phone": "133123134",
+			},
+			{
+				"location":    "/abc",
+				"header:a":    "1",
+				"query:phone": "133123",
+			},
+			{
+				"location": "/abc",
+				"header:a": "1",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"location = /abc", "header:a != 10", "query:name = liu", "query:phone = 13312313412"},
+				target: "demo",
+			},
+			{
+				paths:  []string{"location = /abc", "header:a != 10", "query:phone ^= 133123"},
+				target: "demo2",
+			},
+			{
+				paths:  []string{"location = /abc", "header:a != 10", "query:phone = 133123"},
+				target: "demo3",
+			},
+			{
+				paths:  []string{"location = /abc", "header:a != 10"},
+				target: "demo4",
+			},
+		},
+		want:    []string{"demo", "demo2", "demo3", "demo4"},
+		wantErr: false,
+	},
+	{
+		name: "测试前缀匹配",
+		testCase: []testSource{
+			{
+				"location": "/abc/adw",
+				"header:a": "1",
+			},
+			{
+				"location": "/abc",
+				"header:a": "1",
+			},
+			{
+				"location": "/abcdasdwq",
+				"header:a": "1",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"location ^= /abc/", "header:a != 10"},
+				target: "demo",
+			},
+			{
+				paths:  []string{"location = /abc", "header:a != 10"},
+				target: "demo2",
+			},
+			{
+				paths:  []string{"location ^= /abc", "header:a != 10"},
+				target: "demo3",
+			},
+		},
+		want:    []string{"demo", "demo2", "demo3"},
+		wantErr: false,
+	},
+	{
+		name: "检测前缀",
+		testCase: []testSource{
+			{
+				"location":    "/abc",
+				"header:a":    "1",
+				"query:name":  "liu",
+				"query:phone": "13312313412",
+			},
+			{
+				"location":    "/abc",
+				"header:a":    "1",
+				"query:name":  "liu",
+				"query:phone": "13312313412",
+				"query:mail":  "demo@eolinker.com",
+			},
+			{
+				"location":    "/abc",
+				"header:a":    "1",
+				"query:name":  "liu",
+				"query:phone": "13312313412",
+				"query:mail":  "demoabc",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"location = /abc", "header:a != 10", "query:name = liu", "query:phone = 13312313412"},
+				target: "demo",
+			},
+			{
+				paths:  []string{"location = /abc", "header:a != 10", "query:name = liu", "query:mail = demo@eolinker.com"},
+				target: "demo2",
+			},
+			{
+				paths:  []string{"location = /abc", "header:a != 10", "query:name = liu", "query:mail ^= demo"},
+				target: "demo3",
+			},
+		},
+		want:    []string{"demo", "demo2", "demo3"},
+		wantErr: false,
+	},
+}
+
 func TestParseRouter(t *testing.T) {
 
 	helper := NewTestHelper([]string{"location", "header", "query"})
-	tests := []struct {
-		name     string
-		args     []*TestRule
-		want     []string
-		testCase []testSource
-		wantErr  bool
-	}{
-		{
-			name: "检测互斥",
-			testCase: []testSource{
-				{
-					"location": "/abc",
-					"header:a": "10",
-				},
-				{
-					"location": "/abc",
-					"header:a": "1",
-				},
-			},
-			args: []*TestRule{
-				{
-					paths:  []string{"location = /abc", "header:a = 10"},
-					target: "demo",
-				},
-				{
-					paths:  []string{"location = /abc", "header:a != 10"},
-					target: "demo2",
-				},
-			},
-			want:    []string{"demo", "demo2"},
-			wantErr: false,
-		},
-		{
-			name: "路由树有多余节点2",
-			testCase: []testSource{
-				{
-					"location":   "/abc",
-					"header:a":   "1",
-					"query:name": "liu",
-				},
-				{
-					"location": "/abc",
-					"header:a": "1",
-				},
-				{
-					"location":    "/abc",
-					"header:a":    "1",
-					"query:name":  "liu",
-					"query:phone": "13312313412",
-				},
-			},
-			args: []*TestRule{
-				{
-					paths:  []string{"location = /abc", "header:a != 10"},
-					target: "demo2",
-				},
-				{
-					paths:  []string{"location = /abc", "header:a != 10", "query:name = liu", "query:phone = 13312313412"},
-					target: "demo",
-				},
-			},
-			want:    []string{"demo2", "demo2", "demo"},
-			wantErr: false,
-		},
-		{
-			name: "路由树有多余节点1",
-			testCase: []testSource{
-				{
-					"location":   "/abc",
-					"header:a":   "1",
-					"query:name": "liu",
-				},
-				{
-					"location": "/abc",
-					"header:a": "1",
-				},
-			},
-			args: []*TestRule{
-				{
-					paths:  []string{"location = /abc", "header:a != 10", "query:name = liu"},
-					target: "demo",
-				},
-				{
-					paths:  []string{"location = /abc", "header:a != 10"},
-					target: "demo2",
-				},
-			},
-			want:    []string{"demo", "demo2"},
-			wantErr: false,
-		},
-		{
-			name: "检测前缀",
-			testCase: []testSource{
-				{
-					"location":    "/abc",
-					"header:a":    "1",
-					"query:name":  "liu",
-					"query:phone": "13312313412",
-				},
-				{
-					"location":    "/abc",
-					"header:a":    "1",
-					"query:name":  "liu",
-					"query:phone": "13312313412",
-					"query:mail":  "demo@eolinker.com",
-				},
-				{
-					"location":    "/abc",
-					"header:a":    "1",
-					"query:name":  "liu",
-					"query:phone": "13312313412",
-					"query:mail":  "demoabc",
-				},
-			},
-			args: []*TestRule{
-				{
-					paths:  []string{"location = /abc", "header:a != 10", "query:name = liu", "query:phone = 13312313412"},
-					target: "demo",
-				},
-				{
-					paths:  []string{"location = /abc", "header:a != 10", "query:name = liu", "query:mail = demo@eolinker.com"},
-					target: "demo2",
-				},
-				{
-					paths:  []string{"location = /abc", "header:a != 10", "query:name = liu", "query:mail ^= demo"},
-					target: "demo3",
-				},
-			},
-			want:    []string{"demo", "demo2", "demo3"},
-			wantErr: false,
-		},
-	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rules := make([]Rule, 0, len(tt.args))
