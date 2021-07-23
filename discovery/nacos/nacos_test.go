@@ -2,15 +2,16 @@ package nacos
 
 import (
 	"fmt"
-	"github.com/eolinker/goku-eosc/discovery"
 	"testing"
+
+	"github.com/eolinker/goku-eosc/discovery"
 )
 
 func TestNacos_GetApp(t *testing.T) {
 	serviceName := "nacos.naming.serviceName"
 	n := &nacos{
 		address: []string{
-			"39.108.94.48:8848",
+			"10.1.94.48:8848",
 		},
 		params: map[string]string{
 			"username": "test",

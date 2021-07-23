@@ -3,7 +3,6 @@ package upstream_http
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
@@ -77,12 +76,8 @@ func send(ctx *http_context.Context, s service.IServiceDetail, hUpstream upstrea
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(body))
+
+	fmt.Println(string(resp.Body()))
 	return nil
 }
 

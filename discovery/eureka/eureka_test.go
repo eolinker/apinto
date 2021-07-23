@@ -2,8 +2,9 @@ package eureka
 
 import (
 	"fmt"
-	"github.com/eolinker/goku-eosc/discovery"
 	"testing"
+
+	"github.com/eolinker/goku-eosc/discovery"
 )
 
 func TestGetApp(t *testing.T) {
@@ -12,7 +13,7 @@ func TestGetApp(t *testing.T) {
 		id:   "1",
 		name: "eolinker",
 		address: []string{
-			"http://39.108.94.48:8761/eureka",
+			"http://10.1.94.48:8761/eureka",
 		},
 		params: map[string]string{
 			"username": "test",
