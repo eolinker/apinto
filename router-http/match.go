@@ -1,13 +1,16 @@
 package router
 
-import "net/http"
+import (
+	http2 "github.com/eolinker/goku-eosc/match/http"
+	"net/http"
+)
 
 type IMatcher interface {
 	Match(req *http.Request) (http.Handler, bool)
 }
 
 type Matcher struct {
-	reader  IReader
+	reader  http2.IReader
 	checker IChecker
 }
 

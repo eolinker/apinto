@@ -13,3 +13,4 @@ func parse(cs []*Config) (IMatcher, error) {
 	//todo parse config to tree
 	return &Tree{}, nil
 }
+
