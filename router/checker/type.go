@@ -7,9 +7,9 @@ const (
 	CheckTypePrefix
 	CheckTypeSuffix
 	CheckTypeNotEqual
+	CheckTypeNull
 	CheckTypeExist
 	CheckTypeNotExist
-	CheckTypeNull
 	CheckTypeRegular
 	CheckTypeRegularG
 	CheckTypeAll

@@ -229,6 +229,35 @@ var tests = []struct {
 		wantErr: false,
 	},
 	{
+		name: "测试匹配类型优先级",
+		testCase: []testSource{
+			{
+				"location": "/abc",
+				"header:a": "a",
+			},
+			{
+				"location": "/abc",
+				"header:a": "A",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"location = /abc", "header:a = a"},
+				target: "demo",
+			},
+			{
+				paths:  []string{"location = /abc", "header:a != a"},
+				target: "demo2",
+			},
+			{
+				paths:  []string{"location = /abc", "header:a ~= [a-z]{1}"},
+				target: "demo3",
+			},
+		},
+		want:    []string{"demo"},
+		wantErr: false,
+	},
+	{
 		name: "检测前缀",
 		testCase: []testSource{
 			{
