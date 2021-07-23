@@ -68,10 +68,10 @@ func (b *basic) Auth(ctx *http_context.Context) error {
 			if u.Expire == 0 || time.Now().Unix() < u.Expire {
 				return nil
 			}
-			return errors.New("the user is expired")
+			return auth.ErrorExpireUser
 		}
 	}
-	return errors.New("invalid user")
+	return auth.ErrorInvalidUser
 }
 
 //retrieveCredentials 获取basicAuth认证信息
