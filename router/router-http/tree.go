@@ -31,9 +31,15 @@ func parse(cs []*Config) (IMatcher, error) {
 				Target:c.Id,
 			} )
 		}
-
-
 	}
-	return &Tree{}, nil
+	r,err:=router.ParseRouter(rules,NewHttpRouterHelper())
+	if err!= nil{
+		return nil,err
+	}
+
+	return &Matcher{
+		r:        r,
+		services: targets,
+	},nil
 }
 

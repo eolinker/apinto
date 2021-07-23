@@ -33,7 +33,7 @@ func ParseRouter(rules []Rule,helper ICreateHelper)(IRouter,error)  {
 
 	for i:=range rules{
 		r:=rules[i]
-		err:=root.add(r.Path,r.Target)
+		err:=root.add(r.Path,NewEndpoint(r.Target,r.Path))
 		if err!= nil{
 			return nil,err
 		}
@@ -43,14 +43,14 @@ func ParseRouter(rules []Rule,helper ICreateHelper)(IRouter,error)  {
 
 type createNodes map[string]*createNode
 
-func (cns createNodes)add(path []RulePath,target string)error  {
+func (cns createNodes)add(path []RulePath,endpoint *tEndpoint)error  {
 	p:=path[0]
 	node,has:=cns[p.CMD]
 	if !has{
 		node = newCreateNode(p.CMD)
 		cns[p.CMD] = node
 	}
-	return node.add(p.Checker,path[1:],target)
+	return node.add(p.Checker,path[1:],endpoint)
 }
 func (cns createNodes) list(helper ICreateHelper)[]*createNode  {
 	res:=make([]*createNode,0,len(cns))
@@ -114,48 +114,85 @@ func (cr *createRoot) toRouter(helper ICreateHelper) IRouter {
 	return cr.nexts.toRouter(helper)
 
 }
+type IEndpoint interface {
+	CMDs()[]string
+	Get(CMD string)(checker.Checker,bool)
+	Target()string
+}
+type tEndpoint struct {
+	target string
+	cmds []string
+	checkers map[string]checker.Checker
 
-func (cr *createRoot) add(path []RulePath,target string) error {
-	if len(path) == 0 || target == ""{
+}
+
+func (e *tEndpoint) CMDs() []string {
+	return e.cmds
+}
+
+func (e *tEndpoint) Get(CMD string) (checker.Checker,bool) {
+	c,h:=e.checkers[CMD]
+	return c,h
+}
+
+func (e *tEndpoint) Target() string {
+	return e.target
+}
+
+func NewEndpoint(target string, path []RulePath) *tEndpoint {
+	cs:=make(map[string]checker.Checker)
+	cmds:=make([]string,0,len(path))
+	for _,p:=range path{
+		cs[p.CMD] = p.Checker
+		cmds = append(cmds, p.CMD)
+	}
+	return &tEndpoint{target: target, checkers:cs,cmds:cmds}
+}
+
+func (e *tEndpoint) Router(source ISource) (endpoint IEndpoint, has bool) {
+	return e,e!= nil
+}
+
+func (cr *createRoot) add(path []RulePath,endpoint *tEndpoint) error {
+	if len(path) == 0 || endpoint == nil {
 		return fmt.Errorf("invalid router")
 	}
-	return cr.nexts.add(path,target)
+	return cr.nexts.add(path,endpoint)
 
 }
 type createChecker struct {
 	checker checker.Checker
 	nexts createNodes
-	target string
+	endpoint *tEndpoint
 }
 
 func newCreateChecker(checker checker.Checker) *createChecker {
 	return &createChecker{
 		checker:    checker,
 		nexts: 		make(createNodes),
-		target:     "",
+		endpoint:     nil,
 	}
 }
 func (cc *createChecker) toRouter(helper ICreateHelper) IRouter {
 
 	if len(cc.nexts) == 0{
-		if cc.target!= ""{
-			return Endpoint(cc.target)
+		if cc.endpoint != nil{
+			return cc.endpoint
 		}
 		return nil
 	}
 
 	return cc.nexts.toRouter(helper)
 }
-func (cc *createChecker) add(path []RulePath,target string) error {
+func (cc *createChecker) add(path []RulePath,endpoint *tEndpoint) error {
  	if len(path) == 0 {
-		if cc.target != ""{
-			return fmt.Errorf("%s target %s: exist",cc.checker.Key(),target)
+		if cc.endpoint != nil{
+			return fmt.Errorf("%s target %s: exist",cc.checker.Key(),endpoint.target)
 		}
-		cc.target =target
+		cc.endpoint = endpoint
 		return nil
 	}
-	return cc.nexts.add(path,target)
-
+	return cc.nexts.add(path,endpoint)
 }
 
 type createNode struct {
@@ -202,7 +239,7 @@ func (cn *createNode) toRouter(helper ICreateHelper)IRouter  {
 		checkers:cs,
 	}
 }
-func (cn *createNode)add(checker checker.Checker,path []RulePath,target string)  error{
+func (cn *createNode)add(checker checker.Checker,path []RulePath,endpoint *tEndpoint)  error{
 
 	k:=checker.Key()
 	cc,has:=cn.checkers[k]
@@ -211,7 +248,7 @@ func (cn *createNode)add(checker checker.Checker,path []RulePath,target string) 
 		cn.checkers[k] = cc
 	}
 
-	return cc.add(path,target)
+	return cc.add(path,endpoint)
 }
 
 
@@ -229,18 +266,18 @@ func (cks createCheckers) Less(i, j int) bool {
 	}
 	vl:= len(ci.checker.Value()) - len(cj.checker.Value())
 	if vl != 0{
-		return vl <0
+		return vl > 0
 	}
 	if ci.checker.Value() != cj.checker.Value(){
 		return ci.checker.Value() < cj.checker.Value()
 	}
 
-	ls := len(ci.nexts)- len(cj.nexts)
+	ls := len(cj.nexts)- len(cj.nexts)
 	if ls != 0{
-		return ls < 0
+		return ls > 0
 	}
 
-	return len(ci.target)<len(cj.target)
+	return len(ci.endpoint.cmds) > len(cj.endpoint.cmds)
 
 }
 

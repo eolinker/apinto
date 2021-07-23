@@ -9,25 +9,18 @@ type ISource interface {
 }
 
 type IRouter interface {
-	Router(source ISource)(target string,has bool)
+	Router(source ISource)(endpoint IEndpoint,has bool)
 }
 
 type Routers []IRouter
 
-func (rs Routers) Router(source ISource) (  string,  bool) {
+func (rs Routers) Router(source ISource) ( IEndpoint,  bool) {
 	for _,r:=range rs{
 		if target,has:=r.Router(source);has{
 			return target,has
 		}
 	}
-	return "", false
-}
-
-
-type Endpoint  string
-
-func (e Endpoint) Router(source ISource) (target string, has bool) {
-	return string(e),true
+	return nil, false
 }
 
 type Node struct {
@@ -40,13 +33,9 @@ type Node struct {
 
 }
 
-func NewNode() *Node {
-	return &Node{
-		equals: map[string]IRouter{},
-	}
-}
 
-func (n *Node) Router(source ISource) ( string,  bool) {
+
+func (n *Node) Router(source ISource) ( IEndpoint,  bool) {
 
 	v,has:=source.Get(n.cmd)
 
@@ -66,7 +55,7 @@ func (n *Node) Router(source ISource) ( string,  bool) {
 		}
 	}
 
-	return "",false
+	return nil,false
 
 }
 
