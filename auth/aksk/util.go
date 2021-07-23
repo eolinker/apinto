@@ -13,6 +13,7 @@ import (
 
 const dateHeader = "x-gateway-date"
 
+//buildToSign 构建待加密的签名所需字符串
 func buildToSign(ctx *http_context.Context, encType string, signedHeaders []string) string {
 	toSign := strings.Builder{}
 	toSign.WriteString(encType + "\n")
@@ -23,6 +24,7 @@ func buildToSign(ctx *http_context.Context, encType string, signedHeaders []stri
 	return toSign.String()
 }
 
+//buildHexCanonicalRequest 构建规范消息头
 func buildHexCanonicalRequest(ctx *http_context.Context, signedHeaders []string) string {
 	cr := strings.Builder{}
 
@@ -61,7 +63,9 @@ func hexEncode(data []byte) string {
 }
 
 func hmaxBySHA256(secretKey, toSign string) string {
+	// 创建对应的sha256哈希加密算法
 	hm := hmac.New(sha256.New, []byte(secretKey))
+	//写入加密数据
 	hm.Write([]byte(toSign))
 	return hex.EncodeToString(hm.Sum(nil))
 }
