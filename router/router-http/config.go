@@ -1,11 +1,11 @@
 package router_http
 
 import (
-	"fmt"
+
 	"github.com/eolinker/goku-eosc/router"
 	"github.com/eolinker/goku-eosc/router/checker"
 	"github.com/eolinker/goku-eosc/service"
-	"net/textproto"
+
 )
 
 type  HeaderItem struct {
@@ -24,6 +24,7 @@ type Rule struct {
 
 type Config struct {
 	Id     string
+	Name string
 	Hosts  []string
 	Target service.IService
 	Rules  []Rule
@@ -31,16 +32,19 @@ type Config struct {
 
 func (r *Rule) toPath()([]router.RulePath ,error) {
 
-	locationChecker,err:= checker.Parse(r.Location)
-	if err!= nil{
-		return nil,err
-	}
+
 	path:=make([]router.RulePath,0,len(r.Header)+len(r.Query)+1)
 
-	path = append(path, router.RulePath{
-		CMD:     toLocation(),
-		Checker:locationChecker,
-	} )
+	if len(r.Location) >0{
+		locationChecker,err:= checker.Parse(r.Location)
+		if err!= nil{
+			return nil,err
+		}
+		path = append(path, router.RulePath{
+			CMD:     toLocation(),
+			Checker:locationChecker,
+		} )
+	}
 
 	for _,h:=range r.Header{
 		ck,err:= checker.Parse(h.Pattern)

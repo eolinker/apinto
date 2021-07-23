@@ -1,5 +1,9 @@
 package checker
 
+var (
+	globalCheckerExist =  &checkerExist{}
+	globalCheckerNotExist = &checkerNotExits{}
+)
 type checkerExist struct {
 
 }
@@ -14,7 +18,7 @@ func (t *checkerExist) Value() string {
 
 func newCheckerExist() *checkerExist {
 
-	 return &checkerExist{}
+	 return globalCheckerExist
 }
 
 func (t *checkerExist) Check(v string, has bool) bool {
@@ -46,5 +50,5 @@ func (c *checkerNotExits) CheckType() CheckType {
 }
 
 func newCheckerNotExits() *checkerNotExits {
-	return &checkerNotExits{}
+	return globalCheckerNotExist
 }

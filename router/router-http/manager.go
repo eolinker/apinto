@@ -18,7 +18,7 @@ var (
 
 func init() {
 	n := time.Now().UnixNano()
-	data := make([]byte, 8)
+	data := make([]byte, 9)
 	binary.PutVarint(data, n)
 	sign = hex.EncodeToString(data)
 }

@@ -2,8 +2,17 @@ package http_router
 
 import "github.com/eolinker/eosc"
 
+var (
+	driverInfo =eosc.ExtendInfo{
+		ID:      "eolinker:goku:http_router",
+		Group:   "eolinker",
+		Project: "goku",
+		Name:    "http_router",
+	}
+)
+
 func Register()  {
-	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:http_router",NewRouterDriverFactory())
+	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver(driverInfo.ID,NewRouterDriverFactory())
 }
 
 type RouterDriverFactory struct {
@@ -11,11 +20,11 @@ type RouterDriverFactory struct {
 }
 
 func (r *RouterDriverFactory) ExtendInfo() eosc.ExtendInfo {
-	panic("implement me")
+	return driverInfo
 }
 
 func (r *RouterDriverFactory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
-	panic("implement me")
+	return NewHttpRouter(profession,name,label,desc,params),nil
 }
 
 func NewRouterDriverFactory() *RouterDriverFactory {

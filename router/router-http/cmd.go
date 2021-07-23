@@ -15,34 +15,42 @@ import (
 )
 
 const (
-	cmdLocation="LOCATION"
-	cmdHeader = "HEADER"
-	cmdQuery = "QUERY"
+	cmdLocation = "LOCATION"
+	cmdHeader   = "HEADER"
+	cmdQuery    = "QUERY"
+	cmdHost     = "HOST"
 )
-func toLocation()string{
+
+func toLocation() string {
 	return cmdLocation
 }
 func toHeader(key string) string {
-	return fmt.Sprint(cmdHeader ,":",textproto.CanonicalMIMEHeaderKey(key))
+	return fmt.Sprint(cmdHeader, ":", textproto.CanonicalMIMEHeaderKey(key))
 }
 func toQuery(key string) string {
-	return fmt.Sprint(cmdQuery ,":",key)
+	return fmt.Sprint(cmdQuery, ":", key)
 
 }
-
-func headerName(cmd string) (string,bool) {
-	if b:= strings.HasPrefix(cmd,"HEADER:");b{
-		return strings.TrimPrefix(cmd,"HEADER:"),true
+func toHost()string  {
+	return cmdHost
+}
+func headerName(cmd string) (string, bool) {
+	if b := strings.HasPrefix(cmd, "HEADER:"); b {
+		return strings.TrimPrefix(cmd, "HEADER:"), true
 	}
-	return "",false
+	return "", false
 
 }
-func queryName(cmd string)(string,bool)  {
-	if b:= strings.HasPrefix(cmd,"QUERY:");b{
-		return strings.TrimPrefix(cmd,"QUERY:"),true
+func queryName(cmd string) (string, bool) {
+	if b := strings.HasPrefix(cmd, "QUERY:"); b {
+		return strings.TrimPrefix(cmd, "QUERY:"), true
 	}
-	return "",false
+	return "", false
 }
-func isLocation(cmd string)bool  {
-	return strings.EqualFold(cmd,cmdLocation)
+func isLocation(cmd string) bool {
+	return cmd == cmdLocation
 }
+func isHost(cmd string) bool {
+	return cmd == cmdHost
+}
+

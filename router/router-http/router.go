@@ -37,8 +37,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		http.NotFound(w, req)
 		return
 	}
-	h.Handle(w,req,nee)
-
+	h.Handle(w,req,NewEndPoint(e))
 }
 
 func (r *Router) SetRouter(id string, config *Config) error {

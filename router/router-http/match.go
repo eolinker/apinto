@@ -38,5 +38,29 @@ func newHttpSources(req *http.Request) *HttpSources {
 }
 
 func (h *HttpSources) Get(cmd string) (string, bool) {
+	if isHost(cmd){
+		return h.req.Host,true
+	}
 
+	if isLocation(cmd){
+		return h.req.RequestURI,true
+	}
+	if hn,yes:=headerName(cmd);yes{
+		if vs,has:=h.req.Header[hn];has {
+			if len(vs) == 0{
+				return "",true
+			}
+			return vs[0],true
+		}
+	}
+
+	if qn,yes:=queryName(cmd);yes{
+		if vs,has:=h.req.URL.Query()[qn];has{
+			if len(vs) == 0{
+				return "",true
+			}
+			return vs[0],true
+		}
+	}
+	return "",false
 }

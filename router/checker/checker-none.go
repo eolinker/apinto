@@ -2,6 +2,9 @@ package checker
 
 import "strings"
 
+var (
+	globalCheckerNone = &checkerNone{}
+)
 type checkerNone struct {
 
 }
@@ -15,7 +18,7 @@ func (t *checkerNone) Value() string {
 }
 
 func newCheckerNone() *checkerNone {
-	return &checkerNone{}
+	return globalCheckerNone
 }
 
 func (t *checkerNone) Check(v string, has bool) bool {
@@ -26,6 +29,6 @@ func (t *checkerNone) Check(v string, has bool) bool {
 }
 
 func (t *checkerNone) CheckType() CheckType {
-	return CheckTypeNull
+	return CheckTypeNone
 }
 
