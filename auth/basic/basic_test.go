@@ -158,13 +158,14 @@ type writer struct {
 }
 
 func (w writer) Header() http.Header {
-	panic("implement me")
+	header := http.Header{}
+	return header
 }
 
 func (w writer) Write(bytes []byte) (int, error) {
-	panic("implement me")
+	return len(bytes), nil
 }
 
 func (w writer) WriteHeader(statusCode int) {
-	panic("implement me")
+	return
 }
