@@ -13,6 +13,8 @@ import (
 var supportTypes = []string{
 	"ak/sk",
 	"aksk",
+	"AK/SK",
+	"AKSK",
 }
 
 type aksk struct {
@@ -36,6 +38,9 @@ func (a *aksk) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) e
 	}
 
 	for _, c := range config.akskConfig {
+		if _, has := a.akskConfig[c.AK]; has{
+			return fmt.Errorf("[error]Config Repeat. Repeat Key: %s", c.AK)
+		}
 		a.akskConfig[c.AK] = c
 	}
 
