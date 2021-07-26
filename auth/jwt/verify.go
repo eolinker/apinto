@@ -465,13 +465,10 @@ func verifyRegisteredClaims(token *jwtToken, claimsToVerify []string) error {
 	if claimsToVerify == nil {
 		claimsToVerify = []string{}
 	}
-	var err error = nil
+
 	for _, claimName := range claimsToVerify {
 		var claim int64 = 0
 		if _, ok := token.Claims[claimName]; ok {
-			//if typeOfData(token.Claims[claimName]) == reflect.Int64 || typeOfData(token.Claims[claimName]) == reflect.Int {
-			//	claim = token.Claims[claimName].(int64)
-			//}
 
 			if typeOfData(token.Claims[claimName]) == reflect.Float64 {
 				claimFloat64, success := token.Claims[claimName].(float64)
@@ -487,17 +484,17 @@ func verifyRegisteredClaims(token *jwtToken, claimsToVerify []string) error {
 		switch claimName {
 		case "nbf":
 			if claim > time.Now().Unix() {
-				err = errors.New("[jwt_auth] token not valid yet")
+				return errors.New("[jwt_auth] token not valid yet")
 			}
 		case "exp":
 			if claim <= time.Now().Unix() {
-				err = errors.New("[jwt_auth] token expired")
+				return errors.New("[jwt_auth] token expired")
 			}
 		default:
-			err = errors.New("[jwt_auth] Invalid claims")
+			return errors.New("[jwt_auth] Invalid claims")
 		}
 	}
-	return err
+	return nil
 }
 
 //获取数据的类型
@@ -559,10 +556,10 @@ func (j *jwt) doJWTAuthentication(context *http_context.Context) error {
 	keyClaimName := "iss"
 	if _, ok := token.Claims[keyClaimName]; ok {
 		key = token.Claims[keyClaimName].(string)
-	}
-	if _, ok := token.Header[keyClaimName]; ok && key == "" {
+	} else if _, ok = token.Header[keyClaimName]; ok {
 		key = token.Header[keyClaimName].(string)
 	}
+
 	if key == "" {
 		return errors.New("[jwt_auth] No mandatory " + keyClaimName + " in claims")
 	}
@@ -604,13 +601,12 @@ func (j *jwt) doJWTAuthentication(context *http_context.Context) error {
 func validateCredentials(credentials []JwtCredential) (map[string]*JwtCredential, error) {
 	IssAlgorithmMap := map[string]*JwtCredential{}
 
-	for _, credential := range credentials {
+	for k, credential := range credentials {
 		s := fmt.Sprintf("%s%s", credential.Iss, credential.Algorithm)
-		if _, has := IssAlgorithmMap[s]; !has {
-			IssAlgorithmMap[s] = &credential
-			continue
+		if _, has := IssAlgorithmMap[s]; has {
+			return nil, fmt.Errorf("[jwt_auth] the combine of Iss and Algorithm Repeat")
 		}
-		return nil, fmt.Errorf("[jwt_auth] the combine of Iss and Algorithm Repeat")
+		IssAlgorithmMap[s] = &credentials[k]
 	}
 
 	return IssAlgorithmMap, nil

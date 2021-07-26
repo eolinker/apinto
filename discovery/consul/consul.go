@@ -48,8 +48,8 @@ func (c *consul) Start() error {
 						}
 
 						nodes := make([]discovery.INode, 0, len(nodeSet))
-						for _, node := range nodeSet {
-							nodes = append(nodes, node)
+						for k := range nodeSet {
+							nodes = append(nodes, nodeSet[k])
 						}
 						//更新目标服务的节点列表
 						c.services.Update(serviceName, nodes)
