@@ -43,16 +43,9 @@ func main() {
 
 			Drivers: []eosc.DriverConfig{
 				{
-					ID:     "eolinker:goku:example",
+					ID:     "eolinker:goku:http_router",
 					Name:   "http",
 					Label:  "http",
-					Desc:   "http路由",
-					Params: nil,
-				},
-				{
-					ID:     "eolinker:goku:example",
-					Name:   "https",
-					Label:  "https",
 					Desc:   "http路由",
 					Params: nil,
 				},
