@@ -1,9 +1,10 @@
 package router_http
 
 import (
-	"github.com/eolinker/eosc"
 	"net/http"
 	"sync"
+
+	"github.com/eolinker/eosc"
 )
 
 var _ IRouter = (*Router)(nil)
@@ -24,6 +25,7 @@ type Router struct {
 func NewRouter() *Router {
 	return &Router{
 		locker: &sync.Mutex{},
+		data:   eosc.NewUntyped(),
 	}
 }
 
@@ -32,12 +34,12 @@ func (r *Router) Count() int {
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	h,e, has := r.match.Match(req)
+	h, e, has := r.match.Match(req)
 	if !has {
 		http.NotFound(w, req)
 		return
 	}
-	h.Handle(w,req,NewEndPoint(e))
+	h.Handle(w, req, NewEndPoint(e))
 }
 
 func (r *Router) SetRouter(id string, config *Config) error {

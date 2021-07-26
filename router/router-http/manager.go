@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
-	"github.com/eolinker/eosc/listener"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/eolinker/eosc/listener"
 )
 
 var _ iManager = (*Manager)(nil)
@@ -36,20 +37,18 @@ type Manager struct {
 	routers   IRouters
 	servers   map[int]*http.Server
 	listeners map[int]net.Listener
-
-
 }
 
 func (m *Manager) Cancel() {
 	m.locker.Lock()
 	defer m.locker.Unlock()
-	ctx:=context.Background()
- 	for p,s:=range m.servers{
- 		s.Shutdown(ctx)
+	ctx := context.Background()
+	for p, s := range m.servers {
+		s.Shutdown(ctx)
 		delete(m.servers, p)
 	}
 
-	for k,l:=range m.listeners{
+	for k, l := range m.listeners {
 		l.Close()
 		delete(m.listeners, k)
 	}
@@ -57,7 +56,10 @@ func (m *Manager) Cancel() {
 
 func NewManager() *Manager {
 	return &Manager{
-		routers: NewRouters(),
+		routers:   NewRouters(),
+		servers:   make(map[int]*http.Server),
+		listeners: make(map[int]net.Listener),
+		locker:    sync.Mutex{},
 	}
 }
 
