@@ -59,4 +59,18 @@ func (n *Node) Router(source ISource) ( IEndpoint,  bool) {
 
 }
 
+type NodeShut struct {
+	next IRouter
+	endpoint IEndpoint
+}
 
+func (n *NodeShut) Router(source ISource) (  IEndpoint,   bool) {
+	if e ,has:=n.next.Router(source);has{
+		return e,has
+	}
+	return n.endpoint,true
+}
+
+func NewNodeShut(next IRouter, endpoint IEndpoint) IRouter {
+	return &NodeShut{next: next, endpoint: endpoint}
+}

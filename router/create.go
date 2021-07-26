@@ -64,7 +64,7 @@ func (cns createNodes) list(helper ICreateHelper)[]*createNode  {
 	sort.Sort(cl)
 	return cl.nodes
 }
-func (cns createNodes)toRouter(helper ICreateHelper) IRouter {
+func (cns createNodes)toRouter(helper ICreateHelper) Routers {
 
 	nodeList := cns.list(helper)
 
@@ -123,7 +123,6 @@ type tEndpoint struct {
 	target string
 	cmds []string
 	checkers map[string]checker.Checker
-
 }
 
 func (e *tEndpoint) CMDs() []string {
@@ -176,13 +175,20 @@ func newCreateChecker(checker checker.Checker) *createChecker {
 func (cc *createChecker) toRouter(helper ICreateHelper) IRouter {
 
 	if len(cc.nexts) == 0{
+
 		if cc.endpoint != nil{
 			return cc.endpoint
 		}
+
 		return nil
 	}
 
-	return cc.nexts.toRouter(helper)
+	 routers:= cc.nexts.toRouter(helper)
+	 // if there is endpoint, append to end
+	if cc.endpoint != nil{
+		routers = append(routers, cc.endpoint)
+	}
+	return routers
 }
 func (cc *createChecker) add(path []RulePath,endpoint *tEndpoint) error {
  	if len(path) == 0 {

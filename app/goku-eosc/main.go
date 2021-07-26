@@ -74,7 +74,7 @@ func main() {
 			AppendLabel:  []string{"discovery"},
 			Drivers: []eosc.DriverConfig{
 				{
-					ID:     "eolinker:goku:upstream_http_proxy",
+					ID:     "eolinker:goku:http_proxy",
 					Name:   "http_proxy",
 					Label:  "http转发负载",
 					Desc:   "http转发负载",

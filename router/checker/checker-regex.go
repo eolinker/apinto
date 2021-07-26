@@ -21,7 +21,7 @@ func (t *checkerRegexp) Key() string {
 }
 
 func newCheckerRegexp(pattern string) (*checkerRegexp,error) {
-	pattern =  fmt.Sprintf("/%s/",formatPattern(pattern))
+	pattern =  fmt.Sprintf("%s",formatPattern(pattern))
 	rex,err:= regexp.Compile(pattern)
 	if err!= nil{
 		return nil,err
@@ -33,8 +33,9 @@ func newCheckerRegexp(pattern string) (*checkerRegexp,error) {
 	},nil
 }
 func newCheckerRegexpG(pattern string,) (*checkerRegexp,error) {
-	pattern = fmt.Sprintf("/%s/i",formatPattern(pattern))
-	rex,err:= regexp.Compile(pattern)
+	pattern = fmt.Sprintf(`(?i)(%s)`,formatPattern(pattern))
+
+	rex,err:= regexp.CompilePOSIX(pattern)
 	if err!= nil{
 		return nil,err
 	}
@@ -65,12 +66,12 @@ func formatPattern(pattern string)string  {
 	if len(pattern) ==0{
 		return pattern
 	}
-	if strings.HasPrefix(pattern,"/") && strings.HasSuffix(pattern,"/"){
-		return strings.TrimSuffix(pattern[1:],"/")
-	}
-	if strings.HasPrefix(pattern,"/") && strings.HasSuffix(pattern,"/i"){
-		return strings.TrimSuffix(pattern[1:],"/i")
-	}
+	//if strings.HasPrefix(pattern,"/") && strings.HasSuffix(pattern,"/"){
+	//	return strings.TrimSuffix(pattern[1:],"/")
+	//}
+	//if strings.HasPrefix(pattern,"/") && strings.HasSuffix(pattern,"/i"){
+	//	return strings.TrimSuffix(pattern[1:],"/i")
+	//}
 
 	return pattern
 
