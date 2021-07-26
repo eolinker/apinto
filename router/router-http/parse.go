@@ -10,7 +10,11 @@ func parse(cs []*Config) (IMatcher, error) {
 
 	count:=0
 	for i:=range cs{
-		count += len(cs[i].Rules)*len(cs[i].Hosts)
+		hsize := len(cs[i].Hosts)
+		if hsize <1{
+			hsize = 1
+		}
+		count += len(cs[i].Rules)*hsize
 	}
 
 	rules :=make([]router.Rule,0,count)
@@ -39,10 +43,10 @@ func parse(cs []*Config) (IMatcher, error) {
 			}
 			if len(hosts) >0{
 				for _,hp:=range hosts{
-					pathWidthHost := append(make([]router.RulePath,0,len(path)+1),hp)
-					pathWidthHost = append(pathWidthHost,path...)
+					pathWithHost := append(make([]router.RulePath,0,len(path)+1),hp)
+					pathWithHost = append(pathWithHost,path...)
 					rules = append(rules,router.Rule{
-						Path:pathWidthHost,
+						Path:pathWithHost,
 						Target:c.Id,
 					} )
 				}
