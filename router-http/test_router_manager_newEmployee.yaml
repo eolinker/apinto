@@ -1,9 +1,0 @@
-router:
-  - name: E2
-    driver: http
-    listen: "80"
-    rules:
-      - location: "=/abcd"
-        header:
-          user: abc
-        target: serviceE_rule5

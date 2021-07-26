@@ -1,0 +1,35 @@
+package http_router
+
+import (
+	"github.com/eolinker/eosc"
+	router_http "github.com/eolinker/goku-eosc/router/router-http"
+	"github.com/eolinker/goku-eosc/service"
+)
+
+type DriverConfig struct {
+	ID     string       `json:"id"`
+	Name   string       `json:"name" yaml:"name"`
+	Driver string       `json:"driver" yaml:"driver"`
+	Listen int       `json:"listen" yaml:"listen"`
+	Host   []string     `json:"host" yaml:"host"`
+	Rules  []DriverRule `json:"rules" yaml:"rules"`
+
+	Target  eosc.RequireId   `json:"target" target:"target" skill:"github.com/eolinker/goku-eosc/service.service.IService"`
+
+}
+
+type DriverRule struct {
+	Location string            `json:"location" yaml:"location"`
+	Header   map[string]string `json:"header" yaml:"header"`
+	Query    map[string]string `json:"query" yaml:"query"`
+}
+
+type Config struct {
+	name    string
+	port    int
+	rules   []router_http.Rule
+	host    []string
+	target service.IService
+}
+
+
