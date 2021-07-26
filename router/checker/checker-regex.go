@@ -8,49 +8,53 @@ import (
 
 type checkerRegexp struct {
 	pattern string
-	rex *regexp.Regexp
-	tp CheckType
+	rex     *regexp.Regexp
+	tp      CheckType
 }
 
 func (t *checkerRegexp) Key() string {
-	if t.tp == CheckTypeRegularG{
-		return fmt.Sprintf("~*= %s",t.pattern)
+	if t.tp == CheckTypeRegularG {
+		return fmt.Sprintf("~*= %s", t.pattern)
 	}
-	return fmt.Sprintf("~= %s",t.pattern)
+	return fmt.Sprintf("~= %s", t.pattern)
 
 }
 
-func newCheckerRegexp(pattern string) (*checkerRegexp,error) {
-	pattern =  fmt.Sprintf("%s",formatPattern(pattern))
-	rex,err:= regexp.Compile(pattern)
-	if err!= nil{
-		return nil,err
+func newCheckerRegexp(pattern string) (*checkerRegexp, error) {
+	pattern = fmt.Sprintf("%s", formatPattern(pattern))
+	rex, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
 	}
 	return &checkerRegexp{
-		pattern:pattern,
-		rex:rex,
-		tp:CheckTypeRegular,
-	},nil
+		pattern: pattern,
+		rex:     rex,
+		tp:      CheckTypeRegular,
+	}, nil
 }
-func newCheckerRegexpG(pattern string,) (*checkerRegexp,error) {
-	pattern = fmt.Sprintf(`(?i)(%s)`,formatPattern(pattern))
+func newCheckerRegexpG(pattern string) (*checkerRegexp, error) {
+	pattern = fmt.Sprintf(`(?i)(%s)`, formatPattern(pattern))
 
-	rex,err:= regexp.CompilePOSIX(pattern)
-	if err!= nil{
-		return nil,err
+	//rex,err:= regexp.CompilePOSIX(pattern)
+	//if err!= nil{
+	//	return nil,err
+	//}
+	rex, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
 	}
 	return &checkerRegexp{
-		pattern:pattern,
-		rex:rex,
-		tp:CheckTypeRegularG,
-	},nil
+		pattern: pattern,
+		rex:     rex,
+		tp:      CheckTypeRegularG,
+	}, nil
 }
 func (t *checkerRegexp) Value() string {
 	return t.pattern
 }
 
 func (t *checkerRegexp) Check(v string, has bool) bool {
-	if !has{
+	if !has {
 		return false
 	}
 
@@ -61,9 +65,9 @@ func (t *checkerRegexp) CheckType() CheckType {
 	return t.tp
 }
 
-func formatPattern(pattern string)string  {
+func formatPattern(pattern string) string {
 	pattern = strings.TrimSpace(pattern)
-	if len(pattern) ==0{
+	if len(pattern) == 0 {
 		return pattern
 	}
 	//if strings.HasPrefix(pattern,"/") && strings.HasSuffix(pattern,"/"){
