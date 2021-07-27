@@ -13,5 +13,5 @@ type Config struct {
 	Scheme    string         `json:"scheme"`
 	Type      string         `json:"type"`
 	Config    string         `json:"config"`
-	Discovery eosc.RequireId `json:"upstream" skill:"github.com/eolinker/goku-eosc/discovery.discovery.IDiscovery"`
+	Discovery eosc.RequireId `json:"discovery" skill:"github.com/eolinker/goku-eosc/discovery.discovery.IDiscovery"`
 }

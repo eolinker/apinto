@@ -23,19 +23,18 @@ func Parse(pattern string) (Checker, error) {
 	if i < 0 {
 		p := strings.TrimSpace(pattern)
 		switch p {
-		case "*": //任意
+		case "*":
 			return newCheckerAll(), nil
-		case "**": //只要key存在
+		case "**":
 			return newCheckerExist(), nil
-		case "!": //key不存在时
+		case "!":
 			return newCheckerNotExits(), nil
-		case "$": //空值
+		case "$":
 			return newCheckerNone(), nil
 		default:
 			if len(p) == 0 {
 				return newCheckerAll(), nil
 			}
-			// 测全等
 			return newCheckerEqual(p), nil
 		}
 	}
@@ -44,18 +43,23 @@ func Parse(pattern string) (Checker, error) {
 	v := strings.TrimSpace(pattern[i+1:])
 
 	switch tp {
-	case "^": //前缀匹配
+	case "^":
+		if len(v) > 0 {
+			if v[0] == '*' {
+				return newCheckerSuffix(v[1:]), nil
+			}
+		}
 		return newCheckerPrefix(v), nil
-	case "": //全等
+	case "":
 		if len(v) == 0 {
 			return newCheckerAll(), nil
 		}
 		return newCheckerEqual(v), nil
-	case "!": //不等
+	case "!":
 		return newCheckerNotEqual(v), nil
-	case "~": //区分大小写的正则
+	case "~":
 		return newCheckerRegexp(v)
-	case "~*": //不区分大小写的正则
+	case "~*":
 		return newCheckerRegexpG(v)
 	}
 

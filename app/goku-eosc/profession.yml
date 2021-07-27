@@ -1,226 +1,101 @@
-router:
-  -
-    name: http-router_80
-    driver: http  # http驱动
-    listen: 80    # 监听端口
-    host:       # 域名列表，满足该监听端口且域名在下列列表中的可进入该路由
-      - open.*.eolinker.com
-        www.apibee.com
-        www.apishop.net
-    rules:      # 规则列表
-      - location: "/abc"
-        header:
-          version: 1.0
-          app: goku
-      - location: "/"
-        header:
-          user: abc
-          token: abc
-    target: login1@service
-  -
-    name: https-router_443
-    driver: http
-    listen: 443
-    cert:
-      -
-        key: apibee.key
-        crt: apibee.crt
-      -
-        key: eolinker.key
-        crt: eolinker.crt
-    host:
-      - www.eolinker.com
-        www.apibee.com
-        www.apishop.net
-    rules:
-      - location: "/"
-        header:
-          version: 1.0
-          app: goku
-      - location: "/"
-        header:
-          user: abc
-          token: abc
-    target: guest@service
-service:
-  -
-    name: guest
-    driver: http
-    desc: "游客服务"
-    timeout: 30000
-    upstream: product-user@upstream
-    retry: 2
-    rewrite_url: /abc
-    auth:
-      - basic_1
-      - ak/sk_1
-      - apikey_1
-  -
-    name: member
-    driver: http
-    desc: "会员服务"
-    timeout: 30000
-    retry: 2
-    upstream: test-user@upstream
-    rewrite_url: /abc
-  -
-    name: anonymous
-    driver: http
-    desc: "匿名访问"
-    timeout: 3000
-    upstream: www.eolinker.com
-    rewrite_url: /
-    retry: 2
-    scheme: http
-
-upstream:
-  -
-    name: product-user
-    driver: http_proxy  # 静态负载
-    desc: "生产环境-用户模块"
-    discovery: static_1@discovery
-    config: 10.1.1.1 weight=1000;10.1.1.2 weight=10
-    scheme: http
-    type: round-robin
-
-  -
-    name: test-user
-    driver: http_proxy
-    discovery: static_1@discovery
-    desc: "测试环境-用户模块"
-    config: 10.1.1.1 weight=1000;10.1.1.2 weight=10
-    scheme: http
-    type: round-robin
-
-  - name: test-nacos
-    driver: http_proxy
-    desc: "测试环境-nacos"
-    config: userService
-    discovery: nacos_1@discovery
-    scheme: http
-    type: round-robin
-
-discovery:
-  -
-    name: nacos_1
-    driver: nacos
-    labels:
-      scheme: http
-    config:
-      address:
-        - 127.0.0.1:8080
-        - 10.1.1.1:8080
-      params:
-        username: xxx
-        password: xxx
-    health:
-      protocol: http
-      method: GET
-      url: xxx
-      success_code: 200
-      timeout: 3000
-      period: 30
-    health_on: true
-  -
-    name: static_1
-    driver: static
-    labels:
-      scheme: http
-    health:
-      protocol: http
-      method: GET
-      url: xxx
-      success_code: 200
-      timeout: 3000
-      period: 30
-    health_on: true
-
-auth:
-  -
-    name: basic_1
-    driver: basic
-    user:
-      -
-        username: admin1
-        password: 123456
-        labels:
-          name: test1
-          remark: 测试人员1
-        expire: 0
-      -
-        username: admin2
-        password: 123456
-        labels:
-          name: test2
-          remark: 测试人员2
-        expire: 0
-      -
-        username: admin3
-        password: 123456
-        labels:
-          name: test3
-          remark: 测试人员3
-        expire: 0
-  -
-    name: ak/sk_1
-    driver: aksk
-    user:
-      -
-        ak: admin1
-        sk: 123456
-        labels:
-          name: test1
-          remark: 测试人员1
-        expire: 0
-      -
-        ak: admin1
-        sk: 123456
-        labels:
-          name: test2
-          remark: 测试人员2
-        expire: 0
-      -
-        ak: admin1
-        sk: 123456
-        labels:
-          name: test3
-          remark: 测试人员3
-        expire: 0
-  -
-    name: apikey_1
-    driver: apikey
-    user:
-      -
-        apikey: asdqer
-        labels:
-          name: test1
-          remark: 测试人员1
-        expire: 0
-      -
-        apikey: asdqer
-        labels:
-          name: test2
-          remark: 测试人员2
-        expire: 0
-      -
-        apikey: asdqer
-        labels:
-          name: test3
-          remark: 测试人员3
-        expire: 0
-
-  -
-    name: jwt_1
-    driver: jwt
-    credentials:
-      -
-        iss: goku
-        secret: goku
-        rsa_public_key: "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\nq9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==\n-----END PUBLIC KEY-----"
-        algorithm: HS256
-    signature_is_base64: false
-    claims_to_verify:
-      - exp
-      - nbf
-    run_on_preflight: false
-    hide_credentials: false
+-
+  name: router
+  label: 路由
+  desc: 路由
+  dependencies:
+    - service
+  append_label:
+    - host
+    - service
+  drivers:
+    -
+      id: eolinker:goku:http_router
+      name: http
+      label: http
+      desc: http路由
+-
+  name: service
+  label: 服务
+  desc: 服务
+  dependencies:
+    - upstream
+  append_label:
+    - upstream
+  drivers:
+    -
+      id: eolinker:goku:service_http
+      name: http
+      label: service
+      desc: 服务
+-
+  name: upstream
+  label: 上游/负载
+  desc: 上游/负载
+  dependencies:
+    - discovery
+  append_label:
+    - discovery
+  drivers:
+    -
+      id: eolinker:goku:upstream_http_proxy
+      name: http_proxy
+      label: http转发负载
+      desc: http转发负载
+    - id: eolinker:goku:upstream_http_proxy_anonymous
+      name: http_proxy_anonymous
+      label: http匿名转发负载
+      desc: http匿名转发负载（不依赖discovery模块）
+-
+  name: discovery
+  label: 注册中心
+  desc: 注册中心
+  dependencies: null
+  append_label: null
+  drivers:
+    -
+      id: eolinker:goku:discovery_static
+      name: static
+      label: 静态服务发现
+      desc: 静态服务发现
+    -
+      id: eolinker:goku:discovery_nacos
+      name: nacos
+      label: nacos服务发现
+      desc: nacos服务发现
+    -
+      id: eolinker:goku:discovery_consul
+      name: consul
+      label: consul服务发现
+      desc: consul服务发现
+    -
+      id: eolinker:goku:discovery_eureka
+      name: eureka
+      label: eureka服务发现
+      desc: consul服务发现
+-
+  name: auth
+  label: 鉴权
+  desc: 鉴权
+  dependencies: null
+  append_label: null
+  drivers:
+    -
+      id: eolinker:goku:auth_basic
+      name: basic
+      label: basic鉴权
+      desc: basic鉴权
+    -
+      id: eolinker:goku:auth_apikey
+      name: apikey
+      label: apikey鉴权
+      desc: apikey鉴权
+    -
+      id: eolinker:goku:auth_aksk
+      name: aksk
+      label: ak/sk鉴权
+      desc: ak/sk鉴权
+#    -
+#      id: eolinker:goku:auth_jwt
+#      name: jwt
+#      label: jwt鉴权
+#      desc: jwt鉴权

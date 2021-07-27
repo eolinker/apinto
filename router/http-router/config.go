@@ -7,15 +7,14 @@ import (
 )
 
 type DriverConfig struct {
-	ID     string       `json:"id"`
-	Name   string       `json:"name" yaml:"name"`
+	//ID     string       `json:"id"`
+	//Name   string       `json:"name" yaml:"name"`
 	Driver string       `json:"driver" yaml:"driver"`
-	Listen int       `json:"listen" yaml:"listen"`
+	Listen int          `json:"listen" yaml:"listen"`
 	Host   []string     `json:"host" yaml:"host"`
 	Rules  []DriverRule `json:"rules" yaml:"rules"`
 
-	Target  eosc.RequireId   `json:"target" target:"target" skill:"github.com/eolinker/goku-eosc/service.service.IService"`
-
+	Target eosc.RequireId `json:"target" yaml:"target" skill:"github.com/eolinker/goku-eosc/service.service.IService"`
 }
 
 type DriverRule struct {
@@ -25,11 +24,9 @@ type DriverRule struct {
 }
 
 type Config struct {
-	name    string
-	port    int
-	rules   []router_http.Rule
-	host    []string
+	name   string
+	port   int
+	rules  []router_http.Rule
+	host   []string
 	target service.IService
 }
-
-

@@ -8,94 +8,60 @@
 
 package main
 
-import "github.com/eolinker/eosc"
+import (
+	"io/ioutil"
 
-func professionConfig() []eosc.ProfessionConfig {
-	pcs := []eosc.ProfessionConfig{
-		{
-			Name:         "router",
-			Label:        "路由",
-			Desc:         "路由",
-			Dependencies: []string{"service"},
-			AppendLabel:  []string{"host", "service"},
+	"github.com/eolinker/eosc"
+	"github.com/ghodss/yaml"
+)
 
-			Drivers: []eosc.DriverConfig{
-				{
-					ID:     "eolinker:goku:http_router",
-					Name:   "http",
-					Label:  "http",
-					Desc:   "http路由",
-					Params: nil,
-				},
-			},
-		}, {
-			Name:         "service",
-			Label:        "服务",
-			Desc:         "服务",
-			Dependencies: []string{"upstream"},
-			AppendLabel:  []string{"upstream"},
-			Drivers: []eosc.DriverConfig{
-				{
-					ID:     "eolinker:goku:service_http",
-					Name:   "http",
-					Label:  "service",
-					Desc:   "服务",
-					Params: nil,
-				},
-			},
-		},
-		{
-			Name:         "upstream",
-			Label:        "上游/负载",
-			Desc:         "上游/负载",
-			Dependencies: []string{"discovery"},
-			AppendLabel:  []string{"discovery"},
-			Drivers: []eosc.DriverConfig{
-				{
-					ID:     "eolinker:goku:http_proxy",
-					Name:   "http_proxy",
-					Label:  "http转发负载",
-					Desc:   "http转发负载",
-					Params: nil,
-				},
-			},
-		}, {
-			Name:         "discovery",
-			Label:        "注册中心",
-			Desc:         "注册中心",
-			Dependencies: []string{},
-			AppendLabel:  []string{},
-			Drivers: []eosc.DriverConfig{
-				{
-					ID:     "eolinker:goku:discovery_static",
-					Name:   "static",
-					Label:  "静态服务发现",
-					Desc:   "静态服务发现",
-					Params: nil,
-				},
-				{
-					ID:     "eolinker:goku:discovery_nacos",
-					Name:   "nacos",
-					Label:  "nacos服务发现",
-					Desc:   "nacos服务发现",
-					Params: nil,
-				},
-				{
-					ID:     "eolinker:goku:discovery_consul",
-					Name:   "consul",
-					Label:  "consul服务发现",
-					Desc:   "consul服务发现",
-					Params: nil,
-				},
-				{
-					ID:     "eolinker:goku:discovery_eureka",
-					Name:   "eureka",
-					Label:  "eureka服务发现",
-					Desc:   "eureka服务发现",
-					Params: nil,
-				},
-			},
-		},
+type config struct {
+	Name         string         `json:"name" yaml:"name"`
+	Label        string         `json:"label" yaml:"label"`
+	Desc         string         `json:"desc" yaml:"desc"`
+	Dependencies []string       `json:"dependencies" yaml:"dependencies"`
+	AppendLabel  []string       `json:"append_label" yaml:"append_label"`
+	Drivers      []driverConfig `json:"drivers" yaml:"drivers"`
+}
+
+type driverConfig struct {
+	ID     string            `json:"id" yaml:"id"`
+	Name   string            `json:"name" yaml:"name"`
+	Label  string            `json:"label" yaml:"label"`
+	Desc   string            `json:"desc" yaml:"desc"`
+	Params map[string]string `json:"params" yaml:"params"`
+}
+
+func readProfessionConfig(file string) ([]eosc.ProfessionConfig, error) {
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil, err
 	}
-	return pcs
+	cs := make([]config, 0)
+	err = yaml.Unmarshal(data, &cs)
+	if err != nil {
+		return nil, err
+	}
+	pcs := make([]eosc.ProfessionConfig, 0, len(cs))
+	for _, c := range cs {
+		drivers := make([]eosc.DriverConfig, 0, len(c.Drivers))
+		for _, driver := range c.Drivers {
+			drivers = append(drivers, eosc.DriverConfig{
+				ID:     driver.ID,
+				Name:   driver.Name,
+				Label:  driver.Label,
+				Desc:   driver.Desc,
+				Params: driver.Params,
+			})
+		}
+		pcs = append(pcs, eosc.ProfessionConfig{
+			Name:         c.Name,
+			Label:        c.Label,
+			Desc:         c.Desc,
+			Dependencies: c.Dependencies,
+			AppendLabel:  c.AppendLabel,
+			Drivers:      drivers,
+		})
+	}
+	return pcs, nil
 }

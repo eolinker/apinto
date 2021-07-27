@@ -1,21 +1,23 @@
 package main
 
 import (
+	"net/http"
+	"path/filepath"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/log"
 	admin_html "github.com/eolinker/eosc/modules/admin-html"
 	admin_open_api "github.com/eolinker/eosc/modules/admin-open-api"
-	"net/http"
-	"path/filepath"
 )
 
-
 func main() {
+	log.InitDebug(true)
 	Register()
-	pluginPath,_:= filepath.Abs("./plugins")
+	pluginPath, _ := filepath.Abs("./plugins")
 	loadPlugins(pluginPath)
- 	storeName := "memory-yaml"
-	file := "profession.yml"
+	storeName := "yaml"
+	file := "data.yml"
+	driverFile := "profession.yml"
 
 	storeDriver, has := eosc.GetStoreDriver(storeName)
 	if !has {
@@ -33,9 +35,11 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
-
-
-	professions, err := eosc.ProfessionConfigs(professionConfig()).Gen(eosc.DefaultProfessionDriverRegister, storeT)
+	driverCfg, err := readProfessionConfig(driverFile)
+	if err != nil {
+		log.Panic(err)
+	}
+	professions, err := eosc.ProfessionConfigs(driverCfg).Gen(eosc.DefaultProfessionDriverRegister, storeT)
 	if err != nil {
 		panic(err)
 	}
