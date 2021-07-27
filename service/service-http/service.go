@@ -26,17 +26,18 @@ var (
 )
 
 type serviceWorker struct {
-	id         string
-	name       string
-	driver     string
-	desc       string
-	timeout    time.Duration
-	rewriteURL string
-	retry      int
-	scheme     string
-	proxyAddr  string
-	auths      []auth.IAuth
-	upstream   upstream.IUpstream
+	id          string
+	name        string
+	driver      string
+	desc        string
+	timeout     time.Duration
+	rewriteURL  string
+	retry       int
+	scheme      string
+	proxyAddr   string
+	proxyMethod string
+	auths       []auth.IAuth
+	upstream    upstream.IUpstream
 }
 
 //Id 返回服务实例 worker id
@@ -54,6 +55,7 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	if !ok {
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
+	data.rebuild()
 	auths := make([]auth.IAuth, 0, len(data.Auth))
 	for _, a := range data.Auth {
 		if worker, has := workers[a]; has {
@@ -68,6 +70,7 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	s.rewriteURL = data.RewriteURL
 	s.retry = data.Retry
 	s.scheme = data.Scheme
+	s.proxyMethod = data.ProxyMethod
 	s.auths = auths
 	if worker, has := workers[data.Upstream]; has {
 		u, ok := worker.(upstream.IUpstream)
@@ -172,6 +175,9 @@ func (s *serviceWorker) Handle(w http.ResponseWriter, r *http.Request, router se
 	path := s.rewriteURL
 	if has && location.CheckType() == checker.CheckTypePrefix {
 		path = recombinePath(r.URL.Path, location.Value(), s.rewriteURL)
+	}
+	if s.proxyMethod != "" {
+		ctx.ProxyRequest.Method = s.proxyMethod
 	}
 	ctx.ProxyRequest.SetTargetURL(path)
 
