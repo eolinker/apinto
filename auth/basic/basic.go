@@ -22,10 +22,11 @@ var supportTypes = []string{
 }
 
 type basic struct {
-	id     string
-	name   string
-	driver string
-	users  []User
+	id             string
+	name           string
+	driver         string
+	hideCredential bool
+	users          []User
 }
 
 func (b *basic) Id() string {
@@ -42,6 +43,7 @@ func (b *basic) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) 
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
 	b.users = cfg.User
+	b.hideCredential = cfg.HideCredentials
 	return nil
 }
 
@@ -59,6 +61,20 @@ func (b *basic) Auth(ctx *http_context.Context) error {
 		return err
 	}
 	authorization := ctx.Request().Headers().Get(auth.Authorization)
+	if b.hideCredential {
+		//ctx.RequestOrg.DelHeader(auth.Authorization)
+		ctx.Proxy().DelHeader(auth.Authorization)
+		//ctx.ProxyRequest.DelHeader(auth.Authorization)
+		//ctx.Request().Headers().Del(auth.Authorization)
+	}
+	auth1 := ctx.Proxy().GetHeader(auth.Authorization)
+	auth2 := ctx.ProxyRequest.GetHeader(auth.Authorization)
+	auth3 := ctx.GetHeader(auth.Authorization)
+	auth4 := ctx.Headers().Get(auth.Authorization)
+	auth5 := ctx.RequestOrg.GetHeader(auth.Authorization)
+	auth6 := ctx.Request().GetHeader(auth.Authorization)
+	fmt.Println(auth1, auth2, auth3, auth4, auth5, auth6)
+
 	username, password, err := retrieveCredentials(authorization)
 	if err != nil {
 		return err
