@@ -43,12 +43,16 @@ func newHttpSources(req *http.Request) *HttpSources {
 }
 
 func (h *HttpSources) Get(cmd string) (string, bool) {
+
 	if isHost(cmd) {
 		return h.req.Host, true
 	}
+	if isMethod(cmd){
+		return h.req.Method,true
+	}
 
 	if isLocation(cmd) {
-		return h.req.RequestURI, true
+		return h.req.URL.Path, true
 	}
 	if hn, yes := headerName(cmd); yes {
 		if vs, has := h.req.Header[hn]; has {

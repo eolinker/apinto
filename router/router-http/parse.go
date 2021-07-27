@@ -10,12 +10,13 @@ func parse(cs []*Config) (IMatcher, error) {
 
 	count:=0
 	for i:=range cs{
-		hsize := len(cs[i].Hosts)
-		if hsize <1{
-			hsize = 1
-		}
-		count += len(cs[i].Rules)*hsize
+		hSize := len(cs[i].Hosts)
+	 	mSize := len(cs[i].Methods)
+
+		count += len(cs[i].Rules)*hSize*mSize
 	}
+
+
 
 	rules :=make([]router.Rule,0,count)
 
@@ -34,6 +35,17 @@ func parse(cs []*Config) (IMatcher, error) {
 				Checker: hck,
 			})
 		}
+		methods:=make([]router.RulePath,0,len(c.Methods))
+		for _,m:=range c.Methods{
+			mck,e:= checker.Parse(m)
+			if e!= nil{
+				return nil,e
+			}
+			methods = append(methods, router.RulePath{
+				CMD:     toMethod(),
+				Checker: mck,
+			})
+		}
 		targets[c.Id]=c.Target
 		for _,r:=range c.Rules{
 
@@ -41,20 +53,15 @@ func parse(cs []*Config) (IMatcher, error) {
 			if  err!= nil{
 				return nil,err
 			}
-			if len(hosts) >0{
-				for _,hp:=range hosts{
-					pathWithHost := append(make([]router.RulePath,0,len(path)+1),hp)
+			for _,hp:=range hosts{
+				for _,mp:=range methods{
+					pathWithHost := append(make([]router.RulePath,0,len(path)+2),hp,mp)
 					pathWithHost = append(pathWithHost,path...)
 					rules = append(rules,router.Rule{
 						Path:pathWithHost,
 						Target:c.Id,
 					} )
 				}
-			}else{
-				rules = append(rules, router.Rule{
-					Path:path,
-					Target:c.Id,
-				} )
 			}
 		}
 	}
