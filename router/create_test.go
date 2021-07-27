@@ -392,6 +392,41 @@ var tests = []struct {
 		want:    []string{"demo", "demo2", "demo3"},
 		wantErr: false,
 	},
+	{
+		name: "检测重复路由规则覆盖",
+		testCase: []testSource{
+			{
+				"location":    "/abc",
+				"header:a":    "1",
+				"query:name":  "liu",
+				"query:phone": "13312313412",
+				"query:mail":  "demo@eolinker.com",
+			},
+			{
+				"location":    "/abc",
+				"header:a":    "1",
+				"query:name":  "liu",
+				"query:phone": "13312313412",
+				"query:mail":  "demoabc",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"query:name = liu", "query:phone = 13312313412", "query:mail = demo@eolinker.com"},
+				target: "demo",
+			},
+			{
+				paths:  []string{"query:name = liu", "query:mail = demo@eolinker.com", "query:phone = 13312313412"},
+				target: "demo2",
+			},
+			{
+				paths:  []string{"query:name = liu", "query:mail ^= demo"},
+				target: "demo3",
+			},
+		},
+		want:    []string{"demo2", "demo3"},
+		wantErr: true,
+	},
 }
 
 func TestParseRouter(t *testing.T) {
