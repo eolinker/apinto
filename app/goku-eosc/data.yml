@@ -7,7 +7,7 @@ router:
       - open.*.eolinker.com
       - www.apibee.com
       - www.apishop.net
-      - test.abc.com
+      - test.abc.com 
     rules:      # 规则列表
       - location: "/abc"
 #        header:
