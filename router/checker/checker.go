@@ -22,21 +22,7 @@ func Parse(pattern string) (Checker, error) {
 
 	if i < 0 {
 		p := strings.TrimSpace(pattern)
-		switch p {
-		case "*":
-			return newCheckerAll(), nil
-		case "**":
-			return newCheckerExist(), nil
-		case "!":
-			return newCheckerNotExits(), nil
-		case "$":
-			return newCheckerNone(), nil
-		default:
-			if len(p) == 0 {
-				return newCheckerAll(), nil
-			}
-			return newCheckerEqual(p), nil
-		}
+		return parseValue(p)
 	}
 
 	tp := strings.TrimSpace(pattern[:i])
@@ -51,10 +37,7 @@ func Parse(pattern string) (Checker, error) {
 		}
 		return newCheckerPrefix(v), nil
 	case "":
-		if len(v) == 0 {
-			return newCheckerAll(), nil
-		}
-		return newCheckerEqual(v), nil
+		return parseValue(v)
 	case "!":
 		return newCheckerNotEqual(v), nil
 	case "~":
@@ -64,4 +47,32 @@ func Parse(pattern string) (Checker, error) {
 	}
 
 	return nil, fmt.Errorf("%s:%w", pattern, ErrorUnknownExpression)
+}
+
+func parseValue(v string)(Checker,error)  {
+	switch v {
+	case "*":
+		return newCheckerAll(), nil
+	case "**":
+		return newCheckerExist(), nil
+	case "!":
+		return newCheckerNotExits(), nil
+	case "$":
+		return newCheckerNone(), nil
+	default:
+		if len(v) == 0 {
+			return newCheckerAll(), nil
+		}
+		l:=len(v)
+		if len(v)>1 && v[0]=='*' && v[l-1]!= '*' {
+			return  newCheckerSuffix(v[1:]),nil
+		}
+		if len(v)>1 && v[l-1]=='*' && v[0]!= '*'{
+			return newCheckerPrefix(v[:l-1]),nil
+		}
+		if len(v)>2 && v[0] == '*' && v[l-1] == '*'{
+			return newCheckerSub(v[1:l-1]),nil
+		}
+		return newCheckerEqual(v), nil
+	}
 }
