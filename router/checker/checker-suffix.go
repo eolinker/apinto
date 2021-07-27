@@ -10,7 +10,7 @@ type SuffixChecker struct {
 }
 
 func (p *SuffixChecker) Key() string {
-	return fmt.Sprintf("^=%s", p.suffix)
+	return fmt.Sprintf("=*%s", p.suffix)
 }
 
 func newCheckerSuffix(suffix string) *SuffixChecker {
@@ -29,5 +29,5 @@ func (p *SuffixChecker) Check(v string, has bool) bool {
 }
 
 func (p *SuffixChecker) CheckType() CheckType {
-	return CheckTypePrefix
+	return CheckTypeSuffix
 }
