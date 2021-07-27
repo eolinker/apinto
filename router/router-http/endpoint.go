@@ -16,7 +16,7 @@ import (
 )
 var _ service.IRouterEndpoint = (*EndPoint)(nil)
 type EndPoint struct {
-	endpoint router.IEndpoint
+	endpoint router.IEndPoint
 
 
 	headers []string
@@ -63,7 +63,7 @@ func (e *EndPoint) Queries() []string {
 
 
 
-func NewEndPoint(endpoint router.IEndpoint) *EndPoint {
+func NewEndPoint(endpoint router.IEndPoint) *EndPoint {
 	return &EndPoint{endpoint: endpoint}
 }
 

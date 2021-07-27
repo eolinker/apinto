@@ -9,12 +9,12 @@ type ISource interface {
 }
 
 type IRouter interface {
-	Router(source ISource)(endpoint IEndpoint,has bool)
+	Router(source ISource)(endpoint IEndPoint,has bool)
 }
 
 type Routers []IRouter
 
-func (rs Routers) Router(source ISource) ( IEndpoint,  bool) {
+func (rs Routers) Router(source ISource) (IEndPoint,  bool) {
 	for _,r:=range rs{
 		if target,has:=r.Router(source);has{
 			return target,has
@@ -35,7 +35,7 @@ type Node struct {
 
 
 
-func (n *Node) Router(source ISource) ( IEndpoint,  bool) {
+func (n *Node) Router(source ISource) (IEndPoint,  bool) {
 
 	v,has:=source.Get(n.cmd)
 
@@ -60,17 +60,17 @@ func (n *Node) Router(source ISource) ( IEndpoint,  bool) {
 }
 
 type NodeShut struct {
-	next IRouter
-	endpoint IEndpoint
+	next     IRouter
+	endpoint IEndPoint
 }
 
-func (n *NodeShut) Router(source ISource) (  IEndpoint,   bool) {
+func (n *NodeShut) Router(source ISource) (IEndPoint,   bool) {
 	if e ,has:=n.next.Router(source);has{
 		return e,has
 	}
 	return n.endpoint,true
 }
 
-func NewNodeShut(next IRouter, endpoint IEndpoint) IRouter {
+func NewNodeShut(next IRouter, endpoint IEndPoint) IRouter {
 	return &NodeShut{next: next, endpoint: endpoint}
 }

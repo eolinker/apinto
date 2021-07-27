@@ -29,10 +29,11 @@ var supportTypes = []string{
 }
 
 type apikey struct {
-	id     string
-	name   string
-	driver string
-	users  []User
+	id             string
+	name           string
+	driver         string
+	hideCredential bool
+	users          []User
 }
 
 //Auth 鉴权处理
@@ -42,7 +43,7 @@ func (a *apikey) Auth(ctx *http_context.Context) error {
 	if err != nil {
 		return err
 	}
-	authorization, err := getAuthValue(ctx)
+	authorization, err := a.getAuthValue(ctx)
 	if err != nil {
 		return err
 	}
@@ -69,35 +70,43 @@ func TOfData(data interface{}) reflect.Kind {
 }
 
 //getAuthValue 获取Apikey值
-func getAuthValue(ctx *http_context.Context) (string, error) {
+func (a *apikey) getAuthValue(ctx *http_context.Context) (string, error) {
 	// 判断鉴权值是否在header
-	authorization := ctx.Request().Headers().Get(auth.Authorization)
-	if authorization != "" {
+	authorization := ""
+	if authorization = ctx.Request().Headers().Get(auth.Authorization); authorization != "" {
+		if a.hideCredential {
+			ctx.Proxy().DelHeader(auth.Authorization)
+		}
 		return authorization, nil
 	}
-	authorization = ctx.Request().Headers().Get("Apikey")
-	if authorization != "" {
-		return authorization, nil
-	}
+
 	// 判断鉴权值是否在query
-	authorization = ctx.Request().URL().Query().Get("Apikey")
-	if authorization != "" {
+	if authorization = ctx.Request().URL().Query().Get("Apikey"); authorization != "" {
+		if a.hideCredential {
+			ctx.Proxy().Querys().Del("Apikey")
+		}
 		return authorization, nil
 	}
+
 	contentType := ctx.Request().Headers().Get("Content-Type")
-	if strings.Contains(contentType, "application/x-www-form-urlencoded") || strings.Contains(contentType, "application/www-form-urlencoded") {
+	if strings.Contains(contentType, "application/x-www-form-urlencoded") || strings.Contains(contentType, "multipart/form-data") {
 		formParams, err := ctx.Request().BodyForm()
 		if err != nil {
 			return "", err
 		}
 		authorization = formParams.Get("Apikey")
+		if a.hideCredential {
+			delete(formParams, "Apikey")
+			ctx.Proxy().SetForm(formParams)
+		}
+
 	} else if strings.Contains(contentType, "application/json") {
 		var body map[string]interface{}
 		rawbody, err := ctx.Request().RawBody()
 		if err != nil {
 			return "", err
 		}
-		if err := json.Unmarshal(rawbody, &body); err != nil {
+		if err = json.Unmarshal(rawbody, &body); err != nil {
 			return "", err
 		}
 		if _, ok := body["Apikey"]; !ok {
@@ -108,15 +117,20 @@ func getAuthValue(ctx *http_context.Context) (string, error) {
 		} else {
 			return "", errors.New("[apikey_auth] Invalid data type for Apikey")
 		}
-	} else if strings.Contains(contentType, "multipart/form-data") {
-		bodyform, err := ctx.Request().BodyForm()
-		if err != nil {
-			return "", err
+
+		if a.hideCredential {
+			delete(body, "Apikey")
+			newBody, err := json.Marshal(body)
+			if err != nil {
+				return "", err
+			}
+			ctx.Proxy().SetRaw(contentType, newBody)
 		}
-		authorization = bodyform.Get("Apikey")
+
 	} else {
 		return "", errors.New("[apikey_auth] Unsupported Content-Type")
 	}
+
 	if authorization != "" {
 		return authorization, nil
 	}
@@ -140,6 +154,7 @@ func (a *apikey) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
 	a.users = cfg.User
+	a.hideCredential = cfg.HideCredentials
 	return nil
 }
 
