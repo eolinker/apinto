@@ -18,9 +18,10 @@ var supportTypes = []string{
 }
 
 type aksk struct {
-	id         string
-	name       string
-	akskConfig map[string]AKSKConfig
+	id             string
+	name           string
+	hideCredential bool
+	akskConfig     map[string]AKSKConfig
 }
 
 func (a *aksk) Id() string {
@@ -37,11 +38,13 @@ func (a *aksk) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) e
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
 
-	for k, c := range config.akskConfig {
+	a.hideCredential = config.HideCredentials
+
+	for k, c := range config.Aksk {
 		if _, has := a.akskConfig[c.AK]; has {
 			return fmt.Errorf("[error]Config Repeat. Repeat Key: %s", c.AK)
 		}
-		a.akskConfig[c.AK] = config.akskConfig[k]
+		a.akskConfig[c.AK] = config.Aksk[k]
 	}
 
 	return nil
@@ -80,7 +83,7 @@ func (a *aksk) Auth(context *http_context.Context) error {
 			s := hmaxBySHA256(conf.SK, toSign)
 			if s == signature {
 				//若隐藏证书信息
-				if conf.HideCredential {
+				if a.hideCredential {
 					context.Proxy().DelHeader(auth.Authorization)
 				}
 				return nil

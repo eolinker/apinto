@@ -9,11 +9,10 @@ import (
 
 var akskConfig = map[string]AKSKConfig{
 	"4c897cfdfca60a59983adc2627942e7e": {
-		AK:             "4c897cfdfca60a59983adc2627942e7e",
-		SK: 			"6bb8eee91f88336dd95b88a66709f0a3286ce1abf73453acc4619bc142d64040",
-		HideCredential: true,
-		Labels:         map[string]string{},
-		Expire:         1658740726, //2022-07-25 17:18:46
+		AK:     "4c897cfdfca60a59983adc2627942e7e",
+		SK:     "6bb8eee91f88336dd95b88a66709f0a3286ce1abf73453acc4619bc142d64040",
+		Labels: map[string]string{},
+		Expire: 1658740726, //2022-07-25 17:18:46
 	},
 }
 
@@ -21,9 +20,10 @@ var testContexts = make([]*http_context.Context, 0, 10)
 
 func TestAKSK(t *testing.T) {
 	testAKSK := &aksk{
-		id:         "123",
-		name:       "name",
-		akskConfig: akskConfig,
+		id:             "123",
+		name:           "name",
+		hideCredential: true,
+		akskConfig:     akskConfig,
 	}
 
 	createTestContext()
@@ -44,8 +44,7 @@ func TestAKSK(t *testing.T) {
 	}
 }
 
-
-func createTestContext(){
+func createTestContext() {
 	//使用正确sk加密后的签名
 	request1, _ := http.NewRequest("GET", "http://www.demo.com/demo/login?parm1=value1&parm2=", &body{})
 	request1.Header.Set("Authorization-Type", "ak/sk")
