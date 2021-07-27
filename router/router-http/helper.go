@@ -8,15 +8,55 @@
 
 package router_http
 
-type HttpRouterHelper struct {
+import "strings"
 
+var cmds = []string{
+	cmdHost,
+	cmdLocation,
+	cmdHeader,
+	cmdQuery,
+}
+
+type HttpRouterHelper struct {
+	index map[string]int
 }
 
 func NewHttpRouterHelper() *HttpRouterHelper {
-	return &HttpRouterHelper{}
+	index := make(map[string]int)
+	for i, cmd := range cmds {
+		index[cmd] = i
+	}
+	return &HttpRouterHelper{index: index}
+}
+func (h *HttpRouterHelper) cmdType(cmd string) (string, string) {
+	i := strings.Index(cmd, ":")
+	if i < 0 {
+		return cmd, ""
+	}
+	if i == 0 {
+		return strings.ToLower(cmd[1:]), ""
+	}
+
+	return strings.ToLower(cmd[:i]), strings.ToLower(cmd[i+1:])
+
 }
 
 func (h *HttpRouterHelper) Less(i, j string) bool {
-	panic("implement me")
+	cmdI, keyI := h.cmdType(i)
+	cmdJ, keyJ := h.cmdType(j)
+	if cmdI != cmdJ {
+		ii, hasI := h.index[cmdI]
+		jj, hasJ := h.index[cmdJ]
+		if !hasI && !hasJ {
+			return cmdI < cmdJ
+		}
+		if !hasJ {
+			return true
+		}
+		if !hasI {
+			return false
+		}
+		return ii < jj
+	}
+	return keyI < keyJ
 }
-

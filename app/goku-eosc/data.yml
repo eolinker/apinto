@@ -5,13 +5,14 @@ router:
     listen: 8080    # 监听端口
     host:       # 域名列表，满足该监听端口且域名在下列列表中的可进入该路由
       - open.*.eolinker.com
-        www.apibee.com
-        www.apishop.net
+      - www.apibee.com
+      - www.apishop.net
+      - test.abc.com
     rules:      # 规则列表
       - location: "/abc"
-        header:
-          version: "1.0"
-          app: goku
+#        header:
+#          version: "1.0"
+#          app: goku
       - location: "/"
         header:
           user: abc
@@ -30,8 +31,8 @@ router:
         crt: eolinker.crt
     host:
       - www.eolinker.com
-        www.apibee.com
-        www.apishop.net
+      - www.apibee.com
+      - www.apishop.net
     rules:
       - location: "/"
         header:
@@ -50,7 +51,7 @@ service:
     timeout: 30000
     upstream: product-user@upstream
     retry: 2
-    rewrite_url: /abc
+    rewrite_url: /Web/Test/params/print
     auth:
       - basic_1
       - ak/sk_1
@@ -88,7 +89,7 @@ upstream:
     driver: http_proxy
     discovery: static_1@discovery
     desc: "测试环境-用户模块"
-    config: 10.1.1.1 weight=1000;10.1.1.2 weight=10
+    config: 47.95.203.198:8080 weight=1000;10.1.1.2 weight=10
     scheme: http
     type: round-robin
 

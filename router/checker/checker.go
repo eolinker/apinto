@@ -6,57 +6,62 @@ import (
 	"strings"
 )
 
-var(
+var (
 	ErrorUnknownExpression = errors.New("unknown expression")
 )
+
 type Checker interface {
-	Check(v string,has bool) bool
-	Key()string
+	Check(v string, has bool) bool
+	Key() string
 	CheckType() CheckType
-	Value()string
+	Value() string
 }
 
-func Parse(pattern string)(Checker,error)  {
-	i:=strings.Index(pattern,"=")
+func Parse(pattern string) (Checker, error) {
+	i := strings.Index(pattern, "=")
 
-	if i < 0{
-		p:=strings.TrimSpace(pattern)
+	if i < 0 {
+		p := strings.TrimSpace(pattern)
 		switch p {
 		case "*":
-			return newCheckerAll(),nil
+			return newCheckerAll(), nil
 		case "**":
-			return newCheckerExist(),nil
+			return newCheckerExist(), nil
 		case "!":
-			return newCheckerNotExits(),nil
+			return newCheckerNotExits(), nil
 		case "$":
-			return newCheckerNone(),nil
+			return newCheckerNone(), nil
 		default:
-			if len(p) == 0{
-				return newCheckerAll(),nil
+			if len(p) == 0 {
+				return newCheckerAll(), nil
 			}
-			return newCheckerEqual(p),nil
+			return newCheckerEqual(p), nil
 		}
 	}
 
-	tp:= strings.TrimSpace(pattern[:i])
-	v:= strings.TrimSpace(pattern[i+1:])
+	tp := strings.TrimSpace(pattern[:i])
+	v := strings.TrimSpace(pattern[i+1:])
 
-	switch tp{
+	switch tp {
 	case "^":
-		return newCheckerPrefix(v),nil
-	case "":
-		if len(v) == 0{
-			return newCheckerAll(),nil
+		if len(v) > 0 {
+			if v[0] == '*' {
+				return newCheckerSuffix(v[1:]), nil
+			}
 		}
-		return newCheckerEqual(v),nil
+		return newCheckerPrefix(v), nil
+	case "":
+		if len(v) == 0 {
+			return newCheckerAll(), nil
+		}
+		return newCheckerEqual(v), nil
 	case "!":
-		return newCheckerNotEqual(v),nil
+		return newCheckerNotEqual(v), nil
 	case "~":
 		return newCheckerRegexp(v)
 	case "~*":
 		return newCheckerRegexpG(v)
 	}
 
-	return nil,fmt.Errorf("%s:%w",pattern,ErrorUnknownExpression)
+	return nil, fmt.Errorf("%s:%w", pattern, ErrorUnknownExpression)
 }
-

@@ -1,66 +1,71 @@
 package router_http
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/eolinker/goku-eosc/router"
 	"github.com/eolinker/goku-eosc/service"
-	"net/http"
 )
 
 type IMatcher interface {
-	Match(req *http.Request) (service.IService,router.IEndpoint, bool)
+	Match(req *http.Request) (service.IService, router.IEndpoint, bool)
 }
 
 type Matcher struct {
-	r router.IRouter
+	r        router.IRouter
 	services map[string]service.IService
 }
 
-func (m *Matcher) Match(req *http.Request) (service.IService,router.IEndpoint, bool) {
+func (m *Matcher) Match(req *http.Request) (service.IService, router.IEndpoint, bool) {
 
-	sources:=newHttpSources(req)
-	endpoint,has:=m.r.Router(sources)
-	if !has{
-		return nil,nil,false
+	sources := newHttpSources(req)
+	endpoint, has := m.r.Router(sources)
+	if !has {
+		return nil, nil, false
 	}
 
-	s,has:=m.services[endpoint.Target()]
+	s, has := m.services[endpoint.Target()]
 
-	return s,endpoint,has
+	return s, endpoint, has
 }
 
-
-type  HttpSources struct {
-	req * http.Request
+type HttpSources struct {
+	req *http.Request
 }
 
 func newHttpSources(req *http.Request) *HttpSources {
+	index := strings.Index(req.Host, ":")
+	if index > 0 {
+		req.Host = req.Host[:index]
+	}
 	return &HttpSources{req: req}
 }
 
 func (h *HttpSources) Get(cmd string) (string, bool) {
-	if isHost(cmd){
-		return h.req.Host,true
+	if isHost(cmd) {
+		return h.req.Host, true
 	}
 
-	if isLocation(cmd){
-		return h.req.RequestURI,true
+	if isLocation(cmd) {
+		return h.req.RequestURI, true
 	}
-	if hn,yes:=headerName(cmd);yes{
-		if vs,has:=h.req.Header[hn];has {
-			if len(vs) == 0{
-				return "",true
+	if hn, yes := headerName(cmd); yes {
+		if vs, has := h.req.Header[hn]; has {
+			if len(vs) == 0 {
+				return "", true
 			}
-			return vs[0],true
+			return vs[0], true
 		}
 	}
 
-	if qn,yes:=queryName(cmd);yes{
-		if vs,has:=h.req.URL.Query()[qn];has{
-			if len(vs) == 0{
-				return "",true
+	if qn, yes := queryName(cmd); yes {
+		if vs, has := h.req.URL.Query()[qn]; has {
+			if len(vs) == 0 {
+				return "", true
 			}
-			return vs[0],true
+			return vs[0], true
 		}
 	}
-	return "",false
+	return "", false
 }
