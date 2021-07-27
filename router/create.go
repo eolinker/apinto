@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/eolinker/goku-eosc/router/checker"
 	"sort"
+	"strings"
 )
 
 type RulePath struct {
@@ -29,16 +30,16 @@ type ICreateHelper interface {
 
 //ParseRouter parse rule to IRouter
 func ParseRouter(rules []Rule,helper ICreateHelper)(IRouter,error)  {
-	root:=newCreateRoot()
+	root:=newCreateRoot(helper)
 
 	for i:=range rules{
 		r:=rules[i]
-		err:=root.add(r.Path,NewEndpoint(r.Target,r.Path))
+		err:=root.add(r.Path,r.Target)
 		if err!= nil{
 			return nil,err
 		}
 	}
-	return root.toRouter(helper ),nil
+	return root.toRouter( ),nil
 }
 
 type createNodes map[string]*createNode
@@ -87,6 +88,7 @@ type createNodeList struct {
 	ICreateHelper
 }
 
+
 func (cl *createNodeList) Len() int {
 	return len(cl.nodes)
 }
@@ -99,30 +101,51 @@ func (cl *createNodeList) Swap(i, j int) {
 	cl.nodes[i],cl.nodes[j] = cl.nodes[j],cl.nodes[i]
 }
 
+type PathSort struct {
+	path []RulePath
+	helper ICreateHelper
+}
+
+func (p *PathSort) Len() int {
+	return len(p.path)
+}
+
+func (p *PathSort) Less(i, j int) bool {
+	return p.helper.Less(p.path[i].CMD,p.path[j].CMD)
+}
+
+func (p *PathSort) Swap(i, j int) {
+	p.path[i],p.path[j]= p.path[j],p.path[i]
+}
+
 type createRoot struct {
+	helper ICreateHelper
 	nexts createNodes
  }
 
-func newCreateRoot() *createRoot {
+func newCreateRoot(helper ICreateHelper) *createRoot {
 	return &createRoot{
 		nexts: make(createNodes),
+		helper:helper,
 	}
 }
 
-func (cr *createRoot) toRouter(helper ICreateHelper) IRouter {
+func (cr *createRoot) toRouter() IRouter {
 
-	return cr.nexts.toRouter(helper)
+	return cr.nexts.toRouter(cr.helper)
 
 }
-type IEndpoint interface {
+type IEndPoint interface {
 	CMDs()[]string
 	Get(CMD string)(checker.Checker,bool)
 	Target()string
+	EndPoint()string
 }
 type tEndpoint struct {
 	target string
 	cmds []string
 	checkers map[string]checker.Checker
+	endpoint string
 }
 
 func (e *tEndpoint) CMDs() []string {
@@ -137,26 +160,44 @@ func (e *tEndpoint) Get(CMD string) (checker.Checker,bool) {
 func (e *tEndpoint) Target() string {
 	return e.target
 }
+func (e *tEndpoint)EndPoint()string {
+
+	return e.target
+}
 
 func NewEndpoint(target string, path []RulePath) *tEndpoint {
 	cs:=make(map[string]checker.Checker)
 	cmds:=make([]string,0,len(path))
+	build:=strings.Builder{}
+
 	for _,p:=range path{
 		cs[p.CMD] = p.Checker
 		cmds = append(cmds, p.CMD)
+
+		build.WriteString(p.CMD)
+		build.WriteString(p.Checker.Key())
+		build.WriteString("&")
 	}
-	return &tEndpoint{target: target, checkers:cs,cmds:cmds}
+
+	return &tEndpoint{target: target, checkers:cs,cmds:cmds,endpoint:build.String()}
 }
 
-func (e *tEndpoint) Router(source ISource) (endpoint IEndpoint, has bool) {
+func (e *tEndpoint) Router(source ISource) (endpoint IEndPoint, has bool) {
 	return e,e!= nil
 }
 
-func (cr *createRoot) add(path []RulePath,endpoint *tEndpoint) error {
-	if len(path) == 0 || endpoint == nil {
+func (cr *createRoot) add(path []RulePath,target string) error {
+
+	if len(path) == 0 || target == "" {
 		return fmt.Errorf("invalid router")
 	}
-	return cr.nexts.add(path,endpoint)
+
+	cl:= &PathSort{
+		path:path,
+		helper:cr.helper,
+	}
+	sort.Sort(cl)
+	return cr.nexts.add(path,	NewEndpoint(target,path))
 
 }
 type createChecker struct {
@@ -193,7 +234,7 @@ func (cc *createChecker) toRouter(helper ICreateHelper) IRouter {
 func (cc *createChecker) add(path []RulePath,endpoint *tEndpoint) error {
  	if len(path) == 0 {
 		if cc.endpoint != nil{
-			return fmt.Errorf("%s target %s: exist",cc.checker.Key(),endpoint.target)
+			return fmt.Errorf("%s: exist",endpoint.endpoint)
 		}
 		cc.endpoint = endpoint
 		return nil

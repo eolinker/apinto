@@ -10,7 +10,7 @@ type PrefixChecker struct {
 }
 
 func (p *PrefixChecker) Key() string {
-	return fmt.Sprintf("^=%s",p.prefix)
+	return fmt.Sprintf("%s*",p.prefix)
 }
 
 func newCheckerPrefix(prefix string) *PrefixChecker {

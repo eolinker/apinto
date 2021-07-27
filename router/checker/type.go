@@ -6,6 +6,7 @@ const (
 	CheckTypeEqual CheckType = iota
 	CheckTypePrefix
 	CheckTypeSuffix
+	CheckTypeSub
 	CheckTypeNotEqual
 	CheckTypeNone
 	CheckTypeExist
