@@ -53,9 +53,9 @@ service:
     retry: 2
     rewrite_url: /Web/Test/params/print
     auth:
-      - basic_1
-      - ak/sk_1
-      - apikey_1
+      - basic_1@auth
+      - ak/sk_1@auth
+      - apikey_1@auth
   -
     name: member
     driver: http
@@ -80,7 +80,7 @@ upstream:
     driver: http_proxy  # 静态负载
     desc: "生产环境-用户模块"
     discovery: static_1@discovery
-    config: 10.1.1.1 weight=1000;10.1.1.2 weight=10
+    config: 47.95.203.198:8080 weight=1000;10.1.1.2 weight=10
     scheme: http
     type: round-robin
 
