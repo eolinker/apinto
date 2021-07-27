@@ -7,14 +7,12 @@ import (
 	"testing"
 )
 
-var akskConfig = map[string]AKSKConfig{
-	"4c897cfdfca60a59983adc2627942e7e": {
-		AK:     "4c897cfdfca60a59983adc2627942e7e",
-		SK:     "6bb8eee91f88336dd95b88a66709f0a3286ce1abf73453acc4619bc142d64040",
-		Labels: map[string]string{},
-		Expire: 1658740726, //2022-07-25 17:18:46
-	},
-}
+var akskConfig = []AKSKConfig{{
+	AK:     "4c897cfdfca60a59983adc2627942e7e",
+	SK:     "6bb8eee91f88336dd95b88a66709f0a3286ce1abf73453acc4619bc142d64040",
+	Labels: map[string]string{},
+	Expire: 1658740726, //2022-07-25 17:18:46
+}}
 
 var testContexts = make([]*http_context.Context, 0, 10)
 
@@ -23,7 +21,7 @@ func TestAKSK(t *testing.T) {
 		id:             "123",
 		name:           "name",
 		hideCredential: true,
-		akskConfig:     akskConfig,
+		users:          &akskUsers{users: akskConfig},
 	}
 
 	createTestContext()

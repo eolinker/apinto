@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
-	"fmt"
 	http_context "github.com/eolinker/goku-eosc/node/http-context"
 	"math/big"
 	"reflect"
@@ -565,9 +564,9 @@ func (j *jwt) doJWTAuthentication(context *http_context.Context) error {
 	}
 
 	// 从配置中获取jwt凭证配置
-	issAlgorithm := fmt.Sprintf("%s%s", key, token.Header["alg"].(string))
-	jwtSecret, has := j.credentials[issAlgorithm]
-	if !has {
+
+	jwtSecret, err := loadCredential(j.credentials, key, token.Header["alg"].(string))
+	if err != nil {
 		return errors.New("[jwt_auth] No credentials found for given " + keyClaimName)
 	}
 
@@ -598,16 +597,15 @@ func (j *jwt) doJWTAuthentication(context *http_context.Context) error {
 	return nil
 }
 
-func validateCredentials(credentials []JwtCredential) (map[string]*JwtCredential, error) {
-	IssAlgorithmMap := map[string]*JwtCredential{}
+// 从配置中获取jwt凭证配置
+func loadCredential(conf *jwtUsers, key, alg string) (JwtCredential, error) {
 
-	for k, credential := range credentials {
-		s := fmt.Sprintf("%s%s", credential.Iss, credential.Algorithm)
-		if _, has := IssAlgorithmMap[s]; has {
-			return nil, fmt.Errorf("[jwt_auth] the combine of Iss and Algorithm Repeat")
+	for _, credential := range conf.credentials {
+		if credential.Iss == key {
+			if credential.Algorithm == alg {
+				return credential, nil
+			}
 		}
-		IssAlgorithmMap[s] = &credentials[k]
 	}
-
-	return IssAlgorithmMap, nil
+	return JwtCredential{}, errors.New("[jwt_auth] Invalid jwt secret key")
 }

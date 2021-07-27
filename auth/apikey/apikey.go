@@ -14,18 +14,10 @@ import (
 
 //supportTypes 当前驱动支持的authorization type值
 var supportTypes = []string{
-	"apiKey",
-	"apiKey_auth",
-	"apiKey-auth",
-	"apiKeyauth",
 	"apikey",
 	"apikey_auth",
 	"apikey-auth",
 	"apikeyauth",
-	"Apikey",
-	"Apikey_auth",
-	"Apikey-auth",
-	"Apikeyauth",
 }
 
 type apikey struct {
@@ -33,7 +25,7 @@ type apikey struct {
 	name           string
 	driver         string
 	hideCredential bool
-	users          []User
+	users          *apiKeyUsres
 }
 
 //Auth 鉴权处理
@@ -47,7 +39,7 @@ func (a *apikey) Auth(ctx *http_context.Context) error {
 	if err != nil {
 		return err
 	}
-	for _, user := range a.users {
+	for _, user := range a.users.users {
 		if authorization == user.Apikey {
 			if user.Expire == 0 || time.Now().Unix() < user.Expire {
 				return nil
@@ -153,7 +145,9 @@ func (a *apikey) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	if !ok {
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
-	a.users = cfg.User
+	a.users = &apiKeyUsres{
+		users: cfg.User,
+	}
 	a.hideCredential = cfg.HideCredentials
 	return nil
 }

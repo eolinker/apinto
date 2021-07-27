@@ -10,6 +10,10 @@ type Config struct {
 	HideCredentials   bool            `json:"hide_credentials"`
 }
 
+type jwtUsers struct {
+	credentials []JwtCredential
+}
+
 type JwtCredential struct {
 	Iss          string `json:"iss"`
 	Secret       string `json:"secret"`

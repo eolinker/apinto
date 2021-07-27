@@ -4,7 +4,11 @@ type Config struct {
 	Name            string       `json:"name"`
 	Driver          string       `json:"driver"`
 	HideCredentials bool         `json:"hide_credentials"`
-	Aksk            []AKSKConfig `json:"user"`
+	Users           []AKSKConfig `json:"user"`
+}
+
+type akskUsers struct {
+	users []AKSKConfig
 }
 
 type AKSKConfig struct {
