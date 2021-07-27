@@ -9,7 +9,7 @@ import (
 )
 
 type IMatcher interface {
-	Match(req *http.Request) (service.IService, router.IEndpoint, bool)
+	Match(req *http.Request) (service.IService, router.IEndPoint, bool)
 }
 
 type Matcher struct {
@@ -17,7 +17,7 @@ type Matcher struct {
 	services map[string]service.IService
 }
 
-func (m *Matcher) Match(req *http.Request) (service.IService, router.IEndpoint, bool) {
+func (m *Matcher) Match(req *http.Request) (service.IService, router.IEndPoint, bool) {
 
 	sources := newHttpSources(req)
 	endpoint, has := m.r.Router(sources)

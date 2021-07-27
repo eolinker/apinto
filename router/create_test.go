@@ -425,13 +425,13 @@ var tests = []struct {
 			},
 		},
 		want:    []string{"demo2", "demo3"},
-		wantErr: true,
+		wantErr: false,
 	},
 }
 
 func TestParseRouter(t *testing.T) {
 
-	helper := NewTestHelper([]string{"location", "header", "query"})
+	helper := NewTestHelper([]string{"host","location", "header", "query"})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -442,6 +442,10 @@ func TestParseRouter(t *testing.T) {
 			r, err := ParseRouter(rules, helper)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseRouter() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr{
+				t.Logf("ParseRouter() error = %v  ok", err)
 				return
 			}
 
