@@ -26,7 +26,23 @@ type basic struct {
 	name           string
 	driver         string
 	hideCredential bool
-	users          []User
+	users          *basicUsers
+}
+
+type basicUsers struct {
+	users []User
+}
+
+func (b *basicUsers) check(username string, password string) error {
+	for _, u := range b.users {
+		if u.Username == username && u.Password == password {
+			if u.Expire == 0 || time.Now().Unix() < u.Expire {
+				return nil
+			}
+			return auth.ErrorExpireUser
+		}
+	}
+	return auth.ErrorInvalidUser
 }
 
 func (b *basic) Id() string {
@@ -42,7 +58,9 @@ func (b *basic) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) 
 	if !ok {
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
-	b.users = cfg.User
+	b.users = &basicUsers{
+		cfg.User,
+	}
 	b.hideCredential = cfg.HideCredentials
 	return nil
 }
@@ -69,15 +87,7 @@ func (b *basic) Auth(ctx *http_context.Context) error {
 	if err != nil {
 		return err
 	}
-	for _, u := range b.users {
-		if u.Username == username && u.Password == password {
-			if u.Expire == 0 || time.Now().Unix() < u.Expire {
-				return nil
-			}
-			return auth.ErrorExpireUser
-		}
-	}
-	return auth.ErrorInvalidUser
+	return b.users.check(username, password)
 }
 
 //retrieveCredentials 获取basicAuth认证信息
