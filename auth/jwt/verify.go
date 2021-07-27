@@ -512,7 +512,7 @@ func (j *jwt) retrieveJWTToken(context *http_context.Context) (string, error) {
 	const tokenName = "jwt_token"
 	if authorizationHeader := context.Request().GetHeader("Authorization"); authorizationHeader != "" {
 		if j.hideCredentials {
-			delete(context.Proxy().Headers(), "Authorization")
+			context.Proxy().DelHeader("Authorization")
 		}
 		if strings.Contains(authorizationHeader, "bearer ") {
 			authorizationHeader = authorizationHeader[7:]
@@ -522,7 +522,7 @@ func (j *jwt) retrieveJWTToken(context *http_context.Context) (string, error) {
 
 	if value, ok := context.Request().URL().Query()[tokenName]; ok {
 		if j.hideCredentials {
-			delete(context.Proxy().Querys(), tokenName)
+			context.Proxy().Querys().Del(tokenName)
 		}
 		return value[0], nil
 	}
