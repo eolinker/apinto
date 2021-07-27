@@ -125,6 +125,7 @@ func TestJWT(t *testing.T) {
 
 			//自己造formData, query或者body内插入jwt_token
 			httpRequest, _ := http.NewRequest("GET", "/asd/asd/asd?jwt_token="+test.token, requestBody{})
+			httpRequest.Header.Set("Content-Type", "multipart/form-data")
 			ctx := http_context.NewContext(httpRequest, responseWriter{})
 			ctx.RequestOrg.SetHeader("Authorization-Type", "Jwt")
 			err = jwtMoudule.Auth(ctx)
