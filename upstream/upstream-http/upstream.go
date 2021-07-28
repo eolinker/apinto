@@ -111,7 +111,6 @@ func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.ISe
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("addr is:", node.Addr())
 		u := fmt.Sprintf("%s://%s/%s", h.scheme, node.Addr(), path)
 		response, err = http_proxy.DoRequest(ctx, u, serviceDetail.Timeout())
 

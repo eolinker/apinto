@@ -13,6 +13,10 @@ const (
 	name = "round-robin"
 )
 
+var (
+	errNoValidNode = errors.New("no valid node")
+)
+
 //Register 注册round-robin算法
 func Register() {
 	balance.Register(name, newRoundRobinFactory())
@@ -63,13 +67,13 @@ func (r *roundRobin) Next() (discovery.INode, error) {
 		r.set()
 	}
 	if r.size < 1 {
-		return nil, errors.New("no valid node")
+		return nil, errNoValidNode
 	}
 	for {
 		index := r.index
 		r.index = (r.index + 1) % r.size
 		if len(r.downNodes) >= r.size {
-			return nil, errors.New("no valid node")
+			return nil, errNoValidNode
 		}
 
 		if index == 0 {
@@ -77,7 +81,7 @@ func (r *roundRobin) Next() (discovery.INode, error) {
 			if r.cw <= 0 {
 				r.cw = r.maxWeight
 				if r.cw == 0 {
-					return nil, errors.New("no valid node")
+					return nil, errNoValidNode
 				}
 			}
 		}
