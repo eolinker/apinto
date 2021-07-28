@@ -94,8 +94,8 @@
       name: aksk
       label: ak/sk鉴权
       desc: ak/sk鉴权
-#    -
-#      id: eolinker:goku:auth_jwt
-#      name: jwt
-#      label: jwt鉴权
-#      desc: jwt鉴权
+    -
+      id: eolinker:goku:auth_jwt
+      name: jwt
+      label: jwt鉴权
+      desc: jwt鉴权

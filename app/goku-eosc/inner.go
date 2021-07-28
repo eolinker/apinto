@@ -6,6 +6,7 @@ import (
 	"github.com/eolinker/goku-eosc/auth/aksk"
 	"github.com/eolinker/goku-eosc/auth/apikey"
 	"github.com/eolinker/goku-eosc/auth/basic"
+	"github.com/eolinker/goku-eosc/auth/jwt"
 	"github.com/eolinker/goku-eosc/discovery/consul"
 	"github.com/eolinker/goku-eosc/discovery/eureka"
 	"github.com/eolinker/goku-eosc/discovery/nacos"
@@ -34,6 +35,7 @@ func authRegister() {
 	basic.Register()
 	apikey.Register()
 	aksk.Register()
+	jwt.Register()
 }
 
 func discoveryRegister() {
