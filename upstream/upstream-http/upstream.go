@@ -22,6 +22,12 @@ import (
 	"github.com/eolinker/goku-eosc/utils"
 )
 
+var (
+	errorScheme       = errors.New("error scheme.only support http or https")
+	ErrorStructType   = errors.New("error struct type")
+	errorCreateWorker = errors.New("fail to create upstream worker")
+)
+
 //Http org
 type httpUpstream struct {
 	id          string
@@ -46,12 +52,15 @@ func (h *httpUpstream) Start() error {
 //Reset 重新设置http_proxy负载的配置
 func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
-	if !ok {
-		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
+	if !ok || cfg == nil {
+		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), ErrorStructType)
 	}
 	if factory, has := workers[cfg.Discovery]; has {
 		f, ok := factory.(discovery.IDiscovery)
 		if ok {
+			if cfg.Scheme != "http" && cfg.Scheme != "https" {
+				return errorScheme
+			}
 			app, err := f.GetApp(cfg.Config)
 			if err != nil {
 				return err
@@ -75,7 +84,7 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 			return nil
 		}
 	}
-	return errors.New("fail to create upstream worker")
+	return errorCreateWorker
 }
 
 //Stop 停止http_proxy负载，并关闭相应的app
@@ -91,7 +100,6 @@ func (h *httpUpstream) CheckSkill(skill string) bool {
 
 //Send 请求发送，忽略重试
 func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (backend.IResponse, error) {
-
 	var response backend.IResponse
 	var err error
 
