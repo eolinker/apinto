@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -186,7 +187,7 @@ func (s *serviceWorker) Handle(w http.ResponseWriter, r *http.Request, router se
 		return err
 	}
 	ctx.SetBody(response.Body())
-	ctx.SetStatus(200, "200")
+	ctx.SetStatus(response.StatusCode(), strconv.Itoa(response.StatusCode()))
 	return nil
 }
 
