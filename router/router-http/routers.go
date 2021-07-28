@@ -44,9 +44,9 @@ func NewRouters() *Routers {
 	}
 }
 
-//func (rs *Routers) Get(port int) (IRouter, bool) {
+//func (rs *Routers) GetEmployee(port int) (IRouter, bool) {
 //	name := strconv.Itoa(port)
-//	r, has := rs.data.Get(name)
+//	r, has := rs.data.GetEmployee(name)
 //	if !has {
 //		var router IRouter = NewRouter()
 //		rs.data.Set(name, router)

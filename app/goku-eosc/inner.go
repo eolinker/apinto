@@ -1,8 +1,7 @@
 package main
 
 import (
-	store_memory_yaml "github.com/eolinker/eosc/modules/store-memory-yaml"
-	"github.com/eolinker/eosc/modules/store-yaml"
+	"github.com/eolinker/eosc/modules/store-memory"
 	"github.com/eolinker/goku-eosc/auth/aksk"
 	"github.com/eolinker/goku-eosc/auth/apikey"
 	"github.com/eolinker/goku-eosc/auth/basic"
@@ -45,8 +44,7 @@ func discoveryRegister() {
 }
 
 func storeRegister() {
-	store.Register()
-	store_memory_yaml.Register()
+	store_memory.Register()
 }
 
 func upstreamRegister() {
