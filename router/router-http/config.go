@@ -26,6 +26,7 @@ type Config struct {
 	Id     string
 	Name string
 	Hosts  []string
+	Methods []string
 	Target service.IService
 	Rules  []Rule
 }

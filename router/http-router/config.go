@@ -7,10 +7,10 @@ import (
 )
 
 type DriverConfig struct {
-	//ID     string       `json:"id"`
-	//Name   string       `json:"name" yaml:"name"`
+
 	Driver string       `json:"driver" yaml:"driver"`
 	Listen int          `json:"listen" yaml:"listen"`
+	Method []string 	`json:"method" yaml:"method"`
 	Host   []string     `json:"host" yaml:"host"`
 	Rules  []DriverRule `json:"rules" yaml:"rules"`
 

@@ -78,20 +78,33 @@ func getConfig(target service.IService, cf *DriverConfig) *router_http.Config {
 		}
 		rules = append(rules, rr)
 	}
+	hosts := cf.Host
+	if len(hosts) == 0{
+		hosts = []string{"*"}
+	}
+	methods:= cf.Method
+	if len(methods) == 0{
+		methods = []string{"*"}
+	}
 	return &router_http.Config{
 		//Id:     cf.ID,
 		//Name:   cf.Name,
-		Hosts:  cf.Host,
+		Methods: methods,
+		Hosts:  hosts,
 		Target: target,
 		Rules:  rules,
 	}
 
 }
 func NewRouter(id, name string, c *DriverConfig, target service.IService) *Router {
+	conf:= getConfig(target, c)
+	conf.Id = id
+	conf.Name = name
+
 	return &Router{
 		id:   id,
 		name: name,
 		port: c.Listen,
-		conf: getConfig(target, c),
+		conf: conf,
 	}
 }

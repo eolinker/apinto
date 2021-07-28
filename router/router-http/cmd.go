@@ -19,8 +19,12 @@ const (
 	cmdHeader   = "HEADER"
 	cmdQuery    = "QUERY"
 	cmdHost     = "HOST"
+	cmdMethod   = "METHOD"
 )
 
+func toMethod()string  {
+	return cmdMethod
+}
 func toLocation() string {
 	return cmdLocation
 }
@@ -54,3 +58,6 @@ func isHost(cmd string) bool {
 	return cmd == cmdHost
 }
 
+func isMethod(cmd string)bool  {
+	return cmd == cmdMethod
+}

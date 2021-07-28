@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"strings"
 
 	http_context "github.com/eolinker/goku-eosc/node/http-context"
 )
@@ -38,6 +39,7 @@ func CheckAuthorizationType(supportTypes []string, authType string) error {
 	if authType == "" {
 		return ErrorInvalidType
 	}
+	authType = strings.ToLower(authType)
 	for _, t := range supportTypes {
 		if t == authType {
 			return nil
