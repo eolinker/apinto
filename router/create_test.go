@@ -14,39 +14,6 @@ func (t testSource) Get(cmd string) (string, bool) {
 	return v, has
 }
 
-var (
-	testSourcesList = []testSource{
-		{
-			"location": "/abc",
-			"header:a": "10",
-		},
-		{
-			"location": "/abc",
-			"header:a": "1",
-		},
-		{
-			"location":    "/abc",
-			"header:a":    "1",
-			"query:name":  "liu",
-			"query:phone": "13312313412",
-		},
-		{
-			"location":    "/abc",
-			"header:a":    "1",
-			"query:name":  "liu",
-			"query:phone": "13312313412",
-			"query:mail":  "demo@eolinker.com",
-		},
-		{
-			"location":    "/abc",
-			"header:a":    "1",
-			"query:name":  "liu",
-			"query:phone": "13312313412",
-			"query:mail":  "demoabc",
-		},
-	}
-)
-
 type TestHelper struct {
 	index map[string]int
 }
@@ -425,13 +392,182 @@ var tests = []struct {
 			},
 		},
 		want:    []string{"demo2", "demo3"},
+		wantErr: true,
+	},
+	{
+		name: "复杂检测1",
+		testCase: []testSource{
+			{
+				"host":       "a.abc.com",
+				"location":   "",
+				"header:a":   "1",
+				"query:name": "liu",
+			},
+			{
+				"host":       "a.abc.com",
+				"location":   "",
+				"header:a":   "10",
+				"query:name": "liu",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"host = a.abc.com ", "location $", "header:a = 10", "query:name = chen"},
+				target: "demo1",
+			},
+			{
+				paths:  []string{"host = a.abc.com ", "location $", "header:a != 10", "query:name = liu"},
+				target: "demo2",
+			},
+			{
+				paths:  []string{"host ^= a.abc", "location $", "header:a != 10", "query:name = chen"},
+				target: "demo3",
+			},
+			{
+				paths:  []string{"host ^= a.abc", "location $", "header:a = 10", "query:name = liu"},
+				target: "demo4",
+			},
+		},
+		want:    []string{"demo2", "demo4"},
+		wantErr: false,
+	},
+	{
+		name: "检测匹配路径不存在的情况",
+		testCase: []testSource{
+			{
+				"host":       "a.abc.com",
+				"header:a":   "1",
+				"query:name": "wu",
+			},
+			{
+				"host":       "a.abc.com",
+				"header:a":   "10",
+				"query:name": "wu",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"host = a.abc.com ", "header:a = 10", "query:name = chen"},
+				target: "demo1",
+			},
+			{
+				paths:  []string{"host = a.abc.com ", "header:a != 10", "query:name = liu"},
+				target: "demo2",
+			},
+			{
+				paths:  []string{"host ^= a.abc", "header:a != 10", "query:name = chen"},
+				target: "demo3",
+			},
+			{
+				paths:  []string{"host ^= a.abc", "header:a = 10", "query:name = liu"},
+				target: "demo4",
+			},
+		},
+		want:    []string{"", ""},
+		wantErr: false,
+	},
+	{
+		name: "测试任意",
+		testCase: []testSource{
+			{
+				"host":       "a.abc.com",
+				"header:a":   "1",
+				"header:b":   "bbb",
+				"query:name": "chen",
+			},
+			{
+				"host":       "a.abc.com",
+				"header:a":   "10",
+				"header:b":   "ccc",
+				"query:name": "liu",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"host = a.abc.com ", "header:b = ", "header:a = 10", "query:name = chen"},
+				target: "demo1",
+			},
+			{
+				paths:  []string{"host = a.abc.com ", "header:b =* ", "header:a != 10", "query:name = liu"},
+				target: "demo2",
+			},
+			{
+				paths:  []string{"host ^= a.abc", "header:b =", "header:a != 10", "query:name = chen"},
+				target: "demo3",
+			},
+			{
+				paths:  []string{"host ^= a.abc", "header:b * ", "header:a = 10", "query:name = liu"},
+				target: "demo4",
+			},
+		},
+		want:    []string{"demo3", "demo4"},
+		wantErr: false,
+	},
+	{
+		name: "检测同时匹配多个优先",
+		testCase: []testSource{
+			{
+				"host":       "a.abc.com",
+				"header:a":   "aaa",
+				"header:b":   "bbb",
+				"header:c":   "ccc",
+				"query:name": "chen",
+			},
+			{
+				"host":       "a.abc.com",
+				"header:a":   "aaa",
+				"header:b":   "bbb",
+				"query:name": "chen",
+			},
+			{
+				"host":       "a.abc.com",
+				"header:a":   "aaa",
+				"query:name": "chen",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"host = a.abc.com", "header:a = aaa", "query:name = chen"},
+				target: "demo1",
+			},
+			{
+				paths:  []string{"host = a.abc.com ", "query:name = chen", "header:b = bbb ", "header:a = aaa"},
+				target: "demo2",
+			},
+			{
+				paths:  []string{"host = a.abc.com ", "header:c = ccc ", "query:name = chen", "header:b = bbb", "header:a = aaa"},
+				target: "demo3",
+			},
+			{
+				paths:  []string{"host = a.abc.com", "header:a = aaa", "query:name = chen", "query:xxx = chen"},
+				target: "demo4",
+			},
+		},
+		want:    []string{"demo3", "demo2", "demo1"},
+		wantErr: false,
+	},
+	{
+		name: "检测路径上有重复指标",
+		testCase: []testSource{
+			{
+				"host":       "a.abc.com",
+				"query:name": "chen",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"host = a.abc.com", "host = a.abc.com", "query:name = chen"},
+				target: "demo1",
+			},
+		},
+		want:    []string{"demo1"},
 		wantErr: false,
 	},
 }
 
 func TestParseRouter(t *testing.T) {
 
-	helper := NewTestHelper([]string{"host","location", "header", "query"})
+	helper := NewTestHelper([]string{"host", "location", "header", "query"})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -444,7 +580,7 @@ func TestParseRouter(t *testing.T) {
 				t.Errorf("ParseRouter() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if tt.wantErr{
+			if tt.wantErr {
 				t.Logf("ParseRouter() error = %v  ok", err)
 				return
 			}
