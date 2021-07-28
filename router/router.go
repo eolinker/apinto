@@ -1,73 +1,76 @@
 package router
 
 import (
-	"fmt"
-	"net/http"
-	"net/url"
-	"reflect"
-
-	"github.com/eolinker/eosc"
+	"github.com/eolinker/goku-eosc/router/checker"
 )
 
-type IRouterHttpFactory interface {
-}
-
-type IRouterManager interface {
-	Delete(port int, id string) error
-	StartAllServer()
-	ShutDownAllServer()
-	StartServer(port int) error
-	ShutDownServer(port int) error
-}
-
-type IRouterHandler interface {
-	Match(request *http.Request) (string, bool)
+type ISource interface {
+	Get(cmd string)(string,bool)
 }
 
 type IRouter interface {
-	Delete(id string) error
-	Serve() error
-	ShutDown() error
+	Router(source ISource)(endpoint IEndPoint,has bool)
 }
 
-type IRouterRule interface {
-	Location() string
-	Host() string
-	Header() map[string]string
-	Query() url.Values
-}
+type Routers []IRouter
 
-func NewRouter(name string) *Router {
-	return &Router{
-		id:   fmt.Sprintf("%s:%s_%s:%s", group, profession, name, version),
-		name: name,
+func (rs Routers) Router(source ISource) (IEndPoint,  bool) {
+	for _,r:=range rs{
+		if target,has:=r.Router(source);has{
+			return target,has
+		}
 	}
+	return nil, false
 }
 
-//Router 路由模块
-type Router struct {
-	id    string
-	name  string
-	label string
+type Node struct {
+	cmd string
+
+	equals map[string]IRouter
+
+	checkers []checker.Checker
+	nodes []IRouter
+
 }
 
-func (r *Router) ConfigType() reflect.Type {
-	panic("implement me")
+
+
+func (n *Node) Router(source ISource) (IEndPoint,  bool) {
+
+	v,has:=source.Get(n.cmd)
+
+	if has{
+		if child,ok:= n.equals[v];ok{
+			if target,ok:=child.Router(source);ok{
+				return target,true
+			}
+		}
+	}
+
+	for i,c:=range n.checkers{
+		if c.Check(v,has){
+			if target,ok:=n.nodes[i].Router(source);ok{
+				return target,true
+			}
+		}
+	}
+
+	return nil,false
+
 }
 
-func (r *Router) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
-	panic("implement me")
+type NodeShut struct {
+	next     IRouter
+	endpoint IEndPoint
 }
 
-func (r *Router) Name() string {
-	return r.name
+func (n *NodeShut) Router(source ISource) (IEndPoint,   bool) {
+	if e ,has:=n.next.Router(source);has{
+		return e,has
+	}
+	return n.endpoint,true
 }
 
-func (r *Router) Check(config string) error {
-	return nil
-	panic("implement me")
-}
-
-func (r *Router) Render() eosc.Render {
-	panic("implement me")
+func NewNodeShut(next IRouter, endpoint IEndPoint) IRouter {
+	return &NodeShut{next: next, endpoint: endpoint}
 }

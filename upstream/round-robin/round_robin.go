@@ -69,7 +69,7 @@ func (r *roundRobin) Next() (discovery.INode, error) {
 		if len(r.downNodes) >= r.size {
 			return nil, errors.New("no valid node")
 		}
-		r.index = (r.index + 1) % r.size
+
 		if r.index == 0 {
 			r.cw = r.cw - r.gcdWeight
 			if r.cw <= 0 {
@@ -86,6 +86,7 @@ func (r *roundRobin) Next() (discovery.INode, error) {
 			}
 			return r.nodes[r.index], nil
 		}
+		r.index = (r.index + 1) % r.size
 	}
 }
 

@@ -1,12 +1,7 @@
 package service_http
 
 import (
-	"errors"
-	"fmt"
 	"reflect"
-	"time"
-
-	"github.com/eolinker/goku-eosc/upstream"
 
 	"github.com/eolinker/eosc"
 )
@@ -33,39 +28,16 @@ func (d *driver) ConfigType() reflect.Type {
 
 //Create 创建service_http驱动的实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
-	cfg, ok := v.(*Config)
-	if !ok {
-		return nil, fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(v), ErrorStructType)
+
+	w := &serviceWorker{
+		id:     id,
+		name:   name,
+		driver: driverName,
 	}
-	if work, has := workers[cfg.Upstream]; has {
-		w := &serviceWorker{
-			id:         id,
-			name:       name,
-			driver:     cfg.Driver,
-			desc:       cfg.Desc,
-			timeout:    time.Duration(cfg.Timeout) * time.Millisecond,
-			rewriteURL: cfg.RewriteURL,
-			retry:      cfg.Retry,
-			scheme:     cfg.Scheme,
-			upstream:   work.(upstream.IUpstream),
-		}
-		return w, nil
+	err := w.Reset(v, workers)
+	if err != nil {
+		return nil, err
 	}
 
-	if work, has := workers[eosc.RequireId(fmt.Sprintf("%s@%s", cfg.Upstream, "upstream"))]; has {
-		w := &serviceWorker{
-			id:         id,
-			name:       name,
-			driver:     cfg.Driver,
-			desc:       cfg.Desc,
-			timeout:    time.Duration(cfg.Timeout) * time.Millisecond,
-			rewriteURL: cfg.RewriteURL,
-			retry:      cfg.Retry,
-			scheme:     cfg.Scheme,
-			upstream:   work.(upstream.IUpstream),
-		}
-		return w, nil
-	}
-
-	return nil, errors.New("fail to create serviceWorker")
+	return w, nil
 }

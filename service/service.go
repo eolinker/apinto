@@ -1,8 +1,8 @@
 package service
 
 import (
+	"github.com/eolinker/goku-eosc/router/checker"
 	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -13,15 +13,16 @@ func CheckSkill(skill string) bool {
 
 //IService github.com/eolinker/goku-eosc/service.service.IService
 type IService interface {
-	Handle(w http.ResponseWriter, r *http.Request, router IRouterRule) error
+	Handle(w http.ResponseWriter, r *http.Request, router IRouterEndpoint) error
 }
 
-//IRouterRule 实现了返回路由规则信息方法的接口，如返回location、Host、Header、Query
-type IRouterRule interface {
-	Location() string
-	Host() string
-	Header() map[string]string
-	Query() url.Values
+//IRouterEndpoint 实现了返回路由规则信息方法的接口，如返回location、Host、Header、Query
+type IRouterEndpoint interface {
+	Location()( checker.Checker,bool)
+	Header(name string)( checker.Checker,bool)
+	Query(name string)(checker.Checker,bool)
+	Headers()[]string
+	Queries()[]string
 }
 
 //IServiceDetail 实现了返回服务信息方法的接口，如返回服务名，服务描述，重试次数间等..

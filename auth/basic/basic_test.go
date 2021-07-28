@@ -29,9 +29,10 @@ var (
 		},
 	}
 	cfg = &Config{
-		Name:   "basic_test",
-		Driver: "basic",
-		User:   users,
+		Name:            "basic_test",
+		Driver:          "basic",
+		HideCredentials: true,
+		User:            users,
 	}
 )
 

@@ -7,7 +7,7 @@ import (
 
 //Register 注册eureka驱动工厂
 func Register() {
-	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:discover_eureka", NewFactory())
+	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:discovery_eureka", NewFactory())
 }
 
 type factory struct {

@@ -13,14 +13,13 @@ import (
 var supportTypes = []string{
 	"ak/sk",
 	"aksk",
-	"AK/SK",
-	"AKSK",
 }
 
 type aksk struct {
-	id         string
-	name       string
-	akskConfig map[string]AKSKConfig
+	id             string
+	name           string
+	hideCredential bool
+	users          *akskUsers
 }
 
 func (a *aksk) Id() string {
@@ -37,11 +36,10 @@ func (a *aksk) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) e
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
 
-	for _, c := range config.akskConfig {
-		if _, has := a.akskConfig[c.AK]; has{
-			return fmt.Errorf("[error]Config Repeat. Repeat Key: %s", c.AK)
-		}
-		a.akskConfig[c.AK] = c
+	a.hideCredential = config.HideCredentials
+
+	a.users = &akskUsers{
+		users: config.Users,
 	}
 
 	return nil
@@ -63,27 +61,27 @@ func (a *aksk) Auth(context *http_context.Context) error {
 	//解析Authorization字符串
 	encType, ak, signHeaders, signature, err := parseAuthorization(context)
 	//判断配置中是否存在该ak
-	conf, has := a.akskConfig[ak]
-	if !has {
-		return errors.New("[ak/sk_auth] Invalid authorization")
-	}
-	// 判断鉴权是否已过期
-	if conf.Expire != 0 && time.Now().Unix() > conf.Expire {
-		return errors.New("[ak/sk_auth] authorization expired")
-	}
+	for _, user := range a.users.users {
+		if ak == user.AK {
+			switch encType {
+			case "SDK-HMAC-SHA256", "HMAC-SHA256":
+				{
+					//结合context内的信息与配置的sk生成新的签名，与context携带的签名进行对比
+					toSign := buildToSign(context, encType, signHeaders)
+					s := hmaxBySHA256(user.SK, toSign)
+					if s == signature {
+						// 判断鉴权是否已过期
+						if user.Expire != 0 && time.Now().Unix() > user.Expire {
+							return errors.New("[ak/sk_auth] authorization expired")
+						}
 
-	switch encType {
-	case "SDK-HMAC-SHA256", "HMAC-SHA256":
-		{
-			//结合context内的信息与配置的sk生成新的签名，与context携带的签名进行对比
-			toSign := buildToSign(context, encType, signHeaders)
-			s := hmaxBySHA256(conf.SK, toSign)
-			if s == signature {
-				//若隐藏证书信息
-				if conf.HideCredential {
-					context.Proxy().DelHeader(auth.Authorization)
+						//若隐藏证书信息
+						if a.hideCredential {
+							context.Proxy().DelHeader(auth.Authorization)
+						}
+						return nil
+					}
 				}
-				return nil
 			}
 		}
 	}
