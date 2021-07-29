@@ -31,6 +31,7 @@ type INode interface {
 	ID() string
 	IP() string
 	Port() int
+	Scheme() string
 	Addr() string
 	Status() NodeStatus
 	Up()
