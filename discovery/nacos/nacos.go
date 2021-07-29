@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/eolinker/eosc"
@@ -27,6 +28,7 @@ type nacos struct {
 	services   discovery.IServices
 	context    context.Context
 	cancelFunc context.CancelFunc
+	locker     sync.RWMutex
 }
 
 //Id 返回 worker id
@@ -79,13 +81,16 @@ func (n *nacos) Start() error {
 
 //Reset 重置nacos实例配置
 func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+
 	cfg, ok := conf.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
+	n.locker.Lock()
 	n.address = cfg.Config.Address
 	n.params = cfg.Config.Params
 	n.labels = cfg.Labels
+	n.locker.Unlock()
 	return nil
 }
 
@@ -114,7 +119,6 @@ func (n *nacos) GetApp(serviceName string) (discovery.IApp, error) {
 	for _, n := range tmp.Nodes() {
 		nodesMap[n.ID()] = n
 	}
-
 	app := discovery.NewApp(nil, n, n.getParams(serviceName), nodesMap)
 	//将生成的app存入目标服务的app列表
 	n.services.Set(serviceName, app.ID(), app)

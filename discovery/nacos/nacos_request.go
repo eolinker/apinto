@@ -61,6 +61,8 @@ func SendRequest(method string, request string, query map[string]string, body ma
 
 // get nacos query parameters
 func (n *nacos) getParams(serviceName string) map[string]string {
+	n.locker.RLock()
+	defer n.locker.RUnlock()
 	query := n.params
 	query["serviceName"] = serviceName
 	if _, ok := query["healthyOnly"]; !ok {
