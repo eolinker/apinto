@@ -1,5 +1,11 @@
 package discovery
 
+import "errors"
+
+var (
+	ErrDiscoveryDown = errors.New("discovery down")
+)
+
 //CheckSkill 检查目标技能是否符合
 func CheckSkill(skill string) bool {
 	return skill == "github.com/eolinker/goku-eosc/discovery.discovery.IDiscovery"
