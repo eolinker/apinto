@@ -15,7 +15,7 @@ type IApp interface {
 	IAttributes
 	ID() string
 	Nodes() []INode
-	Reset([]INode)
+	Reset(nodes Nodes)
 	NodeError(id string) error
 	Close() error
 }
