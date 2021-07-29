@@ -111,7 +111,11 @@ func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.ISe
 		if err != nil {
 			return nil, err
 		}
-		u := fmt.Sprintf("%s://%s/%s", h.scheme, node.Addr(), path)
+		scheme := node.Scheme()
+		if scheme != "http" && scheme != "https" {
+			scheme = h.scheme
+		}
+		u := fmt.Sprintf("%s://%s/%s", scheme, node.Addr(), path)
 		response, err = http_proxy.DoRequest(ctx, u, serviceDetail.Timeout())
 
 		if err != nil {

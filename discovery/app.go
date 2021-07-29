@@ -44,7 +44,10 @@ func (s *app) GetAttrByName(name string) (string, bool) {
 }
 
 //NewApp 创建服务发现app
-func NewApp(checker IHealthChecker, container IAppContainer, attrs Attrs, nodes map[string]INode) IApp {
+func NewApp(checker IHealthChecker, container IAppContainer, attrs Attrs, nodes Nodes) IApp {
+	if attrs == nil {
+		attrs = make(Attrs)
+	}
 	return &app{
 		attrs:         attrs,
 		nodes:         nodes,

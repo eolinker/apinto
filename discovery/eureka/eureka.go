@@ -144,7 +144,7 @@ func (e *eureka) GetNodeList(serviceName string) (map[string]discovery.INode, er
 			//for k, v := range ins.Metadata {
 			//	label[k] = v
 			//}
-			node := discovery.NewNode(label, ins.InstanceID, ins.IPAddr, port)
+			node := discovery.NewNode(label, ins.InstanceID, ins.IPAddr, port, "")
 			if _, ok := nodes[node.ID()]; ok {
 				continue
 			}

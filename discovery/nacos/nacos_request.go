@@ -2,10 +2,8 @@ package nacos
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 // nacos 实例结构
@@ -26,47 +24,20 @@ func MapToJson(param map[string]interface{}) string {
 	return dataString
 }
 
-func SendRequest(method string, request string, query map[string]string, body map[string]string) (*http.Response, error) {
+func SendRequest(uri string, serviceName string) (*http.Response, error) {
 	// 构造url参数字符串
 	paramsUrl := url.Values{}
-	for key, value := range query {
-		paramsUrl.Add(key, value)
-	}
-	// 更新url
-	paramsUrlString := paramsUrl.Encode()
-	if paramsUrlString != "" {
-		request = request + "?" + paramsUrlString
-	}
-	var bodyReader io.Reader
-	// 构造urlencoded请求体
-	if method == http.MethodPost || method == http.MethodPut {
-		bodyUrl := url.Values{}
-		for key, value := range body {
-			bodyUrl.Add(key, value)
-		}
-		bodyUrlString := bodyUrl.Encode()
-		bodyReader = strings.NewReader(bodyUrlString)
-	}
-	req, err := http.NewRequest(method, request, bodyReader)
+	paramsUrl.Set("serviceName", serviceName)
+	paramsUrl.Set("healthyOnly", "true")
+
+	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, err
 	}
-	httpClient := &http.Client{}
-	response, err := httpClient.Do(req)
+	req.URL.RawQuery = paramsUrl.Encode()
+	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	return response, nil
-}
-
-// get nacos query parameters
-func (n *nacos) getParams(serviceName string) map[string]string {
-	n.locker.RLock()
-	defer n.locker.RUnlock()
-	query := n.params
-	query["serviceName"] = serviceName
-	if _, ok := query["healthyOnly"]; !ok {
-		query["healthyOnly"] = "true"
-	}
-	return query
 }

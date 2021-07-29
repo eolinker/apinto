@@ -24,17 +24,17 @@ func (s *services) get(serviceName string) (eosc.IUntyped, bool) {
 	return apps, ok
 }
 
-func (s *services) Get(serviceName string) (IApp, bool) {
-	if apps, ok := s.get(serviceName); ok {
-		for _, r := range apps.List() {
-			v, ok := r.(IApp)
-			if ok {
-				return v, true
-			}
-		}
-	}
-	return nil, false
-}
+//func (s *services) Get(serviceName string) (IApp, bool) {
+//	if apps, ok := s.get(serviceName); ok {
+//		for _, r := range apps.List() {
+//			v, ok := r.(IApp)
+//			if ok {
+//				return v, true
+//			}
+//		}
+//	}
+//	return nil, false
+//}
 
 //Set 将app存入其对应服务的节点列表
 func (s *services) Set(serviceName string, id string, app IApp) error {
@@ -50,15 +50,18 @@ func (s *services) Set(serviceName string, id string, app IApp) error {
 }
 
 //Remove 将目标app从其对应服务的app列表中删除，传入值为目标app的id
-func (s *services) Remove(appID string) error {
+func (s *services) Remove(appID string) (string, int) {
 	v, has := s.appNameOfID.Del(appID)
 	if has {
-		apps, ok := s.get(v.(string))
+		name := v.(string)
+		apps, ok := s.get(name)
 		if ok {
 			apps.Del(appID)
+			return name, apps.Count()
 		}
+		return name, 0
 	}
-	return nil
+	return "", 0
 }
 
 //Update 更新目标服务所有app的节点列表
@@ -82,8 +85,8 @@ func (s *services) AppKeys() []string {
 //IServices 服务app集合接口
 type IServices interface {
 	Set(serviceName string, id string, app IApp) error
-	Remove(id string) error
-	Update(serviceName string, nodes []INode) error
+	Remove(id string) (string, int)
+	Update(serviceName string, nodes Nodes) error
 	AppKeys() []string
-	Get(serviceName string) (IApp, bool)
+	//Get(serviceName string) (IApp, bool)
 }

@@ -1,12 +1,13 @@
 package consul
 
 import (
-	"github.com/eolinker/eosc/log"
-	"github.com/eolinker/goku-eosc/discovery"
-	"github.com/hashicorp/consul/api"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/eolinker/eosc/log"
+	"github.com/eolinker/goku-eosc/discovery"
+	"github.com/hashicorp/consul/api"
 )
 
 //getConsulClient 创建并返回consul客户端
@@ -48,7 +49,7 @@ func getNodesFromClient(client *api.Client, service string) []discovery.INode {
 			}
 		}
 
-		newNode := discovery.NewNode(serviceEntry.Service.Meta, serviceEntry.Node.ID, ip, port)
+		newNode := discovery.NewNode(serviceEntry.Service.Meta, serviceEntry.Node.ID, ip, port, "")
 		nodes = append(nodes, newNode)
 	}
 
