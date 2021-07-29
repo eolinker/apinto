@@ -1,6 +1,8 @@
 package discovery
 
-import "github.com/eolinker/eosc"
+import (
+	"github.com/eolinker/eosc"
+)
 
 type services struct {
 	apps        eosc.IUntyped
@@ -20,6 +22,18 @@ func (s *services) get(serviceName string) (eosc.IUntyped, bool) {
 	}
 	apps, ok := v.(eosc.IUntyped)
 	return apps, ok
+}
+
+func (s *services) Get(serviceName string) (IApp, bool) {
+	if apps, ok := s.get(serviceName); ok {
+		for _, r := range apps.List() {
+			v, ok := r.(IApp)
+			if ok {
+				return v, true
+			}
+		}
+	}
+	return nil, false
 }
 
 //Set 将app存入其对应服务的节点列表
@@ -71,4 +85,5 @@ type IServices interface {
 	Remove(id string) error
 	Update(serviceName string, nodes []INode) error
 	AppKeys() []string
+	Get(serviceName string) (IApp, bool)
 }

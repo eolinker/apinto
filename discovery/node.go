@@ -5,8 +5,8 @@ import (
 )
 
 //NewNode 创建新节点
-func NewNode(labels map[string]string, id string, ip string, port int) INode {
-	return &node{labels: labels, id: id, ip: ip, port: port, status: Running}
+func NewNode(labels map[string]string, id string, ip string, port int, scheme string) INode {
+	return &node{labels: labels, id: id, ip: ip, port: port, status: Running, scheme: scheme}
 }
 
 type node struct {
@@ -14,6 +14,7 @@ type node struct {
 	id     string
 	ip     string
 	port   int
+	scheme string
 	status NodeStatus
 }
 
@@ -51,6 +52,10 @@ func (n *node) Status() NodeStatus {
 //Labels 返回节点标签集合
 func (n *node) Labels() map[string]string {
 	return n.labels
+}
+
+func (n *node) Scheme() string {
+	return n.scheme
 }
 
 //Addr 返回节点地址
