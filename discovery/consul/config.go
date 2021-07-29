@@ -4,6 +4,7 @@ package consul
 type Config struct {
 	Name   string            `json:"name"`
 	Driver string            `json:"driver"`
+	Scheme string            `json:"scheme"`
 	Labels map[string]string `json:"labels"`
 	Config AccessConfig      `json:"config"`
 }

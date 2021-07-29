@@ -12,14 +12,14 @@ import (
 )
 
 type consul struct {
-	id         string
-	name       string
-	address    []string
-	params     map[string]string
-	labels     map[string]string
-	services   discovery.IServices
-	context    context.Context
-	cancelFunc context.CancelFunc
+	id           string
+	name         string
+	scheme       string
+	accessConfig *AccessConfig
+	labels       map[string]string
+	services     discovery.IServices
+	context      context.Context
+	cancelFunc   context.CancelFunc
 }
 
 //Start 开始服务发现
@@ -71,8 +71,10 @@ func (c *consul) Reset(config interface{}, workers map[eosc.RequireId]interface{
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(config))
 	}
 
-	c.address = workerConfig.Config.Address
-	c.params = workerConfig.Config.Params
+	c.accessConfig = &AccessConfig{
+		Address: workerConfig.Config.Address,
+		Params:  workerConfig.Config.Params,
+	}
 	c.labels = workerConfig.Labels
 
 	return nil
@@ -124,12 +126,12 @@ func (c *consul) CheckSkill(skill string) bool {
 func (c *consul) getNodes(service string) (map[string]discovery.INode, error) {
 	nodeSet := make(map[string]discovery.INode)
 
-	for _, addr := range c.address {
+	for _, addr := range c.accessConfig.Address {
 		if !validAddr(addr) {
 			log.Errorf("address:%s is invalid", addr)
 			continue
 		}
-		client, err := getConsulClient(addr, c.params)
+		client, err := getConsulClient(addr, c.accessConfig.Params)
 		if err != nil {
 			log.Error(err)
 			continue
