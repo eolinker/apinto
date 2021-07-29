@@ -41,10 +41,6 @@
       name: http_proxy
       label: http转发负载
       desc: http转发负载
-    - id: eolinker:goku:upstream_http_proxy_anonymous
-      name: http_proxy_anonymous
-      label: http匿名转发负载
-      desc: http匿名转发负载（不依赖discovery模块）
 -
   name: discovery
   label: 注册中心

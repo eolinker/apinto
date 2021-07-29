@@ -1,0 +1,21 @@
+service:
+  -
+    name: guest
+    driver: http
+    desc: "游客服务"
+    timeout: 30000
+    upstream: product-user@upstream
+    retry: 2
+    rewrite_url: /Web/Test/params/print
+    auth:
+      - basic_1@auth
+      - ak/sk_1@auth
+      - apikey_1@auth
+  -
+    name: member
+    driver: http
+    desc: "会员服务"
+    timeout: 30000
+    retry: 2
+    upstream: test-user@upstream
+    rewrite_url: /abc

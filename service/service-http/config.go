@@ -18,7 +18,7 @@ type Config struct {
 	RewriteURL  string           `json:"rewrite_url"`
 	ProxyMethod string           `json:"proxy_method"`
 	Auth        []eosc.RequireId `json:"auth" skill:"github.com/eolinker/goku-eosc/auth.auth.IAuth"`
-	Upstream    eosc.RequireId   `json:"upstream" skill:"github.com/eolinker/goku-eosc/upstream.upstream.IUpstream"`
+	Upstream    eosc.RequireId   `json:"upstream" skill:"github.com/eolinker/goku-eosc/upstream.upstream.IUpstream" require:"false"`
 }
 
 var validMethods = []string{

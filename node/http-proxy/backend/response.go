@@ -8,4 +8,5 @@ type IResponse interface {
 	StatusCode() int
 	Header() http.Header
 	Proto() string
+	Status() string
 }

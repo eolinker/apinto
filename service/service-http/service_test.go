@@ -43,8 +43,6 @@ func TestService(t *testing.T) {
 	round_robin.Register()
 
 	staticConfig := &upstream_http.Config{
-		Name:      "product-user",
-		Driver:    "http_proxy",
 		Desc:      "生产环境-用户模块",
 		Scheme:    "http",
 		Type:      "round-robin",
@@ -112,12 +110,7 @@ func TestService(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	serv.Handle(&response{}, r, &routerDemo{
-		location: "/product",
-		host:     "localhost:8080",
-		header:   nil,
-		query:    nil,
-	})
+
 }
 
 func getWorker(factory eosc.IProfessionDriverFactory, cfg interface{}, profession string, name string, label string, desc string, params map[string]string, workerID, workerName string, worker map[eosc.RequireId]interface{}) (eosc.IWorker, error) {

@@ -14,7 +14,6 @@ import (
 	http_router "github.com/eolinker/goku-eosc/router/http-router"
 	service_http "github.com/eolinker/goku-eosc/service/service-http"
 	upstream_http "github.com/eolinker/goku-eosc/upstream/upstream-http"
-	upstream_http_anonymous "github.com/eolinker/goku-eosc/upstream/upstream-http_anonymous"
 )
 
 func Register() {
@@ -52,7 +51,6 @@ func storeRegister() {
 
 func upstreamRegister() {
 	upstream_http.Register()
-	upstream_http_anonymous.Register()
 }
 
 func serviceRegister() {

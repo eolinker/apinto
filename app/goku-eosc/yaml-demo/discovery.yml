@@ -1,0 +1,34 @@
+discovery:
+  -
+    name: nacos_1
+    driver: nacos
+    labels:
+      scheme: http
+    config:
+      address:
+        - 127.0.0.1:8080
+        - 10.1.1.1:8080
+      params:
+        username: xxx
+        password: xxx
+    health:
+      protocol: http
+      method: GET
+      url: xxx
+      success_code: 200
+      timeout: 3000
+      period: 30
+    health_on: true
+  -
+    name: static_1
+    driver: static
+    labels:
+      scheme: http
+    health:
+      protocol: http
+      method: GET
+      url: xxx
+      success_code: 200
+      timeout: 3000
+      period: 30
+    health_on: true

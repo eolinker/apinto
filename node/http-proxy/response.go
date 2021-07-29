@@ -1,8 +1,10 @@
 package http_proxy
 
 import (
+	"compress/gzip"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/eolinker/goku-eosc/node/http-proxy/backend"
 )
@@ -14,7 +16,6 @@ type response struct {
 
 //Body 响应体
 func (r *response) Body() []byte {
-	// TODO: 该处可进行gzip等算法解压
 	return r.body
 }
 
@@ -33,13 +34,23 @@ func (r *response) Proto() string {
 	return r.resp.Proto
 }
 
+//Status 状态
+func (r *response) Status() string {
+	return r.resp.Status
+}
+
 //NewResponse 新建响应，返回IResponse节点
 func NewResponse(resp *http.Response) (backend.IResponse, error) {
-	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	bd := resp.Body
+	if strings.Contains(resp.Header.Get("Content-Encoding"), "gzip") {
+		bd, _ = gzip.NewReader(resp.Body)
+	}
+	body, err := ioutil.ReadAll(bd)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+
 	r := &response{
 		body: body,
 		resp: resp,

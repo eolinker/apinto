@@ -1,0 +1,26 @@
+upstream:
+  -
+    name: product-user
+    driver: http_proxy  # 静态负载
+    desc: "生产环境-用户模块"
+    discovery: static_1@discovery
+    config: 127.0.0.1:8580 weight=1000;10.1.1.2 weight=10
+    scheme: http
+    type: round-robin
+
+  -
+    name: test-user
+    driver: http_proxy
+    discovery: static_1@discovery
+    desc: "测试环境-用户模块"
+    config: 47.95.203.198:8080 weight=1000;10.1.1.2 weight=10
+    scheme: http
+    type: round-robin
+
+  - name: test-nacos
+    driver: http_proxy
+    desc: "测试环境-nacos"
+    config: userService
+    discovery: nacos_1@discovery
+    scheme: http
+    type: round-robin
