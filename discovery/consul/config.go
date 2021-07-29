@@ -1,5 +1,7 @@
 package consul
 
+import "strings"
+
 //Config consul驱动配置
 type Config struct {
 	Name   string            `json:"name"`
@@ -13,4 +15,12 @@ type Config struct {
 type AccessConfig struct {
 	Address []string          `json:"address"`
 	Params  map[string]string `json:"params"`
+}
+
+func (c *Config) getScheme() string {
+	scheme := strings.ToLower(c.Scheme)
+	if scheme != "http" && scheme != "https" {
+		scheme = "http"
+	}
+	return scheme
 }

@@ -16,11 +16,6 @@ func getConsulClient(addr string, param map[string]string, scheme string) (*api.
 	//配置信息写入进defaultConfig里
 	defaultConfig.Address = addr
 	defaultConfig.Scheme = scheme
-	if scheme == "https" {
-		//TODO
-		defaultConfig.TLSConfig = api.TLSConfig{}
-	}
-
 	if _, has := param["token"]; has {
 		defaultConfig.Token = param["token"]
 	}
