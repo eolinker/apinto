@@ -30,13 +30,14 @@ func newClient(address []string, scheme string) *client {
 //GetNodeList 从nacos接入地址中获取对应服务的节点列表
 func (c *client) GetNodeList(serviceName string) (discovery.Nodes, error) {
 	nodes := make(discovery.Nodes)
+	isOk := false
 	for _, addr := range c.address {
 		ins, err := c.GetInstanceList(addr, serviceName)
 		if err != nil {
 			log.Info("nacos get node instance list error:", err)
 			continue
 		}
-
+		isOk = true
 		for _, host := range ins.Hosts {
 			label := map[string]string{
 				"valid":  strconv.FormatBool(host.Valid),
@@ -52,7 +53,9 @@ func (c *client) GetNodeList(serviceName string) (discovery.Nodes, error) {
 			}
 		}
 	}
-
+	if !isOk {
+		return nil, discovery.ErrDiscoveryDown
+	}
 	return nodes, nil
 }
 

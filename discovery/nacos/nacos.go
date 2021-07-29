@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/eolinker/eosc/log"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/goku-eosc/discovery"
 )
@@ -55,6 +57,7 @@ func (n *nacos) Start() error {
 					for _, serviceName := range keys {
 						res, err := n.client.GetNodeList(serviceName)
 						if err != nil {
+							log.Warnf("nacos %s:%w for service %s", n.name, discovery.ErrDiscoveryDown, serviceName)
 							continue
 						}
 						//更新目标服务的节点列表
