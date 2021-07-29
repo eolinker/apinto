@@ -5,6 +5,7 @@ type Config struct {
 	Name     string            `json:"name"`
 	Driver   string            `json:"driver"`
 	Labels   map[string]string `json:"labels"`
+	Scheme   string            `json:"scheme"`
 	Health   *HealthConfig     `json:"health"`
 	HealthOn bool              `json:"health_on"`
 }
