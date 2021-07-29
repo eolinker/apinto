@@ -7,6 +7,7 @@
   append_label:
     - host
     - service
+    - listen
   drivers:
     -
       id: eolinker:goku:http_router
