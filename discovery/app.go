@@ -16,7 +16,7 @@ type app struct {
 }
 
 //Reset 重置app的节点列表
-func (s *app) Reset(nodes []INode) {
+func (s *app) Reset(nodes Nodes) {
 	tmp := make(map[string]INode)
 
 	for _, node := range nodes {

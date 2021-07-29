@@ -65,7 +65,7 @@ func (s *services) Remove(appID string) (string, int) {
 }
 
 //Update 更新目标服务所有app的节点列表
-func (s *services) Update(serviceName string, nodes []INode) error {
+func (s *services) Update(serviceName string, nodes Nodes) error {
 	if apps, ok := s.get(serviceName); ok {
 		for _, r := range apps.List() {
 			v, ok := r.(IApp)
