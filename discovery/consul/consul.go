@@ -75,6 +75,11 @@ func (c *consul) Reset(config interface{}, workers map[eosc.RequireId]interface{
 		Address: workerConfig.Config.Address,
 		Params:  workerConfig.Config.Params,
 	}
+
+	c.scheme = workerConfig.Scheme
+	if c.scheme == "" {
+		c.scheme = "http"
+	}
 	c.labels = workerConfig.Labels
 
 	return nil
@@ -93,9 +98,20 @@ func (c *consul) Remove(id string) error {
 
 //GetApp 获取服务发现中目标服务的app
 func (c *consul) GetApp(serviceName string) (discovery.IApp, error) {
-	nodes, err := c.getNodes(serviceName)
-	if err != nil {
-		return nil, err
+	nodes := make(map[string]discovery.INode)
+	var err error
+
+	oldApp, has := c.services.Get(serviceName)
+	if !has {
+		nodes, err = c.getNodes(serviceName)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		oldAppNodes := oldApp.Nodes()
+		for k, node := range oldAppNodes {
+			nodes[node.ID()] = oldAppNodes[k]
+		}
 	}
 
 	app, err := c.Create(serviceName, c.labels, nodes)
@@ -131,7 +147,7 @@ func (c *consul) getNodes(service string) (map[string]discovery.INode, error) {
 			log.Errorf("address:%s is invalid", addr)
 			continue
 		}
-		client, err := getConsulClient(addr, c.accessConfig.Params)
+		client, err := getConsulClient(addr, c.accessConfig.Params, c.scheme)
 		if err != nil {
 			log.Error(err)
 			continue

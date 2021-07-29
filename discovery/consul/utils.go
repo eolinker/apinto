@@ -10,10 +10,16 @@ import (
 )
 
 //getConsulClient 创建并返回consul客户端
-func getConsulClient(addr string, param map[string]string) (*api.Client, error) {
+func getConsulClient(addr string, param map[string]string, scheme string) (*api.Client, error) {
 	defaultConfig := api.DefaultConfig()
 	//配置信息写入进defaultConfig里
 	defaultConfig.Address = addr
+	defaultConfig.Scheme = scheme
+	if scheme == "https" {
+		//TODO
+		defaultConfig.TLSConfig = api.TLSConfig{}
+	}
+
 	if _, has := param["token"]; has {
 		defaultConfig.Token = param["token"]
 	}
@@ -47,8 +53,7 @@ func getNodesFromClient(client *api.Client, service string) []discovery.INode {
 				continue
 			}
 		}
-
-		newNode := discovery.NewNode(serviceEntry.Service.Meta, serviceEntry.Node.ID, ip, port)
+		newNode := discovery.NewNode(serviceEntry.Service.Meta, serviceEntry.Node.ID, ip, port, "")
 		nodes = append(nodes, newNode)
 	}
 
