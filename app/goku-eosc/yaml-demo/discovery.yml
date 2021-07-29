@@ -2,8 +2,7 @@ discovery:
   -
     name: nacos_1
     driver: nacos
-    labels:
-      scheme: http
+    scheme: http
     config:
       address:
         - 127.0.0.1:8080
@@ -22,8 +21,7 @@ discovery:
   -
     name: static_1
     driver: static
-    labels:
-      scheme: http
+    scheme: http
     health:
       protocol: http
       method: GET

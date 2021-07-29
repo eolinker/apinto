@@ -102,10 +102,20 @@ func (n *nacos) Remove(id string) error {
 
 //GetApp 获取服务发现中目标服务的app
 func (n *nacos) GetApp(serviceName string) (discovery.IApp, error) {
-	app, err := n.Create(serviceName)
-	if err != nil {
-		return nil, err
+	tmp, ok := n.services.Get(serviceName)
+	if !ok {
+		var err error
+		tmp, err = n.Create(serviceName)
+		if err != nil {
+			return nil, err
+		}
 	}
+	nodesMap := make(map[string]discovery.INode)
+	for _, n := range tmp.Nodes() {
+		nodesMap[n.ID()] = n
+	}
+
+	app := discovery.NewApp(nil, n, n.getParams(serviceName), nodesMap)
 	//将生成的app存入目标服务的app列表
 	n.services.Set(serviceName, app.ID(), app)
 	return app, nil
@@ -137,7 +147,7 @@ func (n *nacos) GetNodeList(query map[string]string) (map[string]discovery.INode
 				"marked": strconv.FormatBool(host.Marked),
 				"weight": strconv.FormatFloat(host.Weight, 'f', -1, 64),
 			}
-			node := discovery.NewNode(label, host.InstanceId, host.Ip, host.Port)
+			node := discovery.NewNode(label, host.InstanceId, host.Ip, host.Port, "")
 			if _, ok := nodes[node.ID()]; ok {
 				continue
 			}
