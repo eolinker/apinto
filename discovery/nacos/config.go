@@ -1,6 +1,9 @@
 package nacos
 
-import "strings"
+import (
+	"net/url"
+	"strings"
+)
 
 //Config nacos驱动配置
 type Config struct {
@@ -13,6 +16,7 @@ type Config struct {
 //AccessConfig 接入地址配置
 type AccessConfig struct {
 	Address []string
+	Params  map[string]string
 }
 
 func (c *Config) getScheme() string {
@@ -21,4 +25,13 @@ func (c *Config) getScheme() string {
 		scheme = "http"
 	}
 	return scheme
+}
+
+func (c *Config) getParams() url.Values {
+	p := url.Values{}
+	p.Set("healthyOnly", "true")
+	for k, v := range c.Config.Params {
+		p.Set(k, v)
+	}
+	return p
 }
