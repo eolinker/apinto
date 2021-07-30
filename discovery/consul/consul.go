@@ -3,6 +3,7 @@ package consul
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/eolinker/eosc"
@@ -12,14 +13,16 @@ import (
 )
 
 type consul struct {
-	id         string
-	name       string
-	address    []string
-	params     map[string]string
-	labels     map[string]string
-	services   discovery.IServices
-	context    context.Context
-	cancelFunc context.CancelFunc
+	id           string
+	name         string
+	scheme       string
+	accessConfig *AccessConfig
+	labels       map[string]string
+	nodes        discovery.INodesData
+	services     discovery.IServices
+	locker       sync.RWMutex
+	context      context.Context
+	cancelFunc   context.CancelFunc
 }
 
 //Start 开始服务发现
@@ -43,16 +46,14 @@ func (c *consul) Start() error {
 					for _, serviceName := range keys {
 						nodeSet, err := c.getNodes(serviceName)
 						if err != nil {
-							log.Error(err)
+							log.Warnf("consul %s:%w for service %s", c.name, discovery.ErrDiscoveryDown, serviceName)
 							continue
 						}
-
-						nodes := make([]discovery.INode, 0, len(nodeSet))
-						for k := range nodeSet {
-							nodes = append(nodes, nodeSet[k])
-						}
 						//更新目标服务的节点列表
-						c.services.Update(serviceName, nodes)
+						c.locker.Lock()
+						c.nodes.Set(serviceName, nodeSet)
+						c.locker.Unlock()
+						c.services.Update(serviceName, nodeSet)
 					}
 				}
 
@@ -71,8 +72,12 @@ func (c *consul) Reset(config interface{}, workers map[eosc.RequireId]interface{
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(config))
 	}
 
-	c.address = workerConfig.Config.Address
-	c.params = workerConfig.Config.Params
+	c.accessConfig = &AccessConfig{
+		Address: workerConfig.Config.Address,
+		Params:  workerConfig.Config.Params,
+	}
+
+	c.scheme = workerConfig.getScheme()
 	c.labels = workerConfig.Labels
 
 	return nil
@@ -86,17 +91,38 @@ func (c *consul) Stop() error {
 
 //Remove 从所有服务app中移除目标app
 func (c *consul) Remove(id string) error {
-	return c.services.Remove(id)
+	c.locker.Lock()
+	defer c.locker.Unlock()
+	name, count := c.services.Remove(id)
+	if count == 0 {
+		c.nodes.Del(name)
+	}
+	return nil
 }
 
 //GetApp 获取服务发现中目标服务的app
 func (c *consul) GetApp(serviceName string) (discovery.IApp, error) {
-	nodes, err := c.getNodes(serviceName)
-	if err != nil {
-		return nil, err
+	var err error
+	var has bool
+	c.locker.RLock()
+	nodes, has := c.nodes.Get(serviceName)
+	c.locker.RUnlock()
+	if !has {
+		c.locker.Lock()
+		nodes, has = c.nodes.Get(serviceName)
+		if !has {
+			nodes, err = c.getNodes(serviceName)
+			if err != nil {
+				c.locker.Unlock()
+				return nil, err
+			}
+
+			c.nodes.Set(serviceName, nodes)
+		}
+		c.locker.Unlock()
 	}
 
-	app, err := c.Create(serviceName, c.labels, nodes)
+	app, err := c.Create(serviceName, nil, nodes)
 	if err != nil {
 		return nil, err
 	}
@@ -123,25 +149,31 @@ func (c *consul) CheckSkill(skill string) bool {
 //getNodes 通过接入地址获取节点信息
 func (c *consul) getNodes(service string) (map[string]discovery.INode, error) {
 	nodeSet := make(map[string]discovery.INode)
-
-	for _, addr := range c.address {
+	ok := false
+	for _, addr := range c.accessConfig.Address {
 		if !validAddr(addr) {
 			log.Errorf("address:%s is invalid", addr)
 			continue
 		}
-		client, err := getConsulClient(addr, c.params)
+		client, err := getConsulClient(addr, c.accessConfig.Params, c.scheme)
 		if err != nil {
 			log.Error(err)
 			continue
 		}
 
 		clientNodes := getNodesFromClient(client, service)
+		if len(clientNodes) == 0 {
+			continue
+		}
+		ok = true
 		for _, node := range clientNodes {
 			if _, has := nodeSet[node.ID()]; !has {
 				nodeSet[node.ID()] = node
 			}
 		}
 	}
-
+	if !ok {
+		return nil, discovery.ErrDiscoveryDown
+	}
 	return nodeSet, nil
 }
