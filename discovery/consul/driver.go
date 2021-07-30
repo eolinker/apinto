@@ -36,15 +36,15 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	if !ok {
 		return nil, fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(v))
 	}
+
+	clients, err := newClients(workerConfig.Config.Address, workerConfig.Config.Params, workerConfig.getScheme())
+	if err != nil {
+		return nil, err
+	}
 	c := &consul{
-		id:     id,
-		name:   name,
-		scheme: workerConfig.getScheme(),
-		accessConfig: &AccessConfig{
-			Address: workerConfig.Config.Address,
-			Params:  workerConfig.Config.Params,
-		},
-		labels:   workerConfig.Labels,
+		id:       id,
+		name:     name,
+		clients:  clients,
 		nodes:    discovery.NewNodesData(),
 		services: discovery.NewServices(),
 		locker:   sync.RWMutex{},

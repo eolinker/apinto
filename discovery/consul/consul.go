@@ -13,16 +13,14 @@ import (
 )
 
 type consul struct {
-	id           string
-	name         string
-	scheme       string
-	accessConfig *AccessConfig
-	labels       map[string]string
-	nodes        discovery.INodesData
-	services     discovery.IServices
-	locker       sync.RWMutex
-	context      context.Context
-	cancelFunc   context.CancelFunc
+	id         string
+	name       string
+	clients    *consulClients
+	nodes      discovery.INodesData
+	services   discovery.IServices
+	locker     sync.RWMutex
+	context    context.Context
+	cancelFunc context.CancelFunc
 }
 
 //Start 开始服务发现
@@ -44,7 +42,7 @@ func (c *consul) Start() error {
 					//获取现有服务app的服务名名称列表，并从注册中心获取目标服务名的节点列表
 					keys := c.services.AppKeys()
 					for _, serviceName := range keys {
-						nodeSet, err := c.getNodes(serviceName)
+						nodeSet, err := c.clients.getNodes(serviceName)
 						if err != nil {
 							log.Warnf("consul %s:%w for service %s", c.name, discovery.ErrDiscoveryDown, serviceName)
 							continue
@@ -72,14 +70,12 @@ func (c *consul) Reset(config interface{}, workers map[eosc.RequireId]interface{
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(config))
 	}
 
-	c.accessConfig = &AccessConfig{
-		Address: workerConfig.Config.Address,
-		Params:  workerConfig.Config.Params,
+	clients, err := newClients(workerConfig.Config.Address, workerConfig.Config.Params, workerConfig.getScheme())
+	if err != nil {
+		return err
 	}
 
-	c.scheme = workerConfig.getScheme()
-	c.labels = workerConfig.Labels
-
+	c.clients = clients
 	return nil
 }
 
@@ -111,7 +107,7 @@ func (c *consul) GetApp(serviceName string) (discovery.IApp, error) {
 		c.locker.Lock()
 		nodes, has = c.nodes.Get(serviceName)
 		if !has {
-			nodes, err = c.getNodes(serviceName)
+			nodes, err = c.clients.getNodes(serviceName)
 			if err != nil {
 				c.locker.Unlock()
 				return nil, err
@@ -144,36 +140,4 @@ func (c *consul) Id() string {
 //CheckSkill 检查目标能力是否存在
 func (c *consul) CheckSkill(skill string) bool {
 	return discovery.CheckSkill(skill)
-}
-
-//getNodes 通过接入地址获取节点信息
-func (c *consul) getNodes(service string) (map[string]discovery.INode, error) {
-	nodeSet := make(map[string]discovery.INode)
-	ok := false
-	for _, addr := range c.accessConfig.Address {
-		if !validAddr(addr) {
-			log.Errorf("address:%s is invalid", addr)
-			continue
-		}
-		client, err := getConsulClient(addr, c.accessConfig.Params, c.scheme)
-		if err != nil {
-			log.Error(err)
-			continue
-		}
-
-		clientNodes := getNodesFromClient(client, service)
-		if len(clientNodes) == 0 {
-			continue
-		}
-		ok = true
-		for _, node := range clientNodes {
-			if _, has := nodeSet[node.ID()]; !has {
-				nodeSet[node.ID()] = node
-			}
-		}
-	}
-	if !ok {
-		return nil, discovery.ErrDiscoveryDown
-	}
-	return nodeSet, nil
 }

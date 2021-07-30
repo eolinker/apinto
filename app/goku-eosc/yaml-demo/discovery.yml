@@ -9,6 +9,7 @@ discovery:
           - 191.168.1.4:8501
         params:
           - token: a9XXXXd8-5XX9-4fX0-bXXd-3XXXXXXXXaa
+          - namespace: XXXX
   -
     name: nacos_1
     driver: nacos
