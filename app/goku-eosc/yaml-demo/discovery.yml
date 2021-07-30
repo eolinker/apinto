@@ -2,7 +2,7 @@ discovery:
   -
     name: consul_1  #服务发现实例名
     driver: consul  #所使用驱动
-    scheme: http   #非必填，接入地址所使用的scheme，支持http或https,不填或填支持范围外的则默认为http
+    scheme: http   #非必填，接入地址所使用的scheme，仅支持http或https,不填或填支持范围外的则默认为http
     config: #必填，接入地址配置
       -
         address:   #必填，集群接入地址
@@ -14,7 +14,7 @@ discovery:
   -
     name: nacos_1
     driver: nacos
-    scheme: http #非必填，接入地址所使用的scheme，支持http或https,不填或填支持范围外的则默认为http
+    scheme: http #非必填，接入地址所使用的scheme，仅支持http或https,不填或填支持范围外的则默认为http
     config: #必填，接入地址配置
       address:  #必填，集群接入地址
         - 127.0.0.1:8080
@@ -24,7 +24,7 @@ discovery:
         password: xxx
   - name: eureka_1
     driver: eureka
-    scheme: http #非必填，接入地址所使用的scheme，支持http或https,不填或填支持范围外的则默认为http
+    scheme: http #非必填，接入地址所使用的scheme，仅支持http或https,不填或填支持范围外的则默认为http
     config: #必填，接入地址配置
       address: #必填，集群接入地址
         - 127.0.0.1:8080
@@ -35,7 +35,7 @@ discovery:
   -
     name: static_1
     driver: static
-    scheme: http  #非必填，接入地址所使用的scheme，支持http或https,不填或填支持范围外的则默认为http
+    scheme: http  #非必填，接入地址所使用的scheme，仅支持http或https,不填或填支持范围外的则默认为http
     health: #非必填，健康检测配置.不填则一定关闭健康检测
       protocol: http #健康检查请求所使用的协议
       method: GET #健康检查请求所使用的method
