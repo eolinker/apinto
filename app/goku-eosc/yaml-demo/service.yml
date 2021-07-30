@@ -1,13 +1,15 @@
 service:
   -
-    name: guest
-    driver: http
-    desc: "游客服务"
-    timeout: 30000
-    upstream: product-user@upstream
-    retry: 2
-    rewrite_url: /Web/Test/params/print
-    auth:
+    name: guest  #服务实例名
+    driver: http  #服务所使用驱动
+    desc: "游客服务"  #对该服务的描述 非必填
+    scheme: http  #非必填，不填则跟随负载的scheme
+    timeout: 30000  #超时时间
+    upstream: product-user@upstream  #该服务所使用的负载实例
+    retry: 2  #重试次数
+    rewrite_url: /Web/Test/params/print  #转发至负载的重写url
+    proxy_method: GET #非必填
+    auth: #非必填，该服务使用的鉴权实例，通过其一即可，不填则不使用鉴权
       - basic_1@auth
       - ak/sk_1@auth
       - apikey_1@auth

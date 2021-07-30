@@ -1,13 +1,13 @@
 discovery:
-  - name: consul_1
-    driver: consul
-    scheme: http
-    config:
+  - name: consul_1  #服务发现实例名
+    driver: consul  #所使用驱动
+    scheme: http   #接入地址所使用的scheme
+    config: #实例配置
       -
-        address:
+        address:   #集群接入地址
           - 192.168.1.3:8500
           - 191.168.1.4:8501
-        params:
+        params:   #集群接入参数
           - token: a9XXXXd8-5XX9-4fX0-bXXd-3XXXXXXXXaa
           - namespace: XXXX
   -

@@ -1,6 +1,6 @@
 auth:
   -
-    name: aksk_1  #实例名
+    name: ak/sk_1  #实例名
     driver: aksk  #所使用的驱动
     hide_credentials: true  #是否隐藏证书 字段
     user:
@@ -12,10 +12,10 @@ auth:
     name: apikey_1
     driver: apikey
     hide_credentials: true
-    user:
+    user:  #密钥列表
       -
-        apikey: eolinker
-        expire: 0
+        apikey: eolinker  #api密钥
+        expire: 0  #过期时间 类型是unix时间戳 范围>=0 值为0表示永久有效
       -
         apikey: goku
         expire: 1627013522
@@ -23,11 +23,11 @@ auth:
     name: basic_1
     driver: basic
     hide_credentials: true
-    user:
+    user:   #用户列表
       -
         username: wu    #用户名
         password: 123456   #密码
-        expire: 0 #过期时间 类型是unix时间戳 范围>=0 值为0表示永久有效
+        expire: 0
       -
         username: liu
         password: 123456
@@ -41,7 +41,7 @@ auth:
     claims_to_verify:   #jwt 需要进行验证的字段
       - exp   #token过期时间
       - nbf   #token生效时间
-    credentials:
+    credentials:  #证书列表
       -
         iss: TestHS256  #签发人
         secret: eolinker  #密钥  使用HS256,HS384,HS512时使用
