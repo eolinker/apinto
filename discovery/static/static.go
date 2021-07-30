@@ -57,7 +57,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	s.locker.Lock()
 	s.labels = cfg.Labels
 	s.locker.Unlock()
-	s.scheme = cfg.Scheme
+	s.scheme = cfg.getScheme()
 	if cfg.Health == nil {
 		s.healthOn = false
 	} else {

@@ -48,7 +48,7 @@
   desc: 注册中心
   dependencies: null
   append_label:
-    - health_on
+#    - health_on
   drivers:
     -
       id: eolinker:goku:discovery_static
@@ -60,16 +60,16 @@
       name: nacos
       label: nacos服务发现
       desc: nacos服务发现
-#    -
-#      id: eolinker:goku:discovery_consul
-#      name: consul
-#      label: consul服务发现
-#      desc: consul服务发现
-#    -
-#      id: eolinker:goku:discovery_eureka
-#      name: eureka
-#      label: eureka服务发现
-#      desc: consul服务发现
+    -
+      id: eolinker:goku:discovery_consul
+      name: consul
+      label: consul服务发现
+      desc: consul服务发现
+    -
+      id: eolinker:goku:discovery_eureka
+      name: eureka
+      label: eureka服务发现
+      desc: consul服务发现
 -
   name: auth
   label: 鉴权
