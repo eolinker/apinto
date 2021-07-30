@@ -6,8 +6,6 @@ import (
 	"github.com/eolinker/goku-eosc/auth/apikey"
 	"github.com/eolinker/goku-eosc/auth/basic"
 	"github.com/eolinker/goku-eosc/auth/jwt"
-	"github.com/eolinker/goku-eosc/discovery/consul"
-	"github.com/eolinker/goku-eosc/discovery/eureka"
 	"github.com/eolinker/goku-eosc/discovery/nacos"
 	"github.com/eolinker/goku-eosc/discovery/static"
 	http_router "github.com/eolinker/goku-eosc/router/http-router"
@@ -37,8 +35,8 @@ func authRegister() {
 }
 
 func discoveryRegister() {
-	consul.Register()
-	eureka.Register()
+	//consul.Register()
+	//eureka.Register()
 	nacos.Register()
 	static.Register()
 }

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -14,9 +16,10 @@ import (
 
 type client struct {
 	address []string
+	params  url.Values
 }
 
-func newClient(address []string, scheme string) *client {
+func newClient(address []string, params url.Values, scheme string) *client {
 	adds := make([]string, 0, len(address))
 	for _, a := range address {
 		if !strings.HasPrefix(a, "http://") && !strings.HasPrefix(a, "https://") {
@@ -24,7 +27,7 @@ func newClient(address []string, scheme string) *client {
 		}
 		adds = append(adds, a)
 	}
-	return &client{adds}
+	return &client{adds, params}
 }
 
 //GetNodeList 从nacos接入地址中获取对应服务的节点列表
@@ -46,9 +49,6 @@ func (c *client) GetNodeList(serviceName string) (discovery.Nodes, error) {
 			}
 			if _, exist := nodes[host.InstanceId]; !exist {
 				node := discovery.NewNode(label, host.InstanceId, host.Ip, host.Port, "")
-				if _, ok := nodes[node.ID()]; ok {
-					continue
-				}
 				nodes[node.ID()] = node
 			}
 		}
@@ -62,8 +62,14 @@ func (c *client) GetNodeList(serviceName string) (discovery.Nodes, error) {
 //GetInstanceList 获取目标地址指定服务名的实例列表
 func (c *client) GetInstanceList(addr string, serviceName string) (*Instance, error) {
 	addr = addr + instancePath
-
-	response, err := SendRequest(addr, serviceName)
+	paramsUrl := c.params
+	paramsUrl.Set("serviceName", serviceName)
+	req, err := http.NewRequest("GET", addr, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.URL.RawQuery = paramsUrl.Encode()
+	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
