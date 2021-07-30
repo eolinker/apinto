@@ -15,8 +15,9 @@ type jwtUsers struct {
 }
 
 type JwtCredential struct {
-	Iss          string `json:"iss"`
-	Secret       string `json:"secret"`
-	RSAPublicKey string `json:"rsa_public_key"`
-	Algorithm    string `json:"algorithm"`
+	Iss          string            `json:"iss"`
+	Secret       string            `json:"secret"`
+	RSAPublicKey string            `json:"rsa_public_key"`
+	Algorithm    string            `json:"algorithm"`
+	Labels       map[string]string `json:"labels"`
 }

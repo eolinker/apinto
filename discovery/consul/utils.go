@@ -11,10 +11,11 @@ import (
 )
 
 //getConsulClient 创建并返回consul客户端
-func getConsulClient(addr string, param map[string]string) (*api.Client, error) {
+func getConsulClient(addr string, param map[string]string, scheme string) (*api.Client, error) {
 	defaultConfig := api.DefaultConfig()
 	//配置信息写入进defaultConfig里
 	defaultConfig.Address = addr
+	defaultConfig.Scheme = scheme
 	if _, has := param["token"]; has {
 		defaultConfig.Token = param["token"]
 	}
