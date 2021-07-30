@@ -1,6 +1,7 @@
 package consul
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -10,22 +11,62 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
-//getConsulClient 创建并返回consul客户端
-func getConsulClient(addr string, param map[string]string, scheme string) (*api.Client, error) {
+func newClients(addrs []string, param map[string]string, scheme string) (*consulClients, error) {
+	clients := make([]*api.Client, 0, len(addrs))
+
 	defaultConfig := api.DefaultConfig()
-	//配置信息写入进defaultConfig里
-	defaultConfig.Address = addr
 	defaultConfig.Scheme = scheme
 	if _, has := param["token"]; has {
 		defaultConfig.Token = param["token"]
 	}
-
-	client, err := api.NewClient(defaultConfig)
-	if err != nil {
-		return nil, err
+	if _, has := param["namespace"]; has {
+		defaultConfig.Namespace = param["namespace"]
 	}
 
-	return client, nil
+	hasClientFlag := false
+	for _, addr := range addrs {
+		if !validAddr(addr) {
+			log.Warnf("consul address:%s is invalid", addr)
+			continue
+		}
+
+		defaultConfig.Address = addr
+		client, err := api.NewClient(defaultConfig)
+		if err != nil {
+			log.Warnf("consul client create fail. addr: %s  err:%s", addr, err)
+			continue
+		}
+		hasClientFlag = true
+		clients = append(clients, client)
+	}
+
+	if !hasClientFlag {
+		return nil, fmt.Errorf("consul create clients fail")
+	}
+
+	return &consulClients{clients: clients}, nil
+}
+
+//getNodes 通过接入地址获取节点信息
+func (c *consulClients) getNodes(service string) (map[string]discovery.INode, error) {
+	nodeSet := make(map[string]discovery.INode)
+	ok := false
+	for _, client := range c.clients {
+		clientNodes := getNodesFromClient(client, service)
+		if len(clientNodes) == 0 {
+			continue
+		}
+		ok = true
+		for _, node := range clientNodes {
+			if _, has := nodeSet[node.ID()]; !has {
+				nodeSet[node.ID()] = node
+			}
+		}
+	}
+	if !ok {
+		return nil, discovery.ErrDiscoveryDown
+	}
+	return nodeSet, nil
 }
 
 //getNodesFromClient 从连接的客户端返回健康的节点信息
