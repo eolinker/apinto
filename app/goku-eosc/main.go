@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"path/filepath"
 
@@ -12,6 +13,7 @@ import (
 
 func main() {
 	log.InitDebug(true)
+	initFlag()
 	Register()
 	pluginPath, _ := filepath.Abs("./plugins")
 	loadPlugins(pluginPath)
@@ -42,7 +44,6 @@ func main() {
 		panic(err)
 	}
 
-
 	admin := admin_open_api.NewOpenAdmin("/api", professions)
 	htmlAdmin := admin_html.NewHtmlAdmin("/", professions)
 	handler, err := admin.GenHandler()
@@ -57,5 +58,7 @@ func main() {
 	httpServer := http.NewServeMux()
 	httpServer.Handle("/api/", handler)
 	httpServer.Handle("/", hadlerHtml)
-	log.Fatal(http.ListenAndServe(":8088", httpServer))
+
+	log.Info(fmt.Sprintf("Listen http port %d successfully", httpPort))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", httpPort), httpServer))
 }

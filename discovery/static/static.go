@@ -26,7 +26,7 @@ var (
 type static struct {
 	id         string
 	name       string
-	labels     map[string]string
+	//labels     map[string]string
 	scheme     string
 	apps       map[string]discovery.IApp
 	locker     sync.RWMutex
@@ -54,9 +54,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	if !ok {
 		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), ErrorStructType)
 	}
-	s.locker.Lock()
-	s.labels = cfg.Labels
-	s.locker.Unlock()
+
 	s.scheme = cfg.Scheme
 	if cfg.Health == nil {
 		s.healthOn = false
@@ -67,7 +65,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 		if s.checker == nil {
 			s.checker = health_check_http.NewHTTPCheck(
 				health_check_http.Config{
-					Protocol:    cfg.Health.Protocol,
+					Protocol:    cfg.Health.Scheme,
 					Method:      cfg.Health.Method,
 					URL:         cfg.Health.URL,
 					SuccessCode: cfg.Health.SuccessCode,
@@ -77,7 +75,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 		} else {
 			s.checker.Reset(
 				health_check_http.Config{
-					Protocol:    cfg.Health.Protocol,
+					Protocol:    cfg.Health.Scheme,
 					Method:      cfg.Health.Method,
 					URL:         cfg.Health.URL,
 					SuccessCode: cfg.Health.SuccessCode,

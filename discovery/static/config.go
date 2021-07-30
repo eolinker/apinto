@@ -2,9 +2,9 @@ package static
 
 //Config 静态服务发现配置
 type Config struct {
-	Name     string            `json:"name"`
-	Driver   string            `json:"driver"`
-	Labels   map[string]string `json:"labels"`
+	//Name     string            `json:"name"`
+	//Driver   string            `json:"driver"`
+	//Labels   map[string]string `json:"labels"`
 	Scheme   string            `json:"scheme"`
 	Health   *HealthConfig     `json:"health"`
 	HealthOn bool              `json:"health_on"`
@@ -18,7 +18,7 @@ type AccessConfig struct {
 
 //HealthConfig 健康检查配置
 type HealthConfig struct {
-	Protocol    string `json:"protocol"`
+	Scheme      string `json:"scheme"`
 	Method      string `json:"method"`
 	URL         string `json:"url"`
 	SuccessCode int    `json:"success_code"`
