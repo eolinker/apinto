@@ -142,7 +142,7 @@ func (m *signingMethod) Verify(signingString, signature string, key interface{})
 				return err
 			}
 
-			// Get the key
+			// GetEmployee the key
 			var ecdsaKey *ecdsa.PublicKey
 			switch k := key.(type) {
 			case *ecdsa.PublicKey:
@@ -223,7 +223,7 @@ func (m *signingMethod) Sign(signingString string, key interface{}) (string, err
 		}
 	case "ES256", "ES384", "ES512":
 		{
-			// Get the key
+			// GetEmployee the key
 			var ecdsaKey *ecdsa.PrivateKey
 			switch k := key.(type) {
 			case *ecdsa.PrivateKey:

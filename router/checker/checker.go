@@ -16,7 +16,7 @@ type Checker interface {
 	CheckType() CheckType
 	Value() string
 }
-
+//
 func Parse(pattern string) (Checker, error) {
 	i := strings.Index(pattern, "=")
 

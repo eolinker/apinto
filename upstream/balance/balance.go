@@ -68,7 +68,7 @@ func Register(key string, factory IBalanceFactory) {
 	defaultBalanceFactoryRegister.RegisterFactoryByKey(key, factory)
 }
 
-//Get 从默认balanceFactory注册器中获取balance工厂
+//GetEmployee 从默认balanceFactory注册器中获取balance工厂
 func Get(key string) (IBalanceFactory, bool) {
 	return defaultBalanceFactoryRegister.GetFactoryByKey(key)
 }

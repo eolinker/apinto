@@ -12,7 +12,7 @@ func (s *Store) Set(value interface{}) {
 	s.value = value
 }
 
-//Get get
+//GetEmployee get
 func (s *Store) Get() (value interface{}) {
 	return s.value
 }
