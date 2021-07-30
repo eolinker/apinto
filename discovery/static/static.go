@@ -67,7 +67,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 		if s.checker == nil {
 			s.checker = health_check_http.NewHTTPCheck(
 				health_check_http.Config{
-					Protocol:    cfg.Health.Protocol,
+					Protocol:    cfg.Health.Scheme,
 					Method:      cfg.Health.Method,
 					URL:         cfg.Health.URL,
 					SuccessCode: cfg.Health.SuccessCode,
@@ -77,7 +77,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 		} else {
 			s.checker.Reset(
 				health_check_http.Config{
-					Protocol:    cfg.Health.Protocol,
+					Protocol:    cfg.Health.Scheme,
 					Method:      cfg.Health.Method,
 					URL:         cfg.Health.URL,
 					SuccessCode: cfg.Health.SuccessCode,

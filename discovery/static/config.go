@@ -18,7 +18,7 @@ type AccessConfig struct {
 
 //HealthConfig 健康检查配置
 type HealthConfig struct {
-	Protocol    string `json:"protocol"`
+	Scheme      string `json:"scheme"`
 	Method      string `json:"method"`
 	URL         string `json:"url"`
 	SuccessCode int    `json:"success_code"`

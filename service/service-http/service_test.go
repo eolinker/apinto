@@ -55,7 +55,7 @@ func TestService(t *testing.T) {
 		Driver: "static",
 		Labels: nil,
 		Health: &static.HealthConfig{
-			Protocol:    "http",
+			Scheme:      "http",
 			Method:      "POST",
 			URL:         "/Web/Test/params/print",
 			SuccessCode: 200,
