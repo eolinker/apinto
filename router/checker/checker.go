@@ -16,7 +16,7 @@ type Checker interface {
 	CheckType() CheckType
 	Value() string
 }
-
+//
 func Parse(pattern string) (Checker, error) {
 	i := strings.Index(pattern, "=")
 
@@ -32,47 +32,47 @@ func Parse(pattern string) (Checker, error) {
 	case "^":
 		if len(v) > 0 {
 			if v[0] == '*' {
-				return newCheckerSuffix(v[1:]), nil
+				return newCheckerSuffix(v[1:]), nil // ^= *abc 后缀匹配
 			}
 		}
-		return newCheckerPrefix(v), nil
+		return newCheckerPrefix(v), nil // ^= abc 前缀匹配
 	case "":
 		return parseValue(v)
 	case "!":
-		return newCheckerNotEqual(v), nil
+		return newCheckerNotEqual(v), nil //!= 不等于
 	case "~":
-		return newCheckerRegexp(v)
+		return newCheckerRegexp(v) //~= 区分大小写的正则
 	case "~*":
-		return newCheckerRegexpG(v)
+		return newCheckerRegexpG(v) //~*=  不区分大小写的正则
 	}
 
 	return nil, fmt.Errorf("%s:%w", pattern, ErrorUnknownExpression)
 }
 
-func parseValue(v string)(Checker,error)  {
+func parseValue(v string) (Checker, error) {
 	switch v {
-	case "*":
+	case "*": //任意
 		return newCheckerAll(), nil
-	case "**":
+	case "**": //只要key存在
 		return newCheckerExist(), nil
-	case "!":
+	case "!": //key不存在时
 		return newCheckerNotExits(), nil
-	case "$":
+	case "$": //空值
 		return newCheckerNone(), nil
 	default:
 		if len(v) == 0 {
-			return newCheckerAll(), nil
+			return newCheckerAll(), nil //任意
 		}
-		l:=len(v)
-		if len(v)>1 && v[0]=='*' && v[l-1]!= '*' {
-			return  newCheckerSuffix(v[1:]),nil
+		l := len(v)
+		if len(v) > 1 && v[0] == '*' && v[l-1] != '*' {
+			return newCheckerSuffix(v[1:]), nil //*.abc.com 后缀匹配
 		}
-		if len(v)>1 && v[l-1]=='*' && v[0]!= '*'{
-			return newCheckerPrefix(v[:l-1]),nil
+		if len(v) > 1 && v[l-1] == '*' && v[0] != '*' {
+			return newCheckerPrefix(v[:l-1]), nil //abc*前缀匹配
 		}
-		if len(v)>2 && v[0] == '*' && v[l-1] == '*'{
-			return newCheckerSub(v[1:l-1]),nil
+		if len(v) > 2 && v[0] == '*' && v[l-1] == '*' {
+			return newCheckerSub(v[1 : l-1]), nil //*abc*子串匹配
 		}
-		return newCheckerEqual(v), nil
+		return newCheckerEqual(v), nil //全等
 	}
 }

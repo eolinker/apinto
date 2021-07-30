@@ -1,0 +1,33 @@
+upstream:
+  -
+    name: product-user
+    driver: http_proxy  #必填，所使用的驱动， http_proxy为静态负载
+    desc: "生产环境-用户模块"  #非必填，对该负载的描述
+    discovery: static_1@discovery  #必填，该负载所使用的服务发现实例
+    config: 127.0.0.1:8580 weight=1000;10.1.1.2 weight=10  #负载配置，若该负载使用的是static静态服务发现，则配置是静态接入地址及其权重，格式：addr1 weight1;addr2 weight2;...用分号进行分割
+    scheme: http  #必填，负载所使用的scheme，仅支持http或https
+    type: round-robin  #必填，所使用的负载均衡算法
+  -
+    name: test-consul
+    driver: http_proxy
+    desc: "测试环境-consul"
+    config: userService   #负载配置，若该负载使用的是consul、nacos、eureka服务发现，则配置填的是服务名
+    discovery: consul_1@discovery #必填，该负载所使用的服务发现实例
+    scheme: http #必填，负载所使用的scheme，仅支持http或https
+    type: round-robin #必填，所使用的负载均衡算法
+  -
+    name: test-eureka
+    driver: http_proxy
+    desc: "测试环境-eureka"
+    config: userService   #负载配置，若该负载使用的是consul、nacos、eureka服务发现，则配置填的是服务名
+    discovery: eureka_1@discovery #必填，该负载所使用的服务发现实例
+    scheme: http #必填，负载所使用的scheme，仅支持http或https
+    type: round-robin #必填，所使用的负载均衡算法
+  -
+    name: test-nacos
+    driver: http_proxy
+    desc: "测试环境-nacos"
+    config: userService   #负载配置，若该负载使用的是consul、nacos、eureka服务发现，则配置填的是服务名
+    discovery: nacos_1@discovery #必填，该负载所使用的服务发现实例
+    scheme: http #必填，负载所使用的scheme，仅支持http或https
+    type: round-robin #必填，所使用的负载均衡算法

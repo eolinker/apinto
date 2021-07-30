@@ -6,23 +6,44 @@ import (
 )
 
 func TestCreateChecker(t *testing.T) {
+	type  checkValue struct {
+		v string
+		has bool
+	}
 	type args struct {
 		pattern string
+		value checkValue
 	}
 	regexp, _ := newCheckerRegexp("abc")
 	regexpG, _ := newCheckerRegexpG("abc")
 	tests := []struct {
 		name    string
 		args    args
-		want    Checker
+		want    bool
 		wantErr bool
 	}{
 		{
 			name: "equal",
 			args: args{
 				pattern: "abc",
+				value:   checkValue{
+					v:"abc",
+					has:true,
+				},
 			},
-			want:    newCheckerEqual("abc"),
+			want:   true,
+			wantErr: false,
+		},
+		{
+			name: "equal-not",
+			args: args{
+				pattern: "=abc",
+				value:   checkValue{
+					v:"abcd",
+					has:true,
+				},
+			},
+			want:   false,
 			wantErr: false,
 		},
 		{
@@ -94,11 +115,12 @@ func TestCreateChecker(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Parse(tt.args.pattern)
+			checker, err := Parse(tt.args.pattern)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			got:=checker.Check(tt.args.value.v,tt.args.value.has)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Parse() got = %v, want %v", got, tt.want)
 			}

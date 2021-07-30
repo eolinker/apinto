@@ -1,23 +1,28 @@
 package static
 
+import "strings"
+
 //Config 静态服务发现配置
 type Config struct {
-	Name     string            `json:"name"`
-	Driver   string            `json:"driver"`
-	Labels   map[string]string `json:"labels"`
+	//Name     string            `json:"name"`
+	//Driver   string            `json:"driver"`
+	//Labels   map[string]string `json:"labels"`
+	Scheme   string            `json:"scheme"`
 	Health   *HealthConfig     `json:"health"`
 	HealthOn bool              `json:"health_on"`
 }
 
-//AccessConfig 接入地址配置
-type AccessConfig struct {
-	Address []string          `json:"address"`
-	Params  map[string]string `json:"params"`
+func (c *Config) getScheme() string {
+	scheme := strings.ToLower(c.Scheme)
+	if scheme != "http" && scheme != "https" {
+		scheme = "http"
+	}
+	return scheme
 }
 
 //HealthConfig 健康检查配置
 type HealthConfig struct {
-	Protocol    string `json:"protocol"`
+	Scheme      string `json:"scheme"`
 	Method      string `json:"method"`
 	URL         string `json:"url"`
 	SuccessCode int    `json:"success_code"`

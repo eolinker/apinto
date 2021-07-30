@@ -2,11 +2,13 @@ package discovery
 
 import (
 	"fmt"
+
+	"github.com/eolinker/eosc"
 )
 
 //NewNode 创建新节点
-func NewNode(labels map[string]string, id string, ip string, port int) INode {
-	return &node{labels: labels, id: id, ip: ip, port: port, status: Running}
+func NewNode(labels map[string]string, id string, ip string, port int, scheme string) INode {
+	return &node{labels: labels, id: id, ip: ip, port: port, status: Running, scheme: scheme}
 }
 
 type node struct {
@@ -14,6 +16,7 @@ type node struct {
 	id     string
 	ip     string
 	port   int
+	scheme string
 	status NodeStatus
 }
 
@@ -53,6 +56,10 @@ func (n *node) Labels() map[string]string {
 	return n.labels
 }
 
+func (n *node) Scheme() string {
+	return n.scheme
+}
+
 //Addr 返回节点地址
 func (n *node) Addr() string {
 	if n.port == 0 {
@@ -75,3 +82,47 @@ func (n *node) Down() {
 func (n *node) Leave() {
 	n.status = Leave
 }
+
+type INodesData interface {
+	Get(name string) (map[string]INode, bool)
+	Set(name string, nodes map[string]INode)
+	Del(name string) (map[string]INode, bool)
+}
+
+type NodesData struct {
+	data eosc.IUntyped
+}
+
+func NewNodesData() *NodesData {
+	return &NodesData{data: eosc.NewUntyped()}
+}
+
+func (n *NodesData) Get(name string) (map[string]INode, bool) {
+	nodes, has := n.data.Get(name)
+	if !has {
+		return nil, false
+	}
+	ns, ok := nodes.(map[string]INode)
+	if !ok {
+		return nil, false
+	}
+	return ns, true
+}
+
+func (n *NodesData) Set(name string, nodes map[string]INode) {
+	n.data.Set(name, nodes)
+}
+
+func (n *NodesData) Del(name string) (map[string]INode, bool) {
+	nodes, has := n.data.Del(name)
+	if !has {
+		return nil, false
+	}
+	ns, ok := nodes.(map[string]INode)
+	if !ok {
+		return nil, false
+	}
+	return ns, true
+}
+
+type Nodes map[string]INode

@@ -3,6 +3,7 @@ package nacos
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/goku-eosc/discovery"
@@ -35,14 +36,12 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		return nil, fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(v))
 	}
 	return &nacos{
-		id:         id,
-		name:       name,
-		address:    cfg.Config.Address,
-		params:     cfg.Config.Params,
-		labels:     cfg.Labels,
-		services:   discovery.NewServices(),
-		context:    nil,
-		cancelFunc: nil,
+		id:       id,
+		name:     name,
+		client:   newClient(cfg.Config.Address, cfg.getParams(), cfg.getScheme()),
+		nodes:    discovery.NewNodesData(),
+		services: discovery.NewServices(),
+		locker:   sync.RWMutex{},
 	}, nil
 
 }

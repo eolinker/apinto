@@ -7,6 +7,10 @@ import (
 	"strings"
 	"time"
 
+	http_proxy "github.com/eolinker/goku-eosc/node/http-proxy"
+	"github.com/eolinker/goku-eosc/node/http-proxy/backend"
+	"github.com/eolinker/goku-eosc/utils"
+
 	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/goku-eosc/auth"
@@ -72,24 +76,18 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	s.scheme = data.Scheme
 	s.proxyMethod = data.ProxyMethod
 	s.auths = auths
+	s.upstream = nil
 	if worker, has := workers[data.Upstream]; has {
 		u, ok := worker.(upstream.IUpstream)
 		if ok {
 			s.upstream = u
 			return nil
 		}
-	} else if worker, has = workers[eosc.RequireId(fmt.Sprintf("%s@%s", data.Upstream, "upstream"))]; has {
-		if has {
-			u, ok := worker.(upstream.IUpstream)
-			if ok {
-				s.upstream = u
-				return nil
-			}
-			return nil
-		}
+	} else {
+		s.proxyAddr = string(data.Upstream)
 	}
 
-	return errors.New("fail to create serviceWorker")
+	return nil
 
 }
 
@@ -181,13 +179,34 @@ func (s *serviceWorker) Handle(w http.ResponseWriter, r *http.Request, router se
 	}
 	ctx.ProxyRequest.SetTargetURL(path)
 
-	response, err := s.upstream.Send(ctx, s)
+	response, err := s.send(ctx, s)
 	if err != nil {
+		ctx.SetBody([]byte(err.Error()))
 		return err
 	}
-	ctx.SetBody(response.Body())
-	ctx.SetStatus(200, "200")
+	ctx.SetProxyResponseHandler(http_context.NewResponseReader(response.Header(), response.StatusCode(), response.Status(), response.Body()))
 	return nil
+}
+
+func (s *serviceWorker) send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (backend.IResponse, error) {
+	if s.upstream == nil {
+		var response backend.IResponse
+		var err error
+		path := utils.TrimPrefixAll(ctx.ProxyRequest.TargetURL(), "/")
+		for doTrice := serviceDetail.Retry() + 1; doTrice > 0; doTrice-- {
+			u := fmt.Sprintf("%s://%s/%s", serviceDetail.Scheme(), serviceDetail.ProxyAddr(), path)
+			response, err = http_proxy.DoRequest(ctx, u, serviceDetail.Timeout())
+
+			if err != nil {
+				continue
+			} else {
+				return response, err
+			}
+		}
+		return response, err
+	} else {
+		return s.upstream.Send(ctx, serviceDetail)
+	}
 }
 
 //recombinePath 生成新的目标URL

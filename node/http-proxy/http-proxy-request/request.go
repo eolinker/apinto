@@ -140,7 +140,6 @@ func (r *Request) Send(ctx *http_context.Context) (*http.Response, error) {
 	req.Header = parseHeaders(r.headers)
 
 	r.client.Timeout = r.timeout
-
 	httpResponse, err := r.client.Do(req)
 
 	return httpResponse, err

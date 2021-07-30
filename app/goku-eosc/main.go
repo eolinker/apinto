@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"path/filepath"
 
@@ -12,11 +13,12 @@ import (
 
 func main() {
 	log.InitDebug(true)
+	initFlag()
 	Register()
 	pluginPath, _ := filepath.Abs("./plugins")
 	loadPlugins(pluginPath)
-	storeName := "yaml"
-	file := "data.yml"
+	storeName := "memory"
+
 	driverFile := "profession.yml"
 
 	storeDriver, has := eosc.GetStoreDriver(storeName)
@@ -24,9 +26,7 @@ func main() {
 		log.Panic("unkonw store driver:", storeName)
 	}
 
-	storeT, err := storeDriver.Create(map[string]string{
-		"file": file,
-	})
+	storeT, err := storeDriver.Create(nil)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -43,10 +43,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	_, err = eosc.NewWorkers(professions, storeT)
-	if err != nil {
-		log.Panic(err)
-	}
 
 	admin := admin_open_api.NewOpenAdmin("/api", professions)
 	htmlAdmin := admin_html.NewHtmlAdmin("/", professions)
@@ -62,5 +58,7 @@ func main() {
 	httpServer := http.NewServeMux()
 	httpServer.Handle("/api/", handler)
 	httpServer.Handle("/", hadlerHtml)
-	log.Fatal(http.ListenAndServe(":8088", httpServer))
+
+	log.Info(fmt.Sprintf("Listen http port %d successfully", httpPort))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", httpPort), httpServer))
 }

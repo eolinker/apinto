@@ -6,7 +6,8 @@
     - service
   append_label:
     - host
-    - service
+    - target
+    - listen
   drivers:
     -
       id: eolinker:goku:http_router
@@ -41,16 +42,13 @@
       name: http_proxy
       label: http转发负载
       desc: http转发负载
-    - id: eolinker:goku:upstream_http_proxy_anonymous
-      name: http_proxy_anonymous
-      label: http匿名转发负载
-      desc: http匿名转发负载（不依赖discovery模块）
 -
   name: discovery
   label: 注册中心
   desc: 注册中心
   dependencies: null
-  append_label: null
+  append_label:
+#    - health_on
   drivers:
     -
       id: eolinker:goku:discovery_static
@@ -94,8 +92,8 @@
       name: aksk
       label: ak/sk鉴权
       desc: ak/sk鉴权
-#    -
-#      id: eolinker:goku:auth_jwt
-#      name: jwt
-#      label: jwt鉴权
-#      desc: jwt鉴权
+    -
+      id: eolinker:goku:auth_jwt
+      name: jwt
+      label: jwt鉴权
+      desc: jwt鉴权
