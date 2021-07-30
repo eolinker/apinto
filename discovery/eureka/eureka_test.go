@@ -1,7 +1,7 @@
 package eureka
 
 import (
-	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/eolinker/goku-eosc/discovery"
@@ -9,27 +9,38 @@ import (
 
 func TestGetApp(t *testing.T) {
 	serviceName := "DEMO"
-	e := &eureka{
-		id:   "1",
-		name: "eolinker",
-		address: []string{
-			"http://10.1.94.48:8761/eureka",
+	cfg := Config{
+		Name:   "eureka",
+		Scheme: "http",
+		Config: AccessConfig{
+			Address: []string{
+				"10.1.94.48:8761/eureka",
+			},
+			Params: map[string]string{
+				"username": "test",
+				"password": "test",
+			},
 		},
-		params: map[string]string{
-			"username": "test",
-			"password": "test",
-		},
-		labels:     nil,
-		services:   discovery.NewServices(),
-		context:    nil,
-		cancelFunc: nil,
 	}
-
+	e := &eureka{
+		id:       "1",
+		name:     cfg.Name,
+		client:   newClient(cfg.getAddress(), cfg.getParams()),
+		nodes:    discovery.NewNodesData(),
+		services: discovery.NewServices(),
+		locker:   sync.RWMutex{},
+	}
 	app, err := e.GetApp(serviceName)
 	if err != nil {
-		fmt.Println("error:", err)
+		t.Fatal(err)
 	}
 	for _, node := range app.Nodes() {
-		fmt.Println(node.ID())
+		t.Log(node.ID())
+	}
+	ns, bo := e.nodes.Get(serviceName)
+	if bo {
+		t.Log(len(ns))
+	} else {
+		t.Error("nodes error")
 	}
 }

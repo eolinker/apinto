@@ -27,6 +27,18 @@ type nacos struct {
 	locker     sync.RWMutex
 }
 
+// nacos 服务实例结构
+type Instance struct {
+	Hosts []struct {
+		Valid      bool    `json:"valid"`
+		Marked     bool    `json:"marked"`
+		InstanceId string  `json:"instanceId"`
+		Port       int     `json:"port"`
+		Ip         string  `json:"ip"`
+		Weight     float64 `json:"weight"`
+	}
+}
+
 //Id 返回 worker id
 func (n *nacos) Id() string {
 	return n.id
@@ -77,12 +89,11 @@ func (n *nacos) Start() error {
 
 //Reset 重置nacos实例配置
 func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-
 	cfg, ok := conf.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
-	n.client = newClient(cfg.Config.Address, cfg.getScheme())
+	n.client = newClient(cfg.Config.Address, cfg.getParams(), cfg.getScheme())
 	return nil
 }
 
@@ -109,7 +120,6 @@ func (n *nacos) GetApp(serviceName string) (discovery.IApp, error) {
 	nodes, ok := n.nodes.Get(serviceName)
 	n.locker.RUnlock()
 	if !ok {
-
 		n.locker.Lock()
 		nodes, ok = n.nodes.Get(serviceName)
 		if !ok {
