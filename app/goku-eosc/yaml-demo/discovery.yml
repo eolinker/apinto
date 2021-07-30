@@ -1,43 +1,46 @@
 discovery:
-  - name: consul_1  #服务发现实例名
+  -
+    name: consul_1  #服务发现实例名
     driver: consul  #所使用驱动
-    scheme: http   #接入地址所使用的scheme
-    config: #实例配置
+    scheme: http   #非必填，接入地址所使用的scheme，支持http或https,不填或填支持范围外的则默认为http
+    config: #必填，接入地址配置
       -
-        address:   #集群接入地址
+        address:   #必填，集群接入地址
           - 192.168.1.3:8500
           - 191.168.1.4:8501
-        params:   #集群接入参数
+        params:   #非必填，集群接入参数，如访问控制参数和命名空间
           - token: a9XXXXd8-5XX9-4fX0-bXXd-3XXXXXXXXaa
           - namespace: XXXX
   -
     name: nacos_1
     driver: nacos
-    scheme: http
-    config:
-      address:
+    scheme: http #非必填，接入地址所使用的scheme，支持http或https,不填或填支持范围外的则默认为http
+    config: #必填，接入地址配置
+      address:  #必填，集群接入地址
         - 127.0.0.1:8080
         - 10.1.1.1:8080
-      params:
+      params:  #非必填，集群接入参数，如访问控制参数
         username: xxx
         password: xxx
-    health:
-      protocol: http
-      method: GET
-      url: xxx
-      success_code: 200
-      timeout: 3000
-      period: 30
-    health_on: true
+  - name: eureka_1
+    driver: eureka
+    scheme: http #非必填，接入地址所使用的scheme，支持http或https,不填或填支持范围外的则默认为http
+    config: #必填，接入地址配置
+      address: #必填，集群接入地址
+        - 127.0.0.1:8080
+        - 10.1.1.1:8080
+      params: #非必填，集群接入参数，如访问控制参数
+        username: xxx
+        password: xxx
   -
     name: static_1
     driver: static
-    scheme: http
-    health:
-      protocol: http
-      method: GET
-      url: xxx
-      success_code: 200
-      timeout: 3000
-      period: 30
-    health_on: true
+    scheme: http  #非必填，接入地址所使用的scheme，支持http或https,不填或填支持范围外的则默认为http
+    health: #非必填，健康检测配置.不填则一定关闭健康检测
+      protocol: http #健康检查请求所使用的协议
+      method: GET #健康检查请求所使用的method
+      url: xxx  #健康检查请求所使用的url
+      success_code: 200 #健康检查请求成功所返回成功码
+      timeout: 3000  #超时时间
+      period: 30  #健康检查间隔
+    health_on: true  #非必填，健康检查开关，不填则为false,只有填了健康配置且该字段为true时才会开启健康检查
