@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 	"unicode"
 
@@ -27,8 +26,6 @@ type static struct {
 	id         string
 	name       string
 	scheme     string
-	apps       map[string]discovery.IApp
-	locker     sync.RWMutex
 	healthOn   bool
 	checker    *health_check_http.HTTPCheck
 	context    context.Context
@@ -94,11 +91,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 
 //Stop 停止服务发现
 func (s *static) Stop() error {
-	s.locker.Lock()
-	for _, a := range s.apps {
-		a.Close()
-	}
-	s.locker.Unlock()
+
 	return nil
 }
 
@@ -113,17 +106,12 @@ func (s *static) GetApp(config string) (discovery.IApp, error) {
 	if err != nil {
 		return nil, err
 	}
-	s.locker.Lock()
-	s.apps[app.ID()] = app
-	s.locker.Unlock()
+
 	return app, nil
 }
 
 //Remove 从所有服务app中移除目标app
 func (s *static) Remove(id string) error {
-	s.locker.Lock()
-	delete(s.apps, id)
-	s.locker.Unlock()
 	return nil
 }
 
