@@ -21,17 +21,6 @@ func main() {
 	loadPlugins(pluginPath)
 	//storeName := "memory"
 
-	driverFile := "profession.yml"
-
-	//storeDriver, has := eosc.GetStoreDriver(storeName)
-	//if !has {
-	//	log.Panic("unkonw store driver:", storeName)
-	//}
-	//
-	//storeT, err := storeDriver.Create(nil)
-	//if err != nil {
-	//	log.Panic(err)
-	//}
 	storeT := initStore()
 
 	driverCfg, err := readProfessionConfig(driverFile)
