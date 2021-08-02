@@ -1,12 +1,8 @@
 package static
 
 import (
-	"reflect"
-	"sync"
-
-	"github.com/eolinker/goku-eosc/discovery"
-
 	"github.com/eolinker/eosc"
+	"reflect"
 )
 
 const (
@@ -34,8 +30,6 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	s := &static{
 		id:     id,
 		name:   name,
-		locker: sync.RWMutex{},
-		apps:   make(map[string]discovery.IApp),
 	}
 	s.Reset(v, workers)
 	return s, nil

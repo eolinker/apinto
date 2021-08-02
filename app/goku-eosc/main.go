@@ -56,19 +56,24 @@ func main() {
 
 	if path != "" {
 		yamlReader, err := reader_yaml.NewYaml(path)
-		if err == nil {
-			for _, p := range professions.Infos() {
-				values := yamlReader.AllByProfession(p.Name)
-				for _, v := range values {
-					err = storeT.Set(v)
-					if err != nil {
-						log.Errorf("init data error	%s	%s	:%s", p.Name, v.Id, err.Error())
-						continue
-					}
-					log.Infof("set data successful	%s	%s", p.Name, v.Id)
+		if err != nil {
+			log.Warnf("load %s:%s",path,err.Error())
+			log.Panic(err)
+		}
+
+		for _, p := range professions.Infos() {
+			values := yamlReader.AllByProfession(p.Name)
+			for _, v := range values {
+				err = storeT.Set(v)
+				if err != nil {
+					log.Errorf("init data error	%s	%s	:%s", p.Name, v.Id, err.Error())
+					continue
 				}
+				log.Infof("set data successful	%s	%s", p.Name, v.Id)
 			}
 		}
+
+
 	}
 
 	httpServer := http.NewServeMux()
