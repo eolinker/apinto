@@ -24,9 +24,8 @@ var (
 )
 
 type static struct {
-	id   string
-	name string
-	//labels     map[string]string
+	id         string
+	name       string
 	scheme     string
 	apps       map[string]discovery.IApp
 	locker     sync.RWMutex
