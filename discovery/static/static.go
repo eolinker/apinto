@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 	"unicode"
 
@@ -26,9 +25,7 @@ var (
 type static struct {
 	id         string
 	name       string
-	labels     map[string]string
-	apps       map[string]discovery.IApp
-	locker     sync.RWMutex
+	scheme     string
 	healthOn   bool
 	checker    *health_check_http.HTTPCheck
 	context    context.Context
@@ -53,9 +50,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	if !ok {
 		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), ErrorStructType)
 	}
-	s.locker.Lock()
-	s.labels = cfg.Labels
-	s.locker.Unlock()
+	s.scheme = cfg.getScheme()
 	if cfg.Health == nil {
 		s.healthOn = false
 	} else {
@@ -65,7 +60,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 		if s.checker == nil {
 			s.checker = health_check_http.NewHTTPCheck(
 				health_check_http.Config{
-					Protocol:    cfg.Health.Protocol,
+					Protocol:    cfg.Health.Scheme,
 					Method:      cfg.Health.Method,
 					URL:         cfg.Health.URL,
 					SuccessCode: cfg.Health.SuccessCode,
@@ -75,7 +70,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 		} else {
 			s.checker.Reset(
 				health_check_http.Config{
-					Protocol:    cfg.Health.Protocol,
+					Protocol:    cfg.Health.Scheme,
 					Method:      cfg.Health.Method,
 					URL:         cfg.Health.URL,
 					SuccessCode: cfg.Health.SuccessCode,
@@ -96,9 +91,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 
 //Stop 停止服务发现
 func (s *static) Stop() error {
-	for _, a := range s.apps {
-		a.Close()
-	}
+
 	return nil
 }
 
@@ -113,17 +106,12 @@ func (s *static) GetApp(config string) (discovery.IApp, error) {
 	if err != nil {
 		return nil, err
 	}
-	s.locker.Lock()
-	s.apps[app.ID()] = app
-	s.locker.Unlock()
+
 	return app, nil
 }
 
 //Remove 从所有服务app中移除目标app
 func (s *static) Remove(id string) error {
-	s.locker.Lock()
-	delete(s.apps, id)
-	s.locker.Unlock()
 	return nil
 }
 
@@ -146,8 +134,14 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 	for _, word := range words {
 
 		if word == ";" {
-			n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port)
-			nodes[n.ID()] = n
+			if node != nil {
+				scheme, has := node.labels["scheme"]
+				if !has {
+					scheme = s.scheme
+				}
+				n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port, scheme)
+				nodes[n.ID()] = n
+			}
 			index = 0
 			node = nil
 			continue
@@ -193,8 +187,14 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 		}
 		index++
 	}
-	n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port)
-	nodes[n.ID()] = n
+	if node != nil {
+		scheme, has := node.labels["scheme"]
+		if !has {
+			scheme = s.scheme
+		}
+		n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port, scheme)
+		nodes[n.ID()] = n
+	}
 	index = 0
 	node = nil
 

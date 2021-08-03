@@ -1,7 +1,9 @@
 package consul
 
 import (
+	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/eolinker/goku-eosc/discovery"
 
@@ -30,14 +32,22 @@ func (d *driver) ConfigType() reflect.Type {
 
 //Create 创建consul驱动实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+	workerConfig, ok := v.(*Config)
+	if !ok {
+		return nil, fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(v))
+	}
+
+	clients, err := newClients(workerConfig.Config.Address, workerConfig.Config.Params, workerConfig.getScheme())
+	if err != nil {
+		return nil, err
+	}
 	c := &consul{
 		id:       id,
 		name:     name,
+		clients:  clients,
+		nodes:    discovery.NewNodesData(),
 		services: discovery.NewServices(),
-	}
-	err := c.Reset(v, workers)
-	if err != nil {
-		return nil, err
+		locker:   sync.RWMutex{},
 	}
 	return c, nil
 }

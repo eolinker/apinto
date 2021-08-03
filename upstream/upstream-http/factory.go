@@ -8,7 +8,7 @@ import (
 
 //Register 注册http_proxy驱动工厂
 func Register() {
-	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:http_proxy", NewFactory())
+	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:upstream_http_proxy", NewFactory())
 }
 
 type factory struct {

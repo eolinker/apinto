@@ -1,5 +1,11 @@
 package discovery
 
+import "errors"
+
+var (
+	ErrDiscoveryDown = errors.New("discovery down")
+)
+
 //CheckSkill 检查目标技能是否符合
 func CheckSkill(skill string) bool {
 	return skill == "github.com/eolinker/goku-eosc/discovery.discovery.IDiscovery"
@@ -15,7 +21,7 @@ type IApp interface {
 	IAttributes
 	ID() string
 	Nodes() []INode
-	Reset([]INode)
+	Reset(nodes Nodes)
 	NodeError(id string) error
 	Close() error
 }
@@ -31,6 +37,7 @@ type INode interface {
 	ID() string
 	IP() string
 	Port() int
+	Scheme() string
 	Addr() string
 	Status() NodeStatus
 	Up()

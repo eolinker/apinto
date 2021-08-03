@@ -7,6 +7,16 @@ import (
 	"strings"
 	"time"
 
+	http_proxy "github.com/eolinker/goku-eosc/node/http-proxy"
+	"github.com/eolinker/goku-eosc/node/http-proxy/backend"
+	"github.com/eolinker/goku-eosc/utils"
+
+	"github.com/eolinker/eosc/log"
+
+	"github.com/eolinker/goku-eosc/auth"
+
+	"github.com/eolinker/goku-eosc/router/checker"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/goku-eosc/upstream"
 
@@ -20,16 +30,18 @@ var (
 )
 
 type serviceWorker struct {
-	id         string
-	name       string
-	driver     string
-	desc       string
-	timeout    time.Duration
-	rewriteURL string
-	retry      int
-	scheme     string
-	proxyAddr  string
-	upstream   upstream.IUpstream
+	id          string
+	name        string
+	driver      string
+	desc        string
+	timeout     time.Duration
+	rewriteURL  string
+	retry       int
+	scheme      string
+	proxyAddr   string
+	proxyMethod string
+	auths       []auth.IAuth
+	upstream    upstream.IUpstream
 }
 
 //Id 返回服务实例 worker id
@@ -47,34 +59,35 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	if !ok {
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
+	data.rebuild()
+	auths := make([]auth.IAuth, 0, len(data.Auth))
+	for _, a := range data.Auth {
+		if worker, has := workers[a]; has {
+			ah, ok := worker.(auth.IAuth)
+			if ok {
+				auths = append(auths, ah)
+			}
+		}
+	}
+	s.desc = data.Desc
+	s.timeout = time.Duration(data.Timeout) * time.Millisecond
+	s.rewriteURL = data.RewriteURL
+	s.retry = data.Retry
+	s.scheme = data.Scheme
+	s.proxyMethod = data.ProxyMethod
+	s.auths = auths
+	s.upstream = nil
 	if worker, has := workers[data.Upstream]; has {
-		s.desc = data.Desc
-		s.timeout = time.Duration(data.Timeout) * time.Millisecond
-		s.rewriteURL = data.RewriteURL
-		s.retry = data.Retry
-		s.scheme = data.Scheme
 		u, ok := worker.(upstream.IUpstream)
 		if ok {
 			s.upstream = u
 			return nil
 		}
 	} else {
-		worker, has = workers[eosc.RequireId(fmt.Sprintf("%s@%s", data.Upstream, "upstream"))]
-		if has {
-			s.desc = data.Desc
-			s.timeout = time.Duration(data.Timeout) * time.Millisecond
-			s.rewriteURL = data.RewriteURL
-			s.retry = data.Retry
-			s.scheme = data.Scheme
-			u, ok := worker.(upstream.IUpstream)
-			if ok {
-				s.upstream = u
-				return nil
-			}
-			return nil
-		}
+		s.proxyAddr = string(data.Upstream)
 	}
-	return errors.New("fail to create serviceWorker")
+
+	return nil
 
 }
 
@@ -117,18 +130,83 @@ func (s *serviceWorker) ProxyAddr() string {
 	return s.proxyAddr
 }
 
+func (s *serviceWorker) doAuth(ctx *http_context.Context) error {
+	// 鉴权
+	if len(s.auths) > 0 {
+		validRequest := false
+		for _, a := range s.auths {
+			err := a.Auth(ctx)
+			if err == nil {
+				validRequest = true
+				break
+			}
+			log.Error(err)
+		}
+		if !validRequest {
+			return errors.New("invalid user")
+		}
+	}
+	return nil
+}
+
 //Handle 将服务发送到负载
-func (s *serviceWorker) Handle(w http.ResponseWriter, r *http.Request, router service.IRouterRule) error {
+func (s *serviceWorker) Handle(w http.ResponseWriter, r *http.Request, router service.IRouterEndpoint) error {
 	// 构造context
 	ctx := http_context.NewContext(r, w)
-	// 设置目标URL
-	ctx.ProxyRequest.SetTargetURL(recombinePath(r.URL.Path, router.Location(), s.rewriteURL))
-	response, err := s.upstream.Send(ctx, s)
+	defer func() {
+		if e := recover(); e != nil {
+			log.Warn(e)
+		}
+		if ctx.Status() == "" {
+			ctx.SetStatus(200, "200")
+		}
+		ctx.Finish()
+	}()
+	err := s.doAuth(ctx)
 	if err != nil {
+		ctx.SetBody([]byte(err.Error()))
+		ctx.SetStatus(403, "403")
 		return err
 	}
-	fmt.Println(string(response.Body()))
+	// 设置目标URL
+	location, has := router.Location()
+	path := s.rewriteURL
+	if has && location.CheckType() == checker.CheckTypePrefix {
+		path = recombinePath(r.URL.Path, location.Value(), s.rewriteURL)
+	}
+	if s.proxyMethod != "" {
+		ctx.ProxyRequest.Method = s.proxyMethod
+	}
+	ctx.ProxyRequest.SetTargetURL(path)
+
+	response, err := s.send(ctx, s)
+	if err != nil {
+		ctx.SetBody([]byte(err.Error()))
+		return err
+	}
+	ctx.SetProxyResponseHandler(http_context.NewResponseReader(response.Header(), response.StatusCode(), response.Status(), response.Body()))
 	return nil
+}
+
+func (s *serviceWorker) send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (backend.IResponse, error) {
+	if s.upstream == nil {
+		var response backend.IResponse
+		var err error
+		path := utils.TrimPrefixAll(ctx.ProxyRequest.TargetURL(), "/")
+		for doTrice := serviceDetail.Retry() + 1; doTrice > 0; doTrice-- {
+			u := fmt.Sprintf("%s://%s/%s", serviceDetail.Scheme(), serviceDetail.ProxyAddr(), path)
+			response, err = http_proxy.DoRequest(ctx, u, serviceDetail.Timeout())
+
+			if err != nil {
+				continue
+			} else {
+				return response, err
+			}
+		}
+		return response, err
+	} else {
+		return s.upstream.Send(ctx, serviceDetail)
+	}
 }
 
 //recombinePath 生成新的目标URL
