@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"path/filepath"
 
+	reader_yaml "github.com/eolinker/goku-eosc/reader-yaml"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/log"
 	admin_html "github.com/eolinker/eosc/modules/admin-html"
@@ -17,24 +19,21 @@ func main() {
 	Register()
 	pluginPath, _ := filepath.Abs("./plugins")
 	loadPlugins(pluginPath)
-	storeName := "memory"
+	//storeName := "memory"
 
 	driverFile := "profession.yml"
 
-	storeDriver, has := eosc.GetStoreDriver(storeName)
-	if !has {
-		log.Panic("unkonw store driver:", storeName)
-	}
+	//storeDriver, has := eosc.GetStoreDriver(storeName)
+	//if !has {
+	//	log.Panic("unkonw store driver:", storeName)
+	//}
+	//
+	//storeT, err := storeDriver.Create(nil)
+	//if err != nil {
+	//	log.Panic(err)
+	//}
+	storeT := initStore()
 
-	storeT, err := storeDriver.Create(nil)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	err = storeT.Initialization()
-	if err != nil {
-		log.Panic(err)
-	}
 	driverCfg, err := readProfessionConfig(driverFile)
 	if err != nil {
 		log.Panic(err)
@@ -53,6 +52,28 @@ func main() {
 	hadlerHtml, err := htmlAdmin.GenHandler()
 	if err != nil {
 		panic(err)
+	}
+
+	if path != "" {
+		yamlReader, err := reader_yaml.NewYaml(path)
+		if err != nil {
+			log.Warnf("load %s:%s",path,err.Error())
+			log.Panic(err)
+		}
+
+		for _, p := range professions.Infos() {
+			values := yamlReader.AllByProfession(p.Name)
+			for _, v := range values {
+				err = storeT.Set(v)
+				if err != nil {
+					log.Errorf("init data error	%s	%s	:%s", p.Name, v.Id, err.Error())
+					continue
+				}
+				log.Infof("set data successful	%s	%s", p.Name, v.Id)
+			}
+		}
+
+
 	}
 
 	httpServer := http.NewServeMux()
