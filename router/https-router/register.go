@@ -7,7 +7,7 @@ var (
 		ID:      "eolinker:goku:http_router",
 		Group:   "eolinker",
 		Project: "goku",
-		Name:    "https_router",
+		Name:    "http_router",
 	}
 )
 
