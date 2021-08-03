@@ -2,9 +2,6 @@ package static
 
 import (
 	"reflect"
-	"sync"
-
-	"github.com/eolinker/goku-eosc/discovery"
 
 	"github.com/eolinker/eosc"
 )
@@ -32,10 +29,8 @@ func (d *driver) ConfigType() reflect.Type {
 //Create 创建静态服务发现驱动的实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	s := &static{
-		id:     id,
-		name:   name,
-		locker: sync.RWMutex{},
-		apps:   make(map[string]discovery.IApp),
+		id:   id,
+		name: name,
 	}
 	s.Reset(v, workers)
 	return s, nil

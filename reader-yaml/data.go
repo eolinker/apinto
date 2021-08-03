@@ -52,7 +52,7 @@ func (i Item) newStoreValue(profession string, now string) (*eosc.StoreValue, er
 		id = fmt.Sprintf("%s@%s", name, profession)
 	}
 
-	data, err := eosc.MarshalBytes(i)
+	data, err := MarshalBytes(i)
 	if err != nil {
 		return nil, err
 	}
