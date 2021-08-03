@@ -25,7 +25,7 @@ func (rs *Routers) Set(port int, id string, conf *Config) (IRouter, bool, error)
 		if err != nil {
 			return nil, false, err
 		}
-		rs.data.Set(id, router)
+		rs.data.Set(name, router)
 		return router, true, nil
 	} else {
 		router := r.(IRouter)
