@@ -14,9 +14,10 @@ func main() {
 	//fmt.Println(a[i+1:])
 	a := "*"
 	fmt.Println(a[1:])
-	http.ListenAndServe(":8181", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	err := http.ListenAndServeTLS(":8181", "eolinker.csr", "eolinker.key", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		ctx := http_context.NewContext(r, w)
 		ctx.ProxyRequest.Headers()
 	}))
+	fmt.Println(err)
 }

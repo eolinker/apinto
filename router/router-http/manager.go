@@ -2,10 +2,13 @@ package router_http
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,7 +17,8 @@ import (
 
 var _ iManager = (*Manager)(nil)
 var (
-	sign = ""
+	sign                     = ""
+	_ErrorCertificateNotExit = errors.New("not exit ca")
 )
 
 func init() {
@@ -35,8 +39,32 @@ var manager = NewManager()
 type Manager struct {
 	locker    sync.Mutex
 	routers   IRouters
-	servers   map[int]*http.Server
+	servers   map[int]*httpServer
 	listeners map[int]net.Listener
+}
+
+type httpServer struct {
+	tlsConfig *tls.Config
+	port      int
+	protocol  string
+	srv       *http.Server
+	certs     *Certs
+}
+
+func (s *httpServer) shutdown(ctx context.Context) {
+	s.srv.Shutdown(ctx)
+}
+
+func (a *httpServer) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	if a.certs == nil {
+		return nil, _ErrorCertificateNotExit
+	}
+	certificate, has := a.certs.Get(strings.ToLower(info.ServerName))
+	if !has {
+		return nil, _ErrorCertificateNotExit
+	}
+
+	return certificate, nil
 }
 
 func (m *Manager) Cancel() {
@@ -44,7 +72,7 @@ func (m *Manager) Cancel() {
 	defer m.locker.Unlock()
 	ctx := context.Background()
 	for p, s := range m.servers {
-		s.Shutdown(ctx)
+		s.shutdown(ctx)
 		delete(m.servers, p)
 	}
 
@@ -57,7 +85,7 @@ func (m *Manager) Cancel() {
 func NewManager() *Manager {
 	return &Manager{
 		routers:   NewRouters(),
-		servers:   make(map[int]*http.Server),
+		servers:   make(map[int]*httpServer),
 		listeners: make(map[int]net.Listener),
 		locker:    sync.Mutex{},
 	}
@@ -66,6 +94,7 @@ func NewManager() *Manager {
 func (m *Manager) Add(port int, id string, config *Config) error {
 	m.locker.Lock()
 	defer m.locker.Unlock()
+
 	router, isCreate, err := m.routers.Set(port, id, config)
 	if err != nil {
 		return err
@@ -73,14 +102,19 @@ func (m *Manager) Add(port int, id string, config *Config) error {
 	if isCreate {
 		s, has := m.servers[port]
 		if !has {
-			s = &http.Server{}
+			s = &httpServer{srv: &http.Server{}}
 
-			s.Handler = router
+			s.srv.Handler = router
 			l, err := listener.ListenTCP(port, sign)
 			if err != nil {
 				return err
 			}
-			go s.Serve(l)
+			if config.Protocol == "https" {
+				s.certs = newCerts(config.Cert)
+				s.tlsConfig = &tls.Config{GetCertificate: s.GetCertificate}
+				l = tls.NewListener(l, s.tlsConfig)
+			}
+			go s.srv.Serve(l)
 
 			m.servers[port] = s
 			m.listeners[port] = l
@@ -96,7 +130,7 @@ func (m *Manager) Del(port int, id string) error {
 		if r.Count() == 0 {
 			if s, has := m.servers[port]; has {
 				ctx := context.Background()
-				err := s.Shutdown(ctx)
+				err := s.srv.Shutdown(ctx)
 				if err != nil {
 					return err
 				}

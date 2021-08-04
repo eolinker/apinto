@@ -79,25 +79,35 @@ func getConfig(target service.IService, cf *DriverConfig) *router_http.Config {
 		rules = append(rules, rr)
 	}
 	hosts := cf.Host
-	if len(hosts) == 0{
+	if len(hosts) == 0 {
 		hosts = []string{"*"}
 	}
-	methods:= cf.Method
-	if len(methods) == 0{
+	methods := cf.Method
+	if len(methods) == 0 {
 		methods = []string{"*"}
+	}
+	protocol := "http"
+	if cf.Protocol == "https" {
+		protocol = "https"
+	}
+	certs := make([]router_http.Cert, 0, len(cf.Cert))
+	for _, c := range cf.Cert {
+		certs = append(certs, router_http.Cert{Key: c.Key, Crt: c.Crt})
 	}
 	return &router_http.Config{
 		//Id:     cf.ID,
 		//Name:   cf.Name,
-		Methods: methods,
-		Hosts:  hosts,
-		Target: target,
-		Rules:  rules,
+		Cert:     certs,
+		Protocol: protocol,
+		Methods:  methods,
+		Hosts:    hosts,
+		Target:   target,
+		Rules:    rules,
 	}
 
 }
 func NewRouter(id, name string, c *DriverConfig, target service.IService) *Router {
-	conf:= getConfig(target, c)
+	conf := getConfig(target, c)
 	conf.Id = id
 	conf.Name = name
 
