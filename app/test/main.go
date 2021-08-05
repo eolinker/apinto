@@ -37,7 +37,8 @@ func main() {
 	client := &fasthttp.Client{ReadTimeout: 30 * time.Second, MaxConnsPerHost: 4000}
 	err := http.ListenAndServe(":8082", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		req := fasthttp.AcquireRequest()
-		req.SetRequestURI("http://172.18.189.60/")
+		req.Header.SetMethod("POST")
+		req.SetRequestURI("http://47.95.203.198:8080/Web/Test/params/print")
 		var resp fasthttp.Response
 		err := client.Do(req, &resp)
 		//status, resp, err := fasthttp.Get(nil, "http://172.18.189.60/")
@@ -50,6 +51,7 @@ func main() {
 			fmt.Println("请求没有成功:", resp.StatusCode())
 			return
 		}
+		fmt.Println(string(resp.Header.Header()))
 		w.WriteHeader(resp.StatusCode())
 		w.Write(resp.Body())
 

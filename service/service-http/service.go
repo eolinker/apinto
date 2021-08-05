@@ -7,8 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/valyala/fasthttp"
+
 	http_proxy "github.com/eolinker/goku-eosc/node/http-proxy"
-	"github.com/eolinker/goku-eosc/node/http-proxy/backend"
 	"github.com/eolinker/goku-eosc/utils"
 
 	"github.com/eolinker/eosc/log"
@@ -184,13 +185,13 @@ func (s *serviceWorker) Handle(w http.ResponseWriter, r *http.Request, router se
 		ctx.SetBody([]byte(err.Error()))
 		return err
 	}
-	ctx.SetProxyResponseHandler(http_context.NewResponseReader(response.Header(), response.StatusCode(), response.Status(), response.Body()))
+	ctx.SetProxyResponseHandler(http_context.NewResponseReader(&response.Header, response.StatusCode(), response.Body()))
 	return nil
 }
 
-func (s *serviceWorker) send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (backend.IResponse, error) {
+func (s *serviceWorker) send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (*fasthttp.Response, error) {
 	if s.upstream == nil {
-		var response backend.IResponse
+		var response *fasthttp.Response
 		var err error
 		path := utils.TrimPrefixAll(ctx.ProxyRequest.TargetURL(), "/")
 		for doTrice := serviceDetail.Retry() + 1; doTrice > 0; doTrice-- {

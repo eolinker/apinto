@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/eolinker/goku-eosc/node/http-proxy/backend"
+	"github.com/valyala/fasthttp"
 
 	"github.com/eolinker/goku-eosc/upstream"
 
@@ -99,8 +99,8 @@ func (h *httpUpstream) CheckSkill(skill string) bool {
 }
 
 //Send 请求发送，忽略重试
-func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (backend.IResponse, error) {
-	var response backend.IResponse
+func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (*fasthttp.Response, error) {
+	var response *fasthttp.Response
 	var err error
 
 	path := utils.TrimPrefixAll(ctx.ProxyRequest.TargetURL(), "/")

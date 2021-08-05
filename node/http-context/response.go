@@ -3,6 +3,10 @@ package http_context
 import (
 	"io/ioutil"
 	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/valyala/fasthttp"
 )
 
 //ResponseReader 响应结构体
@@ -35,12 +39,27 @@ func newResponseReader(response *http.Response) *ResponseReader {
 }
 
 //NewResponseReader 新增ResponseReader
-func NewResponseReader(header http.Header, statusCode int, status string, body []byte) *ResponseReader {
+func NewResponseReader(header *fasthttp.ResponseHeader, statusCode int, body []byte) *ResponseReader {
 	r := new(ResponseReader)
-	r.Header = NewHeader(header)
-	r.CookiesHandler = newCookieHandle(header)
+	tmpHeader := http.Header{}
+
+	hs := strings.Split(string(header.Header()), "\r\n")
+	for i, h := range hs {
+		if i == 0 {
+			continue
+		}
+		values := strings.Split(h, ":")
+		vLen := len(values)
+		if vLen < 2 {
+			tmpHeader.Set(values[0], "")
+		} else {
+			tmpHeader.Set(values[0], values[1])
+		}
+	}
+	r.Header = &Header{header: tmpHeader}
+	//r.CookiesHandler = newCookieHandle(header)
 	r.StatusHandler = NewStatusHandler()
-	r.SetStatus(statusCode, status)
+	r.SetStatus(statusCode, strconv.Itoa(statusCode))
 	// if response.ContentLength > 0 {
 	// 	body, _ := ioutil.ReadAll(response.body)
 	// 	r.BodyHandler = NewBodyHandler(body)

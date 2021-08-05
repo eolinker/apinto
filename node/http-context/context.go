@@ -6,7 +6,6 @@ import (
 
 	goku_plugin "github.com/eolinker/goku-standard-plugin"
 
-
 	access_field "github.com/eolinker/goku-eosc/node/common/access-field"
 	"github.com/eolinker/goku-eosc/utils"
 )

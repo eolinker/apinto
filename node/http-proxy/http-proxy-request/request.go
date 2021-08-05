@@ -5,9 +5,11 @@ import (
 	"crypto/tls"
 	"errors"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
+	"strings"
+
+	"github.com/valyala/fasthttp"
 
 	http_context "github.com/eolinker/goku-eosc/node/http-context"
 
@@ -19,27 +21,31 @@ import (
 var Version = "2.0"
 
 var (
-	transport = &http.Transport{TLSClientConfig: &tls.Config{
-		InsecureSkipVerify: false,
-	},
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second, // 连接超时时间
-			KeepAlive: 60 * time.Second, // 保持长连接的时间
-		}).DialContext, // 设置连接的参数
-		MaxIdleConns:          500,              // 最大空闲连接
-		IdleConnTimeout:       60 * time.Second, // 空闲连接的超时时间
-		ExpectContinueTimeout: 30 * time.Second, // 等待服务第一个响应的超时时间
-		MaxIdleConnsPerHost:   100,              // 每个host保持的空闲连接数
-	}
-	httpClient = &http.Client{
-		Transport: transport,
+	//transport = &http.Transport{TLSClientConfig: &tls.Config{
+	//	InsecureSkipVerify: false,
+	//},
+	//	DialContext: (&net.Dialer{
+	//		Timeout:   30 * time.Second, // 连接超时时间
+	//		KeepAlive: 60 * time.Second, // 保持长连接的时间
+	//	}).DialContext, // 设置连接的参数
+	//	MaxIdleConns:          500,              // 最大空闲连接
+	//	IdleConnTimeout:       60 * time.Second, // 空闲连接的超时时间
+	//	ExpectContinueTimeout: 30 * time.Second, // 等待服务第一个响应的超时时间
+	//	MaxIdleConnsPerHost:   100,              // 每个host保持的空闲连接数
+	//}
+
+	httpClient = &fasthttp.Client{
+		TLSConfig: &tls.Config{
+			InsecureSkipVerify: false,
+		},
+		MaxConnsPerHost: 4000,
 	}
 )
 
 //SetCert 设置证书配置
 func SetCert(skip int, clientCerts []tls.Certificate) {
 	tlsConfig := &tls.Config{InsecureSkipVerify: skip == 1, Certificates: clientCerts}
-	transport.TLSClientConfig = tlsConfig
+	httpClient.TLSConfig = tlsConfig
 }
 
 //Request http-proxy 请求结构体
@@ -102,7 +108,6 @@ func newRequest(method string, URL *url.URL) (*Request, error) {
 	urlPath = URL.Scheme + "://" + URL.Host + URL.Path
 
 	r := &Request{
-		client:      httpClient,
 		method:      method,
 		url:         urlPath,
 		headers:     make(map[string][]string),
@@ -144,15 +149,20 @@ func (r *Request) SetTimeout(timeout time.Duration) {
 }
 
 //Send 发送请求
-func (r *Request) Send(ctx *http_context.Context) (*http.Response, error) {
-	req := r.HTTPRequest()
-	req.Header.Set("Accept-Encoding", "gzip")
+func (r *Request) Send(ctx *http_context.Context) (*fasthttp.Response, error) {
+	req := fasthttp.AcquireRequest()
+	req.SetRequestURI(r.url)
+	req.Header.SetMethod(r.method)
 	req.Header = parseHeaders(r.headers)
+	req.Header.Set("Accept-Encoding", "gzip")
 
 	r.client.Timeout = r.timeout
-	httpResponse, err := r.client.Do(req)
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(resp) // 用完需要释放资源
 
-	return httpResponse, err
+	err := httpClient.Do(req, resp)
+
+	return resp, err
 }
 
 //QueryParams 获取query参数
@@ -183,19 +193,26 @@ func (r *Request) SetRawBody(body []byte) {
 }
 
 // 解析请求头
-func parseHeaders(headers map[string][]string) http.Header {
-	h := http.Header{}
+func parseHeaders(headers map[string][]string) fasthttp.RequestHeader {
+	h := fasthttp.RequestHeader{}
+	hasAccept := false
+	hasAgent := false
 	for key, values := range headers {
+		key = strings.ToLower(key)
 		for _, value := range values {
+			if key == "accept" {
+				hasAccept = true
+			}
+			if key == "user-agent" {
+				hasAgent = true
+			}
 			h.Add(key, value)
 		}
 	}
 
-	_, hasAccept := h["Accept"]
 	if !hasAccept {
 		h.Add("Accept", "*/*")
 	}
-	_, hasAgent := h["User-Agent"]
 	if !hasAgent {
 		h.Add("User-Agent", "goku-requests/"+Version)
 	}

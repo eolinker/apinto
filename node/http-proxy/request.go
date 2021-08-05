@@ -5,14 +5,14 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/eolinker/goku-eosc/node/http-proxy/backend"
+	"github.com/valyala/fasthttp"
 
 	http_context "github.com/eolinker/goku-eosc/node/http-context"
 	http_proxy_request "github.com/eolinker/goku-eosc/node/http-proxy/http-proxy-request"
 )
 
 //DoRequest 构造请求
-func DoRequest(ctx *http_context.Context, uri string, timeout time.Duration) (backend.IResponse, error) {
+func DoRequest(ctx *http_context.Context, uri string, timeout time.Duration) (*fasthttp.Response, error) {
 	if uri == "" {
 		return nil, fmt.Errorf("invaild url")
 	}
@@ -54,5 +54,5 @@ func DoRequest(ctx *http_context.Context, uri string, timeout time.Duration) (ba
 		return nil, err
 	}
 
-	return NewResponse(response)
+	return response, nil
 }
