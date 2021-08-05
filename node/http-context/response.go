@@ -51,7 +51,9 @@ func NewResponseReader(header *fasthttp.ResponseHeader, statusCode int, body []b
 		values := strings.Split(h, ":")
 		vLen := len(values)
 		if vLen < 2 {
-			tmpHeader.Set(values[0], "")
+			if values[0] != "" {
+				tmpHeader.Set(values[0], "")
+			}
 		} else {
 			tmpHeader.Set(values[0], values[1])
 		}
