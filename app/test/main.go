@@ -36,7 +36,7 @@ func main() {
 	}
 	client := &http.Client{Transport: transport}
 	err := http.ListenAndServe(":8082", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		req, err := http.NewRequest("GET", "http://172.18.189.59/", nil)
+		req, err := http.NewRequest("GET", "http://172.18.189.60/", nil)
 		if err != nil {
 			w.Write([]byte(err.Error()))
 			return
