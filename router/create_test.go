@@ -564,7 +564,7 @@ var tests = []struct {
 		wantErr: false,
 	},
 	{
-		name: "检测匹配路由时，满足多个条件的优先级优于匹配规则的优先级",
+		name: "检测匹配路由时，匹配规则的优先级优于满足多个条件的优先级",
 		testCase: []testSource{
 			{
 				"host":       "a.abc.com",
@@ -585,11 +585,78 @@ var tests = []struct {
 		want:    []string{"demo1"},
 		wantErr: false,
 	},
+	{
+		name: "测试method",
+		testCase: []testSource{
+			{
+				"host":     "a.abc.com",
+				"location": "/abc",
+				"method":   "GET",
+			},
+			{
+				"host":     "a.abc.com",
+				"location": "/abc",
+				"method":   "POST",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"host = a.abc.com", "location = /abc", "method = GET"},
+				target: "demo1",
+			},
+			{
+				paths:  []string{"host = a.abc.com", "location = /abc", "method = POST"},
+				target: "demo2",
+			},
+			{
+				paths:  []string{"host = a.abc.com.cn", "location = /abc", "method = GET"},
+				target: "demo3",
+			},
+			{
+				paths:  []string{"host = a.abc.com.cn", "location = /abc", "method = POST"},
+				target: "demo4",
+			},
+		},
+
+		want:    []string{"demo1", "demo2"},
+		wantErr: false,
+	},
+	{
+		name: "测试匹配优先级规则排序",
+		testCase: []testSource{
+			{
+				"host":     "a.abc.com",
+				"location": "/abc",
+				"method":   "GET",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"host ^=*a.abc.", "location = /abc", "method = GET"},
+				target: "demo1",
+			},
+			{
+				paths:  []string{"host != a.abc.", "location = /abc", "method = GET"},
+				target: "demo2",
+			},
+			{
+				paths:  []string{"host ^= a.abc.com", "location = /abc", "method = GET"},
+				target: "demo3",
+			},
+			{
+				paths:  []string{"host ^= a.abc.com.cn", "location = /abc", "method = GET"},
+				target: "demo4",
+			},
+		},
+
+		want:    []string{"demo3"},
+		wantErr: false,
+	},
 }
 
 func TestParseRouter(t *testing.T) {
 
-	helper := NewTestHelper([]string{"host", "location", "header", "query"})
+	helper := NewTestHelper([]string{"host", "method", "location", "header", "query"})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
