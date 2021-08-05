@@ -35,7 +35,7 @@ func main() {
 	//client := &http.Client{Transport: transport}
 	err := http.ListenAndServe(":8082", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		status, resp, err := fasthttp.Get(nil, "http://47.95.203.198:8080/")
+		status, resp, err := fasthttp.Get(nil, "http://172.18.189.60/")
 		if err != nil {
 			fmt.Println("请求失败:", err.Error())
 			return
