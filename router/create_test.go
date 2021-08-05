@@ -563,6 +563,28 @@ var tests = []struct {
 		want:    []string{"demo1"},
 		wantErr: false,
 	},
+	{
+		name: "检测匹配路由时，满足多个条件的优先级优于匹配规则的优先级",
+		testCase: []testSource{
+			{
+				"host":       "a.abc.com",
+				"location":   "/abc",
+				"query:name": "chen",
+			},
+		},
+		args: []*TestRule{
+			{
+				paths:  []string{"host = a.abc.com", "location = /abc"},
+				target: "demo1",
+			},
+			{
+				paths:  []string{"host ^= a.abc", "location = /abc", "query:name = chen"},
+				target: "demo2",
+			},
+		},
+		want:    []string{"demo1"},
+		wantErr: false,
+	},
 }
 
 func TestParseRouter(t *testing.T) {
