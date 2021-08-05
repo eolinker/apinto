@@ -50,7 +50,6 @@ func SetCert(skip int, clientCerts []tls.Certificate) {
 
 //Request http-proxy 请求结构体
 type Request struct {
-	client  *http.Client
 	method  string
 	url     string
 	headers map[string][]string
@@ -151,16 +150,14 @@ func (r *Request) SetTimeout(timeout time.Duration) {
 //Send 发送请求
 func (r *Request) Send(ctx *http_context.Context) (*fasthttp.Response, error) {
 	req := fasthttp.AcquireRequest()
+	req.Header = parseHeaders(r.headers)
 	req.SetRequestURI(r.url)
 	req.Header.SetMethod(r.method)
-	req.Header = parseHeaders(r.headers)
 	req.Header.Set("Accept-Encoding", "gzip")
 
-	r.client.Timeout = r.timeout
 	resp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseResponse(resp) // 用完需要释放资源
 
-	err := httpClient.Do(req, resp)
+	err := httpClient.DoTimeout(req, resp, r.timeout)
 
 	return resp, err
 }

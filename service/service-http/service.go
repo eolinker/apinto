@@ -185,6 +185,7 @@ func (s *serviceWorker) Handle(w http.ResponseWriter, r *http.Request, router se
 		ctx.SetBody([]byte(err.Error()))
 		return err
 	}
+	defer fasthttp.ReleaseResponse(response)
 	ctx.SetProxyResponseHandler(http_context.NewResponseReader(&response.Header, response.StatusCode(), response.Body()))
 	return nil
 }
