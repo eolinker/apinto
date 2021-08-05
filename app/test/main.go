@@ -34,7 +34,7 @@ func main() {
 	//	MaxIdleConnsPerHost:   100,              // 每个host保持的空闲连接数
 	//}
 	//client := &http.Client{Transport: transport}
-	client := &fasthttp.Client{ReadTimeout: 30 * time.Second}
+	client := &fasthttp.Client{ReadTimeout: 30 * time.Second, MaxConnsPerHost: 4000}
 	err := http.ListenAndServe(":8082", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		req := fasthttp.AcquireRequest()
 		req.SetRequestURI("http://172.18.189.60/")
