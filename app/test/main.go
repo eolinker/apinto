@@ -47,6 +47,7 @@ func main() {
 		}
 
 		w.Write(resp)
+		w.WriteHeader(status)
 	}))
 	fmt.Println(err)
 }
