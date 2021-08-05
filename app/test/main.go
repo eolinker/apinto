@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/valyala/fasthttp"
 )
@@ -33,20 +34,24 @@ func main() {
 	//	MaxIdleConnsPerHost:   100,              // 每个host保持的空闲连接数
 	//}
 	//client := &http.Client{Transport: transport}
+	client := &fasthttp.Client{ReadTimeout: 30 * time.Second}
 	err := http.ListenAndServe(":8082", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		status, resp, err := fasthttp.Get(nil, "http://172.18.189.60/")
+		req := fasthttp.AcquireRequest()
+		req.SetRequestURI("http://172.18.189.60/")
+		var resp fasthttp.Response
+		err := client.Do(req, &resp)
+		//status, resp, err := fasthttp.Get(nil, "http://172.18.189.60/")
 		if err != nil {
 			fmt.Println("请求失败:", err.Error())
 			return
 		}
 
-		if status != fasthttp.StatusOK {
-			fmt.Println("请求没有成功:", status)
+		if resp.StatusCode() != fasthttp.StatusOK {
+			fmt.Println("请求没有成功:", resp.StatusCode())
 			return
 		}
-		w.WriteHeader(status)
-		w.Write(resp)
+		w.WriteHeader(resp.StatusCode())
+		w.Write(resp.Body())
 
 	}))
 	fmt.Println(err)
