@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"sort"
+	"io/ioutil"
+	"net/http"
 )
 
 func main() {
@@ -18,21 +19,17 @@ func main() {
 	//	ctx.ProxyRequest.Headers()
 	//}))
 	//fmt.Println(err)
-	demo := []int{4, 1, 5, 2, 5, 15}
-	sort.Sort(IntSlice(demo))
-	fmt.Println(demo)
-}
-
-type IntSlice []int
-
-func (a IntSlice) Len() int {
-	return len(a)
-}
-
-func (a IntSlice) Less(i, j int) bool {
-	return a[i] < a[j]
-}
-
-func (a IntSlice) Swap(i, j int) {
-	a[i], a[j] = a[j], a[i]
+	client := &http.Client{}
+	err := http.ListenAndServe(":8082", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = "172.18.189.60"
+		resp, err := client.Do(r)
+		if err != nil {
+			w.Write([]byte(err.Error()))
+			return
+		}
+		defer resp.Body.Close()
+		body, _ := ioutil.ReadAll(resp.Body)
+		w.Write(body)
+	}))
+	fmt.Println(err)
 }
