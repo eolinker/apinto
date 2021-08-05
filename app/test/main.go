@@ -29,6 +29,10 @@ func main() {
 		}
 		defer resp.Body.Close()
 		body, _ := ioutil.ReadAll(resp.Body)
+		for key, value := range resp.Header {
+			w.Header().Set(key, value[0])
+		}
+
 		w.Write(body)
 	}))
 	fmt.Println(err)
