@@ -46,8 +46,6 @@ func main() {
 			return
 		}
 
-		fmt.Println(string(resp))
-
 		w.Write(resp)
 	}))
 	fmt.Println(err)
