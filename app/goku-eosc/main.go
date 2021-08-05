@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"runtime"
 
 	reader_yaml "github.com/eolinker/goku-eosc/reader-yaml"
+
+	_ "net/http/pprof"
 
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/log"
@@ -46,7 +49,7 @@ func main() {
 	if path != "" {
 		yamlReader, err := reader_yaml.NewYaml(path)
 		if err != nil {
-			log.Warnf("load %s:%s",path,err.Error())
+			log.Warnf("load %s:%s", path, err.Error())
 			log.Panic(err)
 		}
 
@@ -62,8 +65,10 @@ func main() {
 			}
 		}
 
-
 	}
+	runtime.GOMAXPROCS(4)              // 限制 CPU 使用数，避免过载
+	runtime.SetMutexProfileFraction(1) // 开启对锁调用的跟踪
+	runtime.SetBlockProfileRate(1)     // 开启对阻塞操作的跟踪
 
 	httpServer := http.NewServeMux()
 	httpServer.Handle("/api/", handler)
