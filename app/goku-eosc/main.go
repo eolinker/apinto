@@ -66,10 +66,11 @@ func main() {
 		}
 
 	}
+
 	runtime.GOMAXPROCS(4)              // 限制 CPU 使用数，避免过载
 	runtime.SetMutexProfileFraction(1) // 开启对锁调用的跟踪
 	runtime.SetBlockProfileRate(1)     // 开启对阻塞操作的跟踪
-
+	go http.ListenAndServe("0.0.0.0:6060", nil)
 	httpServer := http.NewServeMux()
 	httpServer.Handle("/api/", handler)
 	httpServer.Handle("/", hadlerHtml)
