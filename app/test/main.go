@@ -21,8 +21,12 @@ func main() {
 	//fmt.Println(err)
 	client := &http.Client{}
 	err := http.ListenAndServe(":8082", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = "172.18.189.60"
-		resp, err := client.Do(r)
+		req, err := http.NewRequest("GET", "http://172.18.189.59/", nil)
+		if err != nil {
+			w.Write([]byte(err.Error()))
+			return
+		}
+		resp, err := client.Do(req)
 		if err != nil {
 			w.Write([]byte(err.Error()))
 			return
