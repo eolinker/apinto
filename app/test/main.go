@@ -51,7 +51,6 @@ func main() {
 				fmt.Println("请求没有成功:", resp.StatusCode())
 				return
 			}
-			fmt.Println(string(resp.Header.Header()))
 			ctx.SetStatusCode(resp.StatusCode())
 			ctx.Write(resp.Body())
 		},
