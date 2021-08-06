@@ -38,7 +38,7 @@ func main() {
 		Handler: func(ctx *fasthttp.RequestCtx) {
 			req := fasthttp.AcquireRequest()
 			req.Header.SetMethod("GET")
-			req.SetRequestURI("http://172.18.189.60")
+			req.SetRequestURI("http://172.18.189.60:8082")
 			var resp fasthttp.Response
 			err := client.Do(req, &resp)
 			//status, resp, err := fasthttp.Get(nil, "http://172.18.189.60/")
