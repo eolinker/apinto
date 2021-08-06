@@ -3,7 +3,6 @@ package service_http
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
@@ -151,9 +150,8 @@ func (s *serviceWorker) doAuth(ctx *http_context.Context) error {
 }
 
 //Handle 将服务发送到负载
-func (s *serviceWorker) Handle(w http.ResponseWriter, r *http.Request, router service.IRouterEndpoint) error {
+func (s *serviceWorker) Handle(ctx *http_context.Context, router service.IRouterEndpoint) error {
 	// 构造context
-	ctx := http_context.NewContext(r, w)
 	defer func() {
 		if e := recover(); e != nil {
 			log.Warn(e)
@@ -173,7 +171,7 @@ func (s *serviceWorker) Handle(w http.ResponseWriter, r *http.Request, router se
 	location, has := router.Location()
 	path := s.rewriteURL
 	if has && location.CheckType() == checker.CheckTypePrefix {
-		path = recombinePath(r.URL.Path, location.Value(), s.rewriteURL)
+		path = recombinePath(ctx.RequestOrg.URL().Path, location.Value(), s.rewriteURL)
 	}
 	if s.proxyMethod != "" {
 		ctx.ProxyRequest.Method = s.proxyMethod
