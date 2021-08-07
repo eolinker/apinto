@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-basic/uuid"
+
 	"github.com/valyala/fasthttp"
 
 	goku_plugin "github.com/eolinker/goku-standard-plugin"
@@ -130,7 +132,7 @@ func (ctx *Context) RequestId() string {
 
 //NewContext 创建Context
 func NewContext(requestCtx *fasthttp.RequestCtx) *Context {
-	requestID := utils.GetRandomString(16)
+	requestID := uuid.New()
 	requestReader := NewRequestReader(requestCtx.Request)
 	ctx := &Context{
 		responseWriter:       requestCtx,
