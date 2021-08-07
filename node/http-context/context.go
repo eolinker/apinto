@@ -114,7 +114,7 @@ func (ctx *Context) Finish() (statusCode int) {
 		}
 	}
 	ctx.responseWriter.SetStatusCode(statusCode)
-	ctx.LogFields.ResponseHeader = utils.HeaderToString(ctx.header)
+	//ctx.LogFields.ResponseHeader = utils.HeaderToString(ctx.header)
 
 	if !bodyAllowed {
 		return statusCode
@@ -146,7 +146,7 @@ func NewContext(requestCtx *fasthttp.RequestCtx) *Context {
 		requestID:            requestID,
 		LogFields:            access_field.NewFields(),
 	}
-	ctx.LogFields.RequestHeader = utils.HeaderToString(requestReader.Headers())
+	//ctx.LogFields.RequestHeader = utils.HeaderToString(requestReader.Headers())
 	ctx.LogFields.RequestMsg = string(ctx.RequestOrg.rawBody)
 	ctx.LogFields.RequestMsgSize = len(ctx.RequestOrg.rawBody)
 	ctx.LogFields.RequestUri = requestReader.req.URL.RequestURI()

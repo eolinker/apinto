@@ -30,6 +30,7 @@ func NewRequestReader(req fasthttp.Request) *RequestReader {
 
 //ParseRequest 解析请求
 func (r *RequestReader) ParseRequest(req fasthttp.Request) {
+
 	newReq, _ := http.NewRequest(string(req.Header.Method()), string(req.URI().FullURI()), nil)
 	hs := strings.Split(string(req.Header.Header()), "\r\n")
 	for i, h := range hs {
