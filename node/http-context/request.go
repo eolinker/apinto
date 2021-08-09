@@ -20,6 +20,8 @@ type IRequest interface {
 	ContentType() string
 	Header() Value
 	Query() Value
+	RawQuery() string
+	RawBody() []byte
 }
 
 type Request struct {
@@ -28,6 +30,8 @@ type Request struct {
 	method      string
 	header      Value
 	query       Value
+	rawQuery    string
+	rawBody     []byte
 	contentType string
 }
 
@@ -51,17 +55,27 @@ func (r *Request) Query() Value {
 	return r.query
 }
 
+func (r *Request) RawQuery() string {
+	return r.rawQuery
+}
+
+func (r *Request) RawBody() []byte {
+	return r.rawBody
+}
+
 func (r *Request) ContentType() string {
 	return r.contentType
 }
 
 func NewRequest(req fasthttp.Request) *Request {
 	newReq := &Request{
-		path:   string(req.URI().Path()),
-		host:   strings.Split(string(req.Header.Host()), ":")[0],
-		method: string(req.Header.Method()),
-		header: Value{},
-		query:  Value{},
+		path:     string(req.URI().Path()),
+		host:     strings.Split(string(req.Header.Host()), ":")[0],
+		method:   string(req.Header.Method()),
+		header:   Value{},
+		query:    Value{},
+		rawQuery: string(req.URI().QueryString()),
+		rawBody:  req.Body(),
 	}
 
 	hs := strings.Split(req.Header.String(), "\r\n")
@@ -79,7 +93,7 @@ func NewRequest(req fasthttp.Request) *Request {
 			newReq.contentType = vs[1]
 		}
 	}
-	qs := strings.Split(string(req.URI().QueryString()), "&")
+	qs := strings.Split(newReq.rawQuery, "&")
 	for _, q := range qs {
 		vs := strings.Split(q, ":")
 		if len(vs) < 2 {

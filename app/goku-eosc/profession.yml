@@ -70,30 +70,30 @@
       name: eureka
       label: eureka服务发现
       desc: consul服务发现
-#-
-#  name: auth
-#  label: 鉴权
-#  desc: 鉴权
-#  dependencies: null
-#  append_label: null
-#  drivers:
-#    -
-#      id: eolinker:goku:auth_basic
-#      name: basic
-#      label: basic鉴权
-#      desc: basic鉴权
-#    -
-#      id: eolinker:goku:auth_apikey
-#      name: apikey
-#      label: apikey鉴权
-#      desc: apikey鉴权
-#    -
-#      id: eolinker:goku:auth_aksk
-#      name: aksk
-#      label: ak/sk鉴权
-#      desc: ak/sk鉴权
-#    -
-#      id: eolinker:goku:auth_jwt
-#      name: jwt
-#      label: jwt鉴权
-#      desc: jwt鉴权
+-
+  name: auth
+  label: 鉴权
+  desc: 鉴权
+  dependencies: null
+  append_label: null
+  drivers:
+    -
+      id: eolinker:goku:auth_basic
+      name: basic
+      label: basic鉴权
+      desc: basic鉴权
+    -
+      id: eolinker:goku:auth_apikey
+      name: apikey
+      label: apikey鉴权
+      desc: apikey鉴权
+    -
+      id: eolinker:goku:auth_aksk
+      name: aksk
+      label: ak/sk鉴权
+      desc: ak/sk鉴权
+    -
+      id: eolinker:goku:auth_jwt
+      name: jwt
+      label: jwt鉴权
+      desc: jwt鉴权

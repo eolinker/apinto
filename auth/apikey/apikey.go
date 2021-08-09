@@ -84,26 +84,25 @@ func (a *apikey) getAuthValue(ctx *http_context.Context) (string, error) {
 		}
 		return authorization, nil
 	}
-
-	contentType, has := ctx.Request().Header().Get("Content-Type")
+	var authorization string
+	contentType, _ := ctx.Request().Header().Get("Content-Type")
 	if strings.Contains(contentType, "application/x-www-form-urlencoded") || strings.Contains(contentType, "multipart/form-data") {
-		body := ctx.ProxyRequest().Body()
+		formParams, err := ctx.BodyHandler.BodyForm()
 		if err != nil {
 			return "", err
 		}
 		authorization = formParams.Get("Apikey")
 		if a.hideCredential {
 			delete(formParams, "Apikey")
-			ctx.Proxy().SetForm(formParams)
+			ctx.BodyHandler.SetForm(formParams)
 		}
-
 	} else if strings.Contains(contentType, "application/json") {
 		var body map[string]interface{}
-		rawbody, err := ctx.RequestOrg().RawBody()
+		rawBody, err := ctx.BodyHandler.RawBody()
 		if err != nil {
 			return "", err
 		}
-		if err = json.Unmarshal(rawbody, &body); err != nil {
+		if err = json.Unmarshal(rawBody, &body); err != nil {
 			return "", err
 		}
 		if _, ok := body["Apikey"]; !ok {
@@ -121,7 +120,7 @@ func (a *apikey) getAuthValue(ctx *http_context.Context) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			ctx.Proxy().SetRaw(contentType, newBody)
+			ctx.BodyHandler.SetRaw(contentType, newBody)
 		}
 
 	} else {

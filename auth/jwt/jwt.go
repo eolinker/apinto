@@ -58,12 +58,16 @@ func (j *jwt) CheckSkill(skill string) bool {
 }
 
 func (j *jwt) Auth(context *http_context.Context) error {
-	err := auth.CheckAuthorizationType(supportTypes, context.RequestOrg().Headers().Get(auth.AuthorizationType))
+	authorizationType, has := context.Request().Header().Get(auth.AuthorizationType)
+	if !has {
+		return auth.ErrorInvalidType
+	}
+	err := auth.CheckAuthorizationType(supportTypes, authorizationType)
 	if err != nil {
 		return err
 	}
 
-	if !j.runOnPreflight && context.RequestOrg().Method() == "OPTIONS" {
+	if !j.runOnPreflight && context.Request().Method() == "OPTIONS" {
 		return nil
 	}
 	err = j.doJWTAuthentication(context)

@@ -18,7 +18,8 @@ const dateHeader = "x-gateway-date"
 func buildToSign(ctx *http_context.Context, encType string, signedHeaders []string) string {
 	toSign := strings.Builder{}
 	toSign.WriteString(encType + "\n")
-	toSign.WriteString(ctx.RequestOrg().Headers().Get(dateHeader) + "\n")
+	dh, _ := ctx.Request().Header().Get(dateHeader)
+	toSign.WriteString(dh + "\n")
 
 	cr := buildHexCanonicalRequest(ctx, signedHeaders)
 	toSign.WriteString(strings.ToLower(cr))
@@ -29,22 +30,22 @@ func buildToSign(ctx *http_context.Context, encType string, signedHeaders []stri
 func buildHexCanonicalRequest(ctx *http_context.Context, signedHeaders []string) string {
 	cr := strings.Builder{}
 
-	cr.WriteString(strings.ToUpper(ctx.RequestOrg().Method()) + "\n")
-	cr.WriteString(buildPath(ctx.RequestOrg().URL().Path) + "\n")
-	cr.WriteString(ctx.RequestOrg().URL().RawQuery + "\n")
+	cr.WriteString(strings.ToUpper(ctx.Request().Method()) + "\n")
+	cr.WriteString(buildPath(ctx.Request().Path()) + "\n")
+	cr.WriteString(ctx.Request().RawQuery() + "\n")
 
 	for _, header := range signedHeaders {
 		if strings.ToLower(header) == "host" {
-			cr.WriteString(buildHeaders(header, ctx.RequestOrg().Host()) + "\n")
+			cr.WriteString(buildHeaders(header, ctx.Request().Host()) + "\n")
 			continue
 		}
-		cr.WriteString(buildHeaders(header, ctx.RequestOrg().Headers().Get(header)) + "\n")
+		v, _ := ctx.Request().Header().Get(header)
+		cr.WriteString(buildHeaders(header, v+"\n"))
 	}
 	cr.WriteString("\n")
 	cr.WriteString(strings.Join(signedHeaders, ";") + "\n")
 
-	body, _ := ctx.RequestOrg().RawBody()
-	cr.WriteString(hexEncode(body))
+	cr.WriteString(hexEncode(ctx.Request().RawBody()))
 
 	return hexEncode([]byte(cr.String()))
 }
@@ -72,7 +73,7 @@ func hmaxBySHA256(secretKey, toSign string) string {
 }
 
 func parseAuthorization(ctx *http_context.Context) (encType string, accessKey string, signHeaders []string, signature string, err error) {
-	authStr := ctx.RequestOrg().Headers().Get(auth.Authorization)
+	authStr, _ := ctx.Request().Header().Get(auth.Authorization)
 
 	infos := strings.Split(authStr, ",")
 	if len(infos) < 3 {

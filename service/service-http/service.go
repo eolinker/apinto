@@ -176,6 +176,13 @@ func (s *serviceWorker) Handle(ctx *http_context.Context, router service.IRouter
 	if s.proxyMethod != "" {
 		ctx.ProxyRequest().Header.SetMethod(s.proxyMethod)
 	}
+	body, err := ctx.BodyHandler.RawBody()
+	if err != nil {
+		ctx.SetBody([]byte(err.Error()))
+		ctx.SetStatus(500)
+		return err
+	}
+	ctx.ProxyRequest().SetBody(body)
 	var response *fasthttp.Response
 	response, err = s.send(ctx, s, path, string(ctx.RequestOrg().URI().QueryString()))
 	if err != nil {
