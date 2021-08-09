@@ -14,7 +14,7 @@ func main() {
 	//fmt.Println(a[i+1:])
 	//a := "*"
 	//fmt.Println(a[1:])
-	//err := http.ListenAndServeTLS(":8181", "eolinker.csr", "eolinker.key", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	//err := http.ListenAndServeTLS(":8181", "eolinker.csr", "eolinker.key", http.HandlerFunc(func(w http.ResponseWriter, r *http.RequestOrg) {
 	//
 	//	ctx := http_context.NewContext(r, w)
 	//	ctx.ProxyRequest.Headers()
@@ -41,7 +41,7 @@ func main() {
 			req.SetRequestURI("http://172.18.189.60:8082")
 			var resp fasthttp.Response
 			err := client.Do(req, &resp)
-			//status, resp, err := fasthttp.Get(nil, "http://172.18.189.60/")
+			//status, resp, err := fasthttp.GetStatus(nil, "http://172.18.189.60/")
 			if err != nil {
 				fmt.Println("请求失败:", err.Error())
 				return

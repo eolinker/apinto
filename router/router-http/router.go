@@ -40,7 +40,7 @@ func (r *Router) Count() int {
 func (r *Router) Handler() fasthttp.RequestHandler {
 	return func(requestCtx *fasthttp.RequestCtx) {
 		ctx := http_context.NewContext(requestCtx)
-		h, e, has := r.match.Match(ctx.RequestOrg.Request())
+		h, e, has := r.match.Match(ctx.Request())
 		if !has {
 			http_context.NotFound(ctx)
 			return
@@ -48,15 +48,6 @@ func (r *Router) Handler() fasthttp.RequestHandler {
 		h.Handle(ctx, NewEndPoint(e))
 	}
 }
-
-//func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-//	h, e, has := r.match.Match(req)
-//	if !has {
-//		http.NotFound(w, req)
-//		return
-//	}
-//	h.Handle(w, req, NewEndPoint(e))
-//}
 
 func (r *Router) SetRouter(id string, config *Config) error {
 	r.locker.Lock()

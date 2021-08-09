@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku-eosc/auth"
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/goku-eosc/auth"
+	http_context "github.com/eolinker/goku-eosc/node/http-context"
 )
 
 //supportTypes 当前驱动支持的authorization type值
@@ -30,8 +31,12 @@ type apikey struct {
 
 //Auth 鉴权处理
 func (a *apikey) Auth(ctx *http_context.Context) error {
+	authorizationType, has := ctx.Request().Header().Get(auth.AuthorizationType)
+	if !has {
+		return auth.ErrorInvalidType
+	}
 	// 判断是否要鉴权要求
-	err := auth.CheckAuthorizationType(supportTypes, ctx.Request().Headers().Get(auth.AuthorizationType))
+	err := auth.CheckAuthorizationType(supportTypes, authorizationType)
 	if err != nil {
 		return err
 	}
@@ -64,41 +69,40 @@ func TOfData(data interface{}) reflect.Kind {
 //getAuthValue 获取Apikey值
 func (a *apikey) getAuthValue(ctx *http_context.Context) (string, error) {
 	// 判断鉴权值是否在header
-	authorization := ""
-	if authorization = ctx.Request().Headers().Get(auth.Authorization); authorization != "" {
+
+	if authorization, has := ctx.Request().Header().Get(auth.Authorization); has {
 		if a.hideCredential {
-			ctx.Proxy().DelHeader(auth.Authorization)
+			ctx.ProxyRequest().Header.Del(auth.Authorization)
 		}
 		return authorization, nil
 	}
 
 	// 判断鉴权值是否在query
-	if authorization = ctx.Request().URL().Query().Get("Apikey"); authorization != "" {
+	if authorization, has := ctx.Request().Query().Get("Apikey"); has {
 		if a.hideCredential {
-			ctx.Proxy().Querys().Del("Apikey")
+			ctx.ProxyRequest().URI().QueryArgs().Del("Apikey")
 		}
 		return authorization, nil
 	}
-
-	contentType := ctx.Request().Headers().Get("Content-Type")
+	var authorization string
+	contentType, _ := ctx.Request().Header().Get("Content-Type")
 	if strings.Contains(contentType, "application/x-www-form-urlencoded") || strings.Contains(contentType, "multipart/form-data") {
-		formParams, err := ctx.Request().BodyForm()
+		formParams, err := ctx.BodyHandler().BodyForm()
 		if err != nil {
 			return "", err
 		}
 		authorization = formParams.Get("Apikey")
 		if a.hideCredential {
 			delete(formParams, "Apikey")
-			ctx.Proxy().SetForm(formParams)
+			ctx.BodyHandler().SetForm(formParams)
 		}
-
 	} else if strings.Contains(contentType, "application/json") {
 		var body map[string]interface{}
-		rawbody, err := ctx.Request().RawBody()
+		rawBody, err := ctx.BodyHandler().RawBody()
 		if err != nil {
 			return "", err
 		}
-		if err = json.Unmarshal(rawbody, &body); err != nil {
+		if err = json.Unmarshal(rawBody, &body); err != nil {
 			return "", err
 		}
 		if _, ok := body["Apikey"]; !ok {
@@ -116,7 +120,7 @@ func (a *apikey) getAuthValue(ctx *http_context.Context) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			ctx.Proxy().SetRaw(contentType, newBody)
+			ctx.BodyHandler().SetRaw(contentType, newBody)
 		}
 
 	} else {

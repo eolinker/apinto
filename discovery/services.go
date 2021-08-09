@@ -24,7 +24,7 @@ func (s *services) get(serviceName string) (eosc.IUntyped, bool) {
 	return apps, ok
 }
 
-//func (s *services) Get(serviceName string) (IApp, bool) {
+//func (s *services) GetStatus(serviceName string) (IApp, bool) {
 //	if apps, ok := s.get(serviceName); ok {
 //		for _, r := range apps.List() {
 //			v, ok := r.(IApp)
@@ -88,5 +88,5 @@ type IServices interface {
 	Remove(id string) (string, int)
 	Update(serviceName string, nodes Nodes) error
 	AppKeys() []string
-	//Get(serviceName string) (IApp, bool)
+	//GetStatus(serviceName string) (IApp, bool)
 }

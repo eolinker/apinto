@@ -50,7 +50,7 @@ func NewRouters() *Routers {
 //	r, has := rs.data.GetEmployee(name)
 //	if !has {
 //		var router IRouter = NewRouter()
-//		rs.data.Set(name, router)
+//		rs.data.SetStatus(name, router)
 //		return router, true
 //	}
 //	return r.(IRouter), false
