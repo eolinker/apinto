@@ -3,9 +3,10 @@ package main
 import "flag"
 
 var (
-	httpPort  = 8081
-	httpsPort = 8082
-	path      = ""
+	httpPort   = 8081
+	httpsPort  = 8082
+	path       = ""
+	driverFile = "profession.yml"
 )
 
 func initFlag() {
@@ -13,6 +14,7 @@ func initFlag() {
 	flag.IntVar(&httpsPort, "https", 8082, "Please provide a valid https port")
 
 	flag.StringVar(&path, "path", "", "Please provide a valid file path")
+	flag.StringVar(&driverFile, "driver_path", "profession.yml", "Please provide a valid file path")
 
 	flag.Parse()
 }

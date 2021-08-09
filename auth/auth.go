@@ -17,6 +17,7 @@ const (
 var (
 	//ErrorInvalidType 非法的鉴权类型
 	ErrorInvalidType = errors.New("invalid authorization type")
+
 	//ErrorInvalidUser 非法用户
 	ErrorInvalidUser = errors.New("invalid user")
 

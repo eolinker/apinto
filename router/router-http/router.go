@@ -1,8 +1,11 @@
 package router_http
 
 import (
-	"net/http"
 	"sync"
+
+	http_context "github.com/eolinker/goku-eosc/node/http-context"
+
+	"github.com/valyala/fasthttp"
 
 	"github.com/eolinker/eosc"
 )
@@ -13,13 +16,14 @@ type IRouter interface {
 	SetRouter(id string, config *Config) error
 	Count() int
 	Del(id string) int
-	http.Handler
+	Handler() fasthttp.RequestHandler
 }
 
 type Router struct {
-	locker sync.Locker
-	data   eosc.IUntyped
-	match  IMatcher
+	locker  sync.Locker
+	data    eosc.IUntyped
+	match   IMatcher
+	handler fasthttp.RequestHandler
 }
 
 func NewRouter() *Router {
@@ -33,13 +37,16 @@ func (r *Router) Count() int {
 	return r.data.Count()
 }
 
-func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	h, e, has := r.match.Match(req)
-	if !has {
-		http.NotFound(w, req)
-		return
+func (r *Router) Handler() fasthttp.RequestHandler {
+	return func(requestCtx *fasthttp.RequestCtx) {
+		ctx := http_context.NewContext(requestCtx)
+		h, e, has := r.match.Match(ctx.Request())
+		if !has {
+			http_context.NotFound(ctx)
+			return
+		}
+		h.Handle(ctx, NewEndPoint(e))
 	}
-	h.Handle(w, req, NewEndPoint(e))
 }
 
 func (r *Router) SetRouter(id string, config *Config) error {

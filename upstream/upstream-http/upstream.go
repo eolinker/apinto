@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/eolinker/goku-eosc/node/http-proxy/backend"
+	"github.com/valyala/fasthttp"
 
 	"github.com/eolinker/goku-eosc/upstream"
 
@@ -99,12 +99,12 @@ func (h *httpUpstream) CheckSkill(skill string) bool {
 }
 
 //Send 请求发送，忽略重试
-func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (backend.IResponse, error) {
-	var response backend.IResponse
+func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail, uri string, query string) (*fasthttp.Response, error) {
+	var response *fasthttp.Response
 	var err error
 
-	path := utils.TrimPrefixAll(ctx.ProxyRequest.TargetURL(), "/")
-
+	path := utils.TrimPrefixAll(uri, "/")
+	request := ctx.ProxyRequest()
 	for doTrice := serviceDetail.Retry() + 1; doTrice > 0; doTrice-- {
 		var node discovery.INode
 		node, err = h.handler.Next()
@@ -115,8 +115,8 @@ func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.ISe
 		if scheme != "http" && scheme != "https" {
 			scheme = h.scheme
 		}
-		u := fmt.Sprintf("%s://%s/%s", scheme, node.Addr(), path)
-		response, err = http_proxy.DoRequest(ctx, u, serviceDetail.Timeout())
+		request.SetRequestURI(fmt.Sprintf("%s://%s/%s", scheme, node.Addr(), path))
+		response, err = http_proxy.DoRequest(request, serviceDetail.Timeout())
 
 		if err != nil {
 			if response == nil {

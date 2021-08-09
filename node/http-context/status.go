@@ -1,27 +1,14 @@
 package http_context
 
-//StatusHandler 状态处理器
-type StatusHandler struct {
-	code   int
-	status string
+type IStatus interface {
+	SetStatus(statusCode int)
+	GetStatus() int
 }
 
-//SetStatus 设置状态信息
-func (s *StatusHandler) SetStatus(code int, status string) {
-	s.code, s.status = code, status
+func (ctx *Context) SetStatus(statusCode int) {
+	ctx.context.SetStatusCode(statusCode)
 }
 
-//StatusCode 获取状态码
-func (s *StatusHandler) StatusCode() int {
-	return s.code
-}
-
-//Status 获取状态
-func (s *StatusHandler) Status() string {
-	return s.status
-}
-
-//NewStatusHandler 状态处理器
-func NewStatusHandler() *StatusHandler {
-	return new(StatusHandler)
+func (ctx *Context) GetStatus() int {
+	return ctx.context.Response.StatusCode()
 }

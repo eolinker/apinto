@@ -9,15 +9,17 @@
 package router_http
 
 import (
+	"sync"
+
 	"github.com/eolinker/goku-eosc/router"
 	"github.com/eolinker/goku-eosc/router/checker"
 	"github.com/eolinker/goku-eosc/service"
-	"sync"
 )
+
 var _ service.IRouterEndpoint = (*EndPoint)(nil)
+
 type EndPoint struct {
 	endpoint router.IEndPoint
-
 
 	headers []string
 	queries []string
@@ -25,24 +27,24 @@ type EndPoint struct {
 }
 
 func (e *EndPoint) Header(name string) (checker.Checker, bool) {
-	return 	e.endpoint.Get(toHeader(name))
+	return e.endpoint.Get(toHeader(name))
 }
 
 func (e *EndPoint) Query(name string) (checker.Checker, bool) {
 	return e.endpoint.Get(toQuery(name))
 }
 
-func (e *EndPoint) initCMD()  {
+func (e *EndPoint) initCMD() {
 	e.once.Do(func() {
-		cs:=e.endpoint.CMDs()
-		e.headers =make([]string,0,len(cs))
-		e.queries = make([]string,0,len(cs))
-		for _,c:=range cs{
-			if h,yes:=headerName(c);yes{
+		cs := e.endpoint.CMDs()
+		e.headers = make([]string, 0, len(cs))
+		e.queries = make([]string, 0, len(cs))
+		for _, c := range cs {
+			if h, yes := headerName(c); yes {
 				e.headers = append(e.headers, h)
 				continue
 			}
-			if q,yes:=queryName(c);yes{
+			if q, yes := queryName(c); yes {
 				e.queries = append(e.queries, q)
 			}
 		}
@@ -60,14 +62,10 @@ func (e *EndPoint) Queries() []string {
 	return e.queries
 }
 
-
-
-
 func NewEndPoint(endpoint router.IEndPoint) *EndPoint {
 	return &EndPoint{endpoint: endpoint}
 }
 
-func (e *EndPoint) Location() (checker.Checker,bool) {
-	return 	e.endpoint.Get(cmdLocation)
+func (e *EndPoint) Location() (checker.Checker, bool) {
+	return e.endpoint.Get(cmdLocation)
 }
-

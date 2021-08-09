@@ -7,11 +7,9 @@ import (
 
 var (
 	storeMemory = "memory"
-	storeYaml   = "yaml"
 )
 
 func initStore() eosc.IStore {
-
 	memoryDriver, has := eosc.GetStoreDriver(storeMemory)
 	if !has {
 		log.Panic("unkonw store driver:", storeMemory)

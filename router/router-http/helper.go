@@ -12,6 +12,7 @@ import "strings"
 
 var cmds = []string{
 	cmdHost,
+	cmdMethod,
 	cmdLocation,
 	cmdHeader,
 	cmdQuery,

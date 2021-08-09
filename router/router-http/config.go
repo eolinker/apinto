@@ -1,19 +1,17 @@
 package router_http
 
 import (
-
 	"github.com/eolinker/goku-eosc/router"
 	"github.com/eolinker/goku-eosc/router/checker"
 	"github.com/eolinker/goku-eosc/service"
-
 )
 
-type  HeaderItem struct {
-	Name string
+type HeaderItem struct {
+	Name    string
 	Pattern string
 }
-type  QueryItem struct {
-	Name string
+type QueryItem struct {
+	Name    string
 	Pattern string
 }
 type Rule struct {
@@ -22,35 +20,41 @@ type Rule struct {
 	Query    []QueryItem
 }
 
-type Config struct {
-	Id     string
-	Name string
-	Hosts  []string
-	Methods []string
-	Target service.IService
-	Rules  []Rule
+type Cert struct {
+	Crt string
+	Key string
 }
 
-func (r *Rule) toPath()([]router.RulePath ,error) {
+type Config struct {
+	Id       string
+	Name     string
+	Protocol string
+	Cert     []Cert
+	Hosts    []string
+	Methods  []string
+	Target   service.IService
+	Rules    []Rule
+}
 
+func (r *Rule) toPath() ([]router.RulePath, error) {
 
-	path:=make([]router.RulePath,0,len(r.Header)+len(r.Query)+1)
+	path := make([]router.RulePath, 0, len(r.Header)+len(r.Query)+1)
 
-	if len(r.Location) >0{
-		locationChecker,err:= checker.Parse(r.Location)
-		if err!= nil{
-			return nil,err
+	if len(r.Location) > 0 {
+		locationChecker, err := checker.Parse(r.Location)
+		if err != nil {
+			return nil, err
 		}
 		path = append(path, router.RulePath{
 			CMD:     toLocation(),
-			Checker:locationChecker,
-		} )
+			Checker: locationChecker,
+		})
 	}
 
-	for _,h:=range r.Header{
-		ck,err:= checker.Parse(h.Pattern)
-		if err!= nil{
-			return  nil,err
+	for _, h := range r.Header {
+		ck, err := checker.Parse(h.Pattern)
+		if err != nil {
+			return nil, err
 		}
 		path = append(path, router.RulePath{
 			CMD:     toHeader(h.Name),
@@ -58,16 +62,15 @@ func (r *Rule) toPath()([]router.RulePath ,error) {
 		})
 	}
 
-	for _,h:=range r.Query{
-		ck,err:= checker.Parse(h.Pattern)
-		if err!= nil{
-			return  nil,err
+	for _, h := range r.Query {
+		ck, err := checker.Parse(h.Pattern)
+		if err != nil {
+			return nil, err
 		}
 		path = append(path, router.RulePath{
 			CMD:     toQuery(h.Name),
 			Checker: ck,
 		})
 	}
-	return path,nil
+	return path, nil
 }
-

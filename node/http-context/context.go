@@ -2,37 +2,50 @@ package http_context
 
 import (
 	"encoding/json"
-	"net/http"
 
-	goku_plugin "github.com/eolinker/goku-standard-plugin"
+	uuid "github.com/satori/go.uuid"
 
+	"github.com/valyala/fasthttp"
 
 	access_field "github.com/eolinker/goku-eosc/node/common/access-field"
-	"github.com/eolinker/goku-eosc/utils"
 )
-
-var _ goku_plugin.ContextProxy = (*Context)(nil)
 
 //Context context
 type Context struct {
-	w http.ResponseWriter
-	*CookiesHandler
-	*PriorityHeader
-	*StatusHandler
-	*StoreHandler
-	RequestOrg           *RequestReader
-	ProxyRequest         *Request
-	ProxyResponseHandler *ResponseReader
-	Body                 []byte
+	context       *fasthttp.RequestCtx
+	requestOrg    *fasthttp.Request
+	proxyRequest  *fasthttp.Request
+	proxyResponse *fasthttp.Response
+	Body          []byte
+	requestID     string
+	RestfulParam  map[string]string
+	LogFields     *access_field.Fields
+	request       IRequest
+	labels        map[string]string
+	bodyHandler   *BodyRequestHandler
+}
 
-	requestID string
-	//finalTargetServer    string
-	//retryTargetServers   string
+//NewContext 创建Context
+func NewContext(ctx *fasthttp.RequestCtx) *Context {
+	id := uuid.NewV4()
+	requestID := id.String()
+	newRequest := &ctx.Request
+	newCtx := &Context{
+		context:      ctx,
+		requestOrg:   fasthttp.AcquireRequest(),
+		proxyRequest: fasthttp.AcquireRequest(),
+		requestID:    requestID,
+		LogFields:    access_field.NewFields(),
+	}
+	newRequest.CopyTo(newCtx.requestOrg)
+	newRequest.CopyTo(newCtx.proxyRequest)
 
-	RestfulParam map[string]string
-	LogFields    *access_field.Fields
-
-	labels map[string]string
+	newCtx.LogFields.RequestHeader = newCtx.requestOrg.Header.String()
+	newCtx.LogFields.RequestMsg = string(newCtx.Body)
+	newCtx.LogFields.RequestMsgSize = len(newCtx.Body)
+	newCtx.LogFields.RequestUri = string(newCtx.requestOrg.RequestURI())
+	newCtx.LogFields.RequestID = requestID
+	return newCtx
 }
 
 func (ctx *Context) Labels() map[string]string {
@@ -53,144 +66,53 @@ func (ctx *Context) SetLabels(labels map[string]string) {
 	}
 }
 
-//Finish finish
-func (ctx *Context) Finish() (n int, statusCode int) {
-
-	header := ctx.PriorityHeader.header
-
-	statusCode = ctx.StatusHandler.code
-	if statusCode == 0 {
-		statusCode = 504
-	}
-	ctx.LogFields.StatusCode = statusCode
-	bodyAllowed := true
-	switch {
-	case statusCode >= 100 && statusCode <= 199:
-		bodyAllowed = false
-		break
-	case statusCode == 204:
-		bodyAllowed = false
-		break
-	case statusCode == 304:
-		bodyAllowed = false
-		break
-	}
-
-	if ctx.PriorityHeader.appendHeader != nil {
-		for k, vs := range ctx.PriorityHeader.appendHeader.header {
-			for _, v := range vs {
-				header.Add(k, v)
-			}
-		}
-	}
-
-	if ctx.PriorityHeader.setHeader != nil {
-		for k, vs := range ctx.PriorityHeader.setHeader.header {
-			header.Del(k)
-			for _, v := range vs {
-				header.Add(k, v)
-			}
-		}
-	}
-
-	for k, vs := range ctx.PriorityHeader.header {
-		if k == "Content-Length" {
-			continue
-			//vs = []string{strconv.Itoa(len(string(ctx.body)))}
-		}
-		for _, v := range vs {
-			ctx.w.Header().Add(k, v)
-		}
-	}
-
-	if ctx.w.Header().Get("Content-Type") == "" {
-		ctx.w.Header().Set("Content-Type", "application/json")
-	}
-
-	if ctx.w.Header().Get("Content-Encoding") == "gzip" {
-		body, err := utils.GzipCompress(ctx.Body)
-		if err == nil {
-			ctx.Body = body
-		}
-	}
-	ctx.w.WriteHeader(statusCode)
-	ctx.LogFields.ResponseHeader = utils.HeaderToString(ctx.header)
-
-	if !bodyAllowed {
-		return 0, statusCode
-	}
-	ctx.LogFields.ResponseMsg = string(ctx.Body)
-	ctx.LogFields.ResponseMsgSize = len(ctx.Body)
-
-	n, _ = ctx.w.Write(ctx.Body)
-	return n, statusCode
-}
-
 //RequestId 请求ID
 func (ctx *Context) RequestId() string {
 	return ctx.requestID
 }
 
-//NewContext 创建Context
-func NewContext(r *http.Request, w http.ResponseWriter) *Context {
-	requestID := utils.GetRandomString(16)
-	requestReader := NewRequestReader(r)
-	ctx := &Context{
-		CookiesHandler:       newCookieHandle(r.Header),
-		PriorityHeader:       NewPriorityHeader(),
-		StatusHandler:        NewStatusHandler(),
-		StoreHandler:         NewStoreHandler(),
-		RequestOrg:           requestReader,
-		ProxyRequest:         NewRequest(requestReader),
-		ProxyResponseHandler: nil,
-		requestID:            requestID,
-		w:                    w,
-		LogFields:            access_field.NewFields(),
+func (ctx *Context) Request() IRequest {
+	if ctx.request == nil {
+		ctx.request = newRequest(ctx.requestOrg)
 	}
-	ctx.LogFields.RequestHeader = utils.HeaderToString(requestReader.Headers())
-	ctx.LogFields.RequestMsg = string(ctx.RequestOrg.rawBody)
-	ctx.LogFields.RequestMsgSize = len(ctx.RequestOrg.rawBody)
-	ctx.LogFields.RequestUri = r.URL.RequestURI()
-	ctx.LogFields.RequestID = requestID
-	return ctx
+	return ctx.request
 }
 
-//SetProxyResponse 设置转发响应
-func (ctx *Context) SetProxyResponse(response *http.Response) {
-
-	ctx.SetProxyResponseHandler(newResponseReader(response))
-
+func (ctx *Context) RequestOrg() *fasthttp.Request {
+	return ctx.requestOrg
 }
 
-//SetProxyResponseHandler 设置转发响应处理器
-func (ctx *Context) SetProxyResponseHandler(response *ResponseReader) {
-	ctx.ProxyResponseHandler = response
-	if ctx.ProxyResponseHandler != nil {
-		ctx.Body = ctx.ProxyResponseHandler.body
-		ctx.SetStatus(ctx.ProxyResponseHandler.StatusCode(), ctx.ProxyResponseHandler.Status())
-		ctx.header = ctx.ProxyResponseHandler.header
+func (ctx *Context) ProxyRequest() *fasthttp.Request {
+	return ctx.proxyRequest
+}
+
+func (ctx *Context) ProxyResponse() *fasthttp.Response {
+	return ctx.proxyResponse
+}
+
+func (ctx *Context) BodyHandler() *BodyRequestHandler {
+	if ctx.bodyHandler == nil {
+		r := ctx.Request()
+		ctx.bodyHandler = newBodyRequestHandler(r.ContentType(), r.RawBody())
 	}
-}
-func (ctx *Context) Write(w http.ResponseWriter) {
-	if ctx.StatusCode() == 0 {
-		ctx.SetStatus(200, "200 ok")
-	}
-	if ctx.Body != nil {
-		w.Write(ctx.Body)
-	}
-
-	w.WriteHeader(ctx.StatusCode())
-
+	return ctx.bodyHandler
 }
 
-//GetBody 获取请求body
-func (ctx *Context) GetBody() []byte {
-	return ctx.Body
+func (ctx *Context) SetBody(body []byte) {
+	ctx.context.SetBody(body)
 }
 
-//SetBody 设置body
-func (ctx *Context) SetBody(data []byte) {
-	ctx.Body = data
+func (ctx *Context) SetResponse(response *fasthttp.Response) {
+	ctx.Body = response.Body()
+	ctx.proxyResponse = response
+}
+
+//Finish finish
+func (ctx *Context) Finish() {
+	ctx.LogFields.ResponseMsg = string(ctx.Body)
+	ctx.LogFields.ResponseMsgSize = len(ctx.Body)
+	ctx.proxyResponse.CopyTo(&ctx.context.Response)
+	return
 }
 
 func (ctx *Context) SetError(err error) {
@@ -202,17 +124,7 @@ func (ctx *Context) SetError(err error) {
 	ctx.Body = errByte
 }
 
-//ProxyResponse 返回响应
-func (ctx *Context) ProxyResponse() goku_plugin.ResponseReader {
-	return ctx.ProxyResponseHandler
-}
-
-//Request 获取原始请求
-func (ctx *Context) Request() goku_plugin.RequestReader {
-	return ctx.RequestOrg
-}
-
-//Proxy 代理
-func (ctx *Context) Proxy() goku_plugin.Request {
-	return ctx.ProxyRequest
+func NotFound(ctx *Context) {
+	ctx.context.SetStatusCode(404)
+	ctx.context.SetBody([]byte("404 Not Found"))
 }
