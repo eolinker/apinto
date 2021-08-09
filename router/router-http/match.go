@@ -1,15 +1,16 @@
 package router_http
 
 import (
-	"net/http"
 	"strings"
+
+	"github.com/valyala/fasthttp"
 
 	"github.com/eolinker/goku-eosc/router"
 	"github.com/eolinker/goku-eosc/service"
 )
 
 type IMatcher interface {
-	Match(req *http.Request) (service.IService, router.IEndPoint, bool)
+	Match(req *fasthttp.Request) (service.IService, router.IEndPoint, bool)
 }
 
 type Matcher struct {
@@ -17,7 +18,7 @@ type Matcher struct {
 	services map[string]service.IService
 }
 
-func (m *Matcher) Match(req *http.Request) (service.IService, router.IEndPoint, bool) {
+func (m *Matcher) Match(req *fasthttp.Request) (service.IService, router.IEndPoint, bool) {
 
 	sources := newHttpSources(req)
 	endpoint, has := m.r.Router(sources)
@@ -31,44 +32,79 @@ func (m *Matcher) Match(req *http.Request) (service.IService, router.IEndPoint, 
 }
 
 type HttpSources struct {
-	req *http.Request
+	method   string
+	host     string
+	location string
+	header   map[string]string
+	queries  map[string]string
 }
 
-func newHttpSources(req *http.Request) *HttpSources {
-	index := strings.Index(req.Host, ":")
-	if index > 0 {
-		req.Host = req.Host[:index]
+func newHttpSources(req *fasthttp.Request) *HttpSources {
+	sources := &HttpSources{
+		method:   string(req.Header.Method()),
+		host:     string(req.Header.Host()),
+		location: string(req.URI().Path()),
+		header:   make(map[string]string),
+		queries:  make(map[string]string),
 	}
-	return &HttpSources{req: req}
+	sources.host = string(req.Host())
+	index := strings.Index(sources.host, ":")
+	if index > 0 {
+		sources.host = sources.host[:index]
+	}
+	hs := strings.Split(req.Header.String(), "\r\n")
+	for _, h := range hs {
+		vs := strings.Split(h, ":")
+		if len(vs) < 2 {
+			if vs[0] == "" {
+				continue
+			}
+			sources.header[vs[0]] = ""
+			continue
+		}
+		sources.header[vs[0]] = strings.TrimSpace(vs[1])
+	}
+	qs := strings.Split(string(req.URI().QueryString()), "&")
+	for _, q := range qs {
+		vs := strings.Split(q, ":")
+		if len(vs) < 2 {
+			if vs[0] == "" {
+				continue
+			}
+			sources.queries[vs[0]] = ""
+			continue
+		}
+		sources.queries[vs[0]] = strings.TrimSpace(vs[1])
+	}
+	return sources
 }
 
 func (h *HttpSources) Get(cmd string) (string, bool) {
-
 	if isHost(cmd) {
-		return h.req.Host, true
+		return h.host, true
 	}
 	if isMethod(cmd) {
-		return h.req.Method, true
+		return h.method, true
 	}
 
 	if isLocation(cmd) {
-		return h.req.URL.Path, true
+		return h.location, true
 	}
 	if hn, yes := headerName(cmd); yes {
-		if vs, has := h.req.Header[hn]; has {
+		if vs, has := h.header[hn]; has {
 			if len(vs) == 0 {
 				return "", true
 			}
-			return vs[0], true
+			return vs, true
 		}
 	}
 
 	if qn, yes := queryName(cmd); yes {
-		if vs, has := h.req.URL.Query()[qn]; has {
+		if vs, has := h.queries[qn]; has {
 			if len(vs) == 0 {
 				return "", true
 			}
-			return vs[0], true
+			return vs, true
 		}
 	}
 	return "", false

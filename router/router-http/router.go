@@ -40,7 +40,7 @@ func (r *Router) Count() int {
 func (r *Router) Handler() fasthttp.RequestHandler {
 	return func(requestCtx *fasthttp.RequestCtx) {
 		ctx := http_context.NewContext(requestCtx)
-		h, e, has := r.match.Match(ctx.RequestOrg.Request())
+		h, e, has := r.match.Match(ctx.Request())
 		if !has {
 			http_context.NotFound(ctx)
 			return

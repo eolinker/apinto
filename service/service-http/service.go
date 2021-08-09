@@ -156,46 +156,48 @@ func (s *serviceWorker) Handle(ctx *http_context.Context, router service.IRouter
 		if e := recover(); e != nil {
 			log.Warn(e)
 		}
-		if ctx.Status() == "" {
-			ctx.SetStatus(200, "200")
+		if ctx.GetStatus() == 0 {
+			ctx.SetStatus(200)
 		}
 		ctx.Finish()
 	}()
 	err := s.doAuth(ctx)
 	if err != nil {
 		ctx.SetBody([]byte(err.Error()))
-		ctx.SetStatus(403, "403")
+		ctx.SetStatus(403)
 		return err
 	}
 	// 设置目标URL
 	location, has := router.Location()
 	path := s.rewriteURL
 	if has && location.CheckType() == checker.CheckTypePrefix {
-		path = recombinePath(ctx.RequestOrg.URL().Path, location.Value(), s.rewriteURL)
+		path = recombinePath(string(ctx.Request().URI().Path()), location.Value(), s.rewriteURL)
 	}
 	if s.proxyMethod != "" {
-		ctx.ProxyRequest.Method = s.proxyMethod
+		ctx.ProxyRequest().Header.SetMethod(s.proxyMethod)
 	}
-	ctx.ProxyRequest.SetTargetURL(path)
-
-	response, err := s.send(ctx, s)
+	var response *fasthttp.Response
+	response, err = s.send(ctx, s, path, string(ctx.Request().URI().QueryString()))
 	if err != nil {
 		ctx.SetBody([]byte(err.Error()))
+		ctx.SetStatus(500)
 		return err
 	}
-	defer fasthttp.ReleaseResponse(response)
-	ctx.SetProxyResponseHandler(http_context.NewResponseReader(&response.Header, response.StatusCode(), response.Body()))
+	ctx.SetResponse(response)
 	return nil
 }
 
-func (s *serviceWorker) send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (*fasthttp.Response, error) {
+func (s *serviceWorker) send(ctx *http_context.Context, serviceDetail service.IServiceDetail, uri string, query string) (*fasthttp.Response, error) {
 	if s.upstream == nil {
 		var response *fasthttp.Response
 		var err error
-		path := utils.TrimPrefixAll(ctx.ProxyRequest.TargetURL(), "/")
+		request := ctx.ProxyRequest()
+		path := utils.TrimPrefixAll(uri, "/")
 		for doTrice := serviceDetail.Retry() + 1; doTrice > 0; doTrice-- {
 			u := fmt.Sprintf("%s://%s/%s", serviceDetail.Scheme(), serviceDetail.ProxyAddr(), path)
-			response, err = http_proxy.DoRequest(ctx, u, serviceDetail.Timeout())
+			request.SetRequestURI(u)
+			request.URI().SetQueryString(query)
+			response, err = http_proxy.DoRequest(request, serviceDetail.Timeout())
 
 			if err != nil {
 				continue
@@ -205,7 +207,7 @@ func (s *serviceWorker) send(ctx *http_context.Context, serviceDetail service.IS
 		}
 		return response, err
 	} else {
-		return s.upstream.Send(ctx, serviceDetail)
+		return s.upstream.Send(ctx, serviceDetail, uri, query)
 	}
 }
 

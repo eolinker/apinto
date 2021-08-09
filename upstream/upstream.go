@@ -13,5 +13,5 @@ func CheckSkill(skill string) bool {
 
 //IUpstream 实现了负载发送请求方法
 type IUpstream interface {
-	Send(ctx *http_context.Context, serviceDetail service.IServiceDetail) (*fasthttp.Response, error)
+	Send(ctx *http_context.Context, serviceDetail service.IServiceDetail, uri string, query string) (*fasthttp.Response, error)
 }
