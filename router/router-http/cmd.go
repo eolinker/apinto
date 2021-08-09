@@ -22,7 +22,7 @@ const (
 	cmdMethod   = "METHOD"
 )
 
-func toMethod()string  {
+func toMethod() string {
 	return cmdMethod
 }
 func toLocation() string {
@@ -35,7 +35,7 @@ func toQuery(key string) string {
 	return fmt.Sprint(cmdQuery, ":", key)
 
 }
-func toHost()string  {
+func toHost() string {
 	return cmdHost
 }
 func headerName(cmd string) (string, bool) {
@@ -58,6 +58,6 @@ func isHost(cmd string) bool {
 	return cmd == cmdHost
 }
 
-func isMethod(cmd string)bool  {
+func isMethod(cmd string) bool {
 	return cmd == cmdMethod
 }

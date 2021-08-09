@@ -1,16 +1,16 @@
 package router_http
 
 import (
-	"context"
 	"crypto/tls"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"net"
-	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/valyala/fasthttp"
 
 	"github.com/eolinker/eosc/listener"
 )
@@ -47,12 +47,12 @@ type httpServer struct {
 	tlsConfig *tls.Config
 	port      int
 	protocol  string
-	srv       *http.Server
+	srv       *fasthttp.Server
 	certs     *Certs
 }
 
-func (s *httpServer) shutdown(ctx context.Context) {
-	s.srv.Shutdown(ctx)
+func (s *httpServer) shutdown() {
+	s.srv.Shutdown()
 }
 
 func (a *httpServer) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
@@ -70,9 +70,8 @@ func (a *httpServer) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate
 func (m *Manager) Cancel() {
 	m.locker.Lock()
 	defer m.locker.Unlock()
-	ctx := context.Background()
 	for p, s := range m.servers {
-		s.shutdown(ctx)
+		s.shutdown()
 		delete(m.servers, p)
 	}
 
@@ -102,9 +101,9 @@ func (m *Manager) Add(port int, id string, config *Config) error {
 	if isCreate {
 		s, has := m.servers[port]
 		if !has {
-			s = &httpServer{srv: &http.Server{}}
+			s = &httpServer{srv: &fasthttp.Server{}}
 
-			s.srv.Handler = router
+			s.srv.Handler = router.Handler()
 			l, err := listener.ListenTCP(port, sign)
 			if err != nil {
 				return err
@@ -129,8 +128,7 @@ func (m *Manager) Del(port int, id string) error {
 	if r, has := m.routers.Del(port, id); has {
 		if r.Count() == 0 {
 			if s, has := m.servers[port]; has {
-				ctx := context.Background()
-				err := s.srv.Shutdown(ctx)
+				err := s.srv.Shutdown()
 				if err != nil {
 					return err
 				}

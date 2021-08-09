@@ -1,15 +1,16 @@
 package router_http
 
 import (
-	"github.com/eolinker/eosc"
 	"strconv"
+
+	"github.com/eolinker/eosc"
 )
 
 var _ IRouters = (*Routers)(nil)
 
 type IRouters interface {
 	Set(port int, id string, conf *Config) (IRouter, bool, error)
- 	Del(port int, id string) (IRouter, bool)
+	Del(port int, id string) (IRouter, bool)
 }
 type Routers struct {
 	data eosc.IUntyped
@@ -49,7 +50,7 @@ func NewRouters() *Routers {
 //	r, has := rs.data.GetEmployee(name)
 //	if !has {
 //		var router IRouter = NewRouter()
-//		rs.data.Set(name, router)
+//		rs.data.SetStatus(name, router)
 //		return router, true
 //	}
 //	return r.(IRouter), false

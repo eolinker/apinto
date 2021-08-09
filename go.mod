@@ -12,7 +12,9 @@ require (
 	github.com/nacos-group/nacos-sdk-go v1.0.8 // indirect
 	github.com/pkg/sftp v1.13.2
 	github.com/robertkrimen/otto v0.0.0-20210614181706-373ff5438452
+	github.com/satori/go.uuid v1.2.0
+	github.com/sbunce/bson v0.0.0-20181119052045-2aa5ebe749b2 // indirect
+	github.com/valyala/fasthttp v1.28.0
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )
-
