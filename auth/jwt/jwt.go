@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"fmt"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/goku-eosc/auth"
 	http_context "github.com/eolinker/goku-eosc/node/http-context"
@@ -57,12 +58,12 @@ func (j *jwt) CheckSkill(skill string) bool {
 }
 
 func (j *jwt) Auth(context *http_context.Context) error {
-	err := auth.CheckAuthorizationType(supportTypes, context.Request().Headers().Get(auth.AuthorizationType))
+	err := auth.CheckAuthorizationType(supportTypes, context.RequestOrg().Headers().Get(auth.AuthorizationType))
 	if err != nil {
 		return err
 	}
 
-	if !j.runOnPreflight && context.Request().Method() == "OPTIONS" {
+	if !j.runOnPreflight && context.RequestOrg().Method() == "OPTIONS" {
 		return nil
 	}
 	err = j.doJWTAuthentication(context)

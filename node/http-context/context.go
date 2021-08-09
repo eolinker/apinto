@@ -20,8 +20,9 @@ type Context struct {
 	requestID     string
 	RestfulParam  map[string]string
 	LogFields     *access_field.Fields
-
-	labels map[string]string
+	request       IRequest
+	labels        map[string]string
+	BodyHandler   *BodyRequestHandler
 }
 
 //NewContext 创建Context
@@ -29,12 +30,15 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 	id := uuid.NewV4()
 	requestID := id.String()
 	newRequest := &ctx.Request
+	req := NewRequest(ctx.Request)
 	newCtx := &Context{
 		context:      ctx,
 		requestOrg:   fasthttp.AcquireRequest(),
 		proxyRequest: fasthttp.AcquireRequest(),
+		request:      req,
 		requestID:    requestID,
 		LogFields:    access_field.NewFields(),
+		BodyHandler:  NewBodyRequestHandler(req.contentType, ctx.Request.Body()),
 	}
 	newRequest.CopyTo(newCtx.requestOrg)
 	newRequest.CopyTo(newCtx.proxyRequest)
@@ -70,7 +74,11 @@ func (ctx *Context) RequestId() string {
 	return ctx.requestID
 }
 
-func (ctx *Context) Request() *fasthttp.Request {
+func (ctx *Context) Request() IRequest {
+	return ctx.request
+}
+
+func (ctx *Context) RequestOrg() *fasthttp.Request {
 	return ctx.requestOrg
 }
 
@@ -96,7 +104,6 @@ func (ctx *Context) Finish() {
 	ctx.LogFields.ResponseMsg = string(ctx.Body)
 	ctx.LogFields.ResponseMsgSize = len(ctx.Body)
 	ctx.proxyResponse.CopyTo(&ctx.context.Response)
-
 	return
 }
 

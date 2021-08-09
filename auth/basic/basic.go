@@ -74,11 +74,11 @@ func (b *basic) CheckSkill(skill string) bool {
 }
 
 func (b *basic) Auth(ctx *http_context.Context) error {
-	err := auth.CheckAuthorizationType(supportTypes, ctx.Request().Headers().Get(auth.AuthorizationType))
+	err := auth.CheckAuthorizationType(supportTypes, ctx.RequestOrg().Headers().Get(auth.AuthorizationType))
 	if err != nil {
 		return err
 	}
-	authorization := ctx.Request().Headers().Get(auth.Authorization)
+	authorization := ctx.RequestOrg().Headers().Get(auth.Authorization)
 	if b.hideCredential {
 		ctx.Proxy().DelHeader(auth.Authorization)
 	}

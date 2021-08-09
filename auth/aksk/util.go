@@ -6,9 +6,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/eolinker/goku-eosc/auth"
 	http_context "github.com/eolinker/goku-eosc/node/http-context"
-	"strings"
 )
 
 const dateHeader = "x-gateway-date"
@@ -17,7 +18,7 @@ const dateHeader = "x-gateway-date"
 func buildToSign(ctx *http_context.Context, encType string, signedHeaders []string) string {
 	toSign := strings.Builder{}
 	toSign.WriteString(encType + "\n")
-	toSign.WriteString(ctx.Request().Headers().Get(dateHeader) + "\n")
+	toSign.WriteString(ctx.RequestOrg().Headers().Get(dateHeader) + "\n")
 
 	cr := buildHexCanonicalRequest(ctx, signedHeaders)
 	toSign.WriteString(strings.ToLower(cr))
@@ -28,21 +29,21 @@ func buildToSign(ctx *http_context.Context, encType string, signedHeaders []stri
 func buildHexCanonicalRequest(ctx *http_context.Context, signedHeaders []string) string {
 	cr := strings.Builder{}
 
-	cr.WriteString(strings.ToUpper(ctx.Request().Method()) + "\n")
-	cr.WriteString(buildPath(ctx.Request().URL().Path) + "\n")
-	cr.WriteString(ctx.Request().URL().RawQuery + "\n")
+	cr.WriteString(strings.ToUpper(ctx.RequestOrg().Method()) + "\n")
+	cr.WriteString(buildPath(ctx.RequestOrg().URL().Path) + "\n")
+	cr.WriteString(ctx.RequestOrg().URL().RawQuery + "\n")
 
 	for _, header := range signedHeaders {
 		if strings.ToLower(header) == "host" {
-			cr.WriteString(buildHeaders(header, ctx.Request().Host()) + "\n")
+			cr.WriteString(buildHeaders(header, ctx.RequestOrg().Host()) + "\n")
 			continue
 		}
-		cr.WriteString(buildHeaders(header, ctx.Request().Headers().Get(header)) + "\n")
+		cr.WriteString(buildHeaders(header, ctx.RequestOrg().Headers().Get(header)) + "\n")
 	}
 	cr.WriteString("\n")
 	cr.WriteString(strings.Join(signedHeaders, ";") + "\n")
 
-	body, _ := ctx.Request().RawBody()
+	body, _ := ctx.RequestOrg().RawBody()
 	cr.WriteString(hexEncode(body))
 
 	return hexEncode([]byte(cr.String()))
@@ -71,7 +72,7 @@ func hmaxBySHA256(secretKey, toSign string) string {
 }
 
 func parseAuthorization(ctx *http_context.Context) (encType string, accessKey string, signHeaders []string, signature string, err error) {
-	authStr := ctx.Request().Headers().Get(auth.Authorization)
+	authStr := ctx.RequestOrg().Headers().Get(auth.Authorization)
 
 	infos := strings.Split(authStr, ",")
 	if len(infos) < 3 {

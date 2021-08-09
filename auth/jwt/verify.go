@@ -11,11 +11,12 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
 	"math/big"
 	"reflect"
 	"strings"
 	"time"
+
+	http_context "github.com/eolinker/goku-eosc/node/http-context"
 )
 
 type jwtToken struct {
@@ -509,7 +510,7 @@ func typeOfData(data interface{}) reflect.Kind {
 //retrieveJWTToken 获取jwtToken字符串
 func (j *jwt) retrieveJWTToken(context *http_context.Context) (string, error) {
 	const tokenName = "jwt_token"
-	if authorizationHeader := context.Request().GetHeader("Authorization"); authorizationHeader != "" {
+	if authorizationHeader := context.RequestOrg().GetHeader("Authorization"); authorizationHeader != "" {
 		if j.hideCredentials {
 			context.Proxy().DelHeader("Authorization")
 		}
@@ -519,14 +520,14 @@ func (j *jwt) retrieveJWTToken(context *http_context.Context) (string, error) {
 		return authorizationHeader, nil
 	}
 
-	if value, ok := context.Request().URL().Query()[tokenName]; ok {
+	if value, ok := context.RequestOrg().URL().Query()[tokenName]; ok {
 		if j.hideCredentials {
 			context.Proxy().Querys().Del(tokenName)
 		}
 		return value[0], nil
 	}
 
-	formdata, err := context.Request().BodyForm()
+	formdata, err := context.RequestOrg().BodyForm()
 	if err != nil {
 		return "", errors.New("[jwt_auth] cannot find token in request")
 	}

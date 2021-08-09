@@ -171,13 +171,13 @@ func (s *serviceWorker) Handle(ctx *http_context.Context, router service.IRouter
 	location, has := router.Location()
 	path := s.rewriteURL
 	if has && location.CheckType() == checker.CheckTypePrefix {
-		path = recombinePath(string(ctx.Request().URI().Path()), location.Value(), s.rewriteURL)
+		path = recombinePath(string(ctx.RequestOrg().URI().Path()), location.Value(), s.rewriteURL)
 	}
 	if s.proxyMethod != "" {
 		ctx.ProxyRequest().Header.SetMethod(s.proxyMethod)
 	}
 	var response *fasthttp.Response
-	response, err = s.send(ctx, s, path, string(ctx.Request().URI().QueryString()))
+	response, err = s.send(ctx, s, path, string(ctx.RequestOrg().URI().QueryString()))
 	if err != nil {
 		ctx.SetBody([]byte(err.Error()))
 		ctx.SetStatus(500)

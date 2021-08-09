@@ -49,15 +49,6 @@ func (r *Router) Handler() fasthttp.RequestHandler {
 	}
 }
 
-//func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-//	h, e, has := r.match.Match(req)
-//	if !has {
-//		http.NotFound(w, req)
-//		return
-//	}
-//	h.Handle(w, req, NewEndPoint(e))
-//}
-
 func (r *Router) SetRouter(id string, config *Config) error {
 	r.locker.Lock()
 	defer r.locker.Unlock()
