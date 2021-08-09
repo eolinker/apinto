@@ -59,20 +59,7 @@ func (r *RequestReader) ParseRequest(req fasthttp.Request) {
 			newReq.Header.Set(values[0], values[1])
 		}
 	}
-	qs := strings.Split(string(req.URI().QueryString()), "&")
-	queries := url.Values{}
-	for _, q := range qs {
-		values := strings.Split(q, "=")
-		vLen := len(values)
-		if vLen < 2 {
-			if values[0] != "" {
-				queries.Set(values[0], "")
-			}
-		} else {
-			queries.Set(values[0], values[1])
-		}
-	}
-	newReq.URL.RawQuery = queries.Encode()
+	newReq.URL.RawQuery = string(req.URI().QueryString())
 	r.req = newReq
 	r.Header = NewHeader(r.req.Header)
 
