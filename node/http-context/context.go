@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-basic/uuid"
+	uuid2 "github.com/satori/go.uuid"
 
 	"github.com/valyala/fasthttp"
 
@@ -132,7 +132,8 @@ func (ctx *Context) RequestId() string {
 
 //NewContext 创建Context
 func NewContext(requestCtx *fasthttp.RequestCtx) *Context {
-	requestID := uuid.New()
+	//requestID := uuid.New()
+	id := uuid2.NewV4()
 	requestReader := NewRequestReader(requestCtx.Request)
 	ctx := &Context{
 		responseWriter:       requestCtx,
@@ -143,7 +144,7 @@ func NewContext(requestCtx *fasthttp.RequestCtx) *Context {
 		RequestOrg:           requestReader,
 		ProxyRequest:         NewRequest(requestReader),
 		ProxyResponseHandler: nil,
-		requestID:            requestID,
+		requestID:            id.String(),
 		LogFields:            access_field.NewFields(),
 	}
 	//ctx.LogFields.RequestHeader = utils.HeaderToString(requestReader.Headers())
