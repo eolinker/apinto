@@ -134,6 +134,7 @@ func (ctx *Context) RequestId() string {
 func NewContext(requestCtx *fasthttp.RequestCtx) *Context {
 	//requestID := uuid.New()
 	id := uuid2.NewV4()
+	requestID := id.String()
 	requestReader := NewRequestReader(requestCtx.Request)
 	ctx := &Context{
 		responseWriter:       requestCtx,
@@ -144,7 +145,7 @@ func NewContext(requestCtx *fasthttp.RequestCtx) *Context {
 		RequestOrg:           requestReader,
 		ProxyRequest:         NewRequest(requestReader),
 		ProxyResponseHandler: nil,
-		requestID:            id.String(),
+		requestID:            requestID,
 		LogFields:            access_field.NewFields(),
 	}
 	//ctx.LogFields.RequestHeader = utils.HeaderToString(requestReader.Headers())
