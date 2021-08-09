@@ -31,7 +31,19 @@ func NewRequestReader(req fasthttp.Request) *RequestReader {
 //ParseRequest 解析请求
 func (r *RequestReader) ParseRequest(req fasthttp.Request) {
 
-	newReq, _ := http.NewRequest(string(req.Header.Method()), string(req.URI().FullURI()), nil)
+	//newReq, _ := http.NewRequest(string(req.Header.Method()), string(req.URI().FullURI()), nil)
+	uri, _ := url.Parse(string(req.URI().FullURI()))
+	newReq := &http.Request{
+		Method:        string(req.Header.Method()),
+		URL:           uri,
+		Proto:         "HTTP/1.1",
+		ProtoMajor:    1,
+		ProtoMinor:    1,
+		Header:        make(http.Header),
+		ContentLength: 0,
+		Host:          uri.Host,
+		RequestURI:    uri.RequestURI(),
+	}
 	hs := strings.Split(string(req.Header.Header()), "\r\n")
 	for i, h := range hs {
 		if i == 0 {
