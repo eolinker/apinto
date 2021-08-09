@@ -176,7 +176,7 @@ func (s *serviceWorker) Handle(ctx *http_context.Context, router service.IRouter
 	if s.proxyMethod != "" {
 		ctx.ProxyRequest().Header.SetMethod(s.proxyMethod)
 	}
-	body, err := ctx.bodyHandler.RawBody()
+	body, err := ctx.BodyHandler().RawBody()
 	if err != nil {
 		ctx.SetBody([]byte(err.Error()))
 		ctx.SetStatus(500)

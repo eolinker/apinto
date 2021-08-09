@@ -87,18 +87,18 @@ func (a *apikey) getAuthValue(ctx *http_context.Context) (string, error) {
 	var authorization string
 	contentType, _ := ctx.Request().Header().Get("Content-Type")
 	if strings.Contains(contentType, "application/x-www-form-urlencoded") || strings.Contains(contentType, "multipart/form-data") {
-		formParams, err := ctx.bodyHandler.BodyForm()
+		formParams, err := ctx.BodyHandler().BodyForm()
 		if err != nil {
 			return "", err
 		}
 		authorization = formParams.Get("Apikey")
 		if a.hideCredential {
 			delete(formParams, "Apikey")
-			ctx.bodyHandler.SetForm(formParams)
+			ctx.BodyHandler().SetForm(formParams)
 		}
 	} else if strings.Contains(contentType, "application/json") {
 		var body map[string]interface{}
-		rawBody, err := ctx.bodyHandler.RawBody()
+		rawBody, err := ctx.BodyHandler().RawBody()
 		if err != nil {
 			return "", err
 		}
@@ -120,7 +120,7 @@ func (a *apikey) getAuthValue(ctx *http_context.Context) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			ctx.bodyHandler.SetRaw(contentType, newBody)
+			ctx.BodyHandler().SetRaw(contentType, newBody)
 		}
 
 	} else {
