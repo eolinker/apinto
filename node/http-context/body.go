@@ -54,7 +54,6 @@ func (b *BodyRequestHandler) Parse() error {
 	if b.isInit {
 		return nil
 	}
-
 	contentType, _, _ := mime.ParseMediaType(b.contentType)
 	switch contentType {
 	case goku_plugin.JSON:
@@ -364,9 +363,7 @@ func (b *BodyRequestHandler) SetFile(files map[string]*goku_plugin.FileHeader) e
 
 //SetRaw 设置raw数据
 func (b *BodyRequestHandler) SetRaw(contentType string, body []byte) {
-
 	b.rawBody, b.contentType, b.isInit, b.isWriteRaw = body, contentType, false, true
-	_, b.orgContentParam, _ = mime.ParseMediaType(contentType)
 	return
 
 }
