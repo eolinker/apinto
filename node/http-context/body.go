@@ -239,7 +239,7 @@ func (b *BodyRequestHandler) AddFile(key string, file *goku_plugin.FileHeader) e
 //Clone 克隆body
 func (b *BodyRequestHandler) Clone() *BodyRequestHandler {
 	rawbody, _ := b.RawBody()
-	return NewBodyRequestHandler(b.contentType, rawbody)
+	return newBodyRequestHandler(b.contentType, rawbody)
 
 }
 
@@ -368,8 +368,8 @@ func (b *BodyRequestHandler) SetRaw(contentType string, body []byte) {
 
 }
 
-//NewBodyRequestHandler 创建body请求处理器
-func NewBodyRequestHandler(contentType string, body []byte) *BodyRequestHandler {
+//newBodyRequestHandler 创建body请求处理器
+func newBodyRequestHandler(contentType string, body []byte) *BodyRequestHandler {
 	b := new(BodyRequestHandler)
 	b.SetRaw(contentType, body)
 	return b

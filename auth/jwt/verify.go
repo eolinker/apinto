@@ -527,14 +527,14 @@ func (j *jwt) retrieveJWTToken(context *http_context.Context) (string, error) {
 		return value, nil
 	}
 
-	formData, err := context.BodyHandler.BodyForm()
+	formData, err := context.bodyHandler.BodyForm()
 	if err != nil {
 		return "", errors.New("[jwt_auth] cannot find token in request")
 	}
 	if value, ok := formData[tokenName]; ok {
 		if j.hideCredentials {
 			delete(formData, tokenName)
-			context.BodyHandler.SetForm(formData)
+			context.bodyHandler.SetForm(formData)
 		}
 		return value[0], nil
 	}

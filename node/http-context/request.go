@@ -67,7 +67,7 @@ func (r *Request) ContentType() string {
 	return r.contentType
 }
 
-func NewRequest(req fasthttp.Request) *Request {
+func newRequest(req *fasthttp.Request) IRequest {
 	newReq := &Request{
 		path:     string(req.URI().Path()),
 		host:     strings.Split(string(req.Header.Host()), ":")[0],

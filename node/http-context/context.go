@@ -22,7 +22,7 @@ type Context struct {
 	LogFields     *access_field.Fields
 	request       IRequest
 	labels        map[string]string
-	BodyHandler   *BodyRequestHandler
+	bodyHandler   *BodyRequestHandler
 }
 
 //NewContext 创建Context
@@ -30,15 +30,12 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 	id := uuid.NewV4()
 	requestID := id.String()
 	newRequest := &ctx.Request
-	req := NewRequest(ctx.Request)
 	newCtx := &Context{
 		context:      ctx,
 		requestOrg:   fasthttp.AcquireRequest(),
 		proxyRequest: fasthttp.AcquireRequest(),
-		request:      req,
 		requestID:    requestID,
 		LogFields:    access_field.NewFields(),
-		BodyHandler:  NewBodyRequestHandler(req.contentType, ctx.Request.Body()),
 	}
 	newRequest.CopyTo(newCtx.requestOrg)
 	newRequest.CopyTo(newCtx.proxyRequest)
@@ -75,6 +72,9 @@ func (ctx *Context) RequestId() string {
 }
 
 func (ctx *Context) Request() IRequest {
+	if ctx.request == nil {
+		ctx.request = newRequest(ctx.requestOrg)
+	}
 	return ctx.request
 }
 
@@ -88,6 +88,14 @@ func (ctx *Context) ProxyRequest() *fasthttp.Request {
 
 func (ctx *Context) ProxyResponse() *fasthttp.Response {
 	return ctx.proxyResponse
+}
+
+func (ctx *Context) BodyHandler() *BodyRequestHandler {
+	if ctx.bodyHandler == nil {
+		r := ctx.Request()
+		ctx.bodyHandler = newBodyRequestHandler(r.ContentType(), r.RawBody())
+	}
+	return ctx.bodyHandler
 }
 
 func (ctx *Context) SetBody(body []byte) {
