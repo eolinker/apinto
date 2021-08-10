@@ -10,7 +10,7 @@ type SubChecker struct {
 }
 
 func (p *SubChecker) Key() string {
-	return fmt.Sprintf("=*%s*",p.sub)
+	return fmt.Sprintf("=*%s*", p.sub)
 }
 
 func newCheckerSub(sub string) *SubChecker {
@@ -21,11 +21,11 @@ func (p *SubChecker) Value() string {
 	return p.sub
 }
 
-func (p *SubChecker) Check(v string,has bool) bool{
-	if !has{
+func (p *SubChecker) Check(v string, has bool) bool {
+	if !has {
 		return false
 	}
-	return strings.HasPrefix(v,p.sub)
+	return strings.Contains(v, p.sub)
 }
 
 func (p *SubChecker) CheckType() CheckType {
