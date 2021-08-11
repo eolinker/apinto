@@ -27,12 +27,13 @@ type Context struct {
 
 //NewContext 创建Context
 func NewContext(ctx *fasthttp.RequestCtx) *Context {
+	requestID := utils.GetRandomString(16)
 	newRequest := &ctx.Request
 	newCtx := &Context{
 		context:      ctx,
 		requestOrg:   fasthttp.AcquireRequest(),
 		proxyRequest: fasthttp.AcquireRequest(),
-		requestID:    utils.GetRandomString(16),
+		requestID:    requestID,
 		LogFields:    access_field.NewFields(),
 	}
 	newRequest.CopyTo(newCtx.requestOrg)
