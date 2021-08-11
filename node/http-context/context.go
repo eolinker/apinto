@@ -3,7 +3,7 @@ package http_context
 import (
 	"encoding/json"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/eolinker/goku-eosc/utils"
 
 	"github.com/valyala/fasthttp"
 
@@ -27,14 +27,12 @@ type Context struct {
 
 //NewContext 创建Context
 func NewContext(ctx *fasthttp.RequestCtx) *Context {
-	id := uuid.NewV4()
-	requestID := id.String()
 	newRequest := &ctx.Request
 	newCtx := &Context{
 		context:      ctx,
 		requestOrg:   fasthttp.AcquireRequest(),
 		proxyRequest: fasthttp.AcquireRequest(),
-		requestID:    requestID,
+		requestID:    utils.GetRandomString(16),
 		LogFields:    access_field.NewFields(),
 	}
 	newRequest.CopyTo(newCtx.requestOrg)
