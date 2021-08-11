@@ -2,7 +2,6 @@ package main
 
 import (
 	"io/ioutil"
-	"time"
 
 	"github.com/valyala/fasthttp"
 )
@@ -14,7 +13,7 @@ func main() {
 	}
 	s := &fasthttp.Server{
 		Handler: func(ctx *fasthttp.RequestCtx) {
-			time.Sleep(10 * time.Millisecond)
+			//time.Sleep(10 * time.Millisecond)
 			ctx.SetStatusCode(200)
 			ctx.Write(data)
 		},
