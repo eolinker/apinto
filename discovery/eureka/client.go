@@ -77,8 +77,9 @@ func (c *client) GetApplication(addr string, serviceName string) (*Application, 
 	if err != nil {
 		return nil, err
 	}
+
 	if res.StatusCode != http.StatusOK {
-		return nil, err
+		return nil, fmt.Errorf("http Status:%d", res.StatusCode)
 	}
 	var application = &Application{}
 	err = xml.Unmarshal(respBody, application)
