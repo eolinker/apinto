@@ -46,10 +46,10 @@ func main() {
 		panic(err)
 	}
 
-	if path != "" {
-		yamlReader, err := reader_yaml.NewYaml(path)
+	if dataPath != "" {
+		yamlReader, err := reader_yaml.NewYaml(dataPath)
 		if err != nil {
-			log.Warnf("load %s:%s", path, err.Error())
+			log.Warnf("load %s:%s", dataPath, err.Error())
 			log.Panic(err)
 		}
 
@@ -75,6 +75,16 @@ func main() {
 	httpServer.Handle("/api/", handler)
 	httpServer.Handle("/", hadlerHtml)
 
-	log.Info(fmt.Sprintf("Listen http port %d successfully", httpPort))
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", httpPort), httpServer))
+	go func() {
+		log.Info(fmt.Sprintf("Listen http port %d successfully", httpPort))
+		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", httpPort), httpServer))
+	}()
+
+	if httpsPemPath != "" && httpsKeyPath != "" {
+		go func() {
+			log.Info(fmt.Sprintf("Listen https port %d successfully", httpsPort))
+			log.Fatal(http.ListenAndServeTLS(fmt.Sprintf(":%d", httpsPort), httpsPemPath, httpsKeyPath, httpServer))
+		}()
+	}
+	select {}
 }
