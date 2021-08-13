@@ -3,11 +3,10 @@ package http_context
 import (
 	"encoding/json"
 
-	uuid "github.com/satori/go.uuid"
-
 	"github.com/valyala/fasthttp"
 
 	access_field "github.com/eolinker/goku-eosc/node/common/access-field"
+	uuid "github.com/satori/go.uuid"
 )
 
 //Context context

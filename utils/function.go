@@ -97,22 +97,21 @@ func GetRandomStringBack(num int) string {
 	return string(result)
 }
 
-const str = "123456789abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ"
 var (
-	randomBytes = []byte(str)
-	randT = rand.New(rand.NewSource(time.Now().UnixNano()))
+	randManager = rand.New(rand.NewSource(time.Now().UnixNano()))
+	randBytes   = []byte("123456789abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ")
+	randSize    = len(randBytes)
 )
 
 //GetRandomString 生成随机字符串
 func GetRandomString(num int) string {
-
-	result :=  make([]byte,num)
-
+	result := make([]byte, num)
 	for i := 0; i < num; i++ {
-		result[i] = randomBytes[int(randT.Int31())%num]
+		result[i] = randBytes[int(randManager.Int31())%randSize]
 	}
 	return string(result)
 }
+
 //CheckFileIsExist 判断文件是否存在  存在返回 true 不存在返回false
 func CheckFileIsExist(filename string) bool {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
