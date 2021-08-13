@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku-eosc/auth"
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
+	"github.com/eolinker/goku/auth"
+	http_context "github.com/eolinker/goku/node/http-context"
 )
 
 //supportTypes 当前驱动支持的authorization type值

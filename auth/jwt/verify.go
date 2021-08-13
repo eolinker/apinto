@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
+	http_context "github.com/eolinker/goku/node/http-context"
 )
 
 type jwtToken struct {

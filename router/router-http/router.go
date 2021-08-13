@@ -3,7 +3,7 @@ package router_http
 import (
 	"sync"
 
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
+	http_context "github.com/eolinker/goku/node/http-context"
 
 	"github.com/valyala/fasthttp"
 

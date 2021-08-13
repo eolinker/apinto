@@ -10,10 +10,10 @@ import (
 	"time"
 	"unicode"
 
-	health_check_http "github.com/eolinker/goku-eosc/health-check-http"
+	health_check_http "github.com/eolinker/goku/health-check-http"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku-eosc/discovery"
+	"github.com/eolinker/goku/discovery"
 )
 
 const name = "static"

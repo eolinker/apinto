@@ -10,9 +10,10 @@ package router
 
 import (
 	"fmt"
-	"github.com/eolinker/goku-eosc/router/checker"
 	"sort"
 	"strings"
+
+	"github.com/eolinker/goku/router/checker"
 )
 
 type RulePath struct {

@@ -3,7 +3,7 @@ package round_robin
 import (
 	"testing"
 
-	"github.com/eolinker/goku-eosc/discovery"
+	"github.com/eolinker/goku/discovery"
 )
 
 type discoveryDemo struct {

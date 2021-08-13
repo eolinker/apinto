@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/eolinker/goku-eosc/router/checker"
+	"github.com/eolinker/goku/router/checker"
 )
 
 type testSource map[string]string

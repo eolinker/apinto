@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku-eosc/discovery"
+	"github.com/eolinker/goku/discovery"
 )
 
 var (

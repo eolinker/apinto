@@ -3,7 +3,7 @@ package upstream_http
 import (
 	"reflect"
 
-	round_robin "github.com/eolinker/goku-eosc/upstream/round-robin"
+	round_robin "github.com/eolinker/goku/upstream/round-robin"
 
 	"github.com/eolinker/eosc"
 )

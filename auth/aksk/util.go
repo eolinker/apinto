@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/eolinker/goku-eosc/auth"
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
+	"github.com/eolinker/goku/auth"
+	http_context "github.com/eolinker/goku/node/http-context"
 )
 
 const dateHeader = "x-gateway-date"

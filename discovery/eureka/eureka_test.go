@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/eolinker/goku-eosc/discovery"
+	"github.com/eolinker/goku/discovery"
 )
 
 func TestGetApp(t *testing.T) {

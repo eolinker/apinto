@@ -9,12 +9,12 @@ import (
 
 	"github.com/eolinker/eosc"
 
-	"github.com/eolinker/goku-eosc/discovery"
+	"github.com/eolinker/goku/discovery"
 
 	"github.com/go-basic/uuid"
 
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
-	"github.com/eolinker/goku-eosc/upstream"
+	http_context "github.com/eolinker/goku/node/http-context"
+	"github.com/eolinker/goku/upstream"
 )
 
 var (

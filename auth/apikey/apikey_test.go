@@ -3,15 +3,16 @@ package apikey
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/eolinker/goku-eosc/auth"
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
+	"errors"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/eolinker/goku/auth"
+	http_context "github.com/eolinker/goku/node/http-context"
 )
-import "errors"
 
 var (
 	users = []User{

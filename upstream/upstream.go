@@ -1,14 +1,14 @@
 package upstream
 
 import (
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
-	"github.com/eolinker/goku-eosc/service"
+	http_context "github.com/eolinker/goku/node/http-context"
+	"github.com/eolinker/goku/service"
 	"github.com/valyala/fasthttp"
 )
 
 //CheckSkill 检测目标技能是否符合
 func CheckSkill(skill string) bool {
-	return skill == "github.com/eolinker/goku-eosc/upstream.upstream.IUpstream"
+	return skill == "github.com/eolinker/goku/upstream.upstream.IUpstream"
 }
 
 //IUpstream 实现了负载发送请求方法

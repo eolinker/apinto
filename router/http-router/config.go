@@ -2,8 +2,8 @@ package http_router
 
 import (
 	"github.com/eolinker/eosc"
-	router_http "github.com/eolinker/goku-eosc/router/router-http"
-	"github.com/eolinker/goku-eosc/service"
+	router_http "github.com/eolinker/goku/router/router-http"
+	"github.com/eolinker/goku/service"
 )
 
 type DriverConfig struct {
@@ -14,7 +14,7 @@ type DriverConfig struct {
 	Rules    []DriverRule   `json:"rules" yaml:"rules"`
 	Protocol string         `json:"protocol" yaml:"protocol"`
 	Cert     []Cert         `json:"cert" yaml:"cert"`
-	Target   eosc.RequireId `json:"target" yaml:"target" skill:"github.com/eolinker/goku-eosc/service.service.IService"`
+	Target   eosc.RequireId `json:"target" yaml:"target" skill:"github.com/eolinker/goku/service.service.IService"`
 }
 
 type DriverRule struct {

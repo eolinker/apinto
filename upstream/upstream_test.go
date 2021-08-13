@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/eolinker/goku-eosc/auth"
+	"github.com/eolinker/goku/auth"
 
 	"github.com/eolinker/eosc"
 )
