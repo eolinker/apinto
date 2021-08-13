@@ -1,9 +1,9 @@
 package router_http
 
 import (
-	"github.com/eolinker/goku-eosc/router"
-	"github.com/eolinker/goku-eosc/router/checker"
-	"github.com/eolinker/goku-eosc/service"
+	"github.com/eolinker/goku/router"
+	"github.com/eolinker/goku/router/checker"
+	"github.com/eolinker/goku/service"
 )
 
 func parse(cs []*Config) (IMatcher, error) {

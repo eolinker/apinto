@@ -6,14 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/eolinker/goku-eosc/service"
+	"github.com/eolinker/goku/service"
 
-	upstream_http "github.com/eolinker/goku-eosc/upstream/upstream-http"
+	upstream_http "github.com/eolinker/goku/upstream/upstream-http"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku-eosc/discovery/static"
-	"github.com/eolinker/goku-eosc/upstream"
-	round_robin "github.com/eolinker/goku-eosc/upstream/round-robin"
+	"github.com/eolinker/goku/discovery/static"
+	"github.com/eolinker/goku/upstream"
+	round_robin "github.com/eolinker/goku/upstream/round-robin"
 )
 
 type routerDemo struct {

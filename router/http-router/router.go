@@ -2,8 +2,8 @@ package http_router
 
 import (
 	"github.com/eolinker/eosc"
-	router_http "github.com/eolinker/goku-eosc/router/router-http"
-	"github.com/eolinker/goku-eosc/service"
+	router_http "github.com/eolinker/goku/router/router-http"
+	"github.com/eolinker/goku/service"
 )
 
 type Router struct {

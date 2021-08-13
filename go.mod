@@ -1,4 +1,4 @@
-module github.com/eolinker/goku-eosc
+module github.com/eolinker/goku
 
 go 1.15
 

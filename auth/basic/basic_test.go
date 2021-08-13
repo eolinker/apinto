@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/eolinker/goku-eosc/auth"
+	"github.com/eolinker/goku/auth"
 
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
+	http_context "github.com/eolinker/goku/node/http-context"
 )
 
 var (

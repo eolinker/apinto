@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	reader_yaml "github.com/eolinker/goku-eosc/reader-yaml"
+	reader_yaml "github.com/eolinker/goku/reader-yaml"
 
 	_ "net/http/pprof"
 

@@ -1,10 +1,10 @@
 package router_http
 
 import (
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
+	http_context "github.com/eolinker/goku/node/http-context"
 
-	"github.com/eolinker/goku-eosc/router"
-	"github.com/eolinker/goku-eosc/service"
+	"github.com/eolinker/goku/router"
+	"github.com/eolinker/goku/service"
 )
 
 type IMatcher interface {

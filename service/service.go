@@ -3,16 +3,16 @@ package service
 import (
 	"time"
 
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
-	"github.com/eolinker/goku-eosc/router/checker"
+	http_context "github.com/eolinker/goku/node/http-context"
+	"github.com/eolinker/goku/router/checker"
 )
 
 //CheckSkill 检查目标技能是否符合
 func CheckSkill(skill string) bool {
-	return skill == "github.com/eolinker/goku-eosc/service.service.IService"
+	return skill == "github.com/eolinker/goku/service.service.IService"
 }
 
-//IService github.com/eolinker/goku-eosc/service.service.IService
+//IService github.com/eolinker/goku/service.service.IService
 type IService interface {
 	Handle(ctx *http_context.Context, router IRouterEndpoint) error
 }

@@ -6,20 +6,20 @@ import (
 
 	"github.com/valyala/fasthttp"
 
-	"github.com/eolinker/goku-eosc/upstream"
+	"github.com/eolinker/goku/upstream"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku-eosc/discovery"
+	"github.com/eolinker/goku/discovery"
 
-	"github.com/eolinker/goku-eosc/service"
+	"github.com/eolinker/goku/service"
 
-	"github.com/eolinker/goku-eosc/upstream/balance"
+	"github.com/eolinker/goku/upstream/balance"
 
-	http_proxy "github.com/eolinker/goku-eosc/node/http-proxy"
+	http_proxy "github.com/eolinker/goku/node/http-proxy"
 
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
+	http_context "github.com/eolinker/goku/node/http-context"
 
-	"github.com/eolinker/goku-eosc/utils"
+	"github.com/eolinker/goku/utils"
 )
 
 var (

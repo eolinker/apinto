@@ -11,7 +11,7 @@ import (
 
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/goku-eosc/discovery"
+	"github.com/eolinker/goku/discovery"
 )
 
 type client struct {

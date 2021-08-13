@@ -5,13 +5,13 @@ import (
 
 	"github.com/valyala/fasthttp"
 
-	"github.com/eolinker/goku-eosc/service"
+	"github.com/eolinker/goku/service"
 
-	http_proxy "github.com/eolinker/goku-eosc/node/http-proxy"
+	http_proxy "github.com/eolinker/goku/node/http-proxy"
 
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
+	http_context "github.com/eolinker/goku/node/http-context"
 
-	"github.com/eolinker/goku-eosc/utils"
+	"github.com/eolinker/goku/utils"
 )
 
 func NewAnonymousUpstream() *httpUpstream {

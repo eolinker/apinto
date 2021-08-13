@@ -5,7 +5,7 @@ import (
 
 	"github.com/valyala/fasthttp"
 
-	access_field "github.com/eolinker/goku-eosc/node/common/access-field"
+	access_field "github.com/eolinker/goku/node/common/access-field"
 	uuid "github.com/satori/go.uuid"
 )
 

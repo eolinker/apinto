@@ -5,7 +5,7 @@ import (
 
 	"github.com/valyala/fasthttp"
 
-	http_proxy_request "github.com/eolinker/goku-eosc/node/http-proxy/http-proxy-request"
+	http_proxy_request "github.com/eolinker/goku/node/http-proxy/http-proxy-request"
 )
 
 //DoRequest 构造请求

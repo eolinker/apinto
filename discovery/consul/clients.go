@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/eolinker/eosc/log"
-	"github.com/eolinker/goku-eosc/discovery"
+	"github.com/eolinker/goku/discovery"
 	"github.com/hashicorp/consul/api"
 )
 

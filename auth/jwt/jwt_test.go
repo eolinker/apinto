@@ -1,10 +1,11 @@
 package jwt
 
 import (
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
 	"io"
 	"net/http"
 	"testing"
+
+	http_context "github.com/eolinker/goku/node/http-context"
 )
 
 type responseWriter struct{}
