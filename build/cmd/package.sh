@@ -6,7 +6,7 @@ cd ${BasePath}/
 
 
 VERSION=$(genVersion $1)
-folder="${BasePath}/out/goku-${VERSION}"
+folder="${BasePath}/out/goku"
 if [[ ! -d "$folder" ]]
 then
   mkdir "$folder"
