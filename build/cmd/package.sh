@@ -16,6 +16,6 @@ then
     exit 1
   fi
 fi
-packageApp console $VERSION
+packageApp goku $VERSION
 
 cd ${ORGPATH}
