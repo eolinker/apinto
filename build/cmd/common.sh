@@ -45,7 +45,7 @@ function packageApp(){
     APP=$1
     VERSION=$2
     cd "${BasePath}/out/"
-    tar -zcf "${BasePath}/out/${APP}-${VERSION}.linux.x64.tar.gz"  "${APP}-${VERSION}"
+    tar -zcf "${APP}" "${BasePath}/out/${APP}-${VERSION}.linux.x64.tar.gz"  "${APP}-${VERSION}/*"
     cd "${BasePath}"
 }
 
