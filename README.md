@@ -31,8 +31,8 @@ Goku 完全基于 Golang 开发，不基于现有第三方产品，因此具有�
 ## 下载官方提供的安装包安装（推荐）
 访问https://github.com/eolinker/goku/releases，
 下载最新的release包，并通过以下命令安装即可：
-tar -zcvf goku_gateway.tar.gz（具体压缩包需要根据release提供的文件名进行修改）
-./goku-eosc -http=8081 -https=8082 -pem=$ssl_pem_path -key=$ssl_pem_path -data_path=$data_path
+tar -zxvf goku-v0.1.0.linux.x64.tar.gz && cd goku/（具体压缩包需要根据release提供的文件名进行修改）
+./goku -http=8081 -data_path data.yaml
 
 ## 自行编译源码进行安装
 访问https://github.com/eolinker/goku ，下载源码并自行编译、安装
@@ -57,7 +57,7 @@ tar -zcvf goku_gateway.tar.gz（具体压缩包需要根据release提供的文�
 --------------
 ## 详细步骤说明
 
-**Goku-Eosc**支持下面两种方式进行网关配置：
+**Goku**支持下面两种方式进行网关配置：
 * 配置文件：启动时加载初始化配置，在网关使用过程中可使用Open Api进行后续配置，支持使用Open Api导出配置
 
 * openAPI：可在网关使用过程中动态配置网关信息，包括路由、服务、负载均衡、鉴权、服务发现等
@@ -89,13 +89,13 @@ service:
 	rewrite_url: /		# 转发重写url
 	scheme: http		# 请求上游协议
 	timeout: 3000	  # 超时时间，单位ms
-	upstream: demoapi.gokuapi.com	# 上游地址，该处可填写负载ID或上游的域名/IP+端口
+	upstream: www.gokuapi.com	# 上游地址，该处可填写负载ID或上游的域名/IP+端口
 ```
 
 #### 启动程序
 
 ```
-./goku-eosc -http 8081 -path demo.yml
+./goku -http 8081 -data_path demo.yml
 ```
 
 #### 访问服务
