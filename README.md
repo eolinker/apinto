@@ -1,5 +1,5 @@
 # 简介
-Goku 是基于 Golang 开发的开源微服务API网关，Github地址：https://github.com/eolinker/goku
+Goku 是基于 Golang 开发的开源微服务API网关
 
 Goku 有以下的特性：
 - 完全开源：Goku 项目由 Eolinker 发起并长期维护，我们希望与全球开发者共同打造微服务生态的基础设施。
