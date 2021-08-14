@@ -29,7 +29,8 @@ Goku 完全基于 Golang 开发，不基于现有第三方产品，因此具有�
 各位可以通过以下方式进行部署：
 
 ## 下载官方提供的安装包安装（推荐）
-访问https://github.com/eolinker/goku/releases，下载最新的release包，并通过以下命令安装即可：
+访问https://github.com/eolinker/goku/releases，
+下载最新的release包，并通过以下命令安装即可：
 tar -zcvf goku_gateway.tar.gz（具体压缩包需要根据release提供的文件名进行修改）
 ./goku-eosc -http=8081 -https=8082 -pem=$ssl_pem_path -key=$ssl_pem_path -data_path=$data_path
 
