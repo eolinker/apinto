@@ -30,11 +30,17 @@ Goku 完全基于 Golang 开发，不基于现有第三方产品，因此具有�
 
 ## 下载官方提供的安装包安装（推荐）
 访问https://github.com/eolinker/goku/releases，下载最新的release包，并通过以下命令安装即可：
+1. 下载安装包
+```
+wget http://github.com/eolinker/goku/releases/download/v0.1.0/goku-v0.1.0.linux.x64.tar.gz
+```
 
+2. 解压安装包
 ```
 tar -zxvf goku-v0.1.0.linux.x64.tar.gz && cd goku/（具体压缩包需要根据release提供的文件名进行修改）
 ```
 
+3. 启动网关
 ```
 ./goku -http=8081 -data_path data.yaml
 ```
