@@ -27,7 +27,6 @@ func (f *filelog) Transport(entry *eosc_log.Entry) error {
 
 func (f *filelog) Start() error {
 
-	//TODO 组装formatter
 	formatter := logFormatter.CreateFormatter(driverName, f.formatterName)
 	transporterReset, err := createTransporter(f.config, formatter)
 	if err != nil {
