@@ -33,7 +33,7 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	if !ok {
 		return nil, fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*DriverConfig)(nil)), eosc.TypeNameOf(v))
 	}
-	c, err := ToConfig(conf)
+	c, err := toConfig(conf)
 	if err != nil {
 		return nil, err
 	}

@@ -38,7 +38,7 @@ type Config struct {
 	Level  log.Level
 }
 
-func ToConfig(c *DriverConfig) (*Config, error) {
+func toConfig(c *DriverConfig) (*Config, error) {
 	if c == nil {
 		return nil, errors.New("config is nil")
 	}

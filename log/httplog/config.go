@@ -33,7 +33,7 @@ func toHeader(items map[string]string) http.Header {
 	return header
 }
 
-func ToConfig(c *DriverConfig) (*Config, error) {
+func toConfig(c *DriverConfig) (*Config, error) {
 	if c == nil {
 		return nil, errors.New("config is nil")
 	}

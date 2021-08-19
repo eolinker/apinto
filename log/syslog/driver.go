@@ -1,4 +1,4 @@
-package httplog
+package syslog
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	driverName = "httplog"
+	driverName = "syslog"
 )
 
 //driver 实现github.com/eolinker/eosc.eosc.IProfessionDriver接口
@@ -22,12 +22,12 @@ type driver struct {
 	params     map[string]string
 }
 
-//ConfigType 返回httplog驱动配置的反射类型
+//ConfigType 返回syslog驱动配置的反射类型
 func (d *driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
-//Create 创建httplog驱动实例
+//Create 创建syslog驱动实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	conf, ok := v.(*DriverConfig)
 	if !ok {
@@ -37,7 +37,7 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	if err != nil {
 		return nil, err
 	}
-	a := &httplog{
+	a := &syslog{
 		id:                 id,
 		name:               name,
 		config:             c,

@@ -42,7 +42,7 @@ func (f *filelog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*DriverConfig)(nil)), eosc.TypeNameOf(conf))
 	}
 
-	c, err := ToConfig(config)
+	c, err := toConfig(config)
 	if err != nil {
 		return err
 	}

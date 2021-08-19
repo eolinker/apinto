@@ -35,7 +35,7 @@ func (h *httplog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*DriverConfig)(nil)), eosc.TypeNameOf(conf))
 	}
 
-	c, err := ToConfig(config)
+	c, err := toConfig(config)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (h *httplog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}
 }
 
 func (h *httplog) Stop() error {
-	return f.transporterManager.Del(f.id)
+	return h.transporterManager.Del(h.id)
 }
 
 func (h *httplog) CheckSkill(skill string) bool {
