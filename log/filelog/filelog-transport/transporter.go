@@ -1,4 +1,4 @@
-package filelog
+package filelog_transport
 
 import (
 	"fmt"
@@ -42,7 +42,7 @@ func (t *Transporter) reset(c *Config) error {
 	return nil
 }
 
-func createTransporter(conf *Config, formatter eosc_log.Formatter) (log.TransporterReset, error) {
+func CreateTransporter(conf *Config, formatter eosc_log.Formatter) (log.TransporterReset, error) {
 
 	fileWriterByPeriod := NewFileWriteByPeriod()
 

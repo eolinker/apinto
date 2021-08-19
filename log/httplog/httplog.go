@@ -3,6 +3,7 @@ package httplog
 import (
 	"fmt"
 	"github.com/eolinker/eosc"
+	transporterManager "github.com/eolinker/eosc/log/transporter-manager"
 	"github.com/eolinker/goku/log"
 	logFormatter "github.com/eolinker/goku/log/common/log-formatter"
 )

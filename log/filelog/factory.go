@@ -30,17 +30,7 @@ func (f *factory) ExtendInfo() eosc.ExtendInfo {
 
 //Create 创建filelog驱动
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
-	//if o, has := params["access_log"]; has && o == "true" {
-	//	return &accessDriver{
-	//		profession: profession,
-	//		name:       name,
-	//		label:      label,
-	//		desc:       desc,
-	//		driver:     driverName,
-	//		configType: reflect.TypeOf((*DriverConfigAccess)(nil)),
-	//		params:     params,
-	//	}, nil
-	//}
+
 	return &driver{
 		profession: profession,
 		name:       name,

@@ -7,12 +7,13 @@ import (
 	transporterManager "github.com/eolinker/eosc/log/transporter-manager"
 	"github.com/eolinker/goku/log"
 	logFormatter "github.com/eolinker/goku/log/common/log-formatter"
+	"github.com/eolinker/goku/log/filelog/filelog-transport"
 )
 
 type filelog struct {
 	id                 string
 	name               string
-	config             *Config
+	config             *filelog_transport.Config
 	formatterName      string
 	transporterManager transporterManager.ITransporterManager
 }
@@ -21,14 +22,10 @@ func (f *filelog) Id() string {
 	return f.id
 }
 
-func (f *filelog) Transport(entry *eosc_log.Entry) error {
-	return nil
-}
-
 func (f *filelog) Start() error {
 
 	formatter := logFormatter.CreateFormatter(driverName, f.formatterName)
-	transporterReset, err := createTransporter(f.config, formatter)
+	transporterReset, err := filelog_transport.CreateTransporter(f.config, formatter)
 	if err != nil {
 		return err
 	}
@@ -41,7 +38,7 @@ func (f *filelog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}
 	if !ok {
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*DriverConfig)(nil)), eosc.TypeNameOf(conf))
 	}
-
+	// TODO 修改formatter并且 REsetTransport
 	c, err := toConfig(config)
 	if err != nil {
 		return err
@@ -50,7 +47,7 @@ func (f *filelog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}
 	f.formatterName = config.FormatterName
 
 	formatter := logFormatter.CreateFormatter(driverName, f.formatterName)
-	transporter, err := createTransporter(f.config, formatter)
+	transporter, err := filelog_transport.CreateTransporter(f.config, formatter)
 	if err != nil {
 		return err
 	}

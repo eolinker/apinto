@@ -1,4 +1,4 @@
-package filelog
+package filelog_transport
 
 import (
 	"fmt"

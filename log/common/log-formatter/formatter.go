@@ -11,17 +11,12 @@ var (
 		"json": true,
 		"line": true,
 	}
-	defaultFormatter = map[string]string{
-		"filelog": "line",
-		"httplog": "json",
-		"syslog":  "json",
-	}
 )
 
-func CreateFormatter(driver string, formatterName string) log.Formatter {
+func CreateFormatter(formatterName string) log.Formatter {
 	formatterName = strings.ToLower(formatterName)
 	if !allFormatterName[formatterName] {
-		formatterName = defaultFormatter[strings.ToLower(driver)]
+
 	}
 	if formatterName == "" {
 		formatterName = "line"
