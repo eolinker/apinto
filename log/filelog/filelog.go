@@ -3,10 +3,8 @@ package filelog
 import (
 	"fmt"
 	"github.com/eolinker/eosc"
-	eosc_log "github.com/eolinker/eosc/log"
 	transporterManager "github.com/eolinker/eosc/log/transporter-manager"
 	"github.com/eolinker/goku/log"
-	logFormatter "github.com/eolinker/goku/log/common/log-formatter"
 	"github.com/eolinker/goku/log/filelog/filelog-transport"
 )
 
@@ -15,6 +13,7 @@ type filelog struct {
 	name               string
 	config             *filelog_transport.Config
 	formatterName      string
+	transporterReset   log.TransporterReset
 	transporterManager transporterManager.ITransporterManager
 }
 
@@ -24,12 +23,17 @@ func (f *filelog) Id() string {
 
 func (f *filelog) Start() error {
 
-	formatter := logFormatter.CreateFormatter(driverName, f.formatterName)
+	formatter, err := filelog_transport.CreateFormatter(f.formatterName)
+	if err != nil {
+		return err
+	}
+
 	transporterReset, err := filelog_transport.CreateTransporter(f.config, formatter)
 	if err != nil {
 		return err
 	}
 
+	f.transporterReset = transporterReset
 	return f.transporterManager.Set(f.id, transporterReset)
 }
 
@@ -38,7 +42,7 @@ func (f *filelog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}
 	if !ok {
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*DriverConfig)(nil)), eosc.TypeNameOf(conf))
 	}
-	// TODO 修改formatter并且 REsetTransport
+
 	c, err := toConfig(config)
 	if err != nil {
 		return err
@@ -46,16 +50,21 @@ func (f *filelog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}
 	f.config = c
 	f.formatterName = config.FormatterName
 
-	formatter := logFormatter.CreateFormatter(driverName, f.formatterName)
-	transporter, err := filelog_transport.CreateTransporter(f.config, formatter)
+	formatter, err := filelog_transport.CreateFormatter(f.formatterName)
 	if err != nil {
 		return err
 	}
 
-	return f.transporterManager.Set(f.id, transporter)
+	err = f.transporterReset.Reset(c, formatter)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (f *filelog) Stop() error {
+	f.transporterReset.Close()
 	return f.transporterManager.Del(f.id)
 }
 
