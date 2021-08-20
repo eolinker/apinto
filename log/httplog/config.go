@@ -3,7 +3,7 @@ package httplog
 import (
 	"errors"
 	"github.com/eolinker/eosc/log"
-	httplog_transporter "github.com/eolinker/goku/log/httplog/httplog-transporter"
+	httplog_transporter "github.com/eolinker/goku/log/common/httplog-transporter"
 	"net/http"
 )
 

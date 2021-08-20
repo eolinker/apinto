@@ -3,7 +3,7 @@ package syslog
 import (
 	"errors"
 	"github.com/eolinker/eosc/log"
-	"github.com/eolinker/goku/log/syslog/syslog-transporter"
+	"github.com/eolinker/goku/log/common/syslog-transporter"
 )
 
 type DriverConfig struct {

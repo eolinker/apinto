@@ -5,7 +5,7 @@ import (
 	"github.com/eolinker/eosc"
 	transporterManager "github.com/eolinker/eosc/log/transporter-manager"
 	"github.com/eolinker/goku/log"
-	"github.com/eolinker/goku/log/syslog/syslog-transporter"
+	"github.com/eolinker/goku/log/common/syslog-transporter"
 )
 
 type syslog struct {
