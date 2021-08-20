@@ -42,7 +42,7 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		name:               name,
 		config:             c,
 		formatterName:      conf.FormatterName,
-		transporterManager: transporter_manager.GetLogTransporterManager(),
+		transporterManager: transporter_manager.GetTransporterManager(""),
 	}
 
 	return a, nil
