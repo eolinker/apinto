@@ -1,0 +1,33 @@
+log:
+  -
+    name: demo_filelog
+    driver: filelog
+    dir: /opt/filelog
+    file: demo
+    level: info
+    period: day
+    expire: 3
+    formatter: line
+    fields:  #选填，日志formatter field
+      - request_id
+  -
+    name: demo_httplog
+    driver: httplog
+    method: POST
+    url: www.demo.com/httplog/write
+    headers: #选填
+      username: admin
+      password: 123456
+    level: fatal
+    formatter: json
+    fields: #选填，日志formatter field
+      - request_id
+  -
+    name: demo_syslog
+    driver: syslog
+    network:
+    url:
+    level: error
+    formatter: line
+    fields: #选填，日志formatter field
+      - request_id
