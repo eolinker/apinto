@@ -31,7 +31,7 @@ func (h *httplog) Start() error {
 	if err != nil {
 		return err
 	}
-
+	h.transporterReset = transporterReset
 	return h.transporterManager.Set(h.id, transporterReset)
 }
 

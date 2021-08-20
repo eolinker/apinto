@@ -6,7 +6,6 @@ import (
 	httplog_transporter "github.com/eolinker/goku/log/common/httplog-transporter"
 	"net/http"
 	"testing"
-	"time"
 )
 
 func TestHTTPLog(t *testing.T) {
@@ -56,5 +55,7 @@ func TestHTTPLog(t *testing.T) {
 	}
 	log.Info("httplog单元测试文件输出日志内容TEST——配置更新后  INFO")
 	log.Warn("httplog单元测试文件输出日志内容TEST——配置更新后  warn")
-	time.Sleep(1 * time.Second)
+
+
+	select{}
 }
