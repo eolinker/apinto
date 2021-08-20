@@ -3,6 +3,7 @@ package httplog
 import (
 	"errors"
 	"github.com/eolinker/eosc/log"
+	httplog_transporter "github.com/eolinker/goku/log/httplog/httplog-transporter"
 	"net/http"
 )
 
@@ -16,15 +17,6 @@ type DriverConfig struct {
 	FormatterName string            `json:"formatter"`
 }
 
-type Config struct {
-	Method  string
-	Url     string
-	Headers http.Header
-	Level   log.Level
-
-	HandlerCount int
-}
-
 func toHeader(items map[string]string) http.Header {
 	header := make(http.Header)
 	for k, v := range items {
@@ -33,7 +25,7 @@ func toHeader(items map[string]string) http.Header {
 	return header
 }
 
-func toConfig(c *DriverConfig) (*Config, error) {
+func toConfig(c *DriverConfig) (*httplog_transporter.Config, error) {
 	if c == nil {
 		return nil, errors.New("config is nil")
 	}
@@ -43,7 +35,7 @@ func toConfig(c *DriverConfig) (*Config, error) {
 		level = log.InfoLevel
 	}
 
-	config := &Config{
+	config := &httplog_transporter.Config{
 		Method:       c.Method,
 		Url:          c.Url,
 		Headers:      toHeader(c.Headers),

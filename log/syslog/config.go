@@ -3,6 +3,7 @@ package syslog
 import (
 	"errors"
 	"github.com/eolinker/eosc/log"
+	"github.com/eolinker/goku/log/syslog/syslog-transporter"
 )
 
 type DriverConfig struct {
@@ -14,13 +15,7 @@ type DriverConfig struct {
 	FormatterName string `json:"formatter"`
 }
 
-type Config struct {
-	Network string
-	RAddr   string
-	Level   log.Level
-}
-
-func toConfig(c *DriverConfig) (*Config, error) {
+func toConfig(c *DriverConfig) (*syslog_transporter.Config, error) {
 	if c == nil {
 		return nil, errors.New("config is nil")
 	}
@@ -30,7 +25,7 @@ func toConfig(c *DriverConfig) (*Config, error) {
 		level = log.InfoLevel
 	}
 
-	config := &Config{
+	config := &syslog_transporter.Config{
 		Network: c.Network,
 		RAddr:   c.URL,
 		Level:   level,

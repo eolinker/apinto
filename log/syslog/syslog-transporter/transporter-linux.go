@@ -1,6 +1,6 @@
 //+build !windows
 
-package syslog
+package syslog_transporter
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ func (t *Transporter) reset(c *Config) error {
 	return nil
 }
 
-func createTransporter(conf *Config, formatter eosc_log.Formatter) (log.TransporterReset, error) {
+func CreateTransporter(conf *Config, formatter eosc_log.Formatter) (log.TransporterReset, error) {
 
 	sysWriter, err := newSysWriter(conf.Network, conf.RAddr, conf.Level, "")
 	if err != nil {

@@ -1,6 +1,6 @@
 //+build !windows,!plan9
 
-package syslog
+package syslog_transporter
 
 import (
 	"github.com/eolinker/eosc/log"

@@ -11,7 +11,7 @@ import (
 type httplog struct {
 	id                 string
 	name               string
-	config             *Config
+	config             *httplog_transporter.Config
 	formatterName      string
 	transporterReset   log.TransporterReset
 	transporterManager transporterManager.ITransporterManager

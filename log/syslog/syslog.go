@@ -5,14 +5,15 @@ import (
 	"github.com/eolinker/eosc"
 	transporterManager "github.com/eolinker/eosc/log/transporter-manager"
 	"github.com/eolinker/goku/log"
-	logFormatter "github.com/eolinker/goku/log/common/log-formatter"
+	"github.com/eolinker/goku/log/syslog/syslog-transporter"
 )
 
 type syslog struct {
 	id                 string
 	name               string
-	config             *Config
+	config             *syslog_transporter.Config
 	formatterName      string
+	transporterReset   log.TransporterReset
 	transporterManager transporterManager.ITransporterManager
 }
 
@@ -21,11 +22,16 @@ func (s *syslog) Id() string {
 }
 
 func (s *syslog) Start() error {
-	formatter := logFormatter.CreateFormatter(driverName, s.formatterName)
-	transporterReset, err := createTransporter(s.config, formatter)
+	formatter, err := syslog_transporter.CreateFormatter(s.formatterName)
 	if err != nil {
 		return err
 	}
+	transporterReset, err := syslog_transporter.CreateTransporter(s.config, formatter)
+	if err != nil {
+		return err
+	}
+
+	s.transporterReset = transporterReset
 
 	return s.transporterManager.Set(s.id, transporterReset)
 }
@@ -43,16 +49,24 @@ func (s *syslog) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	s.config = c
 	s.formatterName = config.FormatterName
 
-	formatter := logFormatter.CreateFormatter(driverName, s.formatterName)
-	transporter, err := createTransporter(s.config, formatter)
+	formatter, err := syslog_transporter.CreateFormatter(s.formatterName)
 	if err != nil {
 		return err
 	}
 
-	return s.transporterManager.Set(s.id, transporter)
+	err = s.transporterReset.Reset(c, formatter)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *syslog) Stop() error {
+	err := s.transporterReset.Close()
+	if err != nil {
+		return err
+	}
 	return s.transporterManager.Del(s.id)
 }
 
