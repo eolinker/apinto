@@ -1,4 +1,4 @@
-package filelog_transport
+package filelog_transporter
 
 import (
 	"fmt"
@@ -15,12 +15,13 @@ var (
 )
 
 func CreateFormatter(formatterName string) (log.Formatter, error) {
+	if formatterName == "" {
+		formatterName = "line"
+	}
+
 	formatterName = strings.ToLower(formatterName)
 	if formatterName != "" && !allFormatterName[formatterName] {
 		return nil, fmt.Errorf("formatterName:%s is not supported", formatterName)
-	}
-	if formatterName == "" {
-		formatterName = "line"
 	}
 
 	switch strings.ToLower(formatterName) {

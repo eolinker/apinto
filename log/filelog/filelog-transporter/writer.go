@@ -1,4 +1,4 @@
-package filelog_transport
+package filelog_transporter
 
 import (
 	"bufio"

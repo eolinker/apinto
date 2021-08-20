@@ -1,9 +1,10 @@
-package httplog
+package httplog_transporter
 
 import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/eolinker/goku/log/httplog"
 	"io/ioutil"
 	"net/http"
 	"runtime/debug"
@@ -19,7 +20,7 @@ type _HttpWriter struct {
 	chanOut chan []byte
 }
 
-func (h *_HttpWriter) reset(c *Config) {
+func (h *_HttpWriter) reset(c *httplog.Config) {
 
 	h.locker.Lock()
 	h.stop()

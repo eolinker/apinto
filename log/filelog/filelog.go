@@ -5,13 +5,13 @@ import (
 	"github.com/eolinker/eosc"
 	transporterManager "github.com/eolinker/eosc/log/transporter-manager"
 	"github.com/eolinker/goku/log"
-	"github.com/eolinker/goku/log/filelog/filelog-transport"
+	"github.com/eolinker/goku/log/filelog/filelog-transporter"
 )
 
 type filelog struct {
 	id                 string
 	name               string
-	config             *filelog_transport.Config
+	config             *filelog_transporter.Config
 	formatterName      string
 	transporterReset   log.TransporterReset
 	transporterManager transporterManager.ITransporterManager
@@ -23,12 +23,12 @@ func (f *filelog) Id() string {
 
 func (f *filelog) Start() error {
 
-	formatter, err := filelog_transport.CreateFormatter(f.formatterName)
+	formatter, err := filelog_transporter.CreateFormatter(f.formatterName)
 	if err != nil {
 		return err
 	}
 
-	transporterReset, err := filelog_transport.CreateTransporter(f.config, formatter)
+	transporterReset, err := filelog_transporter.CreateTransporter(f.config, formatter)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (f *filelog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}
 	f.config = c
 	f.formatterName = config.FormatterName
 
-	formatter, err := filelog_transport.CreateFormatter(f.formatterName)
+	formatter, err := filelog_transporter.CreateFormatter(f.formatterName)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,11 @@ func (f *filelog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}
 }
 
 func (f *filelog) Stop() error {
-	f.transporterReset.Close()
+	err := f.transporterReset.Close()
+	if err != nil {
+		return err
+	}
+
 	return f.transporterManager.Del(f.id)
 }
 

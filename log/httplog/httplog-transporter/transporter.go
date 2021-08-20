@@ -1,8 +1,9 @@
-package httplog
+package httplog_transporter
 
 import (
 	"fmt"
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/goku/log/httplog"
 
 	eosc_log "github.com/eolinker/eosc/log"
 	"github.com/eolinker/goku/log"
@@ -14,19 +15,21 @@ type Transporter struct {
 }
 
 func (t *Transporter) Reset(c interface{}, formatter eosc_log.Formatter) error {
-	conf, ok := c.(*Config)
+	conf, ok := c.(*httplog.Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(c))
+		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*httplog.Config)(nil)), eosc.TypeNameOf(c))
 	}
 
 	t.Transporter.SetFormatter(formatter)
 	return t.reset(conf)
 }
+
 func (t *Transporter) Close() error {
 	t.Transporter.Close()
 	return t.writer.Close()
 }
-func (t *Transporter) reset(c *Config) error {
+
+func (t *Transporter) reset(c *httplog.Config) error {
 	t.SetOutput(t.writer)
 	t.SetLevel(c.Level)
 
@@ -35,7 +38,7 @@ func (t *Transporter) reset(c *Config) error {
 	return nil
 }
 
-func createTransporter(conf *Config, formatter eosc_log.Formatter) (log.TransporterReset, error) {
+func CreateTransporter(conf *httplog.Config, formatter eosc_log.Formatter) (log.TransporterReset, error) {
 
 	httpWriter := newHttpWriter()
 

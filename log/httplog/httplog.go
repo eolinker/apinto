@@ -5,7 +5,7 @@ import (
 	"github.com/eolinker/eosc"
 	transporterManager "github.com/eolinker/eosc/log/transporter-manager"
 	"github.com/eolinker/goku/log"
-	logFormatter "github.com/eolinker/goku/log/common/log-formatter"
+	"github.com/eolinker/goku/log/httplog/httplog-transporter"
 )
 
 type httplog struct {
@@ -13,6 +13,7 @@ type httplog struct {
 	name               string
 	config             *Config
 	formatterName      string
+	transporterReset   log.TransporterReset
 	transporterManager transporterManager.ITransporterManager
 }
 
@@ -21,8 +22,12 @@ func (h *httplog) Id() string {
 }
 
 func (h *httplog) Start() error {
-	formatter := logFormatter.CreateFormatter(driverName, h.formatterName)
-	transporterReset, err := createTransporter(h.config, formatter)
+	formatter, err := httplog_transporter.CreateFormatter(h.formatterName)
+	if err != nil {
+		return err
+	}
+
+	transporterReset, err := httplog_transporter.CreateTransporter(h.config, formatter)
 	if err != nil {
 		return err
 	}
@@ -40,19 +45,27 @@ func (h *httplog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}
 	if err != nil {
 		return err
 	}
+
 	h.config = c
 	h.formatterName = config.FormatterName
 
-	formatter := logFormatter.CreateFormatter(driverName, h.formatterName)
-	transporter, err := createTransporter(h.config, formatter)
+	formatter, err := httplog_transporter.CreateFormatter(h.formatterName)
+	if err != nil {
+		return err
+	}
+	err = h.transporterReset.Reset(c, formatter)
 	if err != nil {
 		return err
 	}
 
-	return h.transporterManager.Set(h.id, transporter)
+	return nil
 }
 
 func (h *httplog) Stop() error {
+	err := h.transporterReset.Close()
+	if err != nil {
+		return err
+	}
 	return h.transporterManager.Del(h.id)
 }
 

@@ -3,7 +3,7 @@ package filelog
 import (
 	"errors"
 	"github.com/eolinker/eosc/log"
-	"github.com/eolinker/goku/log/filelog/filelog-transport"
+	"github.com/eolinker/goku/log/filelog/filelog-transporter"
 )
 
 //DriverConfig 普通log驱动配置
@@ -18,12 +18,12 @@ type DriverConfig struct {
 	FormatterName string `json:"formatter"`
 }
 
-func toConfig(c *DriverConfig) (*filelog_transport.Config, error) {
+func toConfig(c *DriverConfig) (*filelog_transporter.Config, error) {
 	if c == nil {
 		return nil, errors.New("config is nil")
 	}
 
-	period, err := filelog_transport.ParsePeriod(c.Period)
+	period, err := filelog_transporter.ParsePeriod(c.Period)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func toConfig(c *DriverConfig) (*filelog_transport.Config, error) {
 		level = log.InfoLevel
 	}
 
-	config := filelog_transport.Config{
+	config := filelog_transporter.Config{
 		Dir:    c.Dir,
 		File:   c.File,
 		Expire: c.Expire,
