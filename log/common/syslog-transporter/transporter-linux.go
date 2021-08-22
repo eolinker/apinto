@@ -25,10 +25,25 @@ func (t *Transporter) Reset(c interface{}, formatter eosc_log.Formatter) error {
 }
 
 func (t *Transporter) reset(c *Config) error {
-	t.SetOutput(t.writer)
+	sysWriter, err := newSysWriter(c.Network, c.RAddr, c.Level, "")
+	if err != nil {
+		return  err
+	}
+	err = t.writer.writer.Close()
+	if err != nil{
+		return err
+	}
+
+	t.writer = sysWriter
+	t.SetOutput(sysWriter)
 	t.SetLevel(c.Level)
 
 	return nil
+}
+
+func (t *Transporter) Close() error {
+	t.Transporter.Close()
+	return t.writer.writer.Close()
 }
 
 func CreateTransporter(conf *Config, formatter eosc_log.Formatter) (log.TransporterReset, error) {
@@ -42,10 +57,7 @@ func CreateTransporter(conf *Config, formatter eosc_log.Formatter) (log.Transpor
 		Transporter: eosc_log.NewTransport(sysWriter, conf.Level, formatter),
 		writer:      sysWriter,
 	}
+	transport.SetLevel(conf.Level)
 
-	e := transport.Reset(conf, formatter)
-	if e != nil {
-		return nil, e
-	}
 	return transport, nil
 }
