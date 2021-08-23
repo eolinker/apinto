@@ -6,6 +6,7 @@ import (
 	"github.com/eolinker/goku/service"
 )
 
+//DriverConfig http路由驱动配置
 type DriverConfig struct {
 	Driver   string         `json:"driver" yaml:"driver"`
 	Listen   int            `json:"listen" yaml:"listen"`
