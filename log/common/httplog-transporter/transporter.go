@@ -28,7 +28,6 @@ func (t *Transporter) Close() error {
 }
 
 func (t *Transporter) reset(c *Config) error {
-	t.SetOutput(t.writer)
 	t.SetLevel(c.Level)
 
 	t.writer.reset(c)
