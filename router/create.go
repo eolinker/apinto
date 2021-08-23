@@ -124,6 +124,7 @@ type createRoot struct {
 	nexts  createNodes
 }
 
+//newCreateRoot 创建路由树根结点
 func newCreateRoot(helper ICreateHelper) *createRoot {
 	return &createRoot{
 		nexts:  make(createNodes),
@@ -167,6 +168,7 @@ func (e *tEndpoint) EndPoint() string {
 	return e.target
 }
 
+//NewEndpoint 创建路由树的端点
 func NewEndpoint(target string, path []RulePath) *tEndpoint {
 	cs := make(map[string]checker.Checker)
 	cmds := make([]string, 0, len(path))
@@ -198,6 +200,7 @@ func (cr *createRoot) add(path []RulePath, target string) error {
 		path:   path,
 		helper: cr.helper,
 	}
+	// 对匹配路径上的指标类型进行排序
 	sort.Sort(cl)
 	return cr.nexts.add(path, NewEndpoint(target, path))
 
@@ -234,7 +237,9 @@ func (cc *createChecker) toRouter(helper ICreateHelper) IRouter {
 	}
 	return routers
 }
+
 func (cc *createChecker) add(path []RulePath, endpoint *tEndpoint) error {
+	//若该路由路径已无后续的指标，则设置端点
 	if len(path) == 0 {
 		if cc.endpoint != nil {
 			return fmt.Errorf("%s: exist", endpoint.endpoint)
@@ -250,12 +255,14 @@ type createNode struct {
 	checkers map[string]*createChecker
 }
 
+//newCreateNode 创建路由树节点
 func newCreateNode(cmd string) *createNode {
 	return &createNode{
 		cmd:      cmd,
 		checkers: make(map[string]*createChecker),
 	}
 }
+
 func (cn *createNode) toRouter(helper ICreateHelper) IRouter {
 	equals := make(map[string]IRouter)
 	tmp := make([]*createChecker, 0, len(cn.checkers))
@@ -270,6 +277,7 @@ func (cn *createNode) toRouter(helper ICreateHelper) IRouter {
 			tmp = append(tmp, c)
 		}
 	}
+	//对应指标的检查器进行排序
 	sort.Sort(createCheckers(tmp))
 
 	rs := make([]IRouter, 0, len(tmp))
@@ -289,15 +297,17 @@ func (cn *createNode) toRouter(helper ICreateHelper) IRouter {
 		checkers: cs,
 	}
 }
-func (cn *createNode) add(checker checker.Checker, path []RulePath, endpoint *tEndpoint) error {
 
+//add 将路由指标加入到节点中
+func (cn *createNode) add(checker checker.Checker, path []RulePath, endpoint *tEndpoint) error {
+	// 若路由指标的值在该节点已存在则加入，否则生成一个新的子节点
 	k := checker.Key()
 	cc, has := cn.checkers[k]
 	if !has {
 		cc = newCreateChecker(checker)
 		cn.checkers[k] = cc
 	}
-
+	//将该路由路径的后续指标加入到下一个子节点
 	return cc.add(path, endpoint)
 }
 

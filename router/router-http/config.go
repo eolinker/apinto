@@ -36,6 +36,7 @@ type Config struct {
 	Rules    []Rule
 }
 
+//toPath 根据路由指标Location、Header、Query生成相应检查器并封装成RulePath返回
 func (r *Rule) toPath() ([]router.RulePath, error) {
 
 	path := make([]router.RulePath, 0, len(r.Header)+len(r.Query)+1)

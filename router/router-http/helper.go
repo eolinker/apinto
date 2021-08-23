@@ -42,6 +42,7 @@ func (h *HttpRouterHelper) cmdType(cmd string) (string, string) {
 
 }
 
+//Less 排序指标类型的匹配顺序
 func (h *HttpRouterHelper) Less(i, j string) bool {
 	cmdI, keyI := h.cmdType(i)
 	cmdJ, keyJ := h.cmdType(j)

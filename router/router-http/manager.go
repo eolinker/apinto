@@ -51,10 +51,12 @@ type httpServer struct {
 	certs     *Certs
 }
 
+//shutdown 关闭http服务器
 func (s *httpServer) shutdown() {
 	s.srv.Shutdown()
 }
 
+//GetCertificate 获取证书配置
 func (a *httpServer) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
 	if a.certs == nil {
 		return nil, _ErrorCertificateNotExit
@@ -67,6 +69,7 @@ func (a *httpServer) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate
 	return certificate, nil
 }
 
+//Cancel 关闭路由管理器
 func (m *Manager) Cancel() {
 	m.locker.Lock()
 	defer m.locker.Unlock()
@@ -81,6 +84,7 @@ func (m *Manager) Cancel() {
 	}
 }
 
+//NewManager 创建路由管理器
 func NewManager() *Manager {
 	return &Manager{
 		routers:   NewRouters(),
@@ -90,6 +94,7 @@ func NewManager() *Manager {
 	}
 }
 
+//Add 新增路由配置到路由管理器中
 func (m *Manager) Add(port int, id string, config *Config) error {
 	m.locker.Lock()
 	defer m.locker.Unlock()
@@ -122,10 +127,12 @@ func (m *Manager) Add(port int, id string, config *Config) error {
 	return nil
 }
 
+//Del 将某个路由配置从路由管理器中删去
 func (m *Manager) Del(port int, id string) error {
 	m.locker.Lock()
 	defer m.locker.Unlock()
 	if r, has := m.routers.Del(port, id); has {
+		//若目标端口的http服务器已无路由配置，则关闭服务器及listener
 		if r.Count() == 0 {
 			if s, has := m.servers[port]; has {
 				err := s.srv.Shutdown()
@@ -143,10 +150,12 @@ func (m *Manager) Del(port int, id string) error {
 
 }
 
+//Add 将路由配置加入到路由管理器
 func Add(port int, id string, config *Config) error {
 	return manager.Add(port, id, config)
 }
 
+//Del 将路由配置从路由管理器中删去
 func Del(port int, id string) error {
 	return manager.Del(port, id)
 }

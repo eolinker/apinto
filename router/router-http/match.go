@@ -16,6 +16,7 @@ type Matcher struct {
 	services map[string]service.IService
 }
 
+//Match 对http请求进行路由匹配，并返回服务
 func (m *Matcher) Match(req http_context.IRequest) (service.IService, router.IEndPoint, bool) {
 
 	sources := newHttpSources(req)
@@ -48,6 +49,7 @@ func (h *HttpSources) Get(cmd string) (string, bool) {
 	if isLocation(cmd) {
 		return h.req.Path(), true
 	}
+
 	if hn, yes := headerName(cmd); yes {
 		if vs, has := h.req.Header().Get(hn); has {
 			if len(vs) == 0 {
