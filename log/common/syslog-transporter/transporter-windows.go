@@ -1,3 +1,4 @@
+//+build windows
 package syslog_transporter
 
 import (
