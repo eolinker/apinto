@@ -18,4 +18,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )
+replace (
+	github.com/eolinker/eosc v0.0.8 => ../eosc
+)
 
