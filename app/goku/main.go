@@ -56,7 +56,7 @@ func main() {
 		for _, p := range professions.Infos() {
 			values := yamlReader.AllByProfession(p.Name)
 			for _, v := range values {
-				err = storeT.Set(eosc.SpaceWorker, v)
+				err = storeT.Set(v)
 				if err != nil {
 					log.Errorf("init data error	%s	%s	:%s", p.Name, v.Id, err.Error())
 					continue

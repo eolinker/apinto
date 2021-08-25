@@ -13,6 +13,17 @@ type Store struct {
 	locker     sync.RWMutex
 }
 
+func (s *Store) Reset(values []eosc.StoreValue) error {
+	data := eosc.NewUntyped()
+	for _, v := range values {
+		data.Set(v.Id, v)
+	}
+	s.locker.Lock()
+	defer s.locker.Unlock()
+	s.data = data
+	return s.dispatcher.DispatchInit(values)
+}
+
 func NewStore() (eosc.IStore, error) {
 
 	s := &Store{
