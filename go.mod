@@ -3,7 +3,7 @@ module github.com/eolinker/goku
 go 1.15
 
 require (
-	github.com/eolinker/eosc v0.0.8
+	github.com/eolinker/eosc v0.0.9
 	github.com/eolinker/goku-plugin v0.1.4 // indirect
 	github.com/eolinker/goku-standard-plugin v0.1.5
 	github.com/ghodss/yaml v1.0.0
@@ -18,4 +18,3 @@ require (
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )
-
