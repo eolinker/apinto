@@ -3,7 +3,7 @@ package syslog
 import (
 	"github.com/eolinker/eosc/log"
 	transporter_manager "github.com/eolinker/eosc/log/transporter-manager"
-	syslog_transporter "github.com/eolinker/goku/log/common/syslog-transporter"
+	syslog_transporter "github.com/eolinker/goku/log-transport/syslog"
 	"testing"
 )
 

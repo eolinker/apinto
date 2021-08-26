@@ -2,6 +2,8 @@ package stdlog
 
 import (
 	"fmt"
+	log_transport "github.com/eolinker/goku/log-transport"
+	stdlog_transporter "github.com/eolinker/goku/log-transport/stdlog"
 
 	"github.com/eolinker/eosc"
 	transporterManager "github.com/eolinker/eosc/log/transporter-manager"
@@ -69,5 +71,5 @@ func (h *stdlog) Stop() error {
 }
 
 func (h *stdlog) CheckSkill(skill string) bool {
-	return log_transport.CheckSkill(skill)
+	return false
 }

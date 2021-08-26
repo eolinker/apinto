@@ -3,7 +3,7 @@ package filelog
 import (
 	"github.com/eolinker/eosc/log"
 	transporter_manager "github.com/eolinker/eosc/log/transporter-manager"
-	filelog_transporter "github.com/eolinker/goku/log/common/filelog-transporter"
+	filelog_transporter "github.com/eolinker/goku/log-transport/filelog"
 	"testing"
 	"time"
 )

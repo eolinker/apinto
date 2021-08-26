@@ -3,7 +3,7 @@ package httplog
 import (
 	"github.com/eolinker/eosc/log"
 	transporter_manager "github.com/eolinker/eosc/log/transporter-manager"
-	httplog_transporter "github.com/eolinker/goku/log/common/httplog-transporter"
+	httplog_transporter "github.com/eolinker/goku/log-transport/httplog"
 	"net/http"
 	"testing"
 )
@@ -56,6 +56,5 @@ func TestHTTPLog(t *testing.T) {
 	log.Info("httplog单元测试文件输出日志内容TEST——配置更新后  INFO")
 	log.Warn("httplog单元测试文件输出日志内容TEST——配置更新后  warn")
 
-
-	select{}
+	select {}
 }

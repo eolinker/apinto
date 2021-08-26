@@ -3,13 +3,13 @@ package stdlog
 import (
 	"github.com/eolinker/eosc/log"
 	transporter_manager "github.com/eolinker/eosc/log/transporter-manager"
-	stdlog_transporter "github.com/eolinker/goku/log/common/stdlog-transporter"
+	stdlog_transporter "github.com/eolinker/goku/log-transport/stdlog"
 	"testing"
 )
 
 func TestStdLog(t *testing.T) {
 	c := &stdlog_transporter.Config{
-		Level:   4, // info
+		Level: 4, // info
 	}
 	stdlog := &stdlog{
 		id:                 "123@log",
@@ -49,5 +49,5 @@ func TestStdLog(t *testing.T) {
 	log.Info("stdlog单元测试文件输出日志内容TEST——配置更新后  INFO")
 	log.Warn("stdlog单元测试文件输出日志内容TEST——配置更新后  warn")
 
-	select{}
+	select {}
 }

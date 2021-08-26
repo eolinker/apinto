@@ -2,6 +2,8 @@ package filelog
 
 import (
 	"fmt"
+	log_transport "github.com/eolinker/goku/log-transport"
+	filelog_transporter "github.com/eolinker/goku/log-transport/filelog"
 
 	"github.com/eolinker/eosc"
 	transporterManager "github.com/eolinker/eosc/log/transporter-manager"
@@ -72,5 +74,5 @@ func (f *filelog) Stop() error {
 }
 
 func (f *filelog) CheckSkill(skill string) bool {
-	return log_transport.CheckSkill(skill)
+	return false
 }

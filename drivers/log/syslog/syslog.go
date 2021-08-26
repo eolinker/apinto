@@ -2,6 +2,8 @@ package syslog
 
 import (
 	"fmt"
+	log_transport "github.com/eolinker/goku/log-transport"
+	syslog_transporter "github.com/eolinker/goku/log-transport/syslog"
 
 	"github.com/eolinker/eosc"
 	transporterManager "github.com/eolinker/eosc/log/transporter-manager"
@@ -70,5 +72,5 @@ func (s *syslog) Stop() error {
 }
 
 func (s *syslog) CheckSkill(skill string) bool {
-	return log_transport.CheckSkill(skill)
+	return false
 }

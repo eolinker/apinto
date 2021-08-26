@@ -2,6 +2,8 @@ package httplog
 
 import (
 	"fmt"
+	log_transport "github.com/eolinker/goku/log-transport"
+	httplog_transporter "github.com/eolinker/goku/log-transport/httplog"
 
 	"github.com/eolinker/eosc"
 	transporterManager "github.com/eolinker/eosc/log/transporter-manager"
@@ -69,5 +71,5 @@ func (h *httplog) Stop() error {
 }
 
 func (h *httplog) CheckSkill(skill string) bool {
-	return log_transport.CheckSkill(skill)
+	return false
 }
