@@ -2,9 +2,10 @@ package httplog
 
 import (
 	"errors"
-	"github.com/eolinker/eosc/log"
-	httplog_transporter "github.com/eolinker/goku/log/common/httplog-transporter"
 	"net/http"
+
+	"github.com/eolinker/eosc/log"
+	httplog_transporter "github.com/eolinker/goku/log-transport/httplog"
 )
 
 type DriverConfig struct {

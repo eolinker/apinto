@@ -4,6 +4,8 @@ package syslog
 import (
 	"fmt"
 
+	log_transport "github.com/eolinker/goku/log-transport"
+
 	eosc_log "github.com/eolinker/eosc/log"
 )
 

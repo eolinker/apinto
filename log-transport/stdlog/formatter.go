@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/eolinker/eosc/log"
-	formatter_json "github.com/eolinker/goku/log/common/formatter/formatter-json"
+	"github.com/eolinker/goku/log-transport/common/formatter/json"
 )
 
 var (
@@ -27,7 +27,7 @@ func CreateFormatter(formatterName string) (log.Formatter, error) {
 
 	switch strings.ToLower(formatterName) {
 	case "json":
-		return &formatter_json.JSONFormatter{}, nil
+		return &json.JSONFormatter{}, nil
 	case "line":
 		fallthrough
 	default:

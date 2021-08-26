@@ -2,8 +2,9 @@ package filelog
 
 import (
 	"errors"
+
 	"github.com/eolinker/eosc/log"
-	"github.com/eolinker/goku/log/common/filelog-transporter"
+	filelog_transporter "github.com/eolinker/goku/log-transport/filelog"
 )
 
 //DriverConfig 普通log驱动配置

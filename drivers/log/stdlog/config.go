@@ -2,15 +2,16 @@ package stdlog
 
 import (
 	"errors"
+
 	"github.com/eolinker/eosc/log"
-	stdlog_transporter "github.com/eolinker/goku/log/common/stdlog-transporter"
+	stdlog_transporter "github.com/eolinker/goku/log-transport/stdlog"
 )
 
 type DriverConfig struct {
-	Name          string            `json:"name"`
-	Driver        string            `json:"driver"`
-	Level         string            `json:"level"`
-	FormatterName string            `json:"formatter"`
+	Name          string `json:"name"`
+	Driver        string `json:"driver"`
+	Level         string `json:"level"`
+	FormatterName string `json:"formatter"`
 }
 
 func toConfig(c *DriverConfig) (*stdlog_transporter.Config, error) {
@@ -24,7 +25,7 @@ func toConfig(c *DriverConfig) (*stdlog_transporter.Config, error) {
 	}
 
 	config := &stdlog_transporter.Config{
-		Level:        level,
+		Level: level,
 	}
 
 	return config, nil
