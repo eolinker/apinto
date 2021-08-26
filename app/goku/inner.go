@@ -1,18 +1,18 @@
 package main
 
 import (
-	"github.com/eolinker/goku/auth/aksk"
-	"github.com/eolinker/goku/auth/apikey"
-	"github.com/eolinker/goku/auth/basic"
-	"github.com/eolinker/goku/auth/jwt"
-	"github.com/eolinker/goku/discovery/consul"
-	"github.com/eolinker/goku/discovery/eureka"
-	"github.com/eolinker/goku/discovery/nacos"
-	"github.com/eolinker/goku/discovery/static"
-	http_router "github.com/eolinker/goku/router/http-router"
-	service_http "github.com/eolinker/goku/service/service-http"
+	"github.com/eolinker/goku/drivers/auth/aksk"
+	"github.com/eolinker/goku/drivers/auth/apikey"
+	"github.com/eolinker/goku/drivers/auth/basic"
+	"github.com/eolinker/goku/drivers/auth/jwt"
+	"github.com/eolinker/goku/drivers/discovery/consul"
+	"github.com/eolinker/goku/drivers/discovery/eureka"
+	"github.com/eolinker/goku/drivers/discovery/nacos"
+	"github.com/eolinker/goku/drivers/discovery/static"
+	http_router "github.com/eolinker/goku/drivers/router/http-router"
+	service_http "github.com/eolinker/goku/drivers/service/service-http"
+	upstream_http "github.com/eolinker/goku/drivers/upstream/upstream-http"
 	store_memory "github.com/eolinker/goku/store-memory"
-	upstream_http "github.com/eolinker/goku/upstream/upstream-http"
 )
 
 func Register() {
