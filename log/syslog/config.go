@@ -10,7 +10,7 @@ type DriverConfig struct {
 	Name          string `json:"name"`
 	Driver        string `json:"driver"`
 	Network       string `json:"network"`
-	URL           string `json:"url"`
+	RAddr         string `json:"raddr"`
 	Level         string `json:"level"`
 	FormatterName string `json:"formatter"`
 }
@@ -27,7 +27,7 @@ func toConfig(c *DriverConfig) (*syslog_transporter.Config, error) {
 
 	config := &syslog_transporter.Config{
 		Network: c.Network,
-		RAddr:   c.URL,
+		RAddr:   c.RAddr,
 		Level:   level,
 	}
 

@@ -9,8 +9,8 @@ import (
 
 func TestSysLog(t *testing.T) {
 	c := &syslog_transporter.Config{
-		Network:  "",
-		RAddr:     "",
+		Network: "",
+		RAddr:   "",
 		Level:   4, // info
 	}
 	syslog := &syslog{
@@ -40,8 +40,8 @@ func TestSysLog(t *testing.T) {
 	newDriverConfig := &DriverConfig{
 		Name:          "Tesetsyslog",
 		Driver:        "syslog",
-		Network:        "",
-		URL:           "",
+		Network:       "",
+		RAddr:         "",
 		Level:         "info",
 		FormatterName: "json",
 	}
@@ -53,6 +53,5 @@ func TestSysLog(t *testing.T) {
 	log.Info("syslog单元测试文件输出日志内容TEST——配置更新后  INFO")
 	log.Warn("syslog单元测试文件输出日志内容TEST——配置更新后  warn")
 
-
-	select{}
+	select {}
 }
