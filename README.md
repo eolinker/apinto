@@ -6,117 +6,108 @@
 
 ------------
 
-Goku API Gateway （中文名：悟空 API 网关）是一个基于 Golang 开发的微服务网关，能够实现高性能 HTTP API 转发、多租户管理、API 访问权限控制等目的，拥有强大的自定义插件系统可以自行扩展，能够快速帮助企业进行 API 服务治理、提高 API 服务的稳定性和安全性。
+Goku API gateway is a microservice gateway developed based on golang. It can achieve the purposes of high-performance HTTP API forwarding, multi tenant management, API access control, etc. it has a powerful custom plug-in system, which can be expanded by itself, and can quickly help enterprises manage API services and improve the stability and security of API services.
 
-注意：**main**分支为开发主要分支，频繁更新可能导致使用不稳定，若需要使用稳定版本，请查看[release](https://github.com/eolinker/goku/releases)
+Note：The **main** branch is the main development branch. Frequent updates may lead to unstable use. If you need to use a stable version, please look [release](https://github.com/eolinker/goku/releases)
 
-### 概况
+### Summary / [中文介绍](https://github.com/eolinker/goku/blob/main/README_CN.md)
 
-- [为什么要使用Goku](#为什么要使用Goku "为什么要使用Goku")
-- [产品特性](#产品特性 "产品特性")
-- [基准测试](#基准测试 "基准测试")
-- [部署](#部署 "部署")
-- [启动](#启动 "启动")
-- [联系我们](#联系我们 "联系我们")
-- [关于我们](#关于我们 "关于我们")
-- [授权协议](#授权协议 "授权协议")
+- [Why Goku](#Why Goku)
+- [Feature](#Feature)
+- [Benchmark](#Benchmark)
+- [Deployment](#Deployment)
+- [Get Start](#Get Start)
+- [Contact](#Contact)
+- [About](#About)
 
-### 为什么要使用Goku
+### Why Goku
 
-Goku API Gateway （悟空 API 网关）是运行在企业系统服务边界上的微服务网关。当您构建网站、App、IOT甚至是开放API交易时，Goku API Gateway 能够帮你将内部系统中重复的组件抽取出来并放置在Goku网关上运行，如进行用户授权、访问控制、防火墙、数据转换等；并且Goku 提供服务编排的功能，让企业可以快速从各类服务上获取需要的数据，对业务实现快速响应。
+Goku API gateway is a microservice gateway running on the service boundary of enterprise system. When you build websites, apps, iots and even open API transactions, Goku API gateway can help you extract duplicate components from your internal system and run them on Goku gateway, such as user authorization, access control, firewall, data conversion, etc; Moreover, Goku provides the function of service arrangement, so that enterprises can quickly obtain the required data from various services and realize rapid response to business.
 
-Goku API Gateway具有以下优势：
+Goku API gateway has the following advantages:
 
-- 完全开源：Goku 项目由 Eolinker 发起并长期维护，我们希望与全球开发者共同打造微服务生态的基础设施。
-- 优异的性能表现：相同环境下，Goku比Nginx、Kong等产品快约50%，并且在稳定性上也有所优化。
-- 丰富的功能：Goku 提供了一个标准网关应有的所有功能，并且你可以快速连接你的各个微服务以及管理网络流量。
-- 极低的使用和维护成本：Goku 是纯 Go 语言开发的开源网关，没有繁琐的部署，没有外部产品依赖，只需要下载并运行即可，极为简单。
-- 良好的扩展性：Goku 的绝大部分功能都是模块化的，因此你可以很容易扩展它的能力。
+- Completely open source: the Goku project is initiated and maintained by eolinker for a long time. We hope to work with global developers to build the infrastructure of micro service ecology.
+- Excellent performance: under the same environment, Goku is about 50% faster than nginx, Kong and other products, and its stability is also optimized.
+- Rich functions: Goku provides all the functions of a standard gateway, and you can quickly connect your micro services and manage network traffic.
+- Extremely low use and maintenance cost: Goku is an open source gateway developed in pure go language. It has no cumbersome deployment and no external product dependence. It only needs to download and run, which is extremely simple.
+- Good scalability: most of Goku's functions are modular, so you can easily expand its capabilities.
 
-总而言之，Goku API Gateway 能让业务开发团队更加专注地实现业务。
+In a word, Goku API gateway enables the business development team to focus more on business implementation.
 
 [![Stargazers over time](https://starchart.cc/eolinker/goku.svg)](#)
 
-### 产品特性
+### Feture
 
-| 功能     | 描述                                                         |
-| -------- | ------------------------------------------------------------ |
-| 动态路由 | 可通过设置location、query、header、host、method等参数匹配对应的服务 |
-| 服务发现 | 支持对接Eureka、Nacos、Consul                                |
-| 负载均衡 | 支持轮询权重算法                                             |
-| 用户鉴权 | 匿名、Basic、Apikey、JWT、AK/SK认证                          |
-| SSL证书  | 管理多个证书                                                 |
-| 访问域名 | 可为网关设置访问域名                                         |
-| 健康检查 | 支持对负载的节点进行健康检查，确保服务健壮性                 |
-| 协议     | HTTP/HTTPS、Webservice                                       |
-| 插件化   | 流程插件化，按需加载所需模块                                 |
-| OPEN API | 支持使用open api配置网关                                     |
-| 日志     | 提供节点的运行日志,可设置日志的等级输出                      |
+| Feture            | Description                                                  |
+| ----------------- | ------------------------------------------------------------ |
+| Dynamic router    | Match the corresponding service by setting parameters such as location, query, header, host and method |
+| Service discovery | Support such as Eureka, Nacos and Consul                     |
+| Load Balance      | Support polling weight algorithm                             |
+| Authentication    | Anonymous, basic, apikey, JWT, AK / SK authentication        |
+| SSL certificate   | Manage multiple certificates                                 |
+| Access Domain     | The access domain can be set for the gateway                 |
+| Health check      | Support health check of load nodes to ensure service robustness |
+| Protocol          | HTTP/HTTPS、Webservice                                       |
+| Plugin            | The process is plug-in, and the required modules are loaded on demand |
+| OPEN API          | Gateway configuration using open API is supported            |
+| Log               | Provide the operation log of the node, and set the level output of the log |
 
-#### 迭代计划
+#### RoadMap
 
-- **集群支持**：使用**raft**算法构建集群，保证程序高可用性
-
-- **Cli命令支持**：不同参数值不同转发
-
-- **UI界面支持**： 通过UI界面操作网关配置，可以通过需要加载定制不同的UI界面（主题）
-
-- **多协议支持**：支持多种协议，包括但不限于：gRPC、Websocket、tcp/udp、Dubbo
-
-- **流量控制**：拦截异常流量
-
-- **黑白名单**：设置静态IP黑白名单，拦截非法IP
-
-- **插件市场**：由于goku主要是通过插件加载的方式加载所需模块，用户可将所需功能编译成插件，也可从插件市场中下载更新贡献者开发的插件，一键安装使用
-
-- **服务编排**：一个编排API对应多个backend，backend的入参支持客户端传入，也支持backend间的参数传递；backend的返回数据支持字段的过滤、删除、移动、重命名、拆包和封包；编排API能够设定编排调用失败时的异常返回
-
-- **监控**：捕获网关请求数据，并可将其导出到promethus、Graphite中进行分析
+- **Cluster**：Use **raft ** algorithm to build clusters to ensure high program availability
+- **Cli**：Support cli command control gateway program
+- **UI**： The gateway configuration can be operated through the UI interface, and different UI interfaces (Themes) can be customized by loading as required
+- **Multi protocol**：Support a variety of protocols, including but not limited to grpc, websocket, TCP / UDP and Dubbo
+- **Traffic control**：Intercept abnormal traffic
+- **Black and white list**：Set the static IP black-and-white list to intercept illegal IP
+- **Plugin Market**：Because Goku mainly loads the required modules through plug-in loading, users can compile the required functions into plug-ins, or download and update the plug-ins developed by contributors from the plug-in market for one click installation
+- **Service Orchestration**：An orchestration API corresponds to multiple backends. The input parameters of backends support client input and parameter transfer between backends; The returned data of backend supports filtering, deleting, moving, renaming, unpacking and packaging of fields; The orchestration API can set the exception return when the orchestration call fails
+- **Monitor**：Capture the gateway request data and export it to Promethus and graphite for analysis
 - .....
 
-#### 2021年迭代计划
+#### RoadMap  for 2021
 
 ![](http://data.eolinker.com/course/tbDpymJ8343df96713b8bb44b053c2088536ad59d7483d3.png)
 
-### 基准测试
+### Benchmark
 
 
 ![](http://data.eolinker.com/course/6Md3iDR8e64ebc99af18b628851c0b75a8a2061b4b26ff1.png)
 
 
 
-### 部署
+### Deployment
 
-* 直接部署：[部署教程](https://help.gokuapi.com/?path=/quick/arrange)
-* [快速入门教程](https://help.gokuapi.com/?path=/quick/quick_course)
-* [源码编译教程](https://help.gokuapi.com/?path=/quick/arrange)
-* Docker部署：后续支持
-* Kubernetes部署：后续支持
+* Direct Deployment：[Deployment Tutorial](https://help.gokuapi.com/?path=/quick/arrange)
+* [Quick Start Tutorial](https://help.gokuapi.com/?path=/quick/quick_course)
+* [Source Code Compilation Tutorial](https://help.gokuapi.com/?path=/quick/arrange)
+* Docker：Follow up support
+* Kubernetes：Follow up support
 
-### 启动
+### Get start
 
-1.下载安装包并解压（此处以v0.1.0版本的安装包示例）
+1. Download and unzip the installation package (here is an example of the installation package of version v0.1.0)
 
 ```
 wget https://github.com/eolinker/goku/releases/download/v0.1.0/goku-v0.1.0.linux.x64.tar.gz && tar -zxvf goku-v0.1.0.linux.x64.tar.gz && cd goku
 ```
 
-2.启动网关：
+2. Start gateway：
 
 ```
-./goku -data_path {配置文件路径}
+./goku -data_path {data_path}
 ```
 
-### 联系我们
+### Contact
 
-- **帮助文档**：[https://help.gokuapi.com](https://help.gokuapi.com)
-- **QQ群**: 725853895
+- **Help documentation**：[https://help.gokuapi.com](https://help.gokuapi.com)
+- **QQ group**: 725853895
 - **Slack**：[加入我们](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
-- **官网**：[https://www.gokuapi.com](https://www.gokuapi.com)
+- **Official website**：[https://www.gokuapi.com](https://www.gokuapi.com)
 
-### 关于我们
+### About
 
-EOLINKER 是领先的 API 管理服务供应商，为全球超过3000家企业提供专业的 API 研发管理、API自动化测试、API监控、API网关等服务。是首家为ITSS（中国电子工业标准化技术协会）制定API研发管理行业规范的企业。
+Eolinker is a leading API management service provider, providing professional API R & D management, API automation testing, API monitoring, API gateway and other services to more than 3000 enterprises around the world. It is the first enterprise to formulate API R & D management industry specifications for ITSS (China Electronics Industry Standardization Technology Association).
 
-官方网站：[https://www.eolinker.com](https://www.eolinker.com "EOLINKER官方网站")
-免费下载PC桌面端：[https://www.eolinker.com/pc/](https://www.eolinker.com/pc/ "免费下载PC客户端")
+Official website：[https://www.eolinker.com](https://www.eolinker.com "EOLINKER官方网站")
+Download PC desktop for free：[https://www.eolinker.com/pc/](https://www.eolinker.com/pc/ "免费下载PC客户端")
