@@ -94,6 +94,24 @@ Goku API Gateway具有以下优势：
 
 ### 基准测试
 
+#### 压测条件：
+
+```
+机器硬件配置：
+CPU: Intel(R) Xeon(R) Platinum 8369B CPU @ 2.70GHz * 4
+Linux gateway-node 3.10.0-1160.36.2.el7.x86_64
+Total 8G，7G available memory
+
+系统资源占用统计工具：nmon
+压测工具：wrk
+
+压测条件：
+并发量：100\200\400\600\800\1000
+压测时常：30s
+运行指令：./wrk -t16 -c[100\200\400\600\800\1000] -d30s -H "Connection:Close" --latency
+```
+
+#### 压测结果：
 
 ![](http://data.eolinker.com/course/6Md3iDR8e64ebc99af18b628851c0b75a8a2061b4b26ff1.png)
 
