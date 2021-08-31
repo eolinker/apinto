@@ -9,10 +9,12 @@ import (
 	"github.com/eolinker/eosc/log"
 )
 
+//Certs 证书集合结构体
 type Certs struct {
 	certs map[string]*tls.Certificate
 }
 
+//Get 获取证书
 func (c *Certs) Get(hostName string) (*tls.Certificate, bool) {
 	cert, has := c.certs[hostName]
 	if has {

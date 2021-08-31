@@ -16,15 +16,19 @@ import (
 	"github.com/eolinker/goku/router/checker"
 )
 
+//RulePath 路由路径上的指标结构体，包含指标和相应的检查器
 type RulePath struct {
 	CMD     string
 	Checker checker.Checker
 }
+
+//Rule 路由路径结构体，包含路径上的指标和目标服务
 type Rule struct {
 	Path   []RulePath
 	Target string
 }
 
+//ICreateHelper ICreateHelper实现了指标类型排序中的Less方法
 type ICreateHelper interface {
 	Less(i, j string) bool
 }
@@ -54,6 +58,7 @@ func (cns createNodes) add(path []RulePath, endpoint *tEndpoint) error {
 	}
 	return node.add(p.Checker, path[1:], endpoint)
 }
+
 func (cns createNodes) list(helper ICreateHelper) []*createNode {
 	res := make([]*createNode, 0, len(cns))
 	for _, v := range cns {
@@ -66,6 +71,7 @@ func (cns createNodes) list(helper ICreateHelper) []*createNode {
 	sort.Sort(cl)
 	return cl.nodes
 }
+
 func (cns createNodes) toRouter(helper ICreateHelper) Routers {
 
 	nodeList := cns.list(helper)
@@ -102,6 +108,7 @@ func (cl *createNodeList) Swap(i, j int) {
 	cl.nodes[i], cl.nodes[j] = cl.nodes[j], cl.nodes[i]
 }
 
+//PathSort 指标排序结构体，实现了sort接口，用于对路由路径上的指标进行排序
 type PathSort struct {
 	path   []RulePath
 	helper ICreateHelper
@@ -124,6 +131,7 @@ type createRoot struct {
 	nexts  createNodes
 }
 
+//newCreateRoot 创建路由树根结点
 func newCreateRoot(helper ICreateHelper) *createRoot {
 	return &createRoot{
 		nexts:  make(createNodes),
@@ -143,6 +151,7 @@ type IEndPoint interface {
 	Target() string
 	EndPoint() string
 }
+
 type tEndpoint struct {
 	target   string
 	cmds     []string
@@ -162,11 +171,13 @@ func (e *tEndpoint) Get(CMD string) (checker.Checker, bool) {
 func (e *tEndpoint) Target() string {
 	return e.target
 }
+
 func (e *tEndpoint) EndPoint() string {
 
 	return e.target
 }
 
+//NewEndpoint 创建路由树的端点
 func NewEndpoint(target string, path []RulePath) *tEndpoint {
 	cs := make(map[string]checker.Checker)
 	cmds := make([]string, 0, len(path))
@@ -198,6 +209,7 @@ func (cr *createRoot) add(path []RulePath, target string) error {
 		path:   path,
 		helper: cr.helper,
 	}
+	// 对匹配路径上的指标类型进行排序
 	sort.Sort(cl)
 	return cr.nexts.add(path, NewEndpoint(target, path))
 
@@ -216,6 +228,7 @@ func newCreateChecker(checker checker.Checker) *createChecker {
 		endpoint: nil,
 	}
 }
+
 func (cc *createChecker) toRouter(helper ICreateHelper) IRouter {
 
 	if len(cc.nexts) == 0 {
@@ -234,7 +247,9 @@ func (cc *createChecker) toRouter(helper ICreateHelper) IRouter {
 	}
 	return routers
 }
+
 func (cc *createChecker) add(path []RulePath, endpoint *tEndpoint) error {
+	//若该路由路径已无后续的指标，则设置端点
 	if len(path) == 0 {
 		if cc.endpoint != nil {
 			return fmt.Errorf("%s: exist", endpoint.endpoint)
@@ -250,12 +265,14 @@ type createNode struct {
 	checkers map[string]*createChecker
 }
 
+//newCreateNode 创建路由树节点
 func newCreateNode(cmd string) *createNode {
 	return &createNode{
 		cmd:      cmd,
 		checkers: make(map[string]*createChecker),
 	}
 }
+
 func (cn *createNode) toRouter(helper ICreateHelper) IRouter {
 	equals := make(map[string]IRouter)
 	tmp := make([]*createChecker, 0, len(cn.checkers))
@@ -270,6 +287,7 @@ func (cn *createNode) toRouter(helper ICreateHelper) IRouter {
 			tmp = append(tmp, c)
 		}
 	}
+	//对应指标的检查器进行排序
 	sort.Sort(createCheckers(tmp))
 
 	rs := make([]IRouter, 0, len(tmp))
@@ -289,15 +307,17 @@ func (cn *createNode) toRouter(helper ICreateHelper) IRouter {
 		checkers: cs,
 	}
 }
-func (cn *createNode) add(checker checker.Checker, path []RulePath, endpoint *tEndpoint) error {
 
+//add 将路由指标加入到节点中
+func (cn *createNode) add(checker checker.Checker, path []RulePath, endpoint *tEndpoint) error {
+	// 若路由指标的值在该节点已存在则加入，否则生成一个新的子节点
 	k := checker.Key()
 	cc, has := cn.checkers[k]
 	if !has {
 		cc = newCreateChecker(checker)
 		cn.checkers[k] = cc
 	}
-
+	//将该路由路径的后续指标加入到下一个子节点
 	return cc.add(path, endpoint)
 }
 
