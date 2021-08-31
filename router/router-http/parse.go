@@ -47,7 +47,7 @@ func parse(cs []*Config) (IMatcher, error) {
 				Checker: mck,
 			})
 		}
-		targets[c.Id] = c.Target
+		targets[c.ID] = c.Target
 
 		//若配置里的rules为空时
 		if len(c.Rules) == 0 {
@@ -57,7 +57,7 @@ func parse(cs []*Config) (IMatcher, error) {
 					pathWithHost := append(make([]router.RulePath, 0, 2), hp, mp)
 					rules = append(rules, router.Rule{
 						Path:   pathWithHost,
-						Target: c.Id,
+						Target: c.ID,
 					})
 				}
 			}
@@ -75,7 +75,7 @@ func parse(cs []*Config) (IMatcher, error) {
 					pathWithHost = append(pathWithHost, path...)
 					rules = append(rules, router.Rule{
 						Path:   pathWithHost,
-						Target: c.Id,
+						Target: c.ID,
 					})
 				}
 			}
@@ -83,7 +83,7 @@ func parse(cs []*Config) (IMatcher, error) {
 	}
 
 	//将所有路由路径组装成一颗路由树
-	r, err := router.ParseRouter(rules, NewHttpRouterHelper())
+	r, err := router.ParseRouter(rules, NewHTTPRouterHelper())
 	if err != nil {
 		return nil, err
 	}

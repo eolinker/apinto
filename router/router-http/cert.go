@@ -9,6 +9,7 @@ import (
 	"github.com/eolinker/eosc/log"
 )
 
+//Certs 证书集合结构体
 type Certs struct {
 	certs map[string]*tls.Certificate
 }

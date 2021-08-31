@@ -6,27 +6,34 @@ import (
 	"github.com/eolinker/goku/service"
 )
 
+//HeaderItem HeaderItem
 type HeaderItem struct {
 	Name    string
 	Pattern string
 }
+
+//QueryItem QueryItem
 type QueryItem struct {
 	Name    string
 	Pattern string
 }
+
+//Rule 路由Rule
 type Rule struct {
 	Location string
 	Header   []HeaderItem
 	Query    []QueryItem
 }
 
+//Cert 证书结构体
 type Cert struct {
 	Crt string
 	Key string
 }
 
+//Config http路由实例配置结构体
 type Config struct {
-	Id       string
+	ID       string
 	Name     string
 	Protocol string
 	Cert     []Cert
@@ -36,7 +43,7 @@ type Config struct {
 	Rules    []Rule
 }
 
-//toPath 根据路由指标Location、Header、Query生成相应检查器并封装成RulePath返回
+//toPath 根据路由指标Location、Header、Query生成相应Checker并封装成RulePath切片返回
 func (r *Rule) toPath() ([]router.RulePath, error) {
 
 	path := make([]router.RulePath, 0, len(r.Header)+len(r.Query)+1)

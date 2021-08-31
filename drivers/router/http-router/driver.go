@@ -9,15 +9,15 @@ import (
 	"github.com/eolinker/eosc"
 )
 
-//HttpRouterDriver 实现github.com/eolinker/eosc.eosc.IProfessionDriver接口
-type HttpRouterDriver struct {
+//HTTPRouterDriver 实现github.com/eolinker/eosc.eosc.IProfessionDriver接口
+type HTTPRouterDriver struct {
 	info       eosc.DriverInfo
 	configType reflect.Type
 }
 
-//NewHttpRouter 创建一个http路由驱动
-func NewHttpRouter(profession, name, label, desc string, params map[string]string) *HttpRouterDriver {
-	return &HttpRouterDriver{
+//NewHTTPRouter 创建一个http路由驱动
+func NewHTTPRouter(profession, name, label, desc string, params map[string]string) *HTTPRouterDriver {
+	return &HTTPRouterDriver{
 		configType: reflect.TypeOf(new(DriverConfig)),
 		info: eosc.DriverInfo{
 			Name:       name,
@@ -30,7 +30,7 @@ func NewHttpRouter(profession, name, label, desc string, params map[string]strin
 }
 
 //Create 创建一个http路由驱动实例
-func (h *HttpRouterDriver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+func (h *HTTPRouterDriver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	conf, iService, err := h.check(v, workers)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (h *HttpRouterDriver) Create(id, name string, v interface{}, workers map[eo
 }
 
 //check 检查http路由驱动配置
-func (h *HttpRouterDriver) check(v interface{}, workers map[eosc.RequireId]interface{}) (*DriverConfig, service.IService, error) {
+func (h *HTTPRouterDriver) check(v interface{}, workers map[eosc.RequireId]interface{}) (*DriverConfig, service.IService, error) {
 	conf, ok := v.(*DriverConfig)
 	if !ok {
 		return nil, nil, fmt.Errorf("get %s but %s %w", eosc.TypeNameOf(v), eosc.TypeNameOf(new(DriverConfig)), eosc.ErrorRequire)
@@ -58,6 +58,6 @@ func (h *HttpRouterDriver) check(v interface{}, workers map[eosc.RequireId]inter
 }
 
 //ConfigType 返回http路由驱动配置的反射类型
-func (h *HttpRouterDriver) ConfigType() reflect.Type {
+func (h *HTTPRouterDriver) ConfigType() reflect.Type {
 	return h.configType
 }

@@ -16,6 +16,7 @@ func Register() {
 	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver(driverInfo.ID, NewRouterDriverFactory())
 }
 
+//RouterDriverFactory http路由驱动工厂结构体
 type RouterDriverFactory struct {
 }
 
@@ -26,7 +27,7 @@ func (r *RouterDriverFactory) ExtendInfo() eosc.ExtendInfo {
 
 //Create 创建http路由驱动
 func (r *RouterDriverFactory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
-	return NewHttpRouter(profession, name, label, desc, params), nil
+	return NewHTTPRouter(profession, name, label, desc, params), nil
 }
 
 //NewRouterDriverFactory 创建一个http路由驱动工厂

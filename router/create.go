@@ -16,15 +16,19 @@ import (
 	"github.com/eolinker/goku/router/checker"
 )
 
+//RulePath 路由路径上的指标结构体，包含指标和相应的检查器
 type RulePath struct {
 	CMD     string
 	Checker checker.Checker
 }
+
+//Rule 路由路径结构体，包含路径上的指标和目标服务
 type Rule struct {
 	Path   []RulePath
 	Target string
 }
 
+//ICreateHelper ICreateHelper实现了指标类型排序中的Less方法
 type ICreateHelper interface {
 	Less(i, j string) bool
 }
@@ -54,6 +58,7 @@ func (cns createNodes) add(path []RulePath, endpoint *tEndpoint) error {
 	}
 	return node.add(p.Checker, path[1:], endpoint)
 }
+
 func (cns createNodes) list(helper ICreateHelper) []*createNode {
 	res := make([]*createNode, 0, len(cns))
 	for _, v := range cns {
@@ -66,6 +71,7 @@ func (cns createNodes) list(helper ICreateHelper) []*createNode {
 	sort.Sort(cl)
 	return cl.nodes
 }
+
 func (cns createNodes) toRouter(helper ICreateHelper) Routers {
 
 	nodeList := cns.list(helper)
@@ -102,6 +108,7 @@ func (cl *createNodeList) Swap(i, j int) {
 	cl.nodes[i], cl.nodes[j] = cl.nodes[j], cl.nodes[i]
 }
 
+//PathSort 指标排序结构体，实现了sort接口，用于对路由路径上的指标进行排序
 type PathSort struct {
 	path   []RulePath
 	helper ICreateHelper
@@ -144,6 +151,7 @@ type IEndPoint interface {
 	Target() string
 	EndPoint() string
 }
+
 type tEndpoint struct {
 	target   string
 	cmds     []string
@@ -163,6 +171,7 @@ func (e *tEndpoint) Get(CMD string) (checker.Checker, bool) {
 func (e *tEndpoint) Target() string {
 	return e.target
 }
+
 func (e *tEndpoint) EndPoint() string {
 
 	return e.target
@@ -219,6 +228,7 @@ func newCreateChecker(checker checker.Checker) *createChecker {
 		endpoint: nil,
 	}
 }
+
 func (cc *createChecker) toRouter(helper ICreateHelper) IRouter {
 
 	if len(cc.nexts) == 0 {

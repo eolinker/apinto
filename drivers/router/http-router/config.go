@@ -18,12 +18,14 @@ type DriverConfig struct {
 	Target   eosc.RequireId `json:"target" yaml:"target" skill:"github.com/eolinker/goku/service.service.IService"`
 }
 
+//DriverRule http路由驱动配置Rule结构体
 type DriverRule struct {
 	Location string            `json:"location" yaml:"location"`
 	Header   map[string]string `json:"header" yaml:"header"`
 	Query    map[string]string `json:"query" yaml:"query"`
 }
 
+//Config http路由配置结构体
 type Config struct {
 	name   string
 	port   int
@@ -32,6 +34,7 @@ type Config struct {
 	target service.IService
 }
 
+//Cert http路由驱动配置证书Cert结构体
 type Cert struct {
 	Key string `json:"key"`
 	Crt string `json:"crt"`

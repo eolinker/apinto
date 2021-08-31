@@ -13,7 +13,7 @@ type Router struct {
 	port int
 	conf *router_http.Config
 
-	driver *HttpRouterDriver
+	driver *HTTPRouterDriver
 }
 
 //Reset 重置http路由配置
@@ -24,7 +24,7 @@ func (r *Router) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	}
 
 	newConf := getConfig(target, cf)
-	newConf.Id = r.id
+	newConf.ID = r.id
 	newConf.Name = r.name
 	err = router_http.Add(cf.Listen, r.id, newConf)
 	if err != nil {
@@ -105,7 +105,7 @@ func getConfig(target service.IService, cf *DriverConfig) *router_http.Config {
 	}
 
 	return &router_http.Config{
-		//Id:     cf.ID,
+		//ID:     cf.ID,
 		//Name:   cf.Name,
 		Cert:     certs,
 		Protocol: protocol,
@@ -120,7 +120,7 @@ func getConfig(target service.IService, cf *DriverConfig) *router_http.Config {
 //NewRouter 创建http路由驱动实例
 func NewRouter(id, name string, c *DriverConfig, target service.IService) *Router {
 	conf := getConfig(target, c)
-	conf.Id = id
+	conf.ID = id
 	conf.Name = name
 
 	return &Router{

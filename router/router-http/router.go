@@ -41,7 +41,7 @@ func (r *Router) Count() int {
 	return r.data.Count()
 }
 
-//Handler
+//Handler 路由树的handler方法
 func (r *Router) Handler() fasthttp.RequestHandler {
 	return func(requestCtx *fasthttp.RequestCtx) {
 		ctx := http_context.NewContext(requestCtx)

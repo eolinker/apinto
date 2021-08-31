@@ -14,6 +14,7 @@ type IRouters interface {
 	Del(port int, id string) (IRouter, bool)
 }
 
+//Routers 路由树管理器的结构体
 type Routers struct {
 	data eosc.IUntyped
 }
@@ -32,15 +33,14 @@ func (rs *Routers) Set(port int, id string, conf *Config) (IRouter, bool, error)
 		}
 		rs.data.Set(name, router)
 		return router, true, nil
-	} else {
-		router := r.(IRouter)
-		err := router.SetRouter(id, conf)
-		if err != nil {
-			return nil, false, err
-		}
-		return router, false, nil
 	}
 
+	router := r.(IRouter)
+	err := router.SetRouter(id, conf)
+	if err != nil {
+		return nil, false, err
+	}
+	return router, false, nil
 }
 
 //NewRouters 新建路由树管理器

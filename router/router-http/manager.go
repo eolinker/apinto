@@ -16,9 +16,10 @@ import (
 )
 
 var _ iManager = (*Manager)(nil)
+
 var (
-	sign                     = ""
-	_ErrorCertificateNotExit = errors.New("not exit ca")
+	sign                    = ""
+	errorCertificateNotExit = errors.New("not exist cert")
 )
 
 func init() {
@@ -36,6 +37,7 @@ type iManager interface {
 
 var manager = NewManager()
 
+//Manager 路由管理器结构体
 type Manager struct {
 	locker    sync.Mutex
 	routers   IRouters
@@ -52,18 +54,18 @@ type httpServer struct {
 }
 
 //shutdown 关闭http服务器
-func (s *httpServer) shutdown() {
-	s.srv.Shutdown()
+func (h *httpServer) shutdown() {
+	h.srv.Shutdown()
 }
 
 //GetCertificate 获取证书配置
-func (a *httpServer) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	if a.certs == nil {
-		return nil, _ErrorCertificateNotExit
+func (h *httpServer) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	if h.certs == nil {
+		return nil, errorCertificateNotExit
 	}
-	certificate, has := a.certs.Get(strings.ToLower(info.ServerName))
+	certificate, has := h.certs.Get(strings.ToLower(info.ServerName))
 	if !has {
-		return nil, _ErrorCertificateNotExit
+		return nil, errorCertificateNotExit
 	}
 
 	return certificate, nil

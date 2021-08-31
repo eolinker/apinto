@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-//checkerAll 实现了Checker接口，能进行子串匹配
+//SubChecker 实现了Checker接口，能进行子串匹配
 type SubChecker struct {
 	sub string
 }

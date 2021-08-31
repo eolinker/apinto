@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-//checkerAll 实现了Checker接口，能进行后缀匹配
+//SuffixChecker 实现了Checker接口，能进行后缀匹配
 type SuffixChecker struct {
 	suffix string
 }
