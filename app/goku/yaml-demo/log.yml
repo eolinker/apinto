@@ -8,8 +8,6 @@ log:
     period: day
     expire: 3
     formatter: line
-    fields:  #选填，日志formatter field
-      - request_id
   -
     name: demo_httplog
     driver: httplog
@@ -20,14 +18,15 @@ log:
       password: 123456
     level: fatal
     formatter: json
-    fields: #选填，日志formatter field
-      - request_id
   -
     name: demo_syslog
     driver: syslog
-    network:
-    url:
+    network: tcp
+    raddr: 127.0.0.1:8888
     level: error
     formatter: line
-    fields: #选填，日志formatter field
-      - request_id
+  -
+    name: demo_stdlog
+    driver: stdlog
+    level: info
+    formatter: line
