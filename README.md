@@ -1,217 +1,122 @@
-# 简介
-Goku 是基于 Golang 开发的开源微服务API网关
+## GOKU
 
-Goku 有以下的特性：
+[![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/goku)](https://goreportcard.com/report/github.com/eolinker/goku) [![Releases](https://img.shields.io/github/release/eolinker/goku/all.svg?style=flat-square)](https://github.com/eolinker/goku/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/goku.svg?style=flat-square)](https://github.com/eolinker/goku/blob/main/LICENSE)
+
+![](http://data.eolinker.com/course/ZjVKwg65f0af2f992b0ce0fcfd64d04da1696dcab3853ee.png)
+
+------------
+
+Goku API Gateway （中文名：悟空 API 网关）是一个基于 Golang 开发的微服务网关，能够实现高性能 HTTP API 转发、多租户管理、API 访问权限控制等目的，拥有强大的自定义插件系统可以自行扩展，能够快速帮助企业进行 API 服务治理、提高 API 服务的稳定性和安全性。
+
+注意：**main**分支为开发主要分支，频繁更新可能导致使用不稳定，若需要使用稳定版本，请查看[release](https://github.com/eolinker/goku/releases)
+
+### 概况
+
+- [为什么要使用Goku](#为什么要使用Goku "为什么要使用Goku")
+- [产品特性](#产品特性 "产品特性")
+- [为什么要做Goku网关](#为什么要做Goku网关 "为什么要做Goku网关")
+- [基准测试](#基准测试 "基准测试")
+- [安装使用](#安装使用 "安装使用")
+- [联系我们](#联系我们 "联系我们")
+- [关于我们](#关于我们 "关于我们")
+- [授权协议](#授权协议 "授权协议")
+
+### 为什么要使用Goku
+
+Goku API Gateway （悟空 API 网关）是运行在企业系统服务边界上的微服务网关。当您构建网站、App、IOT甚至是开放API交易时，Goku API Gateway 能够帮你将内部系统中重复的组件抽取出来并放置在Goku网关上运行，如进行用户授权、访问控制、防火墙、数据转换等；并且Goku 提供服务编排的功能，让企业可以快速从各类服务上获取需要的数据，对业务实现快速响应。
+
+Goku API Gateway具有以下优势：
+
 - 完全开源：Goku 项目由 Eolinker 发起并长期维护，我们希望与全球开发者共同打造微服务生态的基础设施。
 - 优异的性能表现：相同环境下，Goku比Nginx、Kong等产品快约50%，并且在稳定性上也有所优化。
 - 丰富的功能：Goku 提供了一个标准网关应有的所有功能，并且你可以快速连接你的各个微服务以及管理网络流量。
 - 极低的使用和维护成本：Goku 是纯 Go 语言开发的开源网关，没有繁琐的部署，没有外部产品依赖，只需要下载并运行即可，极为简单。
 - 良好的扩展性：Goku 的绝大部分功能都是模块化的，因此你可以很容易扩展它的能力。
-- 快速与第三方工具连接：后续支持从 Swagger、Postman、Eolinker 工具导入数据，并与 Skywalking、Promethus、Graphite 等无缝连接。
 
-# 主要功能：
-|  功能 | 描述  |
-| ------------ | ------------ |
-|  动态路由 |  可通过设置location、query、header、host、method等参数匹配对应的服务 |
-| 服务发现  | 支持对接Eureka、Nacos、Consul  |
-| 负载均衡  |  支持轮询权重算法 |
-|  用户鉴权 | 匿名、Basic、Apikey、JWT、AK/SK认证  |
-|  SSL证书 | 管理多个证书  |
-|  访问域名 | 可为网关设置访问域名  |
-| 健康检查| 支持对负载的节点进行健康检查，确保服务健壮性|
-|  协议 |  	HTTP/HTTPS、Webservice |
-|  组件化 |  可自定义开发网关组件，并按需加载使用|
-|OPEN API| 支持使用open api配置网关|
+总而言之，Goku API Gateway 能让业务开发团队更加专注地实现业务。
 
-# 部署
-Goku 完全基于 Golang 开发，不基于现有第三方产品，因此具有外部依赖少，部署简单等特点。
+[![Stargazers over time](https://starchart.cc/eolinker/goku.svg)](#)
 
-各位可以通过以下方式进行部署：
+### 产品特性
 
-## 下载官方提供的安装包安装（推荐）
-访问https://github.com/eolinker/goku/releases，下载最新的release包，并通过以下命令安装即可：
-1. 下载安装包
-```
-wget http://github.com/eolinker/goku/releases/download/v0.1.0/goku-v0.1.0.linux.x64.tar.gz
-```
+| 功能     | 描述                                                         |
+| -------- | ------------------------------------------------------------ |
+| 动态路由 | 可通过设置location、query、header、host、method等参数匹配对应的服务 |
+| 服务发现 | 支持对接Eureka、Nacos、Consul                                |
+| 负载均衡 | 支持轮询权重算法                                             |
+| 用户鉴权 | 匿名、Basic、Apikey、JWT、AK/SK认证                          |
+| SSL证书  | 管理多个证书                                                 |
+| 访问域名 | 可为网关设置访问域名                                         |
+| 健康检查 | 支持对负载的节点进行健康检查，确保服务健壮性                 |
+| 协议     | HTTP/HTTPS、Webservice                                       |
+| 插件化   | 流程插件化，按需加载所需模块                                 |
+| OPEN API | 支持使用open api配置网关                                     |
+| 日志     | 提供节点的运行日志,可设置日志的等级输出                      |
 
-2. 解压安装包
-```
-tar -zxvf goku-v0.1.0.linux.x64.tar.gz && cd goku/（具体压缩包需要根据release提供的文件名进行修改）
-```
+#### 迭代计划
 
-3. 启动网关
-```
-./goku -http=8081 -data_path data.yaml
-```
-## 自行编译源码进行安装
-访问https://github.com/eolinker/goku ，下载源码并自行编译、安装
+- **集群支持**：使用**raft**算法构建集群，保证程序高可用性
 
-## Docker、一键部署脚本等（后续支持）
-由于目前Goku网关没有第三方依赖，整个Goku网关只有一个文件，因此不需要Docker也可以快速部署。
-后续集群功能完善后会提供Docker安装包方便在windows和mac等环境下试用。
+- **Cli命令支持**：不同参数值不同转发
 
+- **UI界面支持**： 通过UI界面操作网关配置，可以通过需要加载定制不同的UI界面（主题）
 
-# 快速使用
+- **多协议支持**：支持多种协议，包括但不限于：gRPC、Websocket、tcp/udp、Dubbo
 
-## 使用步骤
+- **流量控制**：拦截异常流量
 
-1、创建服务
+- **黑白名单**：设置静态IP黑白名单，拦截非法IP
 
-2、绑定路由
+- **插件市场**：由于goku主要是通过插件加载的方式加载所需模块，用户可将所需功能编译成插件，也可从插件市场中下载更新贡献者开发的插件，一键安装使用
 
-流程示意图如下：
+- **服务编排**：一个编排API对应多个backend，backend的入参支持客户端传入，也支持backend间的参数传递；backend的返回数据支持字段的过滤、删除、移动、重命名、拆包和封包；编排API能够设定编排调用失败时的异常返回
 
-![](http://data.eolinker.com/course/msPfUJBab6e929932e8610f1326d27d694a1088582b6d8c.png)
+- **监控**：捕获网关请求数据，并可将其导出到promethus、Graphite中进行分析
+- .....
 
---------------
-## 详细步骤说明
+#### 2021年迭代计划
 
-**Goku**支持下面两种方式进行网关配置：
-* 配置文件：启动时加载初始化配置，在网关使用过程中可使用Open Api进行后续配置，支持使用Open Api导出配置
+![](http://data.eolinker.com/course/tbDpymJ8343df96713b8bb44b053c2088536ad59d7483d3.png)
 
-* openAPI：可在网关使用过程中动态配置网关信息，包括路由、服务、负载均衡、鉴权、服务发现等
+### 为什么要做Goku网关
 
-路由配置规则详情点此[查看](http://help.gokuapi.com/?path=/router_driver/http)
+我们 EOLINKER 自2017年成立以来，立志于做全球领先的 API 管理平台，我们先是做了目前国内最大的在线API管理平台（API Studio），然后在18年发布了支持API场景（多个API关联和数据传递）的API监控（API Beacon），今年我们在思考还能为企业客户提供什么更加深度的服务时，认为API网关是一个关键的环节，能够帮助企业综合管理企业内部的微服务API、更方便地对接第三方API以及更好地维护对外的API等。
 
-### 使用文件配置服务
+可以说API网关是我们在深入API管理领域几年之后自然而然要做的事情，而既然要做就努力往大了做，于是我们做了更加大胆的决定：将核心代码全部开源，并且不限制网关的节点，还提供了完整的管理界面，让用户可以部署完成后立即投入使用。
+
+可能有人不理解为什么开源代码是一个大胆的决定，首先我们是一个商业公司而不是公益开源基金会，开源意味着有一大部分收入的流失，其次放眼全球的开源产品几乎都是不盈利的，每年还需要投入大量的研发和维护成本等。
+
+**那我们为什么还要将一个公司的核心产品开源？**
+
+因为一个公司的力量实在有限，如果我们希望把 Goku API Gateway 做到全球一流的水平，将中国的技术产品输出到海外去，开源社区和开发者的力量是必不可少的，因此这产品里面包含着我们的希望和情怀，希望证明在中国，像我们一样专注基础技术领域的企业也能有好的未来。所幸的是我们并不孤独，在我们前面有 Dubbo、TiDB 等优秀的开源项目，相信他们也和我们一样抱有希望在做着类似的事情。
+
+因此我们将 Goku API Gateway 开源，正如它的中文名称 “悟空” 一般，能在开源社区和我们的共同努力下完成72变。
+
+### 基准测试
 
 
-#### 创建一个名为demo.yaml的文件，并在文件中填写下列数据
+![](http://data.eolinker.com/course/6Md3iDR8e64ebc99af18b628851c0b75a8a2061b4b26ff1.png)
 
-```
-router:
-  -
-    name: demo_router
-    driver: http  # http驱动
-    listen: 8080    # 监听端口
-    host:       # 域名列表，满足该监听端口且域名在下列列表中的可进入该路由
-      - www.demo.com
-    rules:      # 规则列表
-      - location: "/demo*"		# 匹配带有"/demo"前缀的url
-    target: params_service@service	# 绑定服务ID，服务ID为：{name}@service，其中name为服务的名称
-service:
-  - 
-	name: params_service	# 服务名称
-	driver: http			# 驱动名称
-	desc: 请求参数处理	# 服务描述
-	retry: 2			# 重试次数
-	rewrite_url: /		# 转发重写url
-	scheme: http		# 请求上游协议
-	timeout: 3000	  # 超时时间，单位ms
-	upstream: www.gokuapi.com	# 上游地址，该处可填写负载ID或上游的域名/IP+端口
-```
 
-#### 启动程序
 
-```
-./goku -http 8081 -data_path demo.yml
-```
+### 安装使用
 
-#### 访问服务
+* 直接部署：[部署教程](https://help.gokuapi.com/?path=/quick/arrange)
+* [快速入门教程](https://help.gokuapi.com/?path=/quick/quick_course)
+* [源码编译教程](https://help.gokuapi.com/?path=/quick/arrange)
+* Docker部署：后续支持
+* Kubernetes部署：后续支持
 
-```
-curl -X POST -H "Host: www.demo.com"\
---url http://localhost:8080/demo/params/print \
---data "username=admin&password=123456"
-```
+### 联系我们
 
-返回数据截图如下：
+- **帮助文档**：[https://help.gokuapi.com](https://help.gokuapi.com)
+- **QQ群**: 725853895
+- **Slack**：[加入我们](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
+- **官网**：[https://www.gokuapi.com](https://www.gokuapi.com)
 
-![](http://data.eolinker.com/course/6aNzFgWf6ed215b99024f80436866685cf8b4fe4f3b9210.png)
+### 关于我们
 
-### 使用openAPI配置网关
+EOLINKER 是领先的 API 管理服务供应商，为全球超过3000家企业提供专业的 API 研发管理、API自动化测试、API监控、API网关等服务。是首家为ITSS（中国电子工业标准化技术协会）制定API研发管理行业规范的企业。
 
-在程序启动后，我们可以通过openAPI进行动态配置网关信息，包括路由、服务、鉴权、负载均衡、服务发现等
-
-#### 创建服务
-
-```
-curl -i -X POST \
---url http://localhost:8081/api/service \
--H "Content-Type: application/json" \
---data "{
-    "name": "params_service",
-    "driver": "http",
-    "desc": "请求参数处理",
-    "timeout": 3000,
-    "upstream": "demoapi.gokuapi.com",
-    "retry": 3,
-    "rewrite_url": "/",
-    "scheme": "https"
-}"
-```
-
-请求参数说明如下：
-
-![](http://data.eolinker.com/course/9hDUGZz764dddfd79f3aca4bd1b7f284d61dcf15ee1735b.png)
-
-返回数据说明如下：
-
-![](http://data.eolinker.com/course/6faVYZ1b781c2e7fe13d4f5e6a6893de68e559c806c3c6f.png)
-
-返回数据示例：
-```
-{
-    "id": "params_service@service",
-    "name": "params_service",
-    "driver": "http",
-    "create_time": "2021-08-03 14:31:50",
-    "update_time": "2021-08-03 14:31:50"
-}
-```
-
-#### 创建路由，并且服务id绑定路由
-
-将第1步返回的 **id** 值填入到路由配置的 **target** 中，如上例中的 **id** 为 **params_service@service**
-
-```
-curl -i -X POST \
---url http://localhost:8081/api/router \
--H "Content-Type: application/json" \
---data "{
-    "name": "demo_router",
-    "driver": "http",
-    "desc": "绑定8080端口",
-    "listen": 8080,
-    "host": ["www.demo.com"],
-    "rules": [{
-        "location": "/demo"
-    }],
-    "target": "params_service@service"
-}"
-```
-
-请求参数说明如下：
-
-![](http://data.eolinker.com/course/Qf5BWg459891c9ab414a94a447bde0059cf327f70c6232e.png)
-
-返回数据说明如下：
-
-![](http://data.eolinker.com/course/6faVYZ1b781c2e7fe13d4f5e6a6893de68e559c806c3c6f.png)
-
-返回数据示例：
-```
-{
-    "id": "demo_router@service",
-    "name": "demo_router",
-    "driver": "http",
-    "create_time": "2021-08-03 14:31:50",
-    "update_time": "2021-08-03 14:31:50"
-}
-```
-
-至此，带有路由的服务转发配置完成
-
-#### 访问服务
-
-```
-curl -X POST -H "Host: www.demo.com"\
---url http://localhost:8080/demo/params/print \
---data "username=admin&password=123456"
-```
-
-返回数据截图如下：
-
-![](http://data.eolinker.com/course/6aNzFgWf6ed215b99024f80436866685cf8b4fe4f3b9210.png)
-
+官方网站：[https://www.eolinker.com](https://www.eolinker.com "EOLINKER官方网站")
+免费下载PC桌面端：[https://www.eolinker.com/pc/](https://www.eolinker.com/pc/ "免费下载PC客户端")
