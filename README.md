@@ -12,11 +12,11 @@ Note：The **main** branch is the main development branch. Frequent updates may 
 
 ### Summary / [中文介绍](https://github.com/eolinker/goku/blob/main/README_CN.md)
 
-- [Why Goku](#Why Goku "Why Goku")
+- [WhyGoku](#WhyGoku "Why Goku")
 - [Feature](#Feature)
 - [Benchmark](#Benchmark)
 - [Deployment](#Deployment)
-- [Get Start](#Get Start "Get Start")
+- [GetStart](#GetStart "Get Start")
 - [Contact](#Contact)
 - [About](#About)
 
