@@ -97,3 +97,26 @@
       name: jwt
       label: jwt鉴权
       desc: jwt鉴权
+-
+  name: log
+  label: 日志
+  desc: 日志
+  dependencies: null
+  append_label: null
+  drivers:
+    - id: eolinker:goku:log_filelog
+      name: filelog
+      label: 文件日志
+      desc: 文件日志
+    - id: eolinker:goku:log_httplog
+      name: httplog
+      label: http日志
+      desc: http日志
+    - id: eolinker:goku:log_syslog
+      name: syslog
+      label: 系统日志
+      desc: 系统日志
+    - id: eolinker:goku:log_stdlog
+      name: stdlog
+      label: 标准输出日志
+      desc: 标准输出日志

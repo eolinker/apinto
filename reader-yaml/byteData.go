@@ -15,9 +15,5 @@ func (b BytesData) UnMarshal(v interface{}) error {
 }
 
 func MarshalBytes(v interface{}) (BytesData, error) {
-	data, err := yaml.Marshal(v)
-	if err != nil {
-		return nil, err
-	}
-	return BytesData(data), nil
+	return yaml.Marshal(v)
 }
