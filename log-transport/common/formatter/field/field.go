@@ -22,7 +22,10 @@ const (
 
 )
 
+//FieldKey 域的key
 type FieldKey = string
+
+//FieldKeys 域列表
 type FieldKeys []FieldKey
 
 //FieldsFormatter access日志格式器
@@ -33,6 +36,7 @@ type FieldsFormatter struct {
 	ignoreTime      bool
 }
 
+//NewFieldsLogFormatter 创建携带域的日志输出格式处理器
 func NewFieldsLogFormatter(fields FieldKeys, timestampFormat string) *FieldsFormatter {
 
 	return &FieldsFormatter{
@@ -43,10 +47,12 @@ func NewFieldsLogFormatter(fields FieldKeys, timestampFormat string) *FieldsForm
 	}
 }
 
+//IgnoreTime 返回是否忽略时间的布尔值
 func (f *FieldsFormatter) IgnoreTime() bool {
 	return f.ignoreTime
 }
 
+//SetIgnoreTime 设置是否忽略时间
 func (f *FieldsFormatter) SetIgnoreTime(ignoreTime bool) {
 	f.ignoreTime = ignoreTime
 }
@@ -58,7 +64,7 @@ func (f *FieldsFormatter) SetFields(fields FieldKeys) {
 	f.locker.Unlock()
 }
 
-//SetFields 设置域
+//Fields 返回域列表
 func (f *FieldsFormatter) Fields() []FieldKey {
 	f.locker.Lock()
 	fields := f.fields
