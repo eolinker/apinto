@@ -14,7 +14,7 @@ service:
     driver: http  # http驱动
     desc: "示例服务"  # 服务描述
     timeout: 30000  # 超时时间，单位：ms
-    upstream: www.eolinker.com  #
+    upstream: www.eolinker.com  # 该服务将请求转发到eolinker主页
     retry: 2    # 重试次数，当后端超时时进行重试
     rewrite_url: /  # 转发到后端的具体路径，如果路由是前缀匹配，则会将匹配
     scheme: http  # 转发到后端服务的协议，该协议仅当匿名转发的时候生效
