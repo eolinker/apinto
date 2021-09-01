@@ -10,7 +10,7 @@ import (
 
 var (
 	locker = sync.Mutex{}
-	lastId int64
+	lastID int64
 
 	start int64
 )
@@ -19,17 +19,21 @@ func init() {
 	s, _ := time.Parse("2020-01-02T15:04:05Z07:00", time.RFC3339)
 	start = s.UnixNano()
 }
+
+//GenerateID 生成id
 func GenerateID() int64 {
 	id := time.Now().UnixNano() - start
 	locker.Lock()
 	defer locker.Unlock()
 
-	for id <= lastId {
+	for id <= lastID {
 		id++
 	}
-	lastId = id
+	lastID = id
 	return id
 }
+
+//GenerateIDString 生成id字符串
 func GenerateIDString() string {
 	id := GenerateID()
 	data := make([]byte, 8)

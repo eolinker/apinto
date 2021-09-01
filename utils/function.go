@@ -85,7 +85,7 @@ func Md5(encodeString string) string {
 	return hex.EncodeToString(h.Sum(nil)) // 输出加密结果
 }
 
-//GetRandomString 生成随机字符串
+//GetRandomStringBack 生成随机字符串
 func GetRandomStringBack(num int) string {
 	str := "123456789abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ"
 	bytes := []byte(str)
@@ -150,6 +150,7 @@ func GetMac() (bool, string) {
 	return false, ""
 }
 
+//GzipCompress 转成Gzip
 func GzipCompress(origin []byte) ([]byte, error) {
 	var b bytes.Buffer
 	gz := gzip.NewWriter(&b)

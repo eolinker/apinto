@@ -27,14 +27,14 @@ type nacos struct {
 	locker     sync.RWMutex
 }
 
-// nacos 服务实例结构
+//Instance nacos 服务实例结构
 type Instance struct {
 	Hosts []struct {
 		Valid      bool    `json:"valid"`
 		Marked     bool    `json:"marked"`
-		InstanceId string  `json:"instanceId"`
+		InstanceID string  `json:"instanceId"`
 		Port       int     `json:"port"`
-		Ip         string  `json:"ip"`
+		IP         string  `json:"ip"`
 		Weight     float64 `json:"weight"`
 	}
 }

@@ -15,6 +15,7 @@ import (
 	store_memory "github.com/eolinker/goku/store-memory"
 )
 
+//Register 注册各类驱动工厂
 func Register() {
 	storeRegister()
 
