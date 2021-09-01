@@ -118,6 +118,7 @@ func (s *Store) GetListener() eosc.IStoreListener {
 	return s
 }
 
+//AddListen 增加监听
 func (s *Store) AddListen(h eosc.IStoreEventHandler) error {
 	if s.dispatcher.AddListen(h) {
 		return h.OnInit(s.All())
