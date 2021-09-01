@@ -10,16 +10,19 @@ import (
 	eosc_log "github.com/eolinker/eosc/log"
 )
 
+//Transporter filelog-Transporter结构
 type Transporter struct {
 	*eosc_log.Transporter
 	writer *FileWriterByPeriod
 }
 
+//Close 关闭
 func (t *Transporter) Close() error {
 	t.writer.Close()
 	return nil
 }
 
+//Reset 重置配置
 func (t *Transporter) Reset(c interface{}, f eosc_log.Formatter) error {
 	conf, ok := c.(*Config)
 	if !ok {
@@ -44,6 +47,7 @@ func (t *Transporter) reset(c *Config) error {
 	return nil
 }
 
+//CreateTransporter 创建filelog-Transporter
 func CreateTransporter(conf *Config, formatter eosc_log.Formatter) (log_transport.TransporterReset, error) {
 
 	fileWriterByPeriod := NewFileWriteByPeriod()

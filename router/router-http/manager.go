@@ -16,9 +16,10 @@ import (
 )
 
 var _ iManager = (*Manager)(nil)
+
 var (
-	sign                     = ""
-	_ErrorCertificateNotExit = errors.New("not exit ca")
+	sign                    = ""
+	errorCertificateNotExit = errors.New("not exist cert")
 )
 
 func init() {
@@ -36,6 +37,7 @@ type iManager interface {
 
 var manager = NewManager()
 
+//Manager 路由管理器结构体
 type Manager struct {
 	locker    sync.Mutex
 	routers   IRouters
@@ -51,22 +53,25 @@ type httpServer struct {
 	certs     *Certs
 }
 
-func (s *httpServer) shutdown() {
-	s.srv.Shutdown()
+//shutdown 关闭http服务器
+func (h *httpServer) shutdown() {
+	h.srv.Shutdown()
 }
 
-func (a *httpServer) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	if a.certs == nil {
-		return nil, _ErrorCertificateNotExit
+//GetCertificate 获取证书配置
+func (h *httpServer) GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	if h.certs == nil {
+		return nil, errorCertificateNotExit
 	}
-	certificate, has := a.certs.Get(strings.ToLower(info.ServerName))
+	certificate, has := h.certs.Get(strings.ToLower(info.ServerName))
 	if !has {
-		return nil, _ErrorCertificateNotExit
+		return nil, errorCertificateNotExit
 	}
 
 	return certificate, nil
 }
 
+//Cancel 关闭路由管理器
 func (m *Manager) Cancel() {
 	m.locker.Lock()
 	defer m.locker.Unlock()
@@ -81,6 +86,7 @@ func (m *Manager) Cancel() {
 	}
 }
 
+//NewManager 创建路由管理器
 func NewManager() *Manager {
 	return &Manager{
 		routers:   NewRouters(),
@@ -90,6 +96,7 @@ func NewManager() *Manager {
 	}
 }
 
+//Add 新增路由配置到路由管理器中
 func (m *Manager) Add(port int, id string, config *Config) error {
 	m.locker.Lock()
 	defer m.locker.Unlock()
@@ -122,10 +129,12 @@ func (m *Manager) Add(port int, id string, config *Config) error {
 	return nil
 }
 
+//Del 将某个路由配置从路由管理器中删去
 func (m *Manager) Del(port int, id string) error {
 	m.locker.Lock()
 	defer m.locker.Unlock()
 	if r, has := m.routers.Del(port, id); has {
+		//若目标端口的http服务器已无路由配置，则关闭服务器及listener
 		if r.Count() == 0 {
 			if s, has := m.servers[port]; has {
 				err := s.srv.Shutdown()
@@ -143,10 +152,12 @@ func (m *Manager) Del(port int, id string) error {
 
 }
 
+//Add 将路由配置加入到路由管理器
 func Add(port int, id string, config *Config) error {
 	return manager.Add(port, id, config)
 }
 
+//Del 将路由配置从路由管理器中删去
 func Del(port int, id string) error {
 	return manager.Del(port, id)
 }

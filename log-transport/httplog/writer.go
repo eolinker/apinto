@@ -35,11 +35,12 @@ func (h *_HttpWriter) reset(c *Config) {
 		handlerCount = 2
 	}
 	for i := 0; i < handlerCount; i++ {
-		go h.do(c.Method, c.Url, c.Headers, ctx)
+		go h.do(ctx, c.Method, c.Url, c.Headers)
 	}
 
 	h.locker.Unlock()
 }
+
 func (h *_HttpWriter) stop() error {
 
 	if h.cancelFunc != nil {
@@ -49,6 +50,7 @@ func (h *_HttpWriter) stop() error {
 
 	return nil
 }
+
 func (h *_HttpWriter) Close() error {
 	h.locker.Lock()
 	h.stop()
@@ -58,14 +60,14 @@ func (h *_HttpWriter) Close() error {
 	return nil
 }
 
-func (h *_HttpWriter) do(method, url string, header http.Header, ctx context.Context) {
+func (h *_HttpWriter) do(ctx context.Context, method, url string, header http.Header) {
 	defer func() {
 		if v := recover(); v != nil {
 			if err, ok := v.(error); ok {
 				fmt.Println("[httplog] do send error:", err)
 				debug.PrintStack()
 			}
-			go h.do(method, url, header, ctx)
+			go h.do(ctx, method, url, header)
 		}
 	}()
 	for {
@@ -79,7 +81,8 @@ func (h *_HttpWriter) do(method, url string, header http.Header, ctx context.Con
 		}
 	}
 }
-func newHttpWriter() *_HttpWriter {
+
+func newHTTPWriter() *_HttpWriter {
 
 	return &_HttpWriter{
 

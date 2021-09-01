@@ -18,6 +18,7 @@ import (
 
 var _ service.IRouterEndpoint = (*EndPoint)(nil)
 
+//EndPoint 路由端点结构体
 type EndPoint struct {
 	endpoint router.IEndPoint
 
@@ -26,10 +27,12 @@ type EndPoint struct {
 	once    sync.Once
 }
 
+//Header 通过header的key返回对应指标值的checker
 func (e *EndPoint) Header(name string) (checker.Checker, bool) {
 	return e.endpoint.Get(toHeader(name))
 }
 
+//Query 通过query的key返回对应指标值的checker
 func (e *EndPoint) Query(name string) (checker.Checker, bool) {
 	return e.endpoint.Get(toQuery(name))
 }
@@ -52,20 +55,24 @@ func (e *EndPoint) initCMD() {
 
 }
 
+//Headers 返回路由端点内header的指标key列表
 func (e *EndPoint) Headers() []string {
 	e.initCMD()
 	return e.headers
 }
 
+//Queries 返回路由端点内query的指标key列表
 func (e *EndPoint) Queries() []string {
 	e.initCMD()
 	return e.queries
 }
 
+//NewEndPoint 创建
 func NewEndPoint(endpoint router.IEndPoint) *EndPoint {
 	return &EndPoint{endpoint: endpoint}
 }
 
+//Location 返回location指标的checker
 func (e *EndPoint) Location() (checker.Checker, bool) {
 	return e.endpoint.Get(cmdLocation)
 }

@@ -7,16 +7,18 @@ import (
 )
 
 var (
-	ErrorUnknownExpression = errors.New("unknown expression")
+	errorUnknownExpression = errors.New("unknown expression")
 )
 
+//Checker 路由指标检查器接口
 type Checker interface {
 	Check(v string, has bool) bool
 	Key() string
 	CheckType() CheckType
 	Value() string
 }
-//
+
+//Parse 可根据路由指标字符串生成相应的检查器
 func Parse(pattern string) (Checker, error) {
 	i := strings.Index(pattern, "=")
 
@@ -46,9 +48,10 @@ func Parse(pattern string) (Checker, error) {
 		return newCheckerRegexpG(v) //~*=  不区分大小写的正则
 	}
 
-	return nil, fmt.Errorf("%s:%w", pattern, ErrorUnknownExpression)
+	return nil, fmt.Errorf("%s:%w", pattern, errorUnknownExpression)
 }
 
+//parseValue 根据不带等号的指标字符串生成检查器
 func parseValue(v string) (Checker, error) {
 	switch v {
 	case "*": //任意

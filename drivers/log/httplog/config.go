@@ -8,11 +8,12 @@ import (
 	httplog_transporter "github.com/eolinker/goku/log-transport/httplog"
 )
 
+//DriverConfig httplog驱动配置
 type DriverConfig struct {
 	Name          string            `json:"name"`
 	Driver        string            `json:"driver"`
 	Method        string            `json:"method"`
-	Url           string            `json:"url"`
+	URL           string            `json:"url"`
 	Headers       map[string]string `json:"headers"`
 	Level         string            `json:"level"`
 	FormatterName string            `json:"formatter"`
@@ -38,7 +39,7 @@ func toConfig(c *DriverConfig) (*httplog_transporter.Config, error) {
 
 	config := &httplog_transporter.Config{
 		Method:       c.Method,
-		Url:          c.Url,
+		Url:          c.URL,
 		Headers:      toHeader(c.Headers),
 		Level:        level,
 		HandlerCount: 5, // 默认值， 以后可能会改成配置
