@@ -30,8 +30,14 @@ func newSysWriter(network string, url string, level log.Level, tag string) (*_Sy
 }
 
 func (s *_SysWriter) Write(p []byte) (n int, err error) {
+	//不需要加锁，syslog.Writer的write方法已加上锁
 	s.writer.Write(p)
 	return len(p), nil
+}
+
+func (s *_SysWriter) Close() error {
+	//不需要加锁，syslog.Writer的close方法已加上锁
+	return s.writer.Close()
 }
 
 func parseLevel(level log.Level) syslog.Priority {
@@ -48,10 +54,10 @@ func parseLevel(level log.Level) syslog.Priority {
 		{
 			return syslog.LOG_INFO
 		}
-	case log.DebugLevel:
+	case log.DebugLevel, log.TraceLevel:
 		{
 			return syslog.LOG_DEBUG
 		}
 	}
-	return syslog.LOG_WARNING
+	return syslog.LOG_ERR
 }

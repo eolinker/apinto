@@ -4,6 +4,7 @@ package syslog
 
 import (
 	"fmt"
+	log_transport "github.com/eolinker/goku/log-transport"
 
 	"github.com/eolinker/eosc"
 	eosc_log "github.com/eolinker/eosc/log"
@@ -31,7 +32,7 @@ func (t *Transporter) reset(c *Config) error {
 	if err != nil {
 		return err
 	}
-	err = t.writer.writer.Close()
+	err = t.writer.Close()
 	if err != nil {
 		return err
 	}
@@ -46,7 +47,7 @@ func (t *Transporter) reset(c *Config) error {
 //Close 关闭
 func (t *Transporter) Close() error {
 	t.Transporter.Close()
-	return t.writer.writer.Close()
+	return t.writer.Close()
 }
 
 //CreateTransporter 创建syslog-Transporter
