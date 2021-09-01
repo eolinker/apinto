@@ -33,6 +33,7 @@ func main() {
 	//	MaxIdleConnsPerHost:   100,              // 每个host保持的空闲连接数
 	//}
 	//client := &http.Client{Transport: transport}
+
 	client := &fasthttp.Client{ReadTimeout: 30 * time.Second, MaxConnsPerHost: 4000}
 	s := &fasthttp.Server{
 		Handler: func(ctx *fasthttp.RequestCtx) {
