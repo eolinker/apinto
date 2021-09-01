@@ -43,7 +43,7 @@ func TestHTTPLog(t *testing.T) {
 		Name:          "Tesethttplog",
 		Driver:        "httplog",
 		Method:        "GET",
-		Url:           "http://127.0.0.1:8081/test",
+		URL:           "http://127.0.0.1:8081/test",
 		Headers:       map[string]string{},
 		Level:         "info",
 		FormatterName: "json",

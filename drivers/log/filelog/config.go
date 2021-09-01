@@ -7,7 +7,7 @@ import (
 	filelog_transporter "github.com/eolinker/goku/log-transport/filelog"
 )
 
-//DriverConfig 普通log驱动配置
+//DriverConfig filelog驱动配置
 type DriverConfig struct {
 	Name          string `json:"name"`
 	Driver        string `json:"driver"`

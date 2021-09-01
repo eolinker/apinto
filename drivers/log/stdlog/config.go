@@ -7,6 +7,7 @@ import (
 	stdlog_transporter "github.com/eolinker/goku/log-transport/stdlog"
 )
 
+//DriverConfig stdlog驱动配置
 type DriverConfig struct {
 	Name          string `json:"name"`
 	Driver        string `json:"driver"`

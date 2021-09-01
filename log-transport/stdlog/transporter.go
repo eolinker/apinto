@@ -10,11 +10,13 @@ import (
 	eosc_log "github.com/eolinker/eosc/log"
 )
 
+//Transporter stdlog-Transporter结构
 type Transporter struct {
 	*eosc_log.Transporter
 	writer *os.File
 }
 
+//Reset 重置配置
 func (t *Transporter) Reset(c interface{}, formatter eosc_log.Formatter) error {
 	conf, ok := c.(*Config)
 	if !ok {
@@ -31,6 +33,7 @@ func (t *Transporter) reset(c *Config) error {
 	return nil
 }
 
+//CreateTransporter 创建stdlog-Transporter
 func CreateTransporter(conf *Config, formatter eosc_log.Formatter) (log_transport.TransporterReset, error) {
 
 	transport := &Transporter{

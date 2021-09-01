@@ -15,6 +15,7 @@ var (
 	}
 )
 
+//CreateFormatter 创建输出格式处理器
 func CreateFormatter(formatterName string) (log.Formatter, error) {
 	if formatterName == "" {
 		formatterName = "line"
