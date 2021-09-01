@@ -82,9 +82,10 @@ func (r *Request) Query() Value {
 		r.rawQuery = string(r.req.URI().QueryString())
 	}
 	if r.query == nil {
+		r.query = make(Value)
 		qs := strings.Split(r.rawQuery, "&")
 		for _, q := range qs {
-			vs := strings.Split(q, ":")
+			vs := strings.Split(q, "=")
 			if len(vs) < 2 {
 				if vs[0] == "" {
 					continue
@@ -120,7 +121,6 @@ func (r *Request) ContentType() string {
 }
 
 func newRequest(req *fasthttp.Request) IRequest {
-	req.Header.ContentType()
 	newReq := &Request{
 		req: req,
 	}

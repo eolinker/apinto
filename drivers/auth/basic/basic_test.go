@@ -2,6 +2,7 @@ package basic
 
 import (
 	"errors"
+	"github.com/valyala/fasthttp"
 	"net/http"
 	"strings"
 	"testing"
@@ -63,16 +64,26 @@ func TestSuccessAuthorization(t *testing.T) {
 		"authorization-type": "basic",
 		"authorization":      "Basic bGl1OjEyMzQ1Ng==",
 	}
-	req, err := buildRequest(headers)
+	// http
+	//req, err := buildRequest(headers)
+	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+
+	// fast http
+	req, err := buildFastRequest(headers)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req, &writer{}))
+	err = worker.Auth(http_context.NewContext(req))
 	if err != nil {
 		t.Error(err)
 		return
 	}
+
 	t.Log("auth success")
 	return
 }
@@ -87,12 +98,22 @@ func TestExpireAuthorization(t *testing.T) {
 		"authorization-type": "basic",
 		"authorization":      "Basic d3U6MTIzNDU2",
 	}
-	req, err := buildRequest(headers)
+	// http
+	//req, err := buildRequest(headers)
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+
+	// fast http
+	req, err := buildFastRequest(headers)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req, &writer{}))
+	err = worker.Auth(http_context.NewContext(req))
+
 	if err == auth.ErrorExpireUser {
 		t.Log("success")
 		return
@@ -110,12 +131,21 @@ func TestNoAuthorization(t *testing.T) {
 	headers := map[string]string{
 		"authorization-type": "basic",
 	}
-	req, err := buildRequest(headers)
+	// http
+	//req, err := buildRequest(headers)
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+
+	// fast http
+	req, err := buildFastRequest(headers)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req, &writer{}))
+	err = worker.Auth(http_context.NewContext(req))
 	if err.Error() == "[basic_auth] authorization required" {
 		t.Log("success")
 		return
@@ -130,12 +160,22 @@ func TestNoAuthorizationType(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	req, err := buildRequest(nil)
+	// http
+	//req, err := buildRequest(nil)
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+
+	// fast http
+	headers := map[string]string{}
+	req, err := buildFastRequest(headers)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req, &writer{}))
+	err = worker.Auth(http_context.NewContext(req))
 	if err == auth.ErrorInvalidType {
 		t.Log("success")
 		return
@@ -153,6 +193,19 @@ func buildRequest(headers map[string]string) (*http.Request, error) {
 		req.Header.Set(key, value)
 	}
 	return req, err
+}
+
+func buildFastRequest(headers map[string]string)  (*fasthttp.RequestCtx, error){
+	context := &fasthttp.RequestCtx{
+		Request: *fasthttp.AcquireRequest(),
+		Response: *fasthttp.AcquireResponse(),
+	}
+	context.Request.Header.SetMethod(fasthttp.MethodPost)
+	for key, value := range headers {
+		context.Request.Header.Set(key, value)
+	}
+	context.Request.SetRequestURI("localhost:8081")
+	return context, nil
 }
 
 type writer struct {

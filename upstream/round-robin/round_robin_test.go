@@ -26,7 +26,7 @@ func TestRoundRobin(t *testing.T) {
 		t.Run(demo.name, func(t *testing.T) {
 			nodes := map[string]discovery.INode{}
 			for key, value := range demo.nodes {
-				nodes[key] = discovery.NewNode(value.label, key, value.ip, value.port)
+				nodes[key] = discovery.NewNode(value.label, key, value.ip, value.port, "")
 			}
 			app := discovery.NewApp(nil, d, nil, nodes)
 			rFactory := newRoundRobinFactory()
