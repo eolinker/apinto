@@ -10,7 +10,7 @@ Goku API Gateway （中文名：悟空 API 网关）是一个基于 Golang 开�
 
 注意：**main**分支为开发主要分支，频繁更新可能导致使用不稳定，若需要使用稳定版本，请查看[release](https://github.com/eolinker/goku/releases)
 
-### 概况
+### 概况 | [English Introduction](https://github.com/eolinker/goku/blob/main/README.md)
 
 - [为什么要使用Goku](#为什么要使用Goku "为什么要使用Goku")
 - [产品特性](#产品特性 "产品特性")
