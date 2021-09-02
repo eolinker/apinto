@@ -11,6 +11,7 @@ import (
 	"github.com/ghodss/yaml"
 )
 
+//Reader yaml文件读取器
 type Reader struct {
 	data eosc.IUntyped
 }
@@ -50,6 +51,7 @@ func load(path string) ([]byteData, error) {
 	return data, nil
 }
 
+//NewYaml 根据文件路径创建一个yaml读取器
 func NewYaml(file string) (*Reader, error) {
 	datas, err := load(file)
 	if err != nil {
@@ -121,6 +123,7 @@ func (s *Reader) setData(items []Item, profession string, now string) error {
 	return nil
 }
 
+//AllByProfession 根据profession返回StoreValue实例列表
 func (s *Reader) AllByProfession(profession string) []eosc.StoreValue {
 	pd, has := s.data.Get(profession)
 	if !has {

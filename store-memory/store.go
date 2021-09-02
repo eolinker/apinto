@@ -42,7 +42,7 @@ func (s *Store) Initialization() error {
 	return nil
 }
 
-//All 回去worker列表
+//All 返回StoreValue列表
 func (s *Store) All() []eosc.StoreValue {
 	list := s.data.List()
 	res := make([]eosc.StoreValue, len(list))
@@ -52,7 +52,7 @@ func (s *Store) All() []eosc.StoreValue {
 	return res
 }
 
-//Get 根据workerID获取worker
+//Get 根据ID获取StoreValue实例
 func (s *Store) Get(id string) (eosc.StoreValue, bool) {
 	if o, has := s.data.Get(id); has {
 		return *o.(*eosc.StoreValue), true
@@ -60,7 +60,7 @@ func (s *Store) Get(id string) (eosc.StoreValue, bool) {
 	return eosc.StoreValue{}, false
 }
 
-//Set 设置worker到存储器中
+//Set 设置StoreValue实例到存储器中
 func (s *Store) Set(v eosc.StoreValue) error {
 
 	s.locker.Lock()
@@ -75,7 +75,7 @@ func (s *Store) Set(v eosc.StoreValue) error {
 	return nil
 }
 
-//Del 根据workerID删除存储器内的worker
+//Del 根据ID删除存储器内的StoreValue实例
 func (s *Store) Del(id string) error {
 	v, has := s.data.Del(id)
 	if has {

@@ -279,7 +279,7 @@ func (b *BodyRequestHandler) RawBody() ([]byte, error) {
 
 }
 
-//encoder encode
+//Encode encode
 func (b *BodyRequestHandler) Encode() error {
 	if b.isWriteRaw {
 		return nil

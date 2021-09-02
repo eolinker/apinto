@@ -10,7 +10,6 @@ package utils
 
 import "testing"
 
-
 func BenchmarkV1(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		GetRandomString(16) // run fib(30) b.N times
@@ -18,6 +17,6 @@ func BenchmarkV1(b *testing.B) {
 }
 func BenchmarkV2(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		GetRandomStringV2(16) // run fib(30) b.N times
+		//GetRandomStringV2(16) // run fib(30) b.N times
 	}
 }
