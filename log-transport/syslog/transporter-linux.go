@@ -4,8 +4,6 @@ package syslog
 
 import (
 	"fmt"
-	log_transport "github.com/eolinker/goku/log-transport"
-
 	"github.com/eolinker/eosc"
 	eosc_log "github.com/eolinker/eosc/log"
 )
@@ -51,18 +49,17 @@ func (t *Transporter) Close() error {
 }
 
 //CreateTransporter 创建syslog-Transporter
-func CreateTransporter(conf *Config, formatter eosc_log.Formatter) (log_transport.TransporterReset, error) {
+func CreateTransporter(network, raddr string, level eosc_log.Level) (*Transporter, error) {
 
-	sysWriter, err := newSysWriter(conf.Network, conf.RAddr, conf.Level, "")
+	sysWriter, err := newSysWriter(network, raddr, level, "")
 	if err != nil {
 		return nil, err
 	}
 
 	transport := &Transporter{
-		Transporter: eosc_log.NewTransport(sysWriter, conf.Level, formatter),
+		Transporter: eosc_log.NewTransport(sysWriter, level),
 		writer:      sysWriter,
 	}
-	transport.SetLevel(conf.Level)
 
 	return transport, nil
 }

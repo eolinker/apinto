@@ -23,12 +23,13 @@ func (h *httplog) Id() string {
 }
 
 func (h *httplog) Start() error {
-	formatter, err := httplog_transporter.CreateFormatter(h.formatterName)
+	formatter, err := CreateFormatter(h.formatterName)
 	if err != nil {
 		return err
 	}
 
-	transporterReset, err := httplog_transporter.CreateTransporter(h.config, formatter)
+	transporterReset := httplog_transporter.CreateTransporter(h.config.Level)
+	err = transporterReset.Reset(h.config,formatter)
 	if err != nil {
 		return err
 	}
@@ -50,7 +51,7 @@ func (h *httplog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}
 	h.config = c
 	h.formatterName = config.FormatterName
 
-	formatter, err := httplog_transporter.CreateFormatter(h.formatterName)
+	formatter, err := CreateFormatter(h.formatterName)
 	if err != nil {
 		return err
 	}
