@@ -8,14 +8,13 @@ import (
 
 type TransporterWindows struct {
 	*eosc_log.Transporter
-	writer *_SysWriter
 }
 
 func (t *TransporterWindows) Reset(c interface{}, formatter eosc_log.Formatter) error {
 	return nil
 }
 
-func (t *TransporterWindows) Close() error{
+func (t *TransporterWindows) Close() error {
 	return nil
 }
 
