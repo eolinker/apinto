@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	log_transport "github.com/eolinker/goku/log-transport"
-
 	"github.com/eolinker/eosc"
 	eosc_log "github.com/eolinker/eosc/log"
 )
@@ -48,18 +46,12 @@ func (t *Transporter) reset(c *Config) error {
 }
 
 //CreateTransporter 创建filelog-Transporter
-func CreateTransporter(conf *Config, formatter eosc_log.Formatter) (log_transport.TransporterReset, error) {
+func CreateTransporter(level eosc_log.Level) *Transporter {
 
 	fileWriterByPeriod := NewFileWriteByPeriod()
 
-	transport := &Transporter{
-		Transporter: eosc_log.NewTransport(fileWriterByPeriod, conf.Level, formatter),
+	return &Transporter{
+		Transporter: eosc_log.NewTransport(fileWriterByPeriod, level),
 		writer:      fileWriterByPeriod,
 	}
-
-	e := transport.Reset(conf, formatter)
-	if e != nil {
-		return nil, e
-	}
-	return transport, nil
 }

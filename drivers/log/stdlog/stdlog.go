@@ -23,12 +23,13 @@ func (h *stdlog) Id() string {
 }
 
 func (h *stdlog) Start() error {
-	formatter, err := stdlog_transporter.CreateFormatter(h.formatterName)
+	formatter, err := CreateFormatter(h.formatterName)
 	if err != nil {
 		return err
 	}
 
-	transporterReset, err := stdlog_transporter.CreateTransporter(h.config, formatter)
+	transporterReset := stdlog_transporter.CreateTransporter(h.config.Level)
+	err = transporterReset.Reset(h.config, formatter)
 	if err != nil {
 		return err
 	}
@@ -50,7 +51,7 @@ func (h *stdlog) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	h.config = c
 	h.formatterName = config.FormatterName
 
-	formatter, err := stdlog_transporter.CreateFormatter(h.formatterName)
+	formatter, err := CreateFormatter(h.formatterName)
 	if err != nil {
 		return err
 	}

@@ -23,14 +23,15 @@ func (s *syslog) Id() string {
 }
 
 func (s *syslog) Start() error {
-	formatter, err := syslog_transporter.CreateFormatter(s.formatterName)
+	formatter, err := CreateFormatter(s.formatterName)
 	if err != nil {
 		return err
 	}
-	transporterReset, err := syslog_transporter.CreateTransporter(s.config, formatter)
+	transporterReset, err := syslog_transporter.CreateTransporter(s.config.Network,s.config.RAddr,s.config.Level)
 	if err != nil {
 		return err
 	}
+	transporterReset.SetFormatter(formatter)
 
 	s.transporterReset = transporterReset
 
@@ -50,7 +51,7 @@ func (s *syslog) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	s.config = c
 	s.formatterName = config.FormatterName
 
-	formatter, err := syslog_transporter.CreateFormatter(s.formatterName)
+	formatter, err := CreateFormatter(s.formatterName)
 	if err != nil {
 		return err
 	}

@@ -3,8 +3,6 @@ package httplog
 import (
 	"fmt"
 
-	log_transport "github.com/eolinker/goku/log-transport"
-
 	"github.com/eolinker/eosc"
 	eosc_log "github.com/eolinker/eosc/log"
 )
@@ -41,18 +39,11 @@ func (t *Transporter) reset(c *Config) error {
 }
 
 //CreateTransporter 创建httplog-Transporter
-func CreateTransporter(conf *Config, formatter eosc_log.Formatter) (log_transport.TransporterReset, error) {
-
+func CreateTransporter(level eosc_log.Level) *Transporter {
 	httpWriter := newHTTPWriter()
 
-	transport := &Transporter{
-		Transporter: eosc_log.NewTransport(httpWriter, conf.Level, formatter),
+ 	return &Transporter{
+		Transporter: eosc_log.NewTransport(httpWriter, level),
 		writer:      httpWriter,
 	}
-
-	e := transport.Reset(conf, formatter)
-	if e != nil {
-		return nil, e
-	}
-	return transport, nil
 }
