@@ -24,12 +24,13 @@ func (f *filelog) Id() string {
 
 func (f *filelog) Start() error {
 
-	formatter, err := filelog_transporter.CreateFormatter(f.formatterName)
+	formatter, err := CreateFormatter(f.formatterName)
 	if err != nil {
 		return err
 	}
 
-	transporterReset, err := filelog_transporter.CreateTransporter(f.config, formatter)
+	transporterReset := filelog_transporter.CreateTransporter(f.config.Level)
+	err = transporterReset.Reset(f.config,formatter)
 	if err != nil {
 		return err
 	}
@@ -51,7 +52,7 @@ func (f *filelog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}
 	f.config = c
 	f.formatterName = config.FormatterName
 
-	formatter, err := filelog_transporter.CreateFormatter(f.formatterName)
+	formatter, err := CreateFormatter(f.formatterName)
 	if err != nil {
 		return err
 	}

@@ -2,9 +2,13 @@ package apikey
 
 import (
 	"bytes"
+	"mime/multipart"
+
+	//"bytes"
 	"encoding/json"
 	"errors"
-	"mime/multipart"
+	"github.com/valyala/fasthttp"
+	//"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
@@ -48,12 +52,21 @@ func TestHeaderAuthorization(t *testing.T) {
 		"authorization-type": "Apikey",
 		"authorization":      "eolinker",
 	}
-	req, err := buildRequest(headers, nil, "")
+	// http
+	//req, err := buildRequest(headers, nil, "")
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+
+	// fast http
+	req, err := buildFastRequest(headers, nil, "")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req, &writer{}))
+	err = worker.Auth(http_context.NewContext(req))
 	if err != nil {
 		t.Error(err)
 		return
@@ -73,12 +86,22 @@ func TestQueryAuthorization(t *testing.T) {
 	query := map[string]string{
 		"Apikey": "eolinker",
 	}
-	req, err := buildRequest(headers, query, "")
+	// http
+	//req, err := buildRequest(headers, query, "")
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+
+	// fast http
+	req, err := buildFastRequest(headers, query, "")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req, &writer{}))
+	err = worker.Auth(http_context.NewContext(req))
+
 	if err != nil {
 		t.Error(err)
 		return
@@ -107,16 +130,31 @@ func TestBodyAuthorization(t *testing.T) {
 		"authorization-type": "Apikey",
 		"Content-Type":       "application/json",
 	}
-	req, err := http.NewRequest(http.MethodPost, "localhost:8081", bytes.NewReader(body))
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	// http
+	//req, err := http.NewRequest(http.MethodPost, "localhost:8081", bytes.NewReader(body))
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//for key, value := range headers {
+	//	req.Header.Set(key, value)
+	//}
+	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+
+	// fast http
+	req := fasthttp.AcquireRequest()
+	req.SetRequestURI("localhost:8081")
+	req.Header.SetMethod(fasthttp.MethodPost)
+	req.SetBody(body)
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
-
-	err = worker.Auth(http_context.NewContext(req, &writer{}))
+	context := &fasthttp.RequestCtx{
+		Request: *fasthttp.AcquireRequest(),
+		Response: *fasthttp.AcquireResponse(),
+	}
+	req.CopyTo(&context.Request)
+	err = worker.Auth(http_context.NewContext(context))
 	if err != nil {
 		t.Error(err)
 		return
@@ -142,16 +180,34 @@ func TestMultipartFormAuthorization(t *testing.T) {
 	headers := map[string]string{
 		"authorization-type": "Apikey",
 	}
-	req, err := http.NewRequest(http.MethodPost, "localhost:8081", buf)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	// http
+	//req, err := http.NewRequest(http.MethodPost, "localhost:8081", buf)
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//for key, value := range headers {
+	//	req.Header.Set(key, value)
+	//}
+	//req.Header.Set("Content-Type", w.FormDataContentType())
+	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+
+	// fast http
+	// fast http
+	req := fasthttp.AcquireRequest()
+	req.SetRequestURI("localhost:8081")
+	req.Header.SetMethod(fasthttp.MethodPost)
+	req.SetBodyString(buf.String())
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
-	err = worker.Auth(http_context.NewContext(req, &writer{}))
+	context := &fasthttp.RequestCtx{
+		Request: *fasthttp.AcquireRequest(),
+		Response: *fasthttp.AcquireResponse(),
+	}
+	req.CopyTo(&context.Request)
+	err = worker.Auth(http_context.NewContext(context))
 	if err != nil {
 		t.Error(err)
 		return
@@ -172,12 +228,22 @@ func TestFormAuthorization(t *testing.T) {
 		"authorization-type": "Apikey",
 		"Content-Type":       "application/x-www-form-urlencoded",
 	}
-	req, err := buildRequest(headers, nil, formBody.Encode())
+	// http
+	//req, err := buildRequest(headers, nil, formBody.Encode())
+	//if err != nil {
+	//	t.Error(err)
+	//	return
+	//}
+	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+
+	// fast http
+	req, err := buildFastRequest(headers, nil, formBody.Encode())
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req, &writer{}))
+	err = worker.Auth(http_context.NewContext(req))
+
 	if err != nil {
 		t.Error(err)
 		return
@@ -223,6 +289,37 @@ func buildRequest(headers map[string]string, query map[string]string, body strin
 		req.URL.RawQuery = params.Encode()
 	}
 	return req, err
+}
+
+func buildFastRequest(headers map[string]string, query map[string]string, body string) (*fasthttp.RequestCtx, error) {
+	method := fasthttp.MethodPost
+	if len(query) > 0 {
+		method = fasthttp.MethodGet
+	}
+	req := fasthttp.AcquireRequest()
+	req.SetRequestURI("localhost:8081")
+	req.Header.SetMethod(method)
+	req.SetBodyString(body)
+
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+
+	if len(query) > 0 {
+		params := make(url.Values)
+		for key, value := range query {
+			params.Add(key, value)
+		}
+		req.URI().SetQueryString(params.Encode())
+	}
+
+
+	context := &fasthttp.RequestCtx{
+		Request: *fasthttp.AcquireRequest(),
+		Response: *fasthttp.AcquireResponse(),
+	}
+	req.CopyTo(&context.Request)
+	return context, nil
 }
 
 type writer struct {

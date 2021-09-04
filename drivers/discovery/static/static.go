@@ -19,7 +19,7 @@ import (
 const name = "static"
 
 var (
-	ErrorStructType = errors.New("error struct type")
+	errorStructType = errors.New("error struct type")
 )
 
 type static struct {
@@ -48,7 +48,7 @@ func (s *static) Start() error {
 func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), ErrorStructType)
+		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), errorStructType)
 	}
 	s.scheme = cfg.getScheme()
 	if cfg.Health == nil {

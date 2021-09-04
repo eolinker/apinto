@@ -1,5 +1,6 @@
 package jwt
 
+//Config JWT实例配置
 type Config struct {
 	Name              string          `json:"name"`
 	Driver            string          `json:"driver"`
@@ -14,6 +15,7 @@ type jwtUsers struct {
 	credentials []JwtCredential
 }
 
+//JwtCredential JWT验证信息
 type JwtCredential struct {
 	Iss          string            `json:"iss"`
 	Secret       string            `json:"secret"`

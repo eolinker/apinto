@@ -47,8 +47,8 @@ func (c *client) GetNodeList(serviceName string) (discovery.Nodes, error) {
 				"marked": strconv.FormatBool(host.Marked),
 				"weight": strconv.FormatFloat(host.Weight, 'f', -1, 64),
 			}
-			if _, exist := nodes[host.InstanceId]; !exist {
-				node := discovery.NewNode(label, host.InstanceId, host.Ip, host.Port, "")
+			if _, exist := nodes[host.InstanceID]; !exist {
+				node := discovery.NewNode(label, host.InstanceID, host.IP, host.Port, "")
 				nodes[node.ID()] = node
 			}
 		}
@@ -62,13 +62,13 @@ func (c *client) GetNodeList(serviceName string) (discovery.Nodes, error) {
 //GetInstanceList 获取目标地址指定服务名的实例列表
 func (c *client) GetInstanceList(addr string, serviceName string) (*Instance, error) {
 	addr = addr + instancePath
-	paramsUrl := c.params
-	paramsUrl.Set("serviceName", serviceName)
+	paramsURL := c.params
+	paramsURL.Set("serviceName", serviceName)
 	req, err := http.NewRequest("GET", addr, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.URL.RawQuery = paramsUrl.Encode()
+	req.URL.RawQuery = paramsURL.Encode()
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err

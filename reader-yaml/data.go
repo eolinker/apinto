@@ -1,7 +1,6 @@
 package reader_yaml
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/eolinker/eosc"
@@ -10,8 +9,8 @@ import (
 //Item 配置项
 type Item map[string]interface{}
 
-//Id 获取ID
-func (i Item) Id() (string, bool) {
+//ID 获取ID
+func (i Item) ID() (string, bool) {
 	v, has := i["id"]
 	if !has {
 		return "", false
@@ -43,11 +42,11 @@ func (i Item) Driver() (string, bool) {
 //newStoreValue 新建storeValue实例
 func (i Item) newStoreValue(profession string, now string) (*eosc.StoreValue, error) {
 	name := ""
-	id, ok := i.Id()
+	id, ok := i.ID()
 	if !ok {
 		name, ok = i.Name()
 		if !ok {
-			return nil, errors.New(fmt.Sprintf("id,name not found in %s", profession))
+			return nil, fmt.Errorf("id,name not found in %s", profession)
 		}
 		id = fmt.Sprintf("%s@%s", name, profession)
 	}
@@ -58,7 +57,7 @@ func (i Item) newStoreValue(profession string, now string) (*eosc.StoreValue, er
 	}
 	driver, ok := i.Driver()
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("driver not found in %s", profession))
+		return nil, fmt.Errorf("driver not found in %s", profession)
 	}
 	return &eosc.StoreValue{
 		Id:         id,
