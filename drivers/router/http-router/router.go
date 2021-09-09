@@ -118,15 +118,16 @@ func getConfig(target service.IService, cf *DriverConfig) *router_http.Config {
 }
 
 //NewRouter 创建http路由驱动实例
-func NewRouter(id, name string, c *DriverConfig, target service.IService) *Router {
+func NewRouter(id, name string, c *DriverConfig, target service.IService, driver *HTTPRouterDriver) *Router {
 	conf := getConfig(target, c)
 	conf.ID = id
 	conf.Name = name
 
 	return &Router{
-		id:   id,
-		name: name,
-		port: c.Listen,
-		conf: conf,
+		id:     id,
+		name:   name,
+		port:   c.Listen,
+		conf:   conf,
+		driver: driver,
 	}
 }
