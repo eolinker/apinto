@@ -35,7 +35,7 @@ func (h *HTTPRouterDriver) Create(id, name string, v interface{}, workers map[eo
 	if err != nil {
 		return nil, err
 	}
-	return NewRouter(id, name, conf, iService), nil
+	return NewRouter(id, name, conf, iService, h), nil
 }
 
 //check 检查http路由驱动配置
