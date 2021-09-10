@@ -6,7 +6,7 @@
 
 ------------
 
-Goku API gateway is a microservice gateway developed based on golang. It can achieve the purposes of high-performance HTTP API forwarding, multi tenant management, API access control, etc. it has a powerful custom plug-in system, which can be expanded by itself, and can quickly help enterprises manage API services and improve the stability and security of API services.
+Goku API gateway is a api gateway developed based on golang. It can achieve the purposes of high-performance HTTP API forwarding, multi tenant management, API access control, etc. it has a powerful custom plug-in system, which can be expanded by itself, and can quickly help enterprises manage API services and improve the stability and security of API services.
 
 **Note**：The **main** branch is the main development branch. Frequent updates may lead to unstable use. If you need to use a stable version, please look [release](https://github.com/eolinker/goku/releases)
 
