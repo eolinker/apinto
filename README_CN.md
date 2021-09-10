@@ -23,7 +23,7 @@ Goku API Gateway （中文名：悟空 API 网关）是一个基于 Golang 开�
 
 ### 为什么要使用Goku
 
-Goku API Gateway （悟空 API 网关）是运行在企业系统服务边界上的微服务网关。当您构建网站、App、IOT甚至是开放API交易时，Goku API Gateway 能够帮你将内部系统中重复的组件抽取出来并放置在Goku网关上运行，如进行用户授权、访问控制、防火墙、数据转换等；并且Goku 提供服务编排的功能，让企业可以快速从各类服务上获取需要的数据，对业务实现快速响应。
+Goku API Gateway （悟空 API 网关）是运行在企业系统服务边界上的API网关。当您构建网站、App、IOT甚至是开放API交易时，Goku API Gateway 能够帮你将内部系统中重复的组件抽取出来并放置在Goku网关上运行，如进行用户授权、访问控制、防火墙、数据转换等；并且Goku 提供服务编排的功能，让企业可以快速从各类服务上获取需要的数据，对业务实现快速响应。
 
 Goku API Gateway具有以下优势：
 
