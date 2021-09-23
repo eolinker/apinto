@@ -14,11 +14,11 @@ type Professions struct {
 }
 
 func (p *Professions) ResetHandler(data []byte) error {
-	professions, err := readProfessionConfig(p.fileName)
+	psConfig, err := readProfessionConfig(p.fileName)
 	if err != nil {
 		return err
 	}
-	p.Professions.Reset(professions)
+	p.Professions.Reset(psConfig)
 	return nil
 }
 

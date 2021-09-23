@@ -44,10 +44,10 @@ func readProfessionConfig(file string) ([]*eosc.ProfessionConfig, error) {
 	}
 	pcs := make([]*eosc.ProfessionConfig, 0, len(cs))
 	for _, c := range cs {
-		drivers := make([]eosc.DriverConfig, 0, len(c.Drivers))
+		drivers := make([]*eosc.DriverConfig, 0, len(c.Drivers))
 		for _, driver := range c.Drivers {
-			drivers = append(drivers, eosc.DriverConfig{
-				ID:     driver.ID,
+			drivers = append(drivers, &eosc.DriverConfig{
+				Id:     driver.ID,
 				Name:   driver.Name,
 				Label:  driver.Label,
 				Desc:   driver.Desc,
@@ -56,10 +56,10 @@ func readProfessionConfig(file string) ([]*eosc.ProfessionConfig, error) {
 		}
 		pcs = append(pcs, &eosc.ProfessionConfig{
 			Name:         c.Name,
-			Label:        c.Label,
+			LocalName:    c.Label,
 			Desc:         c.Desc,
 			Dependencies: c.Dependencies,
-			AppendLabel:  c.AppendLabel,
+			AppendLabels: c.AppendLabel,
 			Drivers:      drivers,
 		})
 	}
