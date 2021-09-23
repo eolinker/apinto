@@ -37,7 +37,7 @@ func main() {
 
 	admin := admin_open_api.NewOpenAdmin("/api", professions)
 	htmlAdmin := admin_html.NewHtmlAdmin("/", professions)
-	handler, err := admin.GenHandler()
+	handler := admin.GenHandler()
 	if err != nil {
 		panic(err)
 	}
