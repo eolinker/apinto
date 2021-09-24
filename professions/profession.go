@@ -56,7 +56,7 @@ func readProfessionConfig(file string) ([]*eosc.ProfessionConfig, error) {
 		}
 		pcs = append(pcs, &eosc.ProfessionConfig{
 			Name:         c.Name,
-			LocalName:    c.Label,
+			Label:        c.Label,
 			Desc:         c.Desc,
 			Dependencies: c.Dependencies,
 			AppendLabels: c.AppendLabel,
