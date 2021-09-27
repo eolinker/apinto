@@ -1,171 +1,113 @@
-### 简介
-**goku-eosc**是一个基于 Golang 开发的微服务网关，其基于框架[eosc](https://github.com/eolinker/goku-eosc "eosc")进行开发
+## GOKU
 
-### 特性
-* 灵活的路由：可通过设置**location**、**query**、**header**、**host**、**method**等参数匹配对应的服务
+[![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/goku)](https://goreportcard.com/report/github.com/eolinker/goku) [![Releases](https://img.shields.io/github/release/eolinker/goku/all.svg?style=flat-square)](https://github.com/eolinker/goku/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/goku.svg?style=flat-square)](https://github.com/eolinker/goku/blob/main/LICENSE)
 
-* 支持对接多个主流的服务发现应用
-	* eureka
-	
-	* nacos
-	
-	* consul
+![](http://data.eolinker.com/course/ZjVKwg65f0af2f992b0ce0fcfd64d04da1696dcab3853ee.png)
 
-* 支持多种鉴权
-	* ak/sk
-	
-	* basic
-	
-	* apikey
-	
-	* jwt
-* 支持健康检查
+------------
 
-### 运行
+Goku API gateway is a api gateway developed based on golang. It can achieve the purposes of high-performance HTTP API forwarding, multi tenant management, API access control, etc. it has a powerful custom plug-in system, which can be expanded by itself, and can quickly help enterprises manage API services and improve the stability and security of API services.
 
-#### 运行参数说明
-* -http：管理端http监听端口，http和https端口必须填写一个
+**Note**：The **main** branch is the main development branch. Frequent updates may lead to unstable use. If you need to use a stable version, please look [release](https://github.com/eolinker/goku/releases)
 
-* -https：管理端https监听端口，http和https端口必须填写一个
+### Summary / [中文介绍](https://github.com/eolinker/goku/blob/main/README_CN.md)
 
-* -pem：证书文件路径，证书文件的后缀名一般为.crt 或 .pem。当需要https监听时该值必填
+- [WhyGoku](#WhyGoku "Why Goku")
+- [Feature](#Feature)
+- [Benchmark](#Benchmark)
+- [Deployment](#Deployment)
+- [GetStart](#GetStart "Get Start")
+- [Contact](#Contact)
+- [About](#About)
 
-* -key：密钥文件路径，密钥文件的后缀名一般为.key。当需要https监听时该值必填
+### Why Goku
 
-* -path：程序启动时加载profession路径，可填写具体的文件名，也可以填写对应的目录名
+Goku API gateway is a microservice gateway running on the service boundary of enterprise system. When you build websites, apps, iots and even open API transactions, Goku API gateway can help you extract duplicate components from your internal system and run them on Goku gateway, such as user authorization, access control, firewall, data conversion, etc; Moreover, Goku provides the function of service arrangement, so that enterprises can quickly obtain the required data from various services and realize rapid response to business.
 
-* -driver_path：驱动配置加载路径，填写具体的文件名，不填则默认为profession.yml
+Goku API gateway has the following advantages:
 
-#### 启动程序
+- Completely open source: the Goku project is initiated and maintained by eolinker for a long time. We hope to work with global developers to build the infrastructure of micro service ecology.
+- Excellent performance: under the same environment, Goku is about 50% faster than nginx, Kong and other products, and its stability is also optimized.
+- Rich functions: Goku provides all the functions of a standard gateway, and you can quickly connect your micro services and manage network traffic.
+- Extremely low use and maintenance cost: Goku is an open source gateway developed in pure go language. It has no cumbersome deployment and no external product dependence. It only needs to download and run, which is extremely simple.
+- Good scalability: most of Goku's functions are modular, so you can easily expand its capabilities.
+
+In a word, Goku API gateway enables the business development team to focus more on business implementation.
+
+[![Stargazers over time](https://starchart.cc/eolinker/goku.svg)](#)
+
+### Feture
+
+| Feture            | Description                                                  |
+| ----------------- | ------------------------------------------------------------ |
+| Dynamic router    | Match the corresponding service by setting parameters such as location, query, header, host and method |
+| Service discovery | Support such as Eureka, Nacos and Consul                     |
+| Load Balance      | Support polling weight algorithm                             |
+| Authentication    | Anonymous, basic, apikey, JWT, AK / SK authentication        |
+| SSL certificate   | Manage multiple certificates                                 |
+| Access Domain     | The access domain can be set for the gateway                 |
+| Health check      | Support health check of load nodes to ensure service robustness |
+| Protocol          | HTTP/HTTPS、Webservice                                       |
+| Plugin            | The process is plug-in, and the required modules are loaded on demand |
+| OPEN API          | Gateway configuration using open API is supported            |
+| Log               | Provide the operation log of the node, and set the level output of the log |
+
+#### RoadMap
+
+- **Cluster**：Use **raft ** algorithm to build clusters to ensure high program availability
+- **Cli**：Support cli command control gateway program
+- **UI**： The gateway configuration can be operated through the UI interface, and different UI interfaces (Themes) can be customized by loading as required
+- **Multi protocol**：Support a variety of protocols, including but not limited to grpc, websocket, TCP / UDP and Dubbo
+- **Traffic control**：Intercept abnormal traffic
+- **Black and white list**：Set the static IP black-and-white list to intercept illegal IP
+- **Plugin Market**：Because Goku mainly loads the required modules through plug-in loading, users can compile the required functions into plug-ins, or download and update the plug-ins developed by contributors from the plug-in market for one click installation
+- **Service Orchestration**：An orchestration API corresponds to multiple backends. The input parameters of backends support client input and parameter transfer between backends; The returned data of backend supports filtering, deleting, moving, renaming, unpacking and packaging of fields; The orchestration API can set the exception return when the orchestration call fails
+- **Monitor**：Capture the gateway request data and export it to Promethus and graphite for analysis
+- .....
+
+#### RoadMap  for 2021
+
+![image](https://user-images.githubusercontent.com/25589530/131605703-698222c6-42fb-4242-b47d-d962d949cdcf.png)
+
+### Benchmark
+
+
+![](http://data.eolinker.com/course/6Md3iDR8e64ebc99af18b628851c0b75a8a2061b4b26ff1.png)
+
+
+
+### Deployment
+
+* Direct Deployment：[Deployment Tutorial](https://help.gokuapi.com/?path=/quick/arrange)
+* [Quick Start Tutorial](https://help.gokuapi.com/?path=/quick/quick_course)
+* [Source Code Compilation Tutorial](https://help.gokuapi.com/?path=/quick/arrange)
+* Docker：Follow up support
+* Kubernetes：Follow up support
+
+### Get start
+
+1. Download and unzip the installation package (here is an example of the installation package of version v0.1.0)
+
 ```
-./goku-eosc -http 8081 -path data.yml
-```
-
-#### 快速使用
-##### 使用openAPI配置服务
-1、新建服务
-```
-curl -i -X POST \
---url http://localhost:8081/api/service \
--H "Content-Type: application/json" \
---data "{
-    "name": "params_service",
-    "driver": "http",
-    "desc": "请求参数处理",
-    "timeout": 3000,
-    "upstream": "demoapi.gokuapi.com",
-    "retry": 3,
-    "rewrite_url": "/",
-    "scheme": "https"
-}"
-```
-
-请求参数说明如下：
-
-![](http://data.eolinker.com/course/9hDUGZz764dddfd79f3aca4bd1b7f284d61dcf15ee1735b.png)
-
-返回数据说明如下：
-
-![](http://data.eolinker.com/course/6faVYZ1b781c2e7fe13d4f5e6a6893de68e559c806c3c6f.png)
-
-返回数据示例：
-```
-{
-    "id": "params_service@service",
-    "name": "params_service",
-    "driver": "http",
-    "create_time": "2021-08-03 14:31:50",
-    "update_time": "2021-08-03 14:31:50"
-}
-```
-
-2、新建路由
-```
-curl -i -X POST \
---url http://localhost:8081/api/router \
--H "Content-Type: application/json" \
---data "{
-    "name": "demo_router",
-    "driver": "http",
-    "desc": "绑定8080端口",
-    "listen": 8080,
-    "host": ["www.demo.com"],
-    "rules": [{
-        "location": "/demo"
-    }],
-    "target": "params_service@service"
-}"
+wget https://github.com/eolinker/goku/releases/download/v0.1.0/goku-v0.1.0.linux.x64.tar.gz && tar -zxvf goku-v0.1.0.linux.x64.tar.gz && cd goku
 ```
 
-请求参数说明如下：
+2. Start gateway：
 
-![](http://data.eolinker.com/course/Qf5BWg459891c9ab414a94a447bde0059cf327f70c6232e.png)
-
-返回数据说明如下：
-
-![](http://data.eolinker.com/course/6faVYZ1b781c2e7fe13d4f5e6a6893de68e559c806c3c6f.png)
-
-返回数据示例：
 ```
-{
-    "id": "demo_router@service",
-    "name": "demo_router",
-    "driver": "http",
-    "create_time": "2021-08-03 14:31:50",
-    "update_time": "2021-08-03 14:31:50"
-}
+./goku -data_path {data_path}
 ```
 
-至此，带有路由的服务转发便已完成
+### Contact
 
-3、访问服务
-```
-curl -X POST -H "Host: www.demo.com"\
---url http://localhost:8080/demo/params/print \
---data "username=admin&password=123456"
-```
+- **Help documentation**：[https://help.gokuapi.com](https://help.gokuapi.com)
+- **QQ group**: 725853895
+- **Slack**：[加入我们](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
+- **Official website**：[https://www.gokuapi.com](https://www.gokuapi.com)
 
-返回数据截图如下：
+### About
 
-![](http://data.eolinker.com/course/6aNzFgWf6ed215b99024f80436866685cf8b4fe4f3b9210.png)
+Eolinker is a leading API management service provider, providing professional API R & D management, API automation testing, API monitoring, API gateway and other services to more than 3000 enterprises around the world. It is the first enterprise to formulate API R & D management industry specifications for ITSS (China Electronics Industry Standardization Technology Association).
 
-##### 使用文件配置服务
-1、创建一个名为demo.yaml的文件，并在文件中填写下列数据
-```
-router:
-  -
-    name: demo_router
-    driver: http  # http驱动
-    listen: 8080    # 监听端口
-    host:       # 域名列表，满足该监听端口且域名在下列列表中的可进入该路由
-      - www.demo.com
-    rules:      # 规则列表
-      - location: "^=/demo"
-    target: params_service@service
-service:
-  - 
-	name: params_service
-	driver: http
-	desc: 请求参数处理
-	retry: 2
-	rewrite_url: /
-	scheme: http
-	timeout: 3000
-	upstream: demoapi.gokuapi.com
-```
-
-2、启动程序
-```
-./goku-eosc -http 8081 -path demo.yml
-```
-
-3、访问服务
-```
-curl -X POST -H "Host: www.demo.com"\
---url http://localhost:8080/demo/params/print \
---data "username=admin&password=123456"
-```
-
-返回数据截图如下：
-
-![](http://data.eolinker.com/course/6aNzFgWf6ed215b99024f80436866685cf8b4fe4f3b9210.png)
+Official website：[https://www.eolinker.com](https://www.eolinker.com "EOLINKER官方网站")
+Download PC desktop for free：[https://www.eolinker.com/pc/](https://www.eolinker.com/pc/ "免费下载PC客户端")
