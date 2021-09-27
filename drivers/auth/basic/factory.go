@@ -24,16 +24,6 @@ func NewFactory() eosc.IProfessionDriverFactory {
 	return &factory{}
 }
 
-//ExtendInfo 返回http_proxy驱动工厂信息
-func (f *factory) ExtendInfo() eosc.ExtendInfo {
-	return eosc.ExtendInfo{
-		ID:      "eolinker:goku:auth_basic",
-		Group:   "eolinker",
-		Project: "goku",
-		Name:    "basic",
-	}
-}
-
 //Create 创建http_proxy驱动
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
 	return &driver{

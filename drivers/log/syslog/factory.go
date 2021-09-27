@@ -1,8 +1,9 @@
 package syslog
 
 import (
-	"github.com/eolinker/eosc"
 	"reflect"
+
+	"github.com/eolinker/eosc"
 )
 
 //Register 注册syslog驱动工厂
@@ -16,16 +17,6 @@ type factory struct {
 //NewFactory 创建syslog驱动工厂
 func NewFactory() eosc.IProfessionDriverFactory {
 	return &factory{}
-}
-
-//ExtendInfo 返回syslog驱动工厂的信息
-func (f *factory) ExtendInfo() eosc.ExtendInfo {
-	return eosc.ExtendInfo{
-		ID:      "eolinker:goku:log_syslog",
-		Group:   "eolinker",
-		Project: "goku",
-		Name:    "syslog",
-	}
 }
 
 //Create 创建syslog驱动

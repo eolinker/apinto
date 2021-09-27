@@ -2,27 +2,13 @@ package http_router
 
 import "github.com/eolinker/eosc"
 
-var (
-	driverInfo = eosc.ExtendInfo{
-		ID:      "eolinker:goku:http_router",
-		Group:   "eolinker",
-		Project: "goku",
-		Name:    "https_router",
-	}
-)
-
 //Register 注册http路由驱动工厂
 func Register() {
-	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver(driverInfo.ID, NewRouterDriverFactory())
+	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:http_router", NewRouterDriverFactory())
 }
 
 //RouterDriverFactory http路由驱动工厂结构体
 type RouterDriverFactory struct {
-}
-
-//ExtendInfo 返回http路由驱动工厂的信息
-func (r *RouterDriverFactory) ExtendInfo() eosc.ExtendInfo {
-	return driverInfo
 }
 
 //Create 创建http路由驱动

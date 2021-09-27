@@ -17,8 +17,6 @@ type LogPeriodType int
 //ParsePeriod 解析周期
 func ParsePeriod(v string) (LogPeriod, error) {
 	switch strings.ToLower(v) {
-	case "month":
-		return PeriodMonth, nil
 	case "day":
 		return PeriodDay, nil
 	case "hour":
@@ -29,8 +27,6 @@ func ParsePeriod(v string) (LogPeriod, error) {
 }
 func (period LogPeriodType) String() string {
 	switch period {
-	case PeriodMonth:
-		return "month"
 	case PeriodDay:
 		return "day"
 	case PeriodHour:
@@ -41,10 +37,8 @@ func (period LogPeriodType) String() string {
 }
 
 const (
-	//PeriodMonth 月
-	PeriodMonth LogPeriodType = iota
 	//PeriodDay 日
-	PeriodDay
+	PeriodDay LogPeriodType = iota
 	//PeriodHour 时
 	PeriodHour
 )
@@ -59,10 +53,6 @@ func (period LogPeriodType) FormatLayout() string {
 	case PeriodDay:
 		{
 			return "2006-01-02"
-		}
-	case PeriodMonth:
-		{
-			return "2006-01"
 		}
 	default:
 		return "2006-01-02-15"

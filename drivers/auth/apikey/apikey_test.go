@@ -7,7 +7,9 @@ import (
 	//"bytes"
 	"encoding/json"
 	"errors"
+
 	"github.com/valyala/fasthttp"
+
 	//"mime/multipart"
 	"net/http"
 	"net/url"
@@ -137,7 +139,7 @@ func TestBodyAuthorization(t *testing.T) {
 	//	return
 	//}
 	//for key, value := range headers {
-	//	req.Header.Set(key, value)
+	//	req.Header.SetDriver(key, value)
 	//}
 	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
@@ -150,7 +152,7 @@ func TestBodyAuthorization(t *testing.T) {
 		req.Header.Set(key, value)
 	}
 	context := &fasthttp.RequestCtx{
-		Request: *fasthttp.AcquireRequest(),
+		Request:  *fasthttp.AcquireRequest(),
 		Response: *fasthttp.AcquireResponse(),
 	}
 	req.CopyTo(&context.Request)
@@ -187,9 +189,9 @@ func TestMultipartFormAuthorization(t *testing.T) {
 	//	return
 	//}
 	//for key, value := range headers {
-	//	req.Header.Set(key, value)
+	//	req.Header.SetDriver(key, value)
 	//}
-	//req.Header.Set("Content-Type", w.FormDataContentType())
+	//req.Header.SetDriver("Content-Type", w.FormDataContentType())
 	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
 	// fast http
@@ -203,7 +205,7 @@ func TestMultipartFormAuthorization(t *testing.T) {
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	context := &fasthttp.RequestCtx{
-		Request: *fasthttp.AcquireRequest(),
+		Request:  *fasthttp.AcquireRequest(),
 		Response: *fasthttp.AcquireResponse(),
 	}
 	req.CopyTo(&context.Request)
@@ -313,9 +315,8 @@ func buildFastRequest(headers map[string]string, query map[string]string, body s
 		req.URI().SetQueryString(params.Encode())
 	}
 
-
 	context := &fasthttp.RequestCtx{
-		Request: *fasthttp.AcquireRequest(),
+		Request:  *fasthttp.AcquireRequest(),
 		Response: *fasthttp.AcquireResponse(),
 	}
 	req.CopyTo(&context.Request)

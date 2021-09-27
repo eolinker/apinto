@@ -1,10 +1,11 @@
 package jwt
 
 import (
-	"github.com/valyala/fasthttp"
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/valyala/fasthttp"
 
 	http_context "github.com/eolinker/goku/node/http-context"
 )
@@ -127,18 +128,18 @@ func TestJWT(t *testing.T) {
 			// http
 			//自己造formData, query或者body内插入jwt_token
 			//httpRequest, _ := http.NewRequest("GET", "/asd/asd/asd?jwt_token="+test.token, requestBody{})
-			//httpRequest.Header.Set("Content-Type", "multipart/form-data")
+			//httpRequest.Header.SetDriver("Content-Type", "multipart/form-data")
 			//ctx := http_context.NewContext(httpRequest, responseWriter{})
 			//ctx.RequestOrg.SetHeader("Authorization-Type", "Jwt")
 
 			// fasthttp
 			context := &fasthttp.RequestCtx{
-				Request: *fasthttp.AcquireRequest(),
+				Request:  *fasthttp.AcquireRequest(),
 				Response: *fasthttp.AcquireResponse(),
 			}
 			context.Request.Header.SetMethod(fasthttp.MethodGet)
 			context.Request.Header.Set("Content-Type", "multipart/form-data")
-			context.Request.SetRequestURI("/asd/asd/asd?jwt_token="+test.token)
+			context.Request.SetRequestURI("/asd/asd/asd?jwt_token=" + test.token)
 			ctx := http_context.NewContext(context)
 
 			err = jwtMoudule.Auth(ctx)

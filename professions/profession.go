@@ -6,7 +6,7 @@
  * Vestibulum commodo. Ut rhoncus gravida arcu.
  */
 
-package main
+package professions
 
 import (
 	"io/ioutil"
@@ -32,7 +32,7 @@ type driverConfig struct {
 	Params map[string]string `json:"params" yaml:"params"`
 }
 
-func readProfessionConfig(file string) ([]eosc.ProfessionConfig, error) {
+func readProfessionConfig(file string) ([]*eosc.ProfessionConfig, error) {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -42,24 +42,24 @@ func readProfessionConfig(file string) ([]eosc.ProfessionConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	pcs := make([]eosc.ProfessionConfig, 0, len(cs))
+	pcs := make([]*eosc.ProfessionConfig, 0, len(cs))
 	for _, c := range cs {
-		drivers := make([]eosc.DriverConfig, 0, len(c.Drivers))
+		drivers := make([]*eosc.DriverConfig, 0, len(c.Drivers))
 		for _, driver := range c.Drivers {
-			drivers = append(drivers, eosc.DriverConfig{
-				ID:     driver.ID,
+			drivers = append(drivers, &eosc.DriverConfig{
+				Id:     driver.ID,
 				Name:   driver.Name,
 				Label:  driver.Label,
 				Desc:   driver.Desc,
 				Params: driver.Params,
 			})
 		}
-		pcs = append(pcs, eosc.ProfessionConfig{
+		pcs = append(pcs, &eosc.ProfessionConfig{
 			Name:         c.Name,
 			Label:        c.Label,
 			Desc:         c.Desc,
 			Dependencies: c.Dependencies,
-			AppendLabel:  c.AppendLabel,
+			AppendLabels: c.AppendLabel,
 			Drivers:      drivers,
 		})
 	}
