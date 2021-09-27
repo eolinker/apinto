@@ -24,16 +24,6 @@ func NewFactory() eosc.IProfessionDriverFactory {
 	return &factory{}
 }
 
-//ExtendInfo 返回静态服务发现驱动工厂的信息
-func (f *factory) ExtendInfo() eosc.ExtendInfo {
-	return eosc.ExtendInfo{
-		ID:      "eolinker:goku:discovery_static",
-		Group:   "eolinker",
-		Project: "goku",
-		Name:    "static",
-	}
-}
-
 //Create 创建静态服务发现驱动
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
 	return &driver{

@@ -1,8 +1,9 @@
 package apikey
 
 import (
-	"github.com/eolinker/eosc"
 	"reflect"
+
+	"github.com/eolinker/eosc"
 )
 
 //Register 注册auth驱动工厂
@@ -16,16 +17,6 @@ type factory struct {
 	label      string
 	desc       string
 	params     map[string]string
-}
-
-//ExtendInfo 返回auth_apikey的驱动工厂信息
-func (f *factory) ExtendInfo() eosc.ExtendInfo {
-	return eosc.ExtendInfo{
-		ID:      "eolinker:goku:auth_apikey",
-		Group:   "eolinker",
-		Project: "goku",
-		Name:    "apikey",
-	}
 }
 
 //Create 创建apikey驱动

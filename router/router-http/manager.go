@@ -2,13 +2,13 @@ package router_http
 
 import (
 	"crypto/tls"
-	"encoding/binary"
-	"encoding/hex"
 	"errors"
 	"net"
 	"strings"
 	"sync"
-	"time"
+
+	"github.com/eolinker/eosc/common/bean"
+	"github.com/eolinker/eosc/traffic"
 
 	"github.com/valyala/fasthttp"
 
@@ -18,16 +18,8 @@ import (
 var _ iManager = (*Manager)(nil)
 
 var (
-	sign                    = ""
 	errorCertificateNotExit = errors.New("not exist cert")
 )
-
-func init() {
-	n := time.Now().UnixNano()
-	data := make([]byte, 9)
-	binary.PutVarint(data, n)
-	sign = hex.EncodeToString(data)
-}
 
 type iManager interface {
 	Add(port int, id string, config *Config) error
@@ -43,6 +35,8 @@ type Manager struct {
 	routers   IRouters
 	servers   map[int]*httpServer
 	listeners map[int]net.Listener
+
+	traffic traffic.ITraffic
 }
 
 type httpServer struct {
@@ -88,7 +82,13 @@ func (m *Manager) Cancel() {
 
 //NewManager 创建路由管理器
 func NewManager() *Manager {
+	var traffic traffic.ITraffic
+	bean.Autowired(&traffic)
+	bean.AddInitializingBeanFunc(func() {
+
+	})
 	return &Manager{
+
 		routers:   NewRouters(),
 		servers:   make(map[int]*httpServer),
 		listeners: make(map[int]net.Listener),
@@ -111,7 +111,8 @@ func (m *Manager) Add(port int, id string, config *Config) error {
 			s = &httpServer{srv: &fasthttp.Server{}}
 
 			s.srv.Handler = router.Handler()
-			l, err := listener.ListenTCP(port, sign)
+			l, err := listener.ListenTcp("", port)
+
 			if err != nil {
 				return err
 			}

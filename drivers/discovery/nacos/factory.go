@@ -1,8 +1,9 @@
 package nacos
 
 import (
-	"github.com/eolinker/eosc"
 	"reflect"
+
+	"github.com/eolinker/eosc"
 )
 
 //Register 注册nacos驱动工厂
@@ -21,16 +22,6 @@ type factory struct {
 //NewFactory 创建nacos驱动工厂
 func NewFactory() eosc.IProfessionDriverFactory {
 	return &factory{}
-}
-
-//ExtendInfo 返回nacos驱动工厂信息
-func (f *factory) ExtendInfo() eosc.ExtendInfo {
-	return eosc.ExtendInfo{
-		ID:      "eolinker:goku:discovery_nacos",
-		Group:   "eolinker",
-		Project: "goku",
-		Name:    "nacos",
-	}
 }
 
 //Create 创建nacos驱动

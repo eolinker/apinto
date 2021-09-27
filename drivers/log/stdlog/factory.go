@@ -1,8 +1,9 @@
 package stdlog
 
 import (
-	"github.com/eolinker/eosc"
 	"reflect"
+
+	"github.com/eolinker/eosc"
 )
 
 //Register 注册stdlog驱动工厂
@@ -16,16 +17,6 @@ type factory struct {
 //NewFactory 创建stdlog驱动工厂
 func NewFactory() eosc.IProfessionDriverFactory {
 	return &factory{}
-}
-
-//ExtendInfo 返回stdlog驱动工厂的信息
-func (f *factory) ExtendInfo() eosc.ExtendInfo {
-	return eosc.ExtendInfo{
-		ID:      "eolinker:goku:log_stdlog",
-		Group:   "eolinker",
-		Project: "goku",
-		Name:    "stdlog",
-	}
 }
 
 //Create 创建stdlog驱动

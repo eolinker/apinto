@@ -1,8 +1,9 @@
 package aksk
 
 import (
-	"github.com/eolinker/eosc"
 	"reflect"
+
+	"github.com/eolinker/eosc"
 )
 
 //Register 注册aksk鉴权驱动工厂
@@ -21,16 +22,6 @@ type factory struct {
 //NewFactory 创建aksk鉴权驱动工厂
 func NewFactory() eosc.IProfessionDriverFactory {
 	return &factory{}
-}
-
-//ExtendInfo 返回aksk鉴权驱动工厂的信息
-func (f *factory) ExtendInfo() eosc.ExtendInfo {
-	return eosc.ExtendInfo{
-		ID:      "eolinker:goku:auth_aksk",
-		Group:   "eolinker",
-		Project: "goku",
-		Name:    "aksk",
-	}
 }
 
 //Create 创建aksk鉴权驱动

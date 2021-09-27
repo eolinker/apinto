@@ -1,8 +1,9 @@
 package eureka
 
 import (
-	"github.com/eolinker/eosc"
 	"reflect"
+
+	"github.com/eolinker/eosc"
 )
 
 //Register 注册eureka驱动工厂
@@ -21,16 +22,6 @@ type factory struct {
 //NewFactory 创建eureka驱动工厂
 func NewFactory() eosc.IProfessionDriverFactory {
 	return &factory{}
-}
-
-//ExtendInfo 返回eureka驱动工厂信息
-func (f *factory) ExtendInfo() eosc.ExtendInfo {
-	return eosc.ExtendInfo{
-		ID:      "eolinker:goku:discover_eureka",
-		Group:   "eolinker",
-		Project: "goku",
-		Name:    "eureka",
-	}
 }
 
 //Create 创建eureka驱动
