@@ -10,21 +10,16 @@ const (
 
 type Professions struct {
 	*professions.Professions
-	fileName string
 }
 
-func (p *Professions) ResetHandler(data []byte) error {
-	psConfig, err := readProfessionConfig(p.fileName)
+func NewProfessions(fileName string) (*Professions, error) {
+	psConfig, err := readProfessionConfig(fileName)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	p := &Professions{
+		Professions: professions.NewProfessions(),
 	}
 	p.Professions.Reset(psConfig)
-	return nil
-}
-
-func NewProfessions(fileName string) *Professions {
-	return &Professions{
-		Professions: professions.NewProfessions(),
-		fileName:    fileName,
-	}
+	return p, nil
 }

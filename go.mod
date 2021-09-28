@@ -13,7 +13,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/urfave/cli v1.22.5 // indirect
 	github.com/urfave/cli/v2 v2.3.0 // indirect
-	github.com/valyala/fasthttp v1.28.0
+	github.com/valyala/fasthttp v1.30.0
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )

@@ -1,8 +1,9 @@
-//+build windows
+// +build windows
 package syslog
 
 import (
 	"fmt"
+
 	eosc_log "github.com/eolinker/eosc/log"
 )
 
