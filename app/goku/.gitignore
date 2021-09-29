@@ -1,3 +1,5 @@
 /eosc-*/
 goku*
 *.log
+/export/
+/runtime_config/
