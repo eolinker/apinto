@@ -33,6 +33,8 @@ func (d *driver) ConfigType() reflect.Type {
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	cfg, ok := v.(*Config)
 	if !ok {
+		val := reflect.ValueOf(v)
+		fmt.Println("reflect", val.Kind(), val.Interface())
 		return nil, fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(v))
 	}
 	return &nacos{

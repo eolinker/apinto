@@ -43,7 +43,7 @@ func (h *HTTPRouterDriver) check(v interface{}, workers map[eosc.RequireId]inter
 	}
 	target, ok := ser.(service.IService)
 	if !ok {
-		return nil, nil, fmt.Errorf("target %w", eosc.ErrorNotGetSillForRequire)
+		return nil, nil, fmt.Errorf("target name: %s type of %s,target %w", conf.Target, eosc.TypeNameOf(ser), eosc.ErrorNotGetSillForRequire)
 	}
 	return conf, target, nil
 

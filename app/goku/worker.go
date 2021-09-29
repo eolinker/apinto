@@ -13,6 +13,7 @@ import (
 	"github.com/eolinker/goku/drivers/log/filelog"
 	"github.com/eolinker/goku/drivers/log/httplog"
 	"github.com/eolinker/goku/drivers/log/stdlog"
+	"github.com/eolinker/goku/drivers/log/syslog"
 	http_router "github.com/eolinker/goku/drivers/router/http-router"
 	service_http "github.com/eolinker/goku/drivers/service/service-http"
 	upstream_http "github.com/eolinker/goku/drivers/upstream/upstream-http"
@@ -48,6 +49,6 @@ func register() {
 	// log
 	filelog.Register()
 	httplog.Register()
-	//syslog.Register()
+	syslog.Register()
 	stdlog.Register()
 }

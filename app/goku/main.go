@@ -13,10 +13,9 @@ package main
 import (
 	"os"
 
-	"github.com/eolinker/eosc/env"
-
 	"github.com/eolinker/eosc"
 
+	"github.com/eolinker/eosc/env"
 	admin_open_api "github.com/eolinker/eosc/modules/admin-open-api"
 	"github.com/eolinker/eosc/process-master/admin"
 
