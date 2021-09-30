@@ -4,6 +4,8 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/eolinker/eosc/log"
+
 	traffic_http_fast "github.com/eolinker/eosc/traffic/traffic-http-fast"
 
 	"github.com/eolinker/eosc/common/bean"
@@ -29,6 +31,8 @@ func init() {
 	bean.Autowired(&tf)
 
 	bean.AddInitializingBeanFunc(func() {
+		log.Debug("init router manager")
+
 		manager = NewManager(tf)
 	})
 }

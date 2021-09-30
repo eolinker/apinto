@@ -3,6 +3,8 @@ package router_http
 import (
 	"sync"
 
+	"github.com/eolinker/eosc/log"
+
 	http_context "github.com/eolinker/goku/node/http-context"
 
 	"github.com/valyala/fasthttp"
@@ -44,6 +46,7 @@ func (r *Router) Count() int {
 //Handler 路由树的handler方法
 func (r *Router) Handler() fasthttp.RequestHandler {
 	return func(requestCtx *fasthttp.RequestCtx) {
+		log.Debug("router handler", requestCtx.Request.String())
 		ctx := http_context.NewContext(requestCtx)
 		h, e, has := r.match.Match(ctx.Request())
 		if !has {

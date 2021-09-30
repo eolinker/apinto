@@ -16,6 +16,11 @@ type Router struct {
 	driver *HTTPRouterDriver
 }
 
+func (r *Router) Ports() []int {
+
+	return []int{r.port}
+}
+
 //Reset 重置http路由配置
 func (r *Router) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cf, target, err := r.driver.check(conf, workers)
