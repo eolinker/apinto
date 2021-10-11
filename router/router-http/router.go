@@ -46,11 +46,16 @@ func (r *Router) Count() int {
 //Handler 路由树的handler方法
 func (r *Router) Handler() fasthttp.RequestHandler {
 	return func(requestCtx *fasthttp.RequestCtx) {
+		match := r.match
+		if match == nil {
+			requestCtx.NotFound()
+			return
+		}
 		log.Debug("router handler", requestCtx.Request.String())
 		ctx := http_context.NewContext(requestCtx)
-		h, e, has := r.match.Match(ctx.Request())
+		h, e, has := match.Match(ctx.Request())
 		if !has {
-			http_context.NotFound(ctx)
+			requestCtx.NotFound()
 			return
 		}
 		h.Handle(ctx, NewEndPoint(e))
