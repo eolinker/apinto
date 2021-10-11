@@ -20,6 +20,7 @@ type IRouter interface {
 	Count() int
 	Del(id string) int
 	Handler() fasthttp.RequestHandler
+	Debug()
 }
 
 //Router 实现了路由树接口
@@ -28,6 +29,11 @@ type Router struct {
 	data    eosc.IUntyped
 	match   IMatcher
 	handler fasthttp.RequestHandler
+}
+
+func (r *Router) Debug() {
+	r.data.List()
+
 }
 
 //NewRouter 新建路由树
@@ -40,6 +46,7 @@ func NewRouter() *Router {
 
 //Count 返回路由树中配置实例的数量
 func (r *Router) Count() int {
+
 	return r.data.Count()
 }
 
@@ -92,6 +99,7 @@ func (r *Router) Del(id string) int {
 	data := r.data.Clone()
 	data.Del(id)
 	if data.Count() == 0 {
+		r.data = data
 		r.match = nil
 	} else {
 		//重新生成路由树
@@ -104,6 +112,7 @@ func (r *Router) Del(id string) int {
 		if err != nil {
 			return r.data.Count()
 		}
+		r.data = data
 		r.match = m
 	}
 
