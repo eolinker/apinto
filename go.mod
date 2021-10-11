@@ -11,7 +11,6 @@ require (
 	github.com/pkg/sftp v1.13.2
 	github.com/robertkrimen/otto v0.0.0-20210614181706-373ff5438452
 	github.com/satori/go.uuid v1.2.0
-	github.com/urfave/cli v1.22.5 // indirect
 	github.com/urfave/cli/v2 v2.3.0 // indirect
 	github.com/valyala/fasthttp v1.30.0
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
@@ -19,5 +18,9 @@ require (
 	golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6 // indirect
 	golang.org/x/tools v0.1.7 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
+)
+
+replace (
+	github.com/eolinker/eosc => ../eosc
 )
 
