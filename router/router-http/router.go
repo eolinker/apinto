@@ -70,17 +70,12 @@ func (r *Router) SetRouter(id string, config *Config) error {
 	data := r.data.Clone()
 	data.Set(id, config)
 	//重新生成路由树
-	list := data.List()
-	cs := make([]*Config, 0, len(list))
-	for _, i := range list {
-		cs = append(cs, i.(*Config))
-	}
-	matcher, err := parse(cs)
+	m, err := parseData(data)
 	if err != nil {
 		return err
 	}
 
-	r.match = matcher
+	r.match = m
 	r.data = data
 	return nil
 }
@@ -97,18 +92,25 @@ func (r *Router) Del(id string) int {
 		r.match = nil
 	} else {
 		//重新生成路由树
-		list := data.List()
-		cs := make([]*Config, 0, len(list))
-		for _, i := range list {
-			cs = append(cs, i.(*Config))
-		}
-		m, err := parse(cs)
+		m, err := parseData(data)
 		if err != nil {
+			// 路由树生成失败， 则放弃
 			return r.data.Count()
 		}
+		// 路由树生成成功，则替换
 		r.data = data
 		r.match = m
 	}
 
 	return r.data.Count()
+}
+
+func parseData(data eosc.IUntyped) (IMatcher, error) {
+	list := data.List()
+	cs := make([]*Config, 0, len(list))
+	for _, i := range list {
+		cs = append(cs, i.(*Config))
+	}
+	return parse(cs)
+
 }
