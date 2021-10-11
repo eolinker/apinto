@@ -20,7 +20,6 @@ type IRouter interface {
 	Count() int
 	Del(id string) int
 	Handler() fasthttp.RequestHandler
-	Debug()
 }
 
 //Router 实现了路由树接口
@@ -29,11 +28,6 @@ type Router struct {
 	data    eosc.IUntyped
 	match   IMatcher
 	handler fasthttp.RequestHandler
-}
-
-func (r *Router) Debug() {
-	r.data.List()
-
 }
 
 //NewRouter 新建路由树
