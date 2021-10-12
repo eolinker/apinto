@@ -4,23 +4,23 @@ import (
 	"os"
 
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/utils"
 
 	"github.com/eolinker/goku/professions"
 
-	process_master "github.com/eolinker/eosc/process-master"
-	"github.com/eolinker/eosc/utils"
-
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/pidfile"
+	process_master "github.com/eolinker/eosc/process-master"
 )
 
 func ProcessMaster() {
+	utils.InitLogTransport(eosc.ProcessMaster)
+
 	p, err := NewMasterHandler()
 	if err != nil {
 		log.Errorf("fail to read procession.yml: %v", err)
 		return
 	}
-	utils.InitLogTransport(eosc.ProcessMaster)
 	file, err := pidfile.New()
 	if err != nil {
 		log.Errorf("the process-master is running:%v by:%d", err, os.Getpid())
