@@ -15,6 +15,7 @@ import (
 
 	"github.com/eolinker/eosc"
 
+	"github.com/eolinker/eosc/env"
 	admin_open_api "github.com/eolinker/eosc/modules/admin-open-api"
 	"github.com/eolinker/eosc/process-master/admin"
 
@@ -41,15 +42,15 @@ func main() {
 		//log.Close()
 		return
 	}
-	//if env.IsDebug() {
-	//	if process.RunDebug(eosc.ProcessMaster) {
-	//		log.Info("debug done")
-	//	} else {
-	//		log.Warn("debug not exist")
-	//	}
-	//	//log.Close()
-	//	return
-	//}
+	if env.IsDebug() {
+		if process.RunDebug(eosc.ProcessMaster) {
+			log.Info("debug done")
+		} else {
+			log.Warn("debug not exist")
+		}
+		//log.Close()
+		return
+	}
 	app := eoscli.NewApp()
 	app.AppendCommand(
 		eoscli.Start(eoscli.StartFunc),
@@ -58,7 +59,7 @@ func main() {
 		eoscli.Info(eoscli.InfoFunc),
 		eoscli.Leave(eoscli.LeaveFunc),
 		eoscli.Cluster(eoscli.ClustersFunc),
-		eoscli.Restart(eoscli.RestartFunc),
+		//eoscli.Restart(eoscli.RestartFunc),
 		eoscli.Env(eoscli.EnvFunc),
 	)
 	err := app.Run(os.Args)
