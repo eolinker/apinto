@@ -4,8 +4,6 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/eolinker/eosc/env"
-
 	"github.com/eolinker/eosc/log"
 
 	traffic_http_fast "github.com/eolinker/eosc/traffic/traffic-http-fast"
@@ -97,11 +95,11 @@ func (m *Manager) Del(port int, id string) error {
 		count := r.Count()
 
 		log.Debug("after delete router,count of port:", port, " count:", count)
-		if count == 0 {
-			m.tf.ShutDown(port)
-		} else if env.IsDebug() {
-
-		}
+		//if count == 0 {
+		//	m.tf.ShutDown(port)
+		//} else if env.IsDebug() {
+		//
+		//}
 	}
 
 	return nil
