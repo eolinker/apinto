@@ -34,6 +34,7 @@ func (rs *Routers) Set(port int, id string, conf *Config) (IRouter, bool, error)
 		rs.data.Set(name, router)
 		return router, true, nil
 	}
+	// todo 这里需要校验端口已使用的的http协议是否与之前配置冲突，并返回新的合并后的证书列表
 
 	router := r.(IRouter)
 	err := router.SetRouter(id, conf)
