@@ -3,7 +3,7 @@ module github.com/eolinker/goku
 go 1.15
 
 require (
-	github.com/eolinker/eosc v0.1.0
+	github.com/eolinker/eosc v0.1.1
 	github.com/eolinker/goku-standard-plugin v0.1.5
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-basic/uuid v1.0.0
@@ -18,9 +18,5 @@ require (
 	golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6 // indirect
 	golang.org/x/tools v0.1.7 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
-)
-
-replace (
-	github.com/eolinker/eosc => ../eosc
 )
 
