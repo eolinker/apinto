@@ -1,75 +1,128 @@
 package http_context
 
 import (
-	"io/ioutil"
-	"net/http"
-	"net/url"
+	"strings"
+
+	"github.com/valyala/fasthttp"
 )
 
-//RequestReader 请求reader
-type RequestReader struct {
-	*Header
-	*BodyRequestHandler
-	req *http.Request
+type Value map[string]string
+
+func (h Value) Get(key string) (string, bool) {
+	v, ok := h[key]
+	return v, ok
 }
 
-//Proto 获取协议
-func (r *RequestReader) Proto() string {
-	return r.req.Proto
+type IRequest interface {
+	Host() string
+	Method() string
+	Path() string
+	ContentType() string
+	Header() Value
+	Query() Value
+	RawQuery() string
+	RawBody() []byte
 }
 
-//NewRequestReader 创建RequestReader
-func NewRequestReader(req *http.Request) *RequestReader {
-	r := new(RequestReader)
-	r.req = req
-	r.ParseRequest()
-	return r
+type Request struct {
+	req         *fasthttp.Request
+	path        string
+	host        string
+	method      string
+	header      Value
+	query       Value
+	rawQuery    string
+	rawBody     []byte
+	contentType string
 }
 
-//ParseRequest 解析请求
-func (r *RequestReader) ParseRequest() {
-
-	r.Header = NewHeader(r.req.Header)
-	body, err := ioutil.ReadAll(r.req.Body)
-	_ = r.req.Body.Close()
-	if err != nil {
-		r.BodyRequestHandler = NewBodyRequestHandler(r.req.Header.Get("Content-Type"), nil)
-	} else {
-		r.BodyRequestHandler = NewBodyRequestHandler(r.req.Header.Get("Content-Type"), body)
+func (r *Request) Host() string {
+	if r.host == "" {
+		r.host = strings.Split(string(r.req.Header.Host()), ":")[0]
 	}
+	return r.host
 }
 
-//Cookie 获取cookie
-func (r *RequestReader) Cookie(name string) (*http.Cookie, error) {
-	return r.req.Cookie(name)
+func (r *Request) Method() string {
+	if r.method == "" {
+		r.method = string(r.req.Header.Method())
+	}
+	return r.method
 }
 
-//Cookies 获取cookies
-func (r *RequestReader) Cookies() []*http.Cookie {
-	return r.req.Cookies()
+func (r *Request) Path() string {
+	if r.path == "" {
+		r.path = string(r.req.URI().Path())
+	}
+	return r.path
 }
 
-//method 获取请求方式
-func (r *RequestReader) Method() string {
-	return r.req.Method
+func (r *Request) Header() Value {
+	if r.header == nil {
+		r.header = make(Value)
+		hs := strings.Split(r.req.Header.String(), "\r\n")
+		for _, h := range hs {
+			vs := strings.Split(h, ":")
+			if len(vs) < 2 {
+				if vs[0] == "" {
+					continue
+				}
+				r.header[vs[0]] = ""
+				continue
+			}
+			r.header[vs[0]] = strings.TrimSpace(vs[1])
+
+		}
+	}
+	return r.header
 }
 
-//url url
-func (r *RequestReader) URL() *url.URL {
-	return r.req.URL
+func (r *Request) Query() Value {
+	if r.rawQuery == "" {
+		r.rawQuery = string(r.req.URI().QueryString())
+	}
+	if r.query == nil {
+		r.query = make(Value)
+		qs := strings.Split(r.rawQuery, "&")
+		for _, q := range qs {
+			vs := strings.Split(q, "=")
+			if len(vs) < 2 {
+				if vs[0] == "" {
+					continue
+				}
+				r.query[vs[0]] = ""
+				continue
+			}
+			r.query[vs[0]] = strings.TrimSpace(vs[1])
+		}
+	}
+	return r.query
 }
 
-//RequestURI 获取请求URI
-func (r *RequestReader) RequestURI() string {
-	return r.req.RequestURI
+func (r *Request) RawQuery() string {
+	if r.rawQuery == "" {
+		r.rawQuery = string(r.req.URI().QueryString())
+	}
+	return r.rawQuery
 }
 
-//Host 获取host
-func (r *RequestReader) Host() string {
-	return r.req.Host
+func (r *Request) RawBody() []byte {
+	if r.rawBody == nil {
+		r.rawBody = r.req.Body()
+	}
+	return r.rawBody
 }
 
-//RemoteAddr 远程地址
-func (r *RequestReader) RemoteAddr() string {
-	return r.req.RemoteAddr
+func (r *Request) ContentType() string {
+	if r.contentType == "" {
+		r.contentType = string(r.req.Header.ContentType())
+	}
+	return r.contentType
+}
+
+func newRequest(req *fasthttp.Request) IRequest {
+	newReq := &Request{
+		req: req,
+	}
+	return newReq
 }

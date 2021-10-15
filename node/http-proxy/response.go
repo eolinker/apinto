@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/eolinker/goku-eosc/node/http-proxy/backend"
+	"github.com/eolinker/goku/node/http-proxy/backend"
 )
 
 type response struct {

@@ -12,23 +12,27 @@ import "strings"
 
 var cmds = []string{
 	cmdHost,
+	cmdMethod,
 	cmdLocation,
 	cmdHeader,
 	cmdQuery,
 }
 
-type HttpRouterHelper struct {
+//HTTPRouterHelper http路由指标类型排序helper
+type HTTPRouterHelper struct {
 	index map[string]int
 }
 
-func NewHttpRouterHelper() *HttpRouterHelper {
+//NewHTTPRouterHelper 新建一个http路由指标类型排序helper
+func NewHTTPRouterHelper() *HTTPRouterHelper {
 	index := make(map[string]int)
 	for i, cmd := range cmds {
 		index[cmd] = i
 	}
-	return &HttpRouterHelper{index: index}
+	return &HTTPRouterHelper{index: index}
 }
-func (h *HttpRouterHelper) cmdType(cmd string) (string, string) {
+
+func (h *HTTPRouterHelper) cmdType(cmd string) (string, string) {
 	i := strings.Index(cmd, ":")
 	if i < 0 {
 		return cmd, ""
@@ -41,7 +45,8 @@ func (h *HttpRouterHelper) cmdType(cmd string) (string, string) {
 
 }
 
-func (h *HttpRouterHelper) Less(i, j string) bool {
+//Less 排序指标类型的匹配顺序
+func (h *HTTPRouterHelper) Less(i, j string) bool {
 	cmdI, keyI := h.cmdType(i)
 	cmdJ, keyJ := h.cmdType(j)
 	if cmdI != cmdJ {
