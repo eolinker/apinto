@@ -4,6 +4,8 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/eolinker/eosc/log"
+
 	traffic_http_fast "github.com/eolinker/eosc/traffic/traffic-http-fast"
 
 	"github.com/eolinker/eosc/common/bean"
@@ -29,6 +31,8 @@ func init() {
 	bean.Autowired(&tf)
 
 	bean.AddInitializingBeanFunc(func() {
+		log.Debug("init router manager")
+
 		manager = NewManager(tf)
 	})
 }
@@ -79,27 +83,6 @@ func (m *Manager) Add(port int, id string, config *Config) error {
 		m.tf.Get(port).SetHttp(router.Handler())
 	}
 
-	//
-	//if isCreate {
-	//	s, has := m.servers[port]
-	//	if !has {
-	//
-	//		l, err := m.traffic.ListenTcp("", port)
-	//
-	//		if err != nil {
-	//			return err
-	//		}
-	//		if config.Protocol == "https" {
-	//			s.certs = newCerts(config.Cert)
-	//			s.tlsConfig = &tls.Config{GetCertificate: s.GetCertificate}
-	//			l = tls.NewListener(l, s.tlsConfig)
-	//		}
-	//		go s.srv.Serve(l)
-	//
-	//		m.servers[port] = s
-	//
-	//	}
-	//}
 	return nil
 }
 
@@ -109,9 +92,14 @@ func (m *Manager) Del(port int, id string) error {
 	defer m.locker.Unlock()
 	if r, has := m.routers.Del(port, id); has {
 		//若目标端口的http服务器已无路由配置，则关闭服务器及listener
-		if r.Count() == 0 {
-			m.tf.ShutDown(port)
-		}
+		count := r.Count()
+
+		log.Debug("after delete router,count of port:", port, " count:", count)
+		//if count == 0 {
+		//	m.tf.ShutDown(port)
+		//} else if env.IsDebug() {
+		//
+		//}
 	}
 
 	return nil

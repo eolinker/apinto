@@ -40,7 +40,7 @@ func TestHTTPLog(t *testing.T) {
 
 	// 测试Reset
 	newDriverConfig := &DriverConfig{
-		Name:          "Tesethttplog",
+		Name:          "Testhttplog",
 		Driver:        "httplog",
 		Method:        "GET",
 		URL:           "http://127.0.0.1:8081/test",

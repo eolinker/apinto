@@ -2,6 +2,7 @@ package http_router
 
 import (
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/log"
 	router_http "github.com/eolinker/goku/router/router-http"
 	"github.com/eolinker/goku/service"
 )
@@ -14,6 +15,11 @@ type Router struct {
 	conf *router_http.Config
 
 	driver *HTTPRouterDriver
+}
+
+func (r *Router) Ports() []int {
+
+	return []int{r.port}
 }
 
 //Reset 重置http路由配置
@@ -53,6 +59,7 @@ func (r *Router) Id() string {
 
 //Start 启动路由worker，将路由实例加入到路由树中
 func (r *Router) Start() error {
+	log.Debug("router:start")
 	return router_http.Add(r.port, r.id, r.conf)
 }
 

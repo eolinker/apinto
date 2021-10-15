@@ -11,7 +11,6 @@ import (
 
 //HTTPRouterDriver 实现github.com/eolinker/eosc.eosc.IProfessionDriver接口
 type HTTPRouterDriver struct {
-	info       eosc.DriverInfo
 	configType reflect.Type
 }
 
@@ -19,13 +18,6 @@ type HTTPRouterDriver struct {
 func NewHTTPRouter(profession, name, label, desc string, params map[string]string) *HTTPRouterDriver {
 	return &HTTPRouterDriver{
 		configType: reflect.TypeOf(new(DriverConfig)),
-		info: eosc.DriverInfo{
-			Name:       name,
-			Label:      label,
-			Desc:       desc,
-			Profession: profession,
-			Params:     params,
-		},
 	}
 }
 
@@ -51,7 +43,7 @@ func (h *HTTPRouterDriver) check(v interface{}, workers map[eosc.RequireId]inter
 	}
 	target, ok := ser.(service.IService)
 	if !ok {
-		return nil, nil, fmt.Errorf("target %w", eosc.ErrorNotGetSillForRequire)
+		return nil, nil, fmt.Errorf("target name: %s type of %s,target %w", conf.Target, eosc.TypeNameOf(ser), eosc.ErrorNotGetSillForRequire)
 	}
 	return conf, target, nil
 

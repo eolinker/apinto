@@ -3,6 +3,8 @@ package router_http
 import (
 	"sync"
 
+	"github.com/eolinker/eosc/log"
+
 	http_context "github.com/eolinker/goku/node/http-context"
 
 	"github.com/valyala/fasthttp"
@@ -38,16 +40,23 @@ func NewRouter() *Router {
 
 //Count 返回路由树中配置实例的数量
 func (r *Router) Count() int {
+
 	return r.data.Count()
 }
 
 //Handler 路由树的handler方法
 func (r *Router) Handler() fasthttp.RequestHandler {
 	return func(requestCtx *fasthttp.RequestCtx) {
+		match := r.match
+		if match == nil {
+			requestCtx.NotFound()
+			return
+		}
+		log.Debug("router handler", requestCtx.Request.String())
 		ctx := http_context.NewContext(requestCtx)
-		h, e, has := r.match.Match(ctx.Request())
+		h, e, has := match.Match(ctx.Request())
 		if !has {
-			http_context.NotFound(ctx)
+			requestCtx.NotFound()
 			return
 		}
 		h.Handle(ctx, NewEndPoint(e))
@@ -61,17 +70,12 @@ func (r *Router) SetRouter(id string, config *Config) error {
 	data := r.data.Clone()
 	data.Set(id, config)
 	//重新生成路由树
-	list := data.List()
-	cs := make([]*Config, 0, len(list))
-	for _, i := range list {
-		cs = append(cs, i.(*Config))
-	}
-	matcher, err := parse(cs)
+	m, err := parseData(data)
 	if err != nil {
 		return err
 	}
 
-	r.match = matcher
+	r.match = m
 	r.data = data
 	return nil
 }
@@ -84,20 +88,29 @@ func (r *Router) Del(id string) int {
 	data := r.data.Clone()
 	data.Del(id)
 	if data.Count() == 0 {
+		r.data = data
 		r.match = nil
 	} else {
 		//重新生成路由树
-		list := data.List()
-		cs := make([]*Config, 0, len(list))
-		for _, i := range list {
-			cs = append(cs, i.(*Config))
-		}
-		m, err := parse(cs)
+		m, err := parseData(data)
 		if err != nil {
+			// 路由树生成失败， 则放弃
 			return r.data.Count()
 		}
+		// 路由树生成成功，则替换
+		r.data = data
 		r.match = m
 	}
 
 	return r.data.Count()
+}
+
+func parseData(data eosc.IUntyped) (IMatcher, error) {
+	list := data.List()
+	cs := make([]*Config, 0, len(list))
+	for _, i := range list {
+		cs = append(cs, i.(*Config))
+	}
+	return parse(cs)
+
 }

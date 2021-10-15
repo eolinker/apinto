@@ -24,18 +24,32 @@ import (
 )
 
 func init() {
-	admin.Register("/api", admin_open_api.CreateHandler())
+	admin.Register("/api/", admin_open_api.CreateHandler())
 	process.Register(eosc.ProcessWorker, ProcessWorker)
 	process.Register(eosc.ProcessMaster, ProcessMaster)
 	process.Register(eosc.ProcessHelper, ProcessHelper)
 }
 
 func main() {
-
+	//defer func() {
+	//	if err := recover(); err != nil {
+	//		log.Error("main recover error: ", err)
+	//	}
+	//	log.Close()
+	//}()
 	if process.Run() {
-		log.Close()
+		//log.Close()
 		return
 	}
+	//if env.IsDebug() {
+	//	if process.RunDebug(eosc.ProcessMaster) {
+	//		log.Info("debug done")
+	//	} else {
+	//		log.Warn("debug not exist")
+	//	}
+	//	//log.Close()
+	//	return
+	//}
 	app := eoscli.NewApp()
 	app.AppendCommand(
 		eoscli.Start(eoscli.StartFunc),

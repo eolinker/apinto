@@ -48,6 +48,7 @@
   desc: 注册中心
   dependencies: null
   append_label:
+#    - health_on
   drivers:
     -
       id: eolinker:goku:discovery_static
