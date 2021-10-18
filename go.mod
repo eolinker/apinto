@@ -3,7 +3,7 @@ module github.com/eolinker/goku
 go 1.15
 
 require (
-	github.com/eolinker/eosc v0.2.1
+	github.com/eolinker/eosc v0.2.2
 	github.com/eolinker/goku-standard-plugin v0.1.5
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-basic/uuid v1.0.0
