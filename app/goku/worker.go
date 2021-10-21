@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/eolinker/eosc"
 	process_worker "github.com/eolinker/eosc/process-worker"
 	"github.com/eolinker/goku/drivers/auth/aksk"
 	"github.com/eolinker/goku/drivers/auth/apikey"
@@ -20,11 +21,12 @@ import (
 )
 
 func ProcessWorker() {
-	register()
-	process_worker.Process()
+	extenderRegister := eosc.NewExtenderRegister()
+	register(extenderRegister)
+	process_worker.Process(extenderRegister)
 }
 
-func register() {
+func register(extenderRegister eosc.IExtenderRegister) {
 	// router
 	http_router.Register()
 

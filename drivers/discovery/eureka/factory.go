@@ -7,8 +7,8 @@ import (
 )
 
 //Register 注册eureka驱动工厂
-func Register() {
-	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:discovery_eureka", NewFactory())
+func Register(register eosc.IExtenderRegister) {
+	register.RegisterExtender("eolinker:goku:discovery_eureka", NewFactory())
 }
 
 type factory struct {
@@ -20,12 +20,12 @@ type factory struct {
 }
 
 //NewFactory 创建eureka驱动工厂
-func NewFactory() eosc.IProfessionDriverFactory {
+func NewFactory() eosc.IExtenderDriverFactory {
 	return &factory{}
 }
 
 //Create 创建eureka驱动
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
+func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IExtenderDriver, error) {
 	return &driver{
 		profession: profession,
 		name:       name,

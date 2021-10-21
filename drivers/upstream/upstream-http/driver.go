@@ -30,7 +30,7 @@ func (d *driver) ConfigType() reflect.Type {
 
 //Create 创建http_proxy驱动的实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
-	round_robin.Register()
+	round_robin.Register(register eosc.IExtenderRegister)
 	w := &httpUpstream{
 		id:     id,
 		name:   name,

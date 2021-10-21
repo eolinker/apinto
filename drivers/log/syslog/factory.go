@@ -7,20 +7,20 @@ import (
 )
 
 //Register 注册syslog驱动工厂
-func Register() {
-	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:log_syslog", NewFactory())
+func Register(register eosc.IExtenderRegister) {
+	register.RegisterExtender("eolinker:goku:log_syslog", NewFactory())
 }
 
 type factory struct {
 }
 
 //NewFactory 创建syslog驱动工厂
-func NewFactory() eosc.IProfessionDriverFactory {
+func NewFactory() eosc.IExtenderDriverFactory {
 	return &factory{}
 }
 
 //Create 创建syslog驱动
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
+func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IExtenderDriver, error) {
 	return &driver{
 		profession: profession,
 		name:       name,
