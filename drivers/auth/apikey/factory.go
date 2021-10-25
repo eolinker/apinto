@@ -7,8 +7,8 @@ import (
 )
 
 //Register 注册auth驱动工厂
-func Register() {
-	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:auth_apikey", NewFactory())
+func Register(register eosc.IExtenderRegister) {
+	register.RegisterExtender("eolinker:goku:auth_apikey", NewFactory())
 }
 
 type factory struct {
@@ -20,7 +20,7 @@ type factory struct {
 }
 
 //Create 创建apikey驱动
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
+func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IExtenderDriver, error) {
 	return &driver{
 		profession: profession,
 		name:       name,
@@ -33,6 +33,6 @@ func (f *factory) Create(profession string, name string, label string, desc stri
 }
 
 //NewFactory 生成一个 auth_apiKey工厂
-func NewFactory() eosc.IProfessionDriverFactory {
+func NewFactory() eosc.IExtenderDriverFactory {
 	return &factory{}
 }
