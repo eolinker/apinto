@@ -8,7 +8,7 @@ import (
 
 //Register 注册静态服务发现的驱动工厂
 func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("eolinker:goku:discovery_static", NewFactory())
+	register.RegisterExtender("discovery_static", NewFactory())
 }
 
 type factory struct {

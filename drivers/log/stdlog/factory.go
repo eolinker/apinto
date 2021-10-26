@@ -8,7 +8,7 @@ import (
 
 //Register 注册stdlog驱动工厂
 func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("eolinker:goku:log_stdlog", NewFactory())
+	register.RegisterExtender("log_stdlog", NewFactory())
 }
 
 type factory struct {

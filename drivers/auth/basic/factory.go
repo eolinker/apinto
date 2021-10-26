@@ -8,7 +8,7 @@ import (
 
 //Register 注册http_proxy驱动工厂
 func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("eolinker:goku:auth_basic", NewFactory())
+	register.RegisterExtender("auth_basic", NewFactory())
 }
 
 type factory struct {

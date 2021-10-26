@@ -8,7 +8,7 @@ import (
 
 //Register 注册auth驱动工厂
 func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("eolinker:goku:auth_apikey", NewFactory())
+	register.RegisterExtender("auth_apikey", NewFactory())
 }
 
 type factory struct {

@@ -8,7 +8,7 @@ import (
 
 //Register 注册nacos驱动工厂
 func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("eolinker:goku:discovery_nacos", NewFactory())
+	register.RegisterExtender("discovery_nacos", NewFactory())
 }
 
 type factory struct {

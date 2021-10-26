@@ -8,7 +8,7 @@ import (
 
 //Register 注册service_http驱动工厂
 func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("eolinker:goku:service_http", NewFactory())
+	register.RegisterExtender("service_http", NewFactory())
 }
 
 type factory struct {
