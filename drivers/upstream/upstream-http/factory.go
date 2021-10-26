@@ -3,6 +3,8 @@ package upstream_http
 import (
 	"reflect"
 
+	round_robin "github.com/eolinker/goku/upstream/round-robin"
+
 	"github.com/eolinker/eosc"
 )
 
@@ -21,6 +23,7 @@ type factory struct {
 
 //NewFactory 创建http_proxy驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
+	round_robin.Register()
 	return &factory{}
 }
 
