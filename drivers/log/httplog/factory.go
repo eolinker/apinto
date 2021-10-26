@@ -8,7 +8,7 @@ import (
 
 //Register 注册httplog驱动工厂
 func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("eolinker:goku:log_httplog", NewFactory())
+	register.RegisterExtender("log_httplog", NewFactory())
 }
 
 type factory struct {

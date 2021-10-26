@@ -14,6 +14,8 @@ package main
 import (
 	"os"
 
+	process_worker "github.com/eolinker/eosc/process-worker"
+
 	"github.com/eolinker/eosc"
 
 	admin_open_api "github.com/eolinker/eosc/modules/admin-open-api"
@@ -25,8 +27,9 @@ import (
 )
 
 func init() {
+	registerInnerExtenders()
 	admin.Register("/api/", admin_open_api.CreateHandler())
-	process.Register(eosc.ProcessWorker, ProcessWorker)
+	process.Register(eosc.ProcessWorker, process_worker.Process)
 	process.Register(eosc.ProcessMaster, ProcessMaster)
 	process.Register(eosc.ProcessHelper, ProcessHelper)
 }

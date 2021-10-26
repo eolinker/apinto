@@ -4,7 +4,7 @@ import "github.com/eolinker/eosc"
 
 //Register 注册http路由驱动工厂
 func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("eolinker:goku:http_router", NewRouterDriverFactory())
+	register.RegisterExtender("http_router", NewRouterDriverFactory())
 }
 
 //RouterDriverFactory http路由驱动工厂结构体

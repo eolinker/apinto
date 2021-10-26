@@ -8,7 +8,7 @@ import (
 
 //Register 注册consul驱动工厂
 func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("eolinker:goku:discovery_consul", NewFactory())
+	register.RegisterExtender("discovery_consul", NewFactory())
 }
 
 type factory struct {

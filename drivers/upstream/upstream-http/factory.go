@@ -10,7 +10,7 @@ import (
 
 //Register 注册http_proxy驱动工厂
 func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("eolinker:goku:upstream_http_proxy", NewFactory())
+	register.RegisterExtender("upstream_http_proxy", NewFactory())
 }
 
 type factory struct {

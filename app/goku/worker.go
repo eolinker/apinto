@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/eolinker/eosc"
-	process_worker "github.com/eolinker/eosc/process-worker"
+	"github.com/eolinker/eosc/extends"
 	"github.com/eolinker/goku/drivers/auth/aksk"
 	"github.com/eolinker/goku/drivers/auth/apikey"
 	"github.com/eolinker/goku/drivers/auth/basic"
@@ -20,13 +20,10 @@ import (
 	upstream_http "github.com/eolinker/goku/drivers/upstream/upstream-http"
 )
 
-func ProcessWorker() {
-	extenderRegister := eosc.NewExtenderRegister()
-	register(extenderRegister)
-	process_worker.Process(extenderRegister)
+func registerInnerExtenders() {
+	extends.AddInnerExtendProject("eolinker.com", "goku", Register)
 }
-
-func register(extenderRegister eosc.IExtenderRegister) {
+func Register(extenderRegister eosc.IExtenderRegister) {
 	// router
 	http_router.Register(extenderRegister)
 
