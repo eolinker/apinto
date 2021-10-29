@@ -11,12 +11,30 @@ var _ IRouters = (*Routers)(nil)
 //IRouters 路由树管理器实现的接口
 type IRouters interface {
 	Set(port int, id string, conf *Config) (IRouter, bool, error)
+	SetAll(id string, conf *Config) (map[int]IRouter, error)
 	Del(port int, id string) (IRouter, bool)
 }
 
 //Routers 路由树管理器的结构体
 type Routers struct {
 	data eosc.IUntyped
+}
+
+func (rs *Routers) SetAll(id string, conf *Config) (map[int]IRouter, error) {
+	routers := make(map[int]IRouter)
+	for key, r := range rs.data.All() {
+		router := r.(IRouter)
+		err := router.SetRouter(id, conf)
+		if err != nil {
+			return nil, err
+		}
+		port, err := strconv.Atoi(key)
+		if err != nil {
+			return nil, err
+		}
+		routers[port] = router
+	}
+	return routers, nil
 }
 
 //Set 将路由配置加入到对应端口的路由树中
@@ -26,13 +44,14 @@ func (rs *Routers) Set(port int, id string, conf *Config) (IRouter, bool, error)
 
 	//若对应端口不存在路由树，则新建
 	if !has {
-		router := NewRouter()
-		err := router.SetRouter(id, conf)
-		if err != nil {
-			return nil, false, err
-		}
-		rs.data.Set(name, router)
-		return router, true, nil
+		return nil, false, nil
+		//router := NewRouter()
+		//err := router.SetRouter(id, conf)
+		//if err != nil {
+		//	return nil, false, err
+		//}
+		//rs.data.Set(name, router)
+		//return router, true, nil
 	}
 	// todo 这里需要校验端口已使用的的http协议是否与之前配置冲突，并返回新的合并后的证书列表
 
