@@ -38,7 +38,7 @@ func ProcessMaster() {
 }
 
 func NewMasterHandler() (*process_master.MasterHandler, error) {
-	p, err := professions.NewProfessions("profession.yml")
+	p, err := professions.NewProfessions()
 	if err != nil {
 		return nil, err
 	}
