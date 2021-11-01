@@ -7,8 +7,8 @@ import (
 )
 
 //Register 注册jwt鉴权驱动工厂
-func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("auth_jwt", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("auth_jwt", NewFactory())
 }
 
 type factory struct {

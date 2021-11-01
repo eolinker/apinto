@@ -23,7 +23,7 @@ import (
 func registerInnerExtenders() {
 	extends.AddInnerExtendProject("eolinker.com", "goku", Register)
 }
-func Register(extenderRegister eosc.IExtenderRegister) {
+func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	// router
 	http_router.Register(extenderRegister)
 

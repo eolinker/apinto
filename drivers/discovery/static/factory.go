@@ -7,8 +7,8 @@ import (
 )
 
 //Register 注册静态服务发现的驱动工厂
-func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("discovery_static", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("discovery_static", NewFactory())
 }
 
 type factory struct {

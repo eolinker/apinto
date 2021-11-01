@@ -7,8 +7,8 @@ import (
 )
 
 //Register 注册httplog驱动工厂
-func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("log_httplog", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("log_httplog", NewFactory())
 }
 
 type factory struct {
