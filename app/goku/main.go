@@ -14,6 +14,8 @@ package main
 import (
 	"os"
 
+	"github.com/eolinker/eosc/env"
+
 	process_worker "github.com/eolinker/eosc/process-worker"
 
 	"github.com/eolinker/eosc"
@@ -45,15 +47,15 @@ func main() {
 		//log.Close()
 		return
 	}
-	//if env.IsDebug() {
-	//	if process.RunDebug(eosc.ProcessMaster) {
-	//		log.Info("debug done")
-	//	} else {
-	//		log.Warn("debug not exist")
-	//	}
-	//	//log.Close()
-	//	return
-	//}
+	if env.IsDebug() {
+		if process.RunDebug(eosc.ProcessMaster) {
+			log.Info("debug done")
+		} else {
+			log.Warn("debug not exist")
+		}
+		//log.Close()
+		return
+	}
 	app := eoscli.NewApp()
 	app.Default()
 	err := app.Run(os.Args)
