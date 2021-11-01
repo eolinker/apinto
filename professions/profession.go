@@ -24,7 +24,7 @@ func GokuProfession() []*eosc.ProfessionConfig {
 				{
 					Id:     "eolinker.com:goku:http_router",
 					Name:   "http",
-					Label:  "htt",
+					Label:  "http",
 					Desc:   "http路由",
 					Params: nil,
 				},
@@ -40,7 +40,7 @@ func GokuProfession() []*eosc.ProfessionConfig {
 			AppendLabels: []string{"upstream"},
 			Drivers: []*eosc.DriverConfig{
 				{
-					Id:    "eolinker:goku:service_http",
+					Id:    "eolinker.com:goku:service_http",
 					Name:  "http",
 					Label: "service",
 					Desc:  "服务",
@@ -56,7 +56,7 @@ func GokuProfession() []*eosc.ProfessionConfig {
 			AppendLabels: []string{"discovery"},
 			Drivers: []*eosc.DriverConfig{
 				{
-					Id:    "eolinker:goku:upstream_http_proxy",
+					Id:    "eolinker.com:goku:upstream_http_proxy",
 					Name:  "http_proxy",
 					Label: "http转发负载",
 					Desc:  "http转发负载",
@@ -72,22 +72,22 @@ func GokuProfession() []*eosc.ProfessionConfig {
 			AppendLabels: nil,
 			Drivers: []*eosc.DriverConfig{
 				{
-					Id:    "eolinker:goku:discovery_static",
+					Id:    "eolinker.com:goku:discovery_static",
 					Name:  "static",
 					Label: "静态服务发现",
 					Desc:  "静态服务发现",
 				}, {
-					Id:    "eolinker:goku:discovery_nacos",
+					Id:    "eolinker.com:goku:discovery_nacos",
 					Name:  "nacos",
 					Label: "nacos服务发现",
 					Desc:  "nacos服务发现",
 				}, {
-					Id:    "eolinker:goku:discovery_consul",
+					Id:    "eolinker.com:goku:discovery_consul",
 					Name:  "consul",
 					Label: "consul服务发现",
 					Desc:  "consul服务发现",
 				}, {
-					Id:    "eolinker:goku:discovery_eureka",
+					Id:    "eolinker.com:goku:discovery_eureka",
 					Name:  "eureka",
 					Label: "eureka服务发现",
 					Desc:  "consul服务发现",
@@ -103,25 +103,25 @@ func GokuProfession() []*eosc.ProfessionConfig {
 			AppendLabels: nil,
 			Drivers: []*eosc.DriverConfig{
 				{
-					Id:    "eolinker:goku:auth_basic",
+					Id:    "eolinker.com:goku:auth_basic",
 					Name:  "basic",
 					Label: "basic鉴权",
 					Desc:  "basic鉴权",
 				},
 				{
-					Id:    "eolinker:goku:auth_apikey",
+					Id:    "eolinker.com:goku:auth_apikey",
 					Name:  "apikey",
 					Label: "apikey鉴权",
 					Desc:  "apikey鉴权",
 				},
 				{
-					Id:    "eolinker:goku:auth_aksk",
+					Id:    "eolinker.com:goku:auth_aksk",
 					Name:  "aksk",
 					Label: "ak/sk鉴权",
 					Desc:  "ak/sk鉴权",
 				},
 				{
-					Id:    "eolinker:goku:auth_jwt",
+					Id:    "eolinker.com:goku:auth_jwt",
 					Name:  "jwt",
 					Label: "jwt鉴权",
 					Desc:  "jwt鉴权",
@@ -137,22 +137,22 @@ func GokuProfession() []*eosc.ProfessionConfig {
 			AppendLabels: nil,
 			Drivers: []*eosc.DriverConfig{
 				{
-					Id:    "eolinker:goku:log_filelog",
+					Id:    "eolinker.com:goku:log_filelog",
 					Name:  "filelog",
 					Label: "文件日志",
 					Desc:  "文件日志",
 				}, {
-					Id:    "eolinker:goku:log_httplog",
+					Id:    "eolinker.com:goku:log_httplog",
 					Name:  "httplog",
 					Label: "http日志",
 					Desc:  "http日志",
 				}, {
-					Id:    "eolinker:goku:log_syslog",
+					Id:    "eolinker.com:goku:log_syslog",
 					Name:  "syslog",
 					Label: "系统日志",
 					Desc:  "系统日志",
 				}, {
-					Id:    "eolinker:goku:log_stdlog",
+					Id:    "eolinker.com:goku:log_stdlog",
 					Name:  "stdlog",
 					Label: "标准输出日志",
 					Desc:  "标准输出日志",

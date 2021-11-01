@@ -62,13 +62,13 @@ func (m *Manager) Cancel() {
 
 //NewManager 创建路由管理器
 func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg) *Manager {
-	log.Debug("abc")
+	log.Debug("new router manager")
 	m := &Manager{
 		routers: NewRouters(),
 		tf:      traffic_http_fast.NewHttpTraffic(tf),
 		locker:  sync.Mutex{},
 	}
-	ports := make([]int, 0, len(listenCfg.Listens))
+
 	for _, cfg := range listenCfg.Listens {
 		port := int(cfg.Port)
 		l, err := tf.ListenTcp("", port)
@@ -87,7 +87,6 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg) *Manager {
 		}
 		m.tf.Set(port, traffic_http_fast.NewHttpService(l))
 	}
-	tf.Expire(ports)
 	return m
 }
 
@@ -95,13 +94,24 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg) *Manager {
 func (m *Manager) Add(port int, id string, config *Config) error {
 	m.locker.Lock()
 	defer m.locker.Unlock()
-
+	if port == 0 {
+		srv := m.tf.All()
+		for p, s := range srv {
+			router, _, err := m.routers.Set(p, id, config)
+			if err != nil {
+				return err
+			}
+			s.Set(router.Handler())
+		}
+		return nil
+	}
 	router, _, err := m.routers.Set(port, id, config)
 	if err != nil {
 		return err
 	}
 	service, has := m.tf.Get(port)
 	if !has {
+		log.Debug("not has port")
 		return nil
 	}
 	service.Set(router.Handler())
