@@ -7,8 +7,8 @@ import (
 )
 
 //Register 注册consul驱动工厂
-func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("discovery_consul", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("discovery_consul", NewFactory())
 }
 
 type factory struct {

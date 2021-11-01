@@ -7,8 +7,8 @@ import (
 )
 
 //Register 注册http_proxy驱动工厂
-func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("auth_basic", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("auth_basic", NewFactory())
 }
 
 type factory struct {

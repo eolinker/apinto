@@ -7,8 +7,8 @@ import (
 )
 
 //Register 注册service_http驱动工厂
-func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("service_http", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("service_http", NewFactory())
 }
 
 type factory struct {

@@ -7,8 +7,8 @@ import (
 )
 
 //Register 注册eureka驱动工厂
-func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("discovery_eureka", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("discovery_eureka", NewFactory())
 }
 
 type factory struct {

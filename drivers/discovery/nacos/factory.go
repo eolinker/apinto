@@ -7,8 +7,8 @@ import (
 )
 
 //Register 注册nacos驱动工厂
-func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("discovery_nacos", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("discovery_nacos", NewFactory())
 }
 
 type factory struct {

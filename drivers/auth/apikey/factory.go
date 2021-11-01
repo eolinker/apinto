@@ -7,8 +7,8 @@ import (
 )
 
 //Register 注册auth驱动工厂
-func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("auth_apikey", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("auth_apikey", NewFactory())
 }
 
 type factory struct {

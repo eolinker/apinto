@@ -9,8 +9,8 @@ import (
 )
 
 //Register 注册http_proxy驱动工厂
-func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("upstream_http_proxy", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("upstream_http_proxy", NewFactory())
 }
 
 type factory struct {

@@ -7,8 +7,8 @@ import (
 )
 
 //Register 注册stdlog驱动工厂
-func Register(register eosc.IExtenderRegister) {
-	register.RegisterExtender("log_stdlog", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("log_stdlog", NewFactory())
 }
 
 type factory struct {
