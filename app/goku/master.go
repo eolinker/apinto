@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/config"
 	"github.com/eolinker/eosc/utils"
 
 	"github.com/eolinker/goku/professions"
@@ -16,11 +15,7 @@ import (
 
 func ProcessMaster() {
 	utils.InitLogTransport(eosc.ProcessMaster)
-	cfg, err := config.GetConfig()
-	if err != nil {
-		log.Error("get config error: ", err)
-		return
-	}
+
 	p, err := NewMasterHandler()
 	if err != nil {
 		log.Errorf("fail to read procession.yml: %v", err)
@@ -33,7 +28,7 @@ func ProcessMaster() {
 	}
 	master := process_master.NewMasterHandle(file)
 
-	if err := master.Start(p, cfg); err != nil {
+	if err := master.Start(p); err != nil {
 		master.Close()
 		log.Errorf("process-master[%d] start faild:%v", os.Getpid(), err)
 		return
