@@ -26,7 +26,7 @@ func ProcessMaster() {
 		log.Errorf("the process-master is running:%v by:%d", err, os.Getpid())
 		return
 	}
-	master := process_master.NewMasterHandle(file)
+	master := process_master.NewMasterHandle()
 
 	if err := master.Start(p); err != nil {
 		master.Close()
@@ -34,7 +34,8 @@ func ProcessMaster() {
 		return
 	}
 
-	master.Wait()
+	master.Wait(file)
+	file.Remove()
 }
 
 func NewMasterHandler() (*process_master.MasterHandler, error) {
