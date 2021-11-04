@@ -112,5 +112,4 @@ func parseData(data eosc.IUntyped) (IMatcher, error) {
 		cs = append(cs, i.(*Config))
 	}
 	return parse(cs)
-
 }

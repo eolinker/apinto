@@ -9,59 +9,172 @@
 package professions
 
 import (
-	"io/ioutil"
-
 	"github.com/eolinker/eosc"
-	"github.com/ghodss/yaml"
 )
 
-type config struct {
-	Name         string         `json:"name" yaml:"name"`
-	Label        string         `json:"label" yaml:"label"`
-	Desc         string         `json:"desc" yaml:"desc"`
-	Dependencies []string       `json:"dependencies" yaml:"dependencies"`
-	AppendLabel  []string       `json:"append_label" yaml:"append_label"`
-	Drivers      []driverConfig `json:"drivers" yaml:"drivers"`
-}
+func GokuProfession() []*eosc.ProfessionConfig {
+	return []*eosc.ProfessionConfig{
+		{
+			Name:         "router",
+			Label:        "路由",
+			Desc:         "路由",
+			Dependencies: []string{"service"},
+			AppendLabels: []string{"host", "target", "listen"},
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:     "eolinker.com:goku:http_router",
+					Name:   "http",
+					Label:  "http",
+					Desc:   "http路由",
+					Params: nil,
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		},
 
-type driverConfig struct {
-	ID     string            `json:"id" yaml:"id"`
-	Name   string            `json:"name" yaml:"name"`
-	Label  string            `json:"label" yaml:"label"`
-	Desc   string            `json:"desc" yaml:"desc"`
-	Params map[string]string `json:"params" yaml:"params"`
-}
-
-func readProfessionConfig(file string) ([]*eosc.ProfessionConfig, error) {
-	data, err := ioutil.ReadFile(file)
-	if err != nil {
-		return nil, err
+		{
+			Name:         "service",
+			Label:        "服务",
+			Desc:         "服务",
+			Dependencies: []string{"upstream"},
+			AppendLabels: []string{"upstream"},
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:goku:service_http",
+					Name:  "http",
+					Label: "service",
+					Desc:  "服务",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		},
+		{
+			Name:         "upstream",
+			Label:        "上游/负载",
+			Desc:         "上游/负载",
+			Dependencies: []string{"discovery"},
+			AppendLabels: []string{"discovery"},
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:goku:upstream_http_proxy",
+					Name:  "http_proxy",
+					Label: "http转发负载",
+					Desc:  "http转发负载",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		},
+		{
+			Name:         "discovery",
+			Label:        "注册中心",
+			Desc:         "注册中心",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:goku:discovery_static",
+					Name:  "static",
+					Label: "静态服务发现",
+					Desc:  "静态服务发现",
+				}, {
+					Id:    "eolinker.com:goku:discovery_nacos",
+					Name:  "nacos",
+					Label: "nacos服务发现",
+					Desc:  "nacos服务发现",
+				}, {
+					Id:    "eolinker.com:goku:discovery_consul",
+					Name:  "consul",
+					Label: "consul服务发现",
+					Desc:  "consul服务发现",
+				}, {
+					Id:    "eolinker.com:goku:discovery_eureka",
+					Name:  "eureka",
+					Label: "eureka服务发现",
+					Desc:  "consul服务发现",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		},
+		{
+			Name:         "auth",
+			Label:        "鉴权",
+			Desc:         "鉴权",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:goku:auth_basic",
+					Name:  "basic",
+					Label: "basic鉴权",
+					Desc:  "basic鉴权",
+				},
+				{
+					Id:    "eolinker.com:goku:auth_apikey",
+					Name:  "apikey",
+					Label: "apikey鉴权",
+					Desc:  "apikey鉴权",
+				},
+				{
+					Id:    "eolinker.com:goku:auth_aksk",
+					Name:  "aksk",
+					Label: "ak/sk鉴权",
+					Desc:  "ak/sk鉴权",
+				},
+				{
+					Id:    "eolinker.com:goku:auth_jwt",
+					Name:  "jwt",
+					Label: "jwt鉴权",
+					Desc:  "jwt鉴权",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		},
+		{
+			Name:         "log",
+			Label:        "日志",
+			Desc:         "日志",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:goku:log_filelog",
+					Name:  "filelog",
+					Label: "文件日志",
+					Desc:  "文件日志",
+				}, {
+					Id:    "eolinker.com:goku:log_httplog",
+					Name:  "httplog",
+					Label: "http日志",
+					Desc:  "http日志",
+				}, {
+					Id:    "eolinker.com:goku:log_syslog",
+					Name:  "syslog",
+					Label: "系统日志",
+					Desc:  "系统日志",
+				}, {
+					Id:    "eolinker.com:goku:log_stdlog",
+					Name:  "stdlog",
+					Label: "标准输出日志",
+					Desc:  "标准输出日志",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		}, {
+			Name:         "setting",
+			Label:        "setting",
+			Desc:         "系统设置",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:     "eolinker:goku:plugin_manager",
+					Name:   "plugin",
+					Label:  "plugin",
+					Desc:   "插件管理器",
+					Params: nil,
+				},
+			},
+			Mod: eosc.ProfessionConfig_Singleton,
+		},
 	}
-	cs := make([]config, 0)
-	err = yaml.Unmarshal(data, &cs)
-	if err != nil {
-		return nil, err
-	}
-	pcs := make([]*eosc.ProfessionConfig, 0, len(cs))
-	for _, c := range cs {
-		drivers := make([]*eosc.DriverConfig, 0, len(c.Drivers))
-		for _, driver := range c.Drivers {
-			drivers = append(drivers, &eosc.DriverConfig{
-				Id:     driver.ID,
-				Name:   driver.Name,
-				Label:  driver.Label,
-				Desc:   driver.Desc,
-				Params: driver.Params,
-			})
-		}
-		pcs = append(pcs, &eosc.ProfessionConfig{
-			Name:         c.Name,
-			Label:        c.Label,
-			Desc:         c.Desc,
-			Dependencies: c.Dependencies,
-			AppendLabels: c.AppendLabel,
-			Drivers:      drivers,
-		})
-	}
-	return pcs, nil
 }

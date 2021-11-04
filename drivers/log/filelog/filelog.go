@@ -2,8 +2,9 @@ package filelog
 
 import (
 	"fmt"
+
+	filelog_transporter "github.com/eolinker/eosc/log/filelog"
 	log_transport "github.com/eolinker/goku/log-transport"
-	filelog_transporter "github.com/eolinker/goku/log-transport/filelog"
 
 	"github.com/eolinker/eosc"
 	transporterManager "github.com/eolinker/eosc/log/transporter-manager"
@@ -30,7 +31,7 @@ func (f *filelog) Start() error {
 	}
 
 	transporterReset := filelog_transporter.CreateTransporter(f.config.Level)
-	err = transporterReset.Reset(f.config,formatter)
+	err = transporterReset.Reset(f.config, formatter)
 	if err != nil {
 		return err
 	}
