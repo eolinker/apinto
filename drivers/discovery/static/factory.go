@@ -7,8 +7,8 @@ import (
 )
 
 //Register 注册静态服务发现的驱动工厂
-func Register() {
-	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:discovery_static", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("discovery_static", NewFactory())
 }
 
 type factory struct {
@@ -20,12 +20,12 @@ type factory struct {
 }
 
 //NewFactory 创建静态服务发现的驱动工厂
-func NewFactory() eosc.IProfessionDriverFactory {
+func NewFactory() eosc.IExtenderDriverFactory {
 	return &factory{}
 }
 
 //Create 创建静态服务发现驱动
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
+func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IExtenderDriver, error) {
 	return &driver{
 		profession: profession,
 		name:       name,

@@ -1,0 +1,17 @@
+# raft日志放置目录
+# data_dir: /var/lib/goku
+
+# pid文件放置地址
+# pid_dir: /var/run/goku/
+
+# 日志放置目录
+# log_dir: /var/log/goku
+
+# socket放置目录
+# socket_dir: /tmp/goku
+
+# goku运行配置地址
+# config: /etc/goku/config.yml
+
+# 扩展仓库目录
+# extends_dir: /var/lib/goku/extends/

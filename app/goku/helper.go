@@ -1,6 +1,8 @@
 package main
 
-import "github.com/eolinker/eosc/helper"
+import (
+	helper "github.com/eolinker/eosc/process-helper"
+)
 
 func ProcessHelper() {
 	helper.Process()
