@@ -1,11 +1,12 @@
 package filelog
 
 import (
-	"github.com/eolinker/eosc/log"
-	transporter_manager "github.com/eolinker/eosc/log/transporter-manager"
-	filelog_transporter "github.com/eolinker/goku/log-transport/filelog"
 	"testing"
 	"time"
+
+	"github.com/eolinker/eosc/log"
+	filelog_transporter "github.com/eolinker/eosc/log/filelog"
+	transporter_manager "github.com/eolinker/eosc/log/transporter-manager"
 )
 
 func TestFileLog(t *testing.T) {

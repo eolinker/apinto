@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/eolinker/eosc/log"
-	filelog_transporter "github.com/eolinker/goku/log-transport/filelog"
+	filelog_transporter "github.com/eolinker/eosc/log/filelog"
 )
 
 //DriverConfig filelog驱动配置
