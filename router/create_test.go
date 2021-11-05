@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/eolinker/goku/router/checker"
+	"github.com/eolinker/eosc/http"
 )
 
 type testSource map[string]string
@@ -70,7 +70,7 @@ func (tr *TestRule) toRule() Rule {
 		if i < 0 {
 			continue
 		}
-		c, e := checker.Parse(p[i:])
+		c, e := http.Parse(p[i:])
 		if e != nil {
 			continue
 		}

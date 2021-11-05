@@ -20,3 +20,8 @@ require (
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )
 
+replace (
+	github.com/eolinker/eosc => ../eosc
+)
+
+

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eolinker/eosc/http"
+
 	"github.com/valyala/fasthttp"
 
 	http_proxy "github.com/eolinker/goku/node/http-proxy"
@@ -14,8 +16,6 @@ import (
 	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/goku/auth"
-
-	"github.com/eolinker/goku/router/checker"
 
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/goku/upstream"
@@ -170,7 +170,7 @@ func (s *serviceWorker) Handle(ctx *http_context.Context, router service.IRouter
 	// 设置目标URL
 	location, has := router.Location()
 	path := s.rewriteURL
-	if has && location.CheckType() == checker.CheckTypePrefix {
+	if has && location.CheckType() == http.CheckTypePrefix {
 		path = recombinePath(string(ctx.RequestOrg().URI().Path()), location.Value(), s.rewriteURL)
 	}
 	if s.proxyMethod != "" {

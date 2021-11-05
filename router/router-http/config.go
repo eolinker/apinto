@@ -1,8 +1,8 @@
 package router_http
 
 import (
+	"github.com/eolinker/eosc/http"
 	"github.com/eolinker/goku/router"
-	"github.com/eolinker/goku/router/checker"
 	"github.com/eolinker/goku/service"
 )
 
@@ -49,7 +49,7 @@ func (r *Rule) toPath() ([]router.RulePath, error) {
 	path := make([]router.RulePath, 0, len(r.Header)+len(r.Query)+1)
 
 	if len(r.Location) > 0 {
-		locationChecker, err := checker.Parse(r.Location)
+		locationChecker, err := http.Parse(r.Location)
 		if err != nil {
 			return nil, err
 		}
@@ -60,7 +60,7 @@ func (r *Rule) toPath() ([]router.RulePath, error) {
 	}
 
 	for _, h := range r.Header {
-		ck, err := checker.Parse(h.Pattern)
+		ck, err := http.Parse(h.Pattern)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +71,7 @@ func (r *Rule) toPath() ([]router.RulePath, error) {
 	}
 
 	for _, h := range r.Query {
-		ck, err := checker.Parse(h.Pattern)
+		ck, err := http.Parse(h.Pattern)
 		if err != nil {
 			return nil, err
 		}

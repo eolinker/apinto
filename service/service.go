@@ -3,8 +3,9 @@ package service
 import (
 	"time"
 
+	"github.com/eolinker/eosc/http"
+
 	http_context "github.com/eolinker/goku/node/http-context"
-	"github.com/eolinker/goku/router/checker"
 )
 
 //CheckSkill 检查目标技能是否符合
@@ -19,9 +20,9 @@ type IService interface {
 
 //IRouterEndpoint 实现了返回路由规则信息方法的接口，如返回location、Host、Header、Query
 type IRouterEndpoint interface {
-	Location() (checker.Checker, bool)
-	Header(name string) (checker.Checker, bool)
-	Query(name string) (checker.Checker, bool)
+	Location() (http.Checker, bool)
+	Header(name string) (http.Checker, bool)
+	Query(name string) (http.Checker, bool)
 	Headers() []string
 	Queries() []string
 }
