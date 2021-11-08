@@ -9,14 +9,14 @@ type Chain struct {
 	next   http.IChain
 }
 
-func CreateChain(filters []http.IFilter) *Chain {
+func CreateChain(filters []http.IFilter) http.IChain {
 	if len(filters) > 0 {
 		return NewChain(filters[0], CreateChain(filters[1:]))
 	}
 	return nil
 }
 
-func NewChain(filter http.IFilter, next http.IChain) *Chain {
+func NewChain(filter http.IFilter, next http.IChain) http.IChain {
 	return &Chain{filter: filter, next: next}
 }
 
