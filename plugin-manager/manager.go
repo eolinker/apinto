@@ -2,6 +2,7 @@ package plugin_manager
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/http"
@@ -21,26 +22,36 @@ func RegisterFilter(factory IPluginFactory) {
 var manager = newPluginManager()
 
 type IPluginManager interface {
-	CreateRouter(id string, conf map[string]*OrdinaryPlugin) http.IChain
-	CreateService(id string, conf map[string]*OrdinaryPlugin) http.IChain
-	CreateUpstream(id string, conf map[string]*OrdinaryPlugin) http.IChain
+	CreateRouter(id string, conf map[string]*OrdinaryPlugin) filter.IChain
+	CreateService(id string, conf map[string]*OrdinaryPlugin) filter.IChain
+	CreateUpstream(id string, conf map[string]*OrdinaryPlugin) filter.IChain
 }
 
 type PluginManager struct {
-	factories eosc.IUntyped
-	pluginCfg []*GlobalPlugin
-	pluginObj eosc.IUntyped
+	factories  eosc.IUntyped
+	plugins    []*GlobalPlugin
+	pluginObjs eosc.IUntyped
 }
 
 type PluginObj struct {
-	http.IChain
+	filter.IChain
 	id   string
+	t    string
 	conf map[string]*OrdinaryPlugin
 }
 
-func (p *PluginManager) create(id string, conf map[string]*OrdinaryPlugin, t string) http.IChain {
+func (p *PluginManager) RemoveObj(id string) (*PluginObj, bool) {
+	value, ok := p.pluginObjs.Del(id)
+	if !ok {
+		return nil, false
+	}
+	v, ok := value.(*PluginObj)
+	return v, ok
+}
+
+func (p *PluginManager) createFilters(conf map[string]*OrdinaryPlugin, t string) []http.IFilter {
 	filters := make([]http.IFilter, 0, len(conf))
-	for _, cfg := range p.pluginCfg {
+	for _, cfg := range p.plugins {
 		if cfg.Status == StatusDisable || cfg.Status == "" || cfg.Type != t {
 			// 当插件类型不匹配，跳过
 			continue
@@ -52,7 +63,7 @@ func (p *PluginManager) create(id string, conf map[string]*OrdinaryPlugin, t str
 				continue
 			}
 			c = v
-		} else if cfg.Status != StatusGlobal {
+		} else if cfg.Status != StatusGlobal && cfg.Status != StatusEnable {
 			continue
 		}
 
@@ -68,24 +79,36 @@ func (p *PluginManager) create(id string, conf map[string]*OrdinaryPlugin, t str
 		}
 		filter, err := factory.Create(c)
 		if err != nil {
-			log.Error("plugin manager: fail to create filter,error is ", err)
+			log.Error("plugin manager: fail to createFilters filter,error is ", err)
 			continue
 		}
 		filters = append(filters, filter)
 	}
-	return filter.CreateChain(filters)
+	return filters
 }
 
-func (p *PluginManager) CreateRouter(id string, conf map[string]*OrdinaryPlugin) http.IChain {
-	return p.create(id, conf, pluginRouter)
+func (p *PluginManager) new(id string, conf map[string]*OrdinaryPlugin, t string) filter.IChain {
+	chain := filter.Create(p.createFilters(conf, t))
+	obj := &PluginObj{
+		IChain: chain,
+		id:     id,
+		conf:   conf,
+		t:      t,
+	}
+	p.pluginObjs.Set(fmt.Sprintf("%s:%s", id, t), obj)
+	return chain
 }
 
-func (p *PluginManager) CreateService(id string, conf map[string]*OrdinaryPlugin) http.IChain {
-	return p.create(id, conf, pluginService)
+func (p *PluginManager) CreateRouter(id string, conf map[string]*OrdinaryPlugin) filter.IChain {
+	return p.new(id, conf, pluginRouter)
 }
 
-func (p *PluginManager) CreateUpstream(id string, conf map[string]*OrdinaryPlugin) http.IChain {
-	return p.create(id, conf, pluginUpstream)
+func (p *PluginManager) CreateService(id string, conf map[string]*OrdinaryPlugin) filter.IChain {
+	return p.new(id, conf, pluginService)
+}
+
+func (p *PluginManager) CreateUpstream(id string, conf map[string]*OrdinaryPlugin) filter.IChain {
+	return p.new(id, conf, pluginUpstream)
 }
 
 func (p *PluginManager) Id() string {
@@ -101,8 +124,16 @@ func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	if !ok {
 		return errors.New("")
 	}
-	p.pluginCfg = cfg
-	// TODO: 此处
+	p.plugins = cfg
+	// 遍历，全量更新
+	for _, obj := range p.pluginObjs.All() {
+		v, ok := obj.(*PluginObj)
+		if !ok {
+			continue
+		}
+		v.IChain.Reset(p.createFilters(v.conf, v.t))
+	}
+
 	return nil
 }
 
@@ -116,7 +147,8 @@ func (p *PluginManager) CheckSkill(skill string) bool {
 
 func newPluginManager() *PluginManager {
 	return &PluginManager{
-		factories: eosc.NewUntyped(),
-		pluginCfg: make([]*GlobalPlugin, 0),
+		factories:  eosc.NewUntyped(),
+		plugins:    make([]*GlobalPlugin, 0),
+		pluginObjs: eosc.NewUntyped(),
 	}
 }
