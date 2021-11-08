@@ -3,8 +3,8 @@ package http_router
 import "github.com/eolinker/eosc"
 
 //Register 注册http路由驱动工厂
-func Register() {
-	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:http_router", NewRouterDriverFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("http_router", NewRouterDriverFactory())
 }
 
 //RouterDriverFactory http路由驱动工厂结构体
@@ -12,7 +12,7 @@ type RouterDriverFactory struct {
 }
 
 //Create 创建http路由驱动
-func (r *RouterDriverFactory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
+func (r *RouterDriverFactory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IExtenderDriver, error) {
 	return NewHTTPRouter(profession, name, label, desc, params), nil
 }
 

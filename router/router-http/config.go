@@ -33,14 +33,13 @@ type Cert struct {
 
 //Config http路由实例配置结构体
 type Config struct {
-	ID       string
-	Name     string
-	Protocol string
-	Cert     []Cert
-	Hosts    []string
-	Methods  []string
-	Target   service.IService
-	Rules    []Rule
+	ID   string
+	Name string
+	//Cert    []Cert
+	Hosts   []string
+	Methods []string
+	Target  service.IService
+	Rules   []Rule
 }
 
 //toPath 根据路由指标Location、Header、Query生成相应Checker并封装成RulePath切片返回

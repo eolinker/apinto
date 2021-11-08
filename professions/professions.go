@@ -12,14 +12,11 @@ type Professions struct {
 	*professions.Professions
 }
 
-func NewProfessions(fileName string) (*Professions, error) {
-	psConfig, err := readProfessionConfig(fileName)
-	if err != nil {
-		return nil, err
-	}
+func NewProfessions() (*Professions, error) {
+
 	p := &Professions{
 		Professions: professions.NewProfessions(),
 	}
-	p.Professions.Reset(psConfig)
+	p.Professions.Reset(GokuProfession())
 	return p, nil
 }

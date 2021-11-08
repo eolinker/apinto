@@ -17,10 +17,10 @@ type Router struct {
 	driver *HTTPRouterDriver
 }
 
-func (r *Router) Ports() []int {
-
-	return []int{r.port}
-}
+//func (r *Router) Ports() []int {
+//
+//	return []int{r.port}
+//}
 
 //Reset 重置http路由配置
 func (r *Router) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
@@ -101,25 +101,22 @@ func getConfig(target service.IService, cf *DriverConfig) *router_http.Config {
 		methods = []string{"*"}
 	}
 
-	protocol := "http"
-	if cf.Protocol == "https" {
-		protocol = "https"
-	}
+	//protocol := "http"
+	//if cf.Protocol == "https" {
+	//	protocol = "https"
+	//}
 
-	certs := make([]router_http.Cert, 0, len(cf.Cert))
-	for _, c := range cf.Cert {
-		certs = append(certs, router_http.Cert{Key: c.Key, Crt: c.Crt})
-	}
+	//certs := make([]router_http.Cert, 0, len(cf.Cert))
+	//for _, c := range cf.Cert {
+	//	certs = append(certs, router_http.Cert{Key: c.Key, Crt: c.Crt})
+	//}
 
 	return &router_http.Config{
-		//ID:     cf.ID,
-		//Name:   cf.Name,
-		Cert:     certs,
-		Protocol: protocol,
-		Methods:  methods,
-		Hosts:    hosts,
-		Target:   target,
-		Rules:    rules,
+		//Cert:    certs,
+		Methods: methods,
+		Hosts:   hosts,
+		Target:  target,
+		Rules:   rules,
 	}
 
 }

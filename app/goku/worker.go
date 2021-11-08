@@ -1,7 +1,8 @@
 package main
 
 import (
-	process_worker "github.com/eolinker/eosc/process-worker"
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/extends"
 	"github.com/eolinker/goku/drivers/auth/aksk"
 	"github.com/eolinker/goku/drivers/auth/apikey"
 	"github.com/eolinker/goku/drivers/auth/basic"
@@ -19,36 +20,34 @@ import (
 	upstream_http "github.com/eolinker/goku/drivers/upstream/upstream-http"
 )
 
-func ProcessWorker() {
-	register()
-	process_worker.Process()
+func registerInnerExtenders() {
+	extends.AddInnerExtendProject("eolinker.com", "goku", Register)
 }
-
-func register() {
+func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	// router
-	http_router.Register()
+	http_router.Register(extenderRegister)
 
 	// service
-	service_http.Register()
+	service_http.Register(extenderRegister)
 
 	// upstream
-	upstream_http.Register()
+	upstream_http.Register(extenderRegister)
 
 	// discovery
-	static.Register()
-	nacos.Register()
-	consul.Register()
-	eureka.Register()
+	static.Register(extenderRegister)
+	nacos.Register(extenderRegister)
+	consul.Register(extenderRegister)
+	eureka.Register(extenderRegister)
 
 	// auth
-	basic.Register()
-	apikey.Register()
-	aksk.Register()
-	jwt.Register()
+	basic.Register(extenderRegister)
+	apikey.Register(extenderRegister)
+	aksk.Register(extenderRegister)
+	jwt.Register(extenderRegister)
 
 	// log
-	filelog.Register()
-	httplog.Register()
-	syslog.Register()
-	stdlog.Register()
+	filelog.Register(extenderRegister)
+	httplog.Register(extenderRegister)
+	syslog.Register(extenderRegister)
+	stdlog.Register(extenderRegister)
 }
