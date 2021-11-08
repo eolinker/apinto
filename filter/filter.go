@@ -5,7 +5,7 @@ import (
 )
 
 type IChain interface {
-	http.IFilterChain
+	http.IChain
 	Append(filters ...http.IFilter) IChain
 	Insert(filters ...http.IFilter) IChain
 	Merge(chain IChain) IChain
