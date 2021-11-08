@@ -4,41 +4,42 @@ import (
 	"github.com/eolinker/eosc/http"
 )
 
+type IChain interface {
+	http.IFilterChain
+	Append(filters ...http.IFilter) IChain
+	Insert(filters ...http.IFilter) IChain
+	Merge(chain IChain) IChain
+}
+
 type Chain struct {
-	filter http.IFilter
-	next   http.IChain
+	*ChainItem
+	filters []http.IFilter
 }
 
-func CreateChain(filters []http.IFilter) http.IChain {
-	if len(filters) > 0 {
-		return NewChain(filters[0], CreateChain(filters[1:]))
-	}
-	return nil
-}
-
-func NewChain(filter http.IFilter, next http.IChain) http.IChain {
-	return &Chain{filter: filter, next: next}
-}
-
-func (c *Chain) DoFilter(ctx http.IHttpContext, endpoint http.IEndpoint) error {
-	if c.filter != nil {
-		err := c.filter.DoFilter(ctx, endpoint, c.next)
-		return err
-	}
-
-	return nil
-}
-
-func (c *Chain) Append(filter http.IFilter) {
-	if c.next == nil {
-		c.next = NewChain(filter, nil)
-	} else {
-		c.next.Append(filter)
+func Create(filters []http.IFilter) IChain {
+	return &Chain{
+		ChainItem: create(filters),
+		filters:   filters,
 	}
 }
 
-func (c *Chain) Insert(filter http.IFilter) {
-	next := NewChain(c.filter, c.next)
-	c.filter = filter
-	c.next = next
+func (c *Chain) Append(filters ...http.IFilter) IChain {
+	nf := make([]http.IFilter, 0, len(filters)+len(c.filters))
+	nf = append(nf, c.filters...)
+	nf = append(nf, filters...)
+	return Create(nf)
+}
+
+func (c *Chain) Insert(filters ...http.IFilter) IChain {
+	nf := make([]http.IFilter, 0, len(filters)+len(c.filters))
+	nf = append(nf, filters...)
+	nf = append(nf, c.filters...)
+	return Create(nf)
+}
+
+func (c *Chain) Merge(chain IChain) IChain {
+
+	return c.Append(&NextFilter{
+		next: chain,
+	})
 }
