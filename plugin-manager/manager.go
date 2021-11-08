@@ -70,6 +70,9 @@ func (p *PluginManager) createFilters(conf map[string]*OrdinaryPlugin, t string)
 				// 不启用该插件
 				continue
 			}
+			if cfg.Status != StatusGlobal && cfg.Status != StatusEnable {
+				continue
+			}
 			c = v
 		} else if cfg.Status != StatusGlobal && cfg.Status != StatusEnable {
 			continue
