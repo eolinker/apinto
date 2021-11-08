@@ -9,11 +9,18 @@ type IChain interface {
 	Append(filters ...http.IFilter) IChain
 	Insert(filters ...http.IFilter) IChain
 	Merge(chain IChain) IChain
+	Reset(filters []http.IFilter)
 }
+
+var _ IChain = (*Chain)(nil)
 
 type Chain struct {
 	*ChainItem
 	filters []http.IFilter
+}
+
+func (c *Chain) Reset(filters []http.IFilter) {
+
 }
 
 func Create(filters []http.IFilter) IChain {
