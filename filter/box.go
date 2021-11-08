@@ -11,7 +11,7 @@ func NewBox(filter http.IFilter) *Box {
 
 }
 
-func (b *Box) DoFilter(ctx http.IHttpContext, next http.IFilterChain) (err error) {
+func (b *Box) DoFilter(ctx http.IHttpContext, next http.IChain) (err error) {
 	if b.filter != nil {
 		return b.filter.DoFilter(ctx, next)
 	}

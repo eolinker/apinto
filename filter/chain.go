@@ -4,7 +4,7 @@ import "github.com/eolinker/eosc/http"
 
 type ChainItem struct {
 	filter http.IFilter
-	next   http.IFilterChain
+	next   http.IChain
 }
 
 func create(filters []http.IFilter) *ChainItem {
