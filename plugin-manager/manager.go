@@ -3,6 +3,7 @@ package plugin_manager
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/http"
@@ -10,7 +11,10 @@ import (
 	"github.com/eolinker/goku/filter"
 )
 
-var id = "plugin@setting"
+var (
+	id        = "plugin@setting"
+	errConfig = errors.New("invalid config")
+)
 
 func RegisterFilter(factory IPluginFactory) {
 	if factory == nil {
@@ -19,18 +23,22 @@ func RegisterFilter(factory IPluginFactory) {
 	manager.factories.Set(factory.Name(), factory)
 }
 
-var manager = newPluginManager()
-
-type IPluginManager interface {
-	CreateRouter(id string, conf map[string]*OrdinaryPlugin) filter.IChain
-	CreateService(id string, conf map[string]*OrdinaryPlugin) filter.IChain
-	CreateUpstream(id string, conf map[string]*OrdinaryPlugin) filter.IChain
-}
+var manager = NewPluginManager()
 
 type PluginManager struct {
 	factories  eosc.IUntyped
 	plugins    []*GlobalPlugin
 	pluginObjs eosc.IUntyped
+}
+
+func DefaultManager() *PluginManager {
+	return manager
+}
+
+type IPluginManager interface {
+	CreateRouter(id string, conf map[string]*OrdinaryPlugin) filter.IChain
+	CreateService(id string, conf map[string]*OrdinaryPlugin) filter.IChain
+	CreateUpstream(id string, conf map[string]*OrdinaryPlugin) filter.IChain
 }
 
 type PluginObj struct {
@@ -111,18 +119,10 @@ func (p *PluginManager) CreateUpstream(id string, conf map[string]*OrdinaryPlugi
 	return p.new(id, conf, pluginUpstream)
 }
 
-func (p *PluginManager) Id() string {
-	return id
-}
-
-func (p *PluginManager) Start() error {
-	return nil
-}
-
-func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (p *PluginManager) Reset(conf interface{}) error {
 	cfg, ok := conf.(Plugins)
 	if !ok {
-		return errors.New("")
+		return errConfig
 	}
 	p.plugins = cfg
 	// 遍历，全量更新
@@ -137,15 +137,30 @@ func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	return nil
 }
 
-func (p *PluginManager) Stop() error {
-	return nil
+func (p *PluginManager) Check(conf interface{}) error {
+	cfg, ok := conf.(Plugins)
+	if !ok {
+		return errConfig
+	}
+	plugins := make([]string, 0, len(cfg))
+	for _, pl := range cfg {
+		_, has := p.factories.Get(pl.ID)
+		if !has {
+			plugins = append(plugins, pl.ID)
+		}
+	}
+	if len(plugins) < 1 {
+		return nil
+	}
+	return errors.New(fmt.Sprintf("plugins(%s) are not exist", strings.Join(plugins, ",")))
 }
 
-func (p *PluginManager) CheckSkill(skill string) bool {
-	panic("implement me")
+func (p *PluginManager) IsExists(id string) bool {
+	_, has := p.factories.Get(id)
+	return has
 }
 
-func newPluginManager() *PluginManager {
+func NewPluginManager() *PluginManager {
 	return &PluginManager{
 		factories:  eosc.NewUntyped(),
 		plugins:    make([]*GlobalPlugin, 0),
