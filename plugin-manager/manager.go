@@ -31,6 +31,40 @@ type PluginManager struct {
 	pluginObjs eosc.IUntyped
 }
 
+func (p *PluginManager) Id() string {
+	return id
+}
+
+func (p *PluginManager) Start() error {
+	return nil
+}
+
+func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+	cfg, ok := conf.(Plugins)
+	if !ok {
+		return errConfig
+	}
+	p.plugins = cfg
+	// 遍历，全量更新
+	for _, obj := range p.pluginObjs.All() {
+		v, ok := obj.(*PluginObj)
+		if !ok {
+			continue
+		}
+		v.IChain.Reset(p.createFilters(v.conf, v.t))
+	}
+
+	return nil
+}
+
+func (p *PluginManager) Stop() error {
+	return nil
+}
+
+func (p *PluginManager) CheckSkill(skill string) bool {
+	return false
+}
+
 func DefaultManager() *PluginManager {
 	return manager
 }
@@ -120,24 +154,6 @@ func (p *PluginManager) CreateService(id string, conf map[string]*OrdinaryPlugin
 
 func (p *PluginManager) CreateUpstream(id string, conf map[string]*OrdinaryPlugin) filter.IChain {
 	return p.new(id, conf, pluginUpstream)
-}
-
-func (p *PluginManager) Reset(conf interface{}) error {
-	cfg, ok := conf.(Plugins)
-	if !ok {
-		return errConfig
-	}
-	p.plugins = cfg
-	// 遍历，全量更新
-	for _, obj := range p.pluginObjs.All() {
-		v, ok := obj.(*PluginObj)
-		if !ok {
-			continue
-		}
-		v.IChain.Reset(p.createFilters(v.conf, v.t))
-	}
-
-	return nil
 }
 
 func (p *PluginManager) Check(conf interface{}) error {
