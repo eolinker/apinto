@@ -6,9 +6,11 @@ import (
 	"github.com/eolinker/eosc"
 )
 
+var name = "auth_basic"
+
 //Register 注册http_proxy驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
-	register.RegisterExtenderDriver("auth_basic", NewFactory())
+	register.RegisterExtenderDriver(name, NewFactory())
 }
 
 type factory struct {

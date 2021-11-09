@@ -1,10 +1,14 @@
 package http_router
 
-import "github.com/eolinker/eosc"
+import (
+	"github.com/eolinker/eosc"
+)
+
+var name = "http_router"
 
 //Register 注册http路由驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
-	register.RegisterExtenderDriver("http_router", NewRouterDriverFactory())
+	register.RegisterExtenderDriver(name, NewRouterDriverFactory())
 }
 
 //RouterDriverFactory http路由驱动工厂结构体

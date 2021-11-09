@@ -6,9 +6,11 @@ import (
 	"github.com/eolinker/eosc"
 )
 
+var name = "auth_aksk"
+
 //Register 注册aksk鉴权驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
-	register.RegisterExtenderDriver("auth_aksk", NewFactory())
+	register.RegisterExtenderDriver(name, NewFactory())
 }
 
 type factory struct {

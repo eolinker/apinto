@@ -6,9 +6,11 @@ import (
 	"github.com/eolinker/eosc"
 )
 
+var name = "log_httplog"
+
 //Register 注册httplog驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
-	register.RegisterExtenderDriver("log_httplog", NewFactory())
+	register.RegisterExtenderDriver(name, NewFactory())
 }
 
 type factory struct {
