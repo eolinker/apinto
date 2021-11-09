@@ -34,7 +34,6 @@ func (rs *Routers) Set(port int, id string, conf *Config) (IRouter, bool, error)
 		rs.data.Set(name, router)
 		return router, true, nil
 	}
-	// todo 这里需要校验端口已使用的的http协议是否与之前配置冲突，并返回新的合并后的证书列表
 
 	router := r.(IRouter)
 	err := router.SetRouter(id, conf)
@@ -50,17 +49,6 @@ func NewRouters() *Routers {
 		data: eosc.NewUntyped(),
 	}
 }
-
-//func (rs *Routers) GetEmployee(port int) (IRouter, bool) {
-//	name := strconv.Itoa(port)
-//	r, has := rs.data.GetEmployee(name)
-//	if !has {
-//		var router IRouter = NewRouter()
-//		rs.data.SetStatus(name, router)
-//		return router, true
-//	}
-//	return r.(IRouter), false
-//}
 
 //Del 将路由配置从对应端口的路由树中删去
 func (rs *Routers) Del(port int, id string) (IRouter, bool) {

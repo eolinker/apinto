@@ -3,6 +3,8 @@ package checker
 import (
 	"fmt"
 	"strings"
+
+	"github.com/eolinker/eosc/http"
 )
 
 //SuffixChecker 实现了Checker接口，能进行后缀匹配
@@ -30,8 +32,8 @@ func (p *SuffixChecker) Check(v string, has bool) bool {
 }
 
 //CheckType 返回检查器的类型值
-func (p *SuffixChecker) CheckType() CheckType {
-	return CheckTypeSuffix
+func (p *SuffixChecker) CheckType() http.CheckType {
+	return http.CheckTypeSuffix
 }
 
 //newCheckerAll 创建一个后缀匹配类型的检查器
