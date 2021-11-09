@@ -101,7 +101,7 @@ func (m *Manager) Add(port int, id string, config *Config) error {
 			if err != nil {
 				return err
 			}
-			s.Set(router.Handler())
+			s.Set(router.Handler)
 		}
 		return nil
 	}
@@ -114,14 +114,7 @@ func (m *Manager) Add(port int, id string, config *Config) error {
 		log.Debug("not has port")
 		return nil
 	}
-	service.Set(router.Handler())
-	//if config.Protocol == "https" {
-	//	certs := newCerts(config.Cert)
-	//	m.tf.Get(port).SetHttps(router.Handler(), certs.certs)
-	//
-	//} else {
-	//	m.tf.Get(port).SetHttp(router.Handler())
-	//}
+	service.Set(router.Handler)
 
 	return nil
 }

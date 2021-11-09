@@ -1,10 +1,11 @@
 package checker
 
+import "github.com/eolinker/eosc/http"
+
 var globalCheckerAll = &checkerAll{}
 
 //checkerAll 实现了Checker接口，能进行任意匹配
 type checkerAll struct {
-
 }
 
 //Key 返回路由指标检查器带有完整规则符号的检测值
@@ -24,8 +25,8 @@ func (t *checkerAll) Check(v string, has bool) bool {
 }
 
 //CheckType 返回检查器的类型值
-func (t *checkerAll) CheckType() CheckType {
-	return CheckTypeAll
+func (t *checkerAll) CheckType() http.CheckType {
+	return http.CheckTypeAll
 }
 
 //newCheckerAll 创建一个任意匹配类型的检查器
