@@ -51,7 +51,7 @@ func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]inter
 		if !ok {
 			continue
 		}
-		v.IChain.Reset(p.createFilters(v.conf, v.t))
+		v.IChainHandler.Reset(p.createFilters(v.conf, v.t)...)
 	}
 
 	return nil
@@ -76,7 +76,7 @@ type IPluginManager interface {
 }
 
 type PluginObj struct {
-	filter.IChain
+	filter.IChainHandler
 	id   string
 	t    string
 	conf map[string]*OrdinaryPlugin
@@ -122,23 +122,23 @@ func (p *PluginManager) createFilters(conf map[string]*OrdinaryPlugin, t string)
 			log.Warn("plugin manager: no implement factory interface,id is ", cfg.ID)
 			continue
 		}
-		filter, err := factory.Create(c)
+		fi, err := factory.Create(c)
 		if err != nil {
 			log.Error("plugin manager: fail to createFilters filter,error is ", err)
 			continue
 		}
-		filters = append(filters, filter)
+		filters = append(filters, fi)
 	}
 	return filters
 }
 
 func (p *PluginManager) new(id string, conf map[string]*OrdinaryPlugin, t string) filter.IChain {
-	chain := filter.Create(p.createFilters(conf, t))
+	chain := filter.NewChain(p.createFilters(conf, t))
 	obj := &PluginObj{
-		IChain: chain,
-		id:     id,
-		conf:   conf,
-		t:      t,
+		IChainHandler: chain,
+		id:            id,
+		conf:          conf,
+		t:             t,
 	}
 	p.pluginObjs.Set(fmt.Sprintf("%s:%s", id, t), obj)
 	return chain
