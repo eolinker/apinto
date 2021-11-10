@@ -10,13 +10,13 @@ type IChainReset interface {
 
 type IChain interface {
 	http.IChain
+	ToFilter() http.IFilter
 	Append(filters ...http.IFilter) IChain
 	Insert(filters ...http.IFilter) IChain
 }
 type IChainHandler interface {
 	IChain
 	IChainReset
-	ToFilter() http.IFilter
 }
 
 func NewChain(filters []http.IFilter) IChainHandler {
