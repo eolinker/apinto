@@ -14,6 +14,7 @@ type IChain interface {
 	Append(filters ...http.IFilter) IChain
 	Insert(filters ...http.IFilter) IChain
 }
+
 type IChainHandler interface {
 	IChain
 	IChainReset
