@@ -27,7 +27,7 @@ func SetCert(skip int, clientCerts []tls.Certificate) {
 	httpClient.TLSConfig = tlsConfig
 }
 
-//Request http-proxy 请求结构体
+//Request http-service-proxy 请求结构体
 type Request struct {
 	timeout     time.Duration
 	httpRequest *fasthttp.Request

@@ -1,13 +1,13 @@
 package filter
 
-import "github.com/eolinker/eosc/http"
+import http_service "github.com/eolinker/eosc/http-service"
 
 type _ChainNode struct {
-	filter http.IFilter
-	next   http.IChain
+	filter http_service.IFilter
+	next   http_service.IChain
 }
 
-func createNode(filters []http.IFilter, end http.IChain) *_ChainNode {
+func createNode(filters []http_service.IFilter, end http_service.IChain) *_ChainNode {
 	if len(filters) == 0 {
 		return nil
 	}
@@ -17,7 +17,7 @@ func createNode(filters []http.IFilter, end http.IChain) *_ChainNode {
 	}
 	return &_ChainNode{filter: filters[0], next: createNode(filters[1:], end)}
 }
-func (c *_ChainNode) DoChain(ctx http.IHttpContext) error {
+func (c *_ChainNode) DoChain(ctx http_service.IHttpContext) error {
 
 	if c == nil {
 		return nil

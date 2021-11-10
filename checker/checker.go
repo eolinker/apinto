@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/eolinker/eosc/http"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 var (
@@ -13,7 +13,7 @@ var (
 )
 
 //Parse 可根据路由指标字符串生成相应的检查器
-func Parse(pattern string) (http.Checker, error) {
+func Parse(pattern string) (http_service.Checker, error) {
 	i := strings.Index(pattern, "=")
 
 	if i < 0 {
@@ -46,7 +46,7 @@ func Parse(pattern string) (http.Checker, error) {
 }
 
 //parseValue 根据不带等号的指标字符串生成检查器
-func parseValue(v string) (http.Checker, error) {
+func parseValue(v string) (http_service.Checker, error) {
 	switch v {
 	case "*": //任意
 		return newCheckerAll(), nil

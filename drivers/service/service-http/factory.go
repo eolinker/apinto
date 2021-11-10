@@ -6,11 +6,11 @@ import (
 	"github.com/eolinker/eosc"
 )
 
-var name = "service_http"
+var DriverName = "service_http"
 
 //Register 注册service_http驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
-	register.RegisterExtenderDriver(name, NewFactory())
+	register.RegisterExtenderDriver(DriverName, NewFactory())
 }
 
 type factory struct {
@@ -30,10 +30,10 @@ func NewFactory() eosc.IExtenderDriverFactory {
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IExtenderDriver, error) {
 	return &driver{
 		profession: profession,
-		name:       name,
+
 		label:      label,
 		desc:       desc,
-		driver:     driverName,
+		driver:     name,
 		configType: reflect.TypeOf((*Config)(nil)),
 		params:     params,
 	}, nil

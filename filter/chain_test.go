@@ -10,7 +10,7 @@ import (
 
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/eosc/http"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 type Out struct {
@@ -21,7 +21,7 @@ type Out struct {
 func NewOut(t *testing.T) *Out {
 	return &Out{t: t}
 }
-func (o *Out) Test(chain http.IChain, name string) {
+func (o *Out) Test(chain http_service.IChain, name string) {
 	o.reset()
 	if err := chain.DoChain(new(TestContext)); err != nil {
 		log.Error(err)
@@ -49,7 +49,7 @@ func NewTestFilter(o *Out, name string) *TestFilter {
 	return &TestFilter{o: o, name: name}
 }
 
-func (t *TestFilter) DoFilter(ctx http.IHttpContext, next http.IChain) (err error) {
+func (t *TestFilter) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
 	t.o.out(t.name)
 
 	return next.DoChain(ctx)
@@ -57,7 +57,7 @@ func (t *TestFilter) DoFilter(ctx http.IHttpContext, next http.IChain) (err erro
 
 func TestIFilter(t *testing.T) {
 	out := NewOut(t)
-	filterOrg := make([]http.IFilter, 2)
+	filterOrg := make([]http_service.IFilter, 2)
 	for i := range filterOrg {
 		filterOrg[i] = NewTestFilter(out, strconv.Itoa(i+1))
 	}
@@ -117,11 +117,11 @@ func (t *TestContext) DelHeader(key string) {
 	panic("implement me")
 }
 
-func (t *TestContext) Set() http.Header {
+func (t *TestContext) Set() http_service.Header {
 	panic("implement me")
 }
 
-func (t *TestContext) Append() http.Header {
+func (t *TestContext) Append() http_service.Header {
 	panic("implement me")
 }
 
@@ -161,11 +161,11 @@ func (t *TestContext) RequestId() string {
 	panic("implement me")
 }
 
-func (t *TestContext) Request() http.RequestReader {
+func (t *TestContext) Request() http_service.RequestReader {
 	panic("implement me")
 }
 
-func (t *TestContext) Proxy() http.Request {
+func (t *TestContext) Proxy() http_service.Request {
 	panic("implement me")
 }
 
@@ -173,7 +173,7 @@ func (t *TestContext) Labels() map[string]string {
 	panic("implement me")
 }
 
-func (t *TestContext) ProxyResponse() http.ResponseReader {
+func (t *TestContext) ProxyResponse() http_service.ResponseReader {
 	panic("implement me")
 }
 
@@ -187,12 +187,12 @@ func (t *TestContext) GetStoreValue(key string) (interface{}, bool) {
 
 func TestAppendCell(t *testing.T) {
 	out := NewOut(t)
-	filters1 := make([]http.IFilter, 5)
+	filters1 := make([]http_service.IFilter, 5)
 	for i := range filters1 {
 
 		filters1[i] = NewTestFilter(out, fmt.Sprint("org-", i+1))
 	}
-	filters2 := make([]http.IFilter, 5)
+	filters2 := make([]http_service.IFilter, 5)
 	for i := range filters2 {
 
 		filters2[i] = NewTestFilter(out, fmt.Sprint("append-", i+1))
@@ -217,11 +217,11 @@ func TestAppendCell(t *testing.T) {
 
 func TestReset(t *testing.T) {
 	out := NewOut(t)
-	filters1 := make([]http.IFilter, 5)
+	filters1 := make([]http_service.IFilter, 5)
 	for i := range filters1 {
 		filters1[i] = NewTestFilter(out, fmt.Sprint("org-", i+1))
 	}
-	filters2 := make([]http.IFilter, 5)
+	filters2 := make([]http_service.IFilter, 5)
 	for i := range filters2 {
 
 		filters2[i] = NewTestFilter(out, fmt.Sprint("append-", i+1))

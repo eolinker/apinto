@@ -11,8 +11,8 @@
   drivers:
     -
       id: eolinker:goku:http_router
-      name: http
-      label: http
+      name: http-service
+      label: http-service
       desc: http路由
 -
   name: service
@@ -25,7 +25,7 @@
   drivers:
     -
       id: eolinker:goku:service_http
-      name: http
+      name: http-service
       label: service
       desc: 服务
 -

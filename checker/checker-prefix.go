@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/eolinker/eosc/http"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 //PrefixChecker 实现了Checker接口，能进行前缀匹配
@@ -32,8 +32,8 @@ func (p *PrefixChecker) Check(v string, has bool) bool {
 }
 
 //CheckType 返回检查器的类型值
-func (p *PrefixChecker) CheckType() http.CheckType {
-	return http.CheckTypePrefix
+func (p *PrefixChecker) CheckType() http_service.CheckType {
+	return http_service.CheckTypePrefix
 }
 
 //newCheckerAll 创建一个前缀匹配类型的检查器

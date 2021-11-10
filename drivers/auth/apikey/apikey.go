@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	http_service "github.com/eolinker/eosc/http-service"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/goku/auth"
 	http_context "github.com/eolinker/goku/node/http-context"
@@ -30,7 +32,7 @@ type apikey struct {
 }
 
 //Auth 鉴权处理
-func (a *apikey) Auth(ctx *http_context.Context) error {
+func (a *apikey) Auth(ctx http_service.IHttpContext) error {
 	authorizationType, has := ctx.Request().Header().Get(auth.AuthorizationType)
 	if !has {
 		return auth.ErrorInvalidType

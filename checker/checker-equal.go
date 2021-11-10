@@ -3,7 +3,7 @@ package checker
 import (
 	"fmt"
 
-	"github.com/eolinker/eosc/http"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 //checkerAll 实现了Checker接口，能进行全等匹配
@@ -36,6 +36,6 @@ func (e *checkerEqual) Check(v string, has bool) bool {
 }
 
 //CheckType 返回检查器的类型值
-func (e *checkerEqual) CheckType() http.CheckType {
-	return http.CheckTypeEqual
+func (e *checkerEqual) CheckType() http_service.CheckType {
+	return http_service.CheckTypeEqual
 }
