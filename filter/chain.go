@@ -18,3 +18,7 @@ type IChainHandler interface {
 	IChainReset
 	ToFilter() http.IFilter
 }
+
+func NewChain(filters []http.IFilter) IChainHandler {
+	return createHandler(filters)
+}

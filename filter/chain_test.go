@@ -2,22 +2,33 @@ package filter
 
 import (
 	"context"
+	"fmt"
 	http2 "net/http"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/eosc/http"
 )
 
 type Out struct {
 	output []string
+	t      *testing.T
 }
 
-func NewOut() *Out {
-	return &Out{}
+func NewOut(t *testing.T) *Out {
+	return &Out{t: t}
 }
+func (o *Out) Test(chain http.IChain, name string) {
+	o.reset()
+	if err := chain.DoChain(new(TestContext)); err != nil {
+		log.Error(err)
+	}
 
+	o.t.Log(name, "\t:\t", o.String())
+}
 func (o *Out) String() string {
 	return strings.Join(o.output, ",")
 }
@@ -44,38 +55,27 @@ func (t *TestFilter) DoFilter(ctx http.IHttpContext, next http.IChain) (err erro
 	return next.DoChain(ctx)
 }
 
-var out = NewOut()
-
 func TestIFilter(t *testing.T) {
-
+	out := NewOut(t)
 	filterOrg := make([]http.IFilter, 2)
 	for i := range filterOrg {
 		filterOrg[i] = NewTestFilter(out, strconv.Itoa(i+1))
 	}
 
-	chainOrg := NewChainHandler(filterOrg)
+	chainOrg := NewChain(filterOrg)
 
-	do(chainOrg, "org", t)
+	out.Test(chainOrg, "ort")
 	chainTest := chainOrg.Append(NewTestFilter(out, "append1.1"), NewTestFilter(out, "append1.2"))
-	do(chainTest, "append", t)
-	//chainOrg.Reset([]http.IFilter{NewTestFilter(out, "reset")})
-	////do(chainTest, "test", t)
-	//
-	////do(chainOrg, "org", t)
-	//
+	out.Test(chainTest, "append")
+
 	chainTest2 := chainOrg.Append(NewTestFilter(out, "append 2"))
-	do(chainTest2, "append2", t)
-	//do(chainTest, "test1", t)
+	out.Test(chainTest2, "append2")
+
 	t2 := chainTest.Append(NewTestFilter(out, "append3"))
-	do(t2, "append to append", t)
+	out.Test(t2, "append to append")
 
 	chainOrg.Reset(NewTestFilter(out, "reset"))
-	do(t2, "append to append after reset:", t)
-}
-func do(chain IChain, name string, t *testing.T) {
-	out.reset()
-	chain.DoChain(new(TestContext))
-	t.Log(name, ":", out)
+	out.Test(t2, "append to append after reset:")
 }
 
 type TestContext struct {
@@ -183,4 +183,57 @@ func (t *TestContext) SetStoreValue(key string, value interface{}) error {
 
 func (t *TestContext) GetStoreValue(key string) (interface{}, bool) {
 	panic("implement me")
+}
+
+func TestAppendCell(t *testing.T) {
+	out := NewOut(t)
+	filters1 := make([]http.IFilter, 5)
+	for i := range filters1 {
+
+		filters1[i] = NewTestFilter(out, fmt.Sprint("org-", i+1))
+	}
+	filters2 := make([]http.IFilter, 5)
+	for i := range filters2 {
+
+		filters2[i] = NewTestFilter(out, fmt.Sprint("append-", i+1))
+	}
+
+	org := NewChain(filters1)
+	app := NewChain(filters2)
+
+	target := org.Append(app.ToFilter())
+
+	out.Test(org, "org")
+	out.Test(app, "app")
+	out.Test(target, "target")
+
+	org.Reset(NewTestFilter(out, "org"))
+	out.Test(target, "target-reset org")
+
+	app.Reset(NewTestFilter(out, "app"))
+	out.Test(target, "target-reset app")
+
+}
+
+func TestReset(t *testing.T) {
+	out := NewOut(t)
+	filters1 := make([]http.IFilter, 5)
+	for i := range filters1 {
+		filters1[i] = NewTestFilter(out, fmt.Sprint("org-", i+1))
+	}
+	filters2 := make([]http.IFilter, 5)
+	for i := range filters2 {
+
+		filters2[i] = NewTestFilter(out, fmt.Sprint("append-", i+1))
+	}
+
+	org := NewChain(filters1)
+	app := NewChain(filters2)
+
+	target1 := org.Append(app.ToFilter())
+	target2 := app.Append(org.ToFilter())
+
+	out.Test(target1, "target1")
+	out.Test(target2, "target2")
+
 }
