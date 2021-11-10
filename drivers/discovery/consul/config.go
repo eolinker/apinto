@@ -1,8 +1,9 @@
 package consul
 
 import (
-	"github.com/hashicorp/consul/api"
 	"strings"
+
+	"github.com/hashicorp/consul/api"
 )
 
 //Config consul驱动配置
@@ -25,8 +26,8 @@ type consulClients struct {
 
 func (c *Config) getScheme() string {
 	scheme := strings.ToLower(c.Scheme)
-	if scheme != "http" && scheme != "https" {
-		scheme = "http"
+	if scheme != "http-service" && scheme != "https" {
+		scheme = "http-service"
 	}
 	return scheme
 }

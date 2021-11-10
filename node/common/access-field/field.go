@@ -10,7 +10,7 @@ type Proxy struct {
 	Request        string `json:"request" field:"request" desc:"请求信息, 如 POST https"`
 	Uri            string `json:"uri" field:"uri" desc:"转发uri, /test"`
 	Method         string `json:"method" field:"method" desc:"请求方法 如 POST"`
-	Protocol       string `json:"protocol" field:"protocol" desc:"请求协议,http/https"`
+	Protocol       string `json:"protocol" field:"protocol" desc:"请求协议,http-service/https"`
 	Upstream       string `json:"upstream" field:"upstream" desc:"负载信息"`
 	Host           string `json:"host" field:"host" desc:"如果是upstream负载,这里是最终目标的ip/域名,否则这里应该根upstream一致"`
 	RequestMsg     string `json:"request_msg" field:"request_msg" desc:"请求内容"`

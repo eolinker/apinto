@@ -22,7 +22,7 @@ type client struct {
 func newClient(address []string, params url.Values, scheme string) *client {
 	adds := make([]string, 0, len(address))
 	for _, a := range address {
-		if !strings.HasPrefix(a, "http://") && !strings.HasPrefix(a, "https://") {
+		if !strings.HasPrefix(a, "http-service://") && !strings.HasPrefix(a, "https://") {
 			a = fmt.Sprintf("%s://%s", scheme, a)
 		}
 		adds = append(adds, a)

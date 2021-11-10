@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	driverName = "http"
+	driverName = "http-service"
 )
 
 //driver 实现github.com/eolinker/eosc.eosc.IProfessionDriver接口

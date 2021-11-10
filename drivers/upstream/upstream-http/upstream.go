@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	errorScheme       = errors.New("error scheme.only support http or https")
+	errorScheme       = errors.New("error scheme.only support http-service or https")
 	ErrorStructType   = errors.New("error struct type")
 	errorCreateWorker = errors.New("fail to create upstream worker")
 )
@@ -58,7 +58,7 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 	if factory, has := workers[cfg.Discovery]; has {
 		f, ok := factory.(discovery.IDiscovery)
 		if ok {
-			if cfg.Scheme != "http" && cfg.Scheme != "https" {
+			if cfg.Scheme != "http-service" && cfg.Scheme != "https" {
 				return errorScheme
 			}
 			app, err := f.GetApp(cfg.Config)
@@ -112,7 +112,7 @@ func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.ISe
 			return nil, err
 		}
 		scheme := node.Scheme()
-		if scheme != "http" && scheme != "https" {
+		if scheme != "http-service" && scheme != "https" {
 			scheme = h.scheme
 		}
 		request.SetRequestURI(fmt.Sprintf("%s://%s/%s", scheme, node.Addr(), path))

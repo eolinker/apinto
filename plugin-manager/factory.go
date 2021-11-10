@@ -4,11 +4,11 @@ import (
 	"reflect"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/http"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 type IPluginFactory interface {
-	Create(cfg interface{}) (http.IFilter, error)
+	Create(cfg interface{}) (http_service.IFilter, error)
 }
 
 type PluginFactory struct {

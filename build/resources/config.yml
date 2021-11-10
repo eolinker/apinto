@@ -7,7 +7,7 @@ ssl:
       - cert: cert.pem
         key:  cert.key
 admin:
-  scheme: http
+  scheme: http-service
   listen: 9400
   ip: 0.0.0.0
   certificate:

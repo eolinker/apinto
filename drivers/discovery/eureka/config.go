@@ -22,8 +22,8 @@ type AccessConfig struct {
 
 func (c *Config) getScheme() string {
 	scheme := strings.ToLower(c.Scheme)
-	if scheme != "http" && scheme != "https" {
-		scheme = "http"
+	if scheme != "http-service" && scheme != "https" {
+		scheme = "http-service"
 	}
 	return scheme
 }
@@ -32,7 +32,7 @@ func (c *Config) getAddress() []string {
 	scheme := c.getScheme()
 	adds := make([]string, 0, len(c.Config.Address))
 	for _, a := range c.Config.Address {
-		if !strings.HasPrefix(a, "http://") && !strings.HasPrefix(a, "https://") {
+		if !strings.HasPrefix(a, "http-service://") && !strings.HasPrefix(a, "https://") {
 			a = fmt.Sprintf("%s://%s", scheme, a)
 		}
 		adds = append(adds, a)

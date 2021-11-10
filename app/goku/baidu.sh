@@ -3,7 +3,7 @@ curl -X POST http://127.0.0.1:9400/api/service --data '{
 
     "name": "baidu",
 
-    "driver": "http",
+    "driver": "http-service",
 
     "desc": "匿名服务，直接转发，不需要配负载，没有鉴权",
 
@@ -23,9 +23,9 @@ curl -X POST http://127.0.0.1:9400/api/router --data '{
 
     "name": "baidu",
 
-    "driver": "http",
+    "driver": "http-service",
 
-    "desc": "http",
+    "desc": "http-service",
 
     "listen": 8888,
 

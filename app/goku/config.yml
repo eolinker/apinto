@@ -16,6 +16,6 @@ ssl:
   certificate: ./cert // 证书文件目录，不填则默认从cert目录下载
 
 admin:
-  scheme: http
+  scheme: http-service
   listen: 9400
   ip: 0.0.0.0

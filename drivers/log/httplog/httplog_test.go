@@ -1,17 +1,18 @@
 package httplog
 
 import (
+	"net/http"
+	"testing"
+
 	"github.com/eolinker/eosc/log"
 	transporter_manager "github.com/eolinker/eosc/log/transporter-manager"
 	httplog_transporter "github.com/eolinker/goku/log-transport/httplog"
-	"net/http"
-	"testing"
 )
 
 func TestHTTPLog(t *testing.T) {
 	c := &httplog_transporter.Config{
 		Method:  "POST",
-		Url:     "http://127.0.0.1:8080/test",
+		Url:     "http-service://127.0.0.1:8080/test",
 		Headers: http.Header{"a": []string{"1"}},
 		Level:   4, // info
 	}
@@ -43,7 +44,7 @@ func TestHTTPLog(t *testing.T) {
 		Name:          "Testhttplog",
 		Driver:        "httplog",
 		Method:        "GET",
-		URL:           "http://127.0.0.1:8081/test",
+		URL:           "http-service://127.0.0.1:8081/test",
 		Headers:       map[string]string{},
 		Level:         "info",
 		FormatterName: "json",

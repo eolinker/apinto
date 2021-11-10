@@ -1,20 +1,24 @@
 package plugin_manager
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/eolinker/eosc/common/bean"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/http"
+	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/goku/filter"
 )
 
 var (
-	errConfig          = errors.New("invalid config")
-	ErrorDriverNotExit = errors.New("drive not exit")
+	errConfig                      = errors.New("invalid config")
+	ErrorDriverNotExit             = errors.New("drive not exit")
+	ErrorGlobalPluginMastConfig    = errors.New("global mast have config")
+	ErrorGlobalPluginConfigInvalid = errors.New("invalid global config")
 )
 
 type IPluginChain interface {
@@ -97,8 +101,8 @@ func (p *PluginManager) RemoveObj(id string) (*PluginObj, bool) {
 	return v, ok
 }
 
-func (p *PluginManager) createFilters(conf map[string]*OrdinaryPlugin, t string) []http.IFilter {
-	filters := make([]http.IFilter, 0, len(conf))
+func (p *PluginManager) createFilters(conf map[string]*OrdinaryPlugin, t string) []http_service.IFilter {
+	filters := make([]http_service.IFilter, 0, len(conf))
 	for _, plugin := range p.plugins {
 		if plugin.Status == StatusDisable || plugin.Status == "" || plugin.Type != t {
 			// 当插件类型不匹配，跳过
@@ -117,15 +121,19 @@ func (p *PluginManager) createFilters(conf map[string]*OrdinaryPlugin, t string)
 		} else if plugin.Status != StatusGlobal && plugin.Status != StatusEnable {
 			continue
 		}
-
-		worker, err := plugin.drive.Create(fmt.Sprintf("%s@%s", plugin.Name, p.name), plugin.Name, c, nil)
+		confObj, err := toConfig(c, plugin.drive.ConfigType())
 		if err != nil {
 			log.Error("plugin manager: fail to createFilters filter,error is ", err)
 			continue
 		}
-		fi, ok := worker.(http.IFilter)
+		worker, err := plugin.drive.Create(fmt.Sprintf("%s@%s", plugin.Name, p.name), plugin.Name, confObj, nil)
+		if err != nil {
+			log.Error("plugin manager: fail to createFilters filter,error is ", err)
+			continue
+		}
+		fi, ok := worker.(http_service.IFilter)
 		if !ok {
-			log.Error("extender ", plugin.ID, " not plugin for http.Filter")
+			log.Error("extender ", plugin.ID, " not plugin for http-service.Filter")
 			continue
 		}
 		filters = append(filters, fi)
@@ -184,6 +192,26 @@ func NewPluginManager(profession, name string) *PluginManager {
 		plugins:    nil,
 		pluginObjs: eosc.NewUntyped(),
 	}
+
 	bean.Autowired(&pm.extenderDrivers)
 	return pm
+}
+
+func toConfig(v interface{}, t reflect.Type) (interface{}, error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	obj := newConfig(t)
+	err = json.Unmarshal(data, obj)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+func newConfig(t reflect.Type) interface{} {
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	return reflect.New(t).Interface()
 }

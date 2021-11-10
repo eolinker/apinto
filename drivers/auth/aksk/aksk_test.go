@@ -48,17 +48,17 @@ func TestAKSK(t *testing.T) {
 func createTestContext() {
 	//使用正确sk加密后的签名
 
-	// http
-	//request1, _ := http.NewRequest("GET", "http://www.demo.com/demo/login?parm1=value1&parm2=", &body{})
+	// http-service
+	//request1, _ := http-service.NewRequest("GET", "http://www.demo.com/demo/login?parm1=value1&parm2=", &body{})
 	//request1.Header.SetDriver("Authorization-Type", "ak/sk")
 	//request1.Header.SetDriver("Content-Type", "application/json")
 	//request1.Header.SetDriver("x-gateway-date", "20200605T104456Z")
 	//request1.Header.SetDriver("Authorization", "HMAC-SHA256 Access=4c897cfdfca60a59983adc2627942e7e, SignedHeaders=content-type;host;x-gateway-date, Signature=0c3d2598d931f36ca7d261d52dcd29f09d6573671bd593b7cbc55f73eb942758")
 	//Context1 := http_context.NewContext(request1, &writer{})
 
-	// fast http
+	// fast http-service
 	request1 := fasthttp.AcquireRequest()
-	request1.SetRequestURI("http://www.demo.com/demo/login?parm1=value1&parm2=")
+	request1.SetRequestURI("http-service://www.demo.com/demo/login?parm1=value1&parm2=")
 	request1.Header.SetMethod(fasthttp.MethodGet)
 	request1.Header.Set("Authorization-Type", "ak/sk")
 	request1.Header.Set("Content-Type", "application/json")
@@ -76,8 +76,8 @@ func createTestContext() {
 
 	//使用错误sk加密后的签名
 
-	// http
-	//request2, _ := http.NewRequest("GET", "http://www.demo.com/demo/login?parm1=value1&parm2=", &body{})
+	// http-service
+	//request2, _ := http-service.NewRequest("GET", "http://www.demo.com/demo/login?parm1=value1&parm2=", &body{})
 	//request2.Header.SetDriver("Authorization-Type", "ak/sk")
 	//request2.Header.SetDriver("Content-Type", "application/json")
 	//request2.Header.SetDriver("x-gateway-date", "20200605T104456Z")
@@ -86,7 +86,7 @@ func createTestContext() {
 
 	// https
 	request2 := fasthttp.AcquireRequest()
-	request2.SetRequestURI("http://www.demo.com/demo/login?parm1=value1&parm2=")
+	request2.SetRequestURI("http-service://www.demo.com/demo/login?parm1=value1&parm2=")
 	request2.Header.SetMethod(fasthttp.MethodGet)
 	request2.Header.Set("Authorization-Type", "ak/sk")
 	request2.Header.Set("Content-Type", "application/json")
@@ -102,8 +102,8 @@ func createTestContext() {
 	testContexts = append(testContexts, Context2)
 
 	//传输了不存在的ak
-	// http
-	//request3, _ := http.NewRequest("GET", "http://www.demo.com/demo/login?parm1=value1&parm2=", &body{})
+	// http-service
+	//request3, _ := http-service.NewRequest("GET", "http://www.demo.com/demo/login?parm1=value1&parm2=", &body{})
 	//request3.Header.SetDriver("Authorization-Type", "ak/sk")
 	//request3.Header.SetDriver("Content-Type", "application/json")
 	//request3.Header.SetDriver("x-gateway-date", "20200605T104456Z")
@@ -111,9 +111,9 @@ func createTestContext() {
 	//Context3 := http_context.NewContext(request3, &writer{})
 	//testContexts = append(testContexts, Context3)
 
-	// fast http
+	// fast http-service
 	request3 := fasthttp.AcquireRequest()
-	request3.SetRequestURI("http://www.demo.com/demo/login?parm1=value1&parm2=")
+	request3.SetRequestURI("http-service://www.demo.com/demo/login?parm1=value1&parm2=")
 	request3.Header.SetMethod(fasthttp.MethodGet)
 	request3.Header.Set("Authorization-Type", "ak/sk")
 	request3.Header.Set("Content-Type", "application/json")

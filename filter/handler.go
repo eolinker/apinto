@@ -1,13 +1,13 @@
 package filter
 
-import "github.com/eolinker/eosc/http"
+import http_service "github.com/eolinker/eosc/http-service"
 
 type _ChainHandler struct {
 	orgFilter    *_ChainFilter
 	resetHandler IChainReset
 }
 
-func createHandler(filters []http.IFilter) *_ChainHandler {
+func createHandler(filters []http_service.IFilter) *_ChainHandler {
 	orgFilter := toFilter(filters)
 	return &_ChainHandler{
 		orgFilter:    orgFilter,
@@ -16,17 +16,17 @@ func createHandler(filters []http.IFilter) *_ChainHandler {
 
 }
 
-func (c *_ChainHandler) ToFilter() http.IFilter {
+func (c *_ChainHandler) ToFilter() http_service.IFilter {
 	return c.orgFilter
 }
 
-func (c *_ChainHandler) DoChain(ctx http.IHttpContext) error {
+func (c *_ChainHandler) DoChain(ctx http_service.IHttpContext) error {
 	return c.orgFilter.DoFilter(ctx, nil)
 }
 
-func (c *_ChainHandler) Append(filters ...http.IFilter) IChain {
+func (c *_ChainHandler) Append(filters ...http_service.IFilter) IChain {
 	pre := c.ToFilter()
-	fs := make([]http.IFilter, 0, len(filters)+1)
+	fs := make([]http_service.IFilter, 0, len(filters)+1)
 	fs = append(fs, pre)
 	fs = append(fs, filters...)
 	n := createHandler(fs)
@@ -34,9 +34,9 @@ func (c *_ChainHandler) Append(filters ...http.IFilter) IChain {
 	return n
 }
 
-func (c *_ChainHandler) Insert(filters ...http.IFilter) IChain {
+func (c *_ChainHandler) Insert(filters ...http_service.IFilter) IChain {
 	pre := c.ToFilter()
-	fs := make([]http.IFilter, 0, len(filters)+1)
+	fs := make([]http_service.IFilter, 0, len(filters)+1)
 	fs = append(fs, filters...)
 	fs = append(fs, pre)
 	n := createHandler(fs)
@@ -44,7 +44,7 @@ func (c *_ChainHandler) Insert(filters ...http.IFilter) IChain {
 	return n
 }
 
-func (c *_ChainHandler) Reset(filters ...http.IFilter) {
+func (c *_ChainHandler) Reset(filters ...http_service.IFilter) {
 	if c.resetHandler == nil {
 		c.orgFilter.Reset(filters...)
 		return

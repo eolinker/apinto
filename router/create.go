@@ -13,13 +13,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/eolinker/eosc/http"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 //RulePath 路由路径上的指标结构体，包含指标和相应的检查器
 type RulePath struct {
 	CMD     string
-	Checker http.Checker
+	Checker http_service.Checker
 }
 
 //Rule 路由路径结构体，包含路径上的指标和目标服务
@@ -147,7 +147,7 @@ func (cr *createRoot) toRouter() IRouter {
 
 type IEndPoint interface {
 	CMDs() []string
-	Get(CMD string) (http.Checker, bool)
+	Get(CMD string) (http_service.Checker, bool)
 	Target() string
 	EndPoint() string
 }
@@ -155,7 +155,7 @@ type IEndPoint interface {
 type tEndpoint struct {
 	target   string
 	cmds     []string
-	checkers map[string]http.Checker
+	checkers map[string]http_service.Checker
 	endpoint string
 }
 
@@ -163,7 +163,7 @@ func (e *tEndpoint) CMDs() []string {
 	return e.cmds
 }
 
-func (e *tEndpoint) Get(CMD string) (http.Checker, bool) {
+func (e *tEndpoint) Get(CMD string) (http_service.Checker, bool) {
 	c, h := e.checkers[CMD]
 	return c, h
 }
@@ -179,7 +179,7 @@ func (e *tEndpoint) EndPoint() string {
 
 //NewEndpoint 创建路由树的端点
 func NewEndpoint(target string, path []RulePath) *tEndpoint {
-	cs := make(map[string]http.Checker)
+	cs := make(map[string]http_service.Checker)
 	cmds := make([]string, 0, len(path))
 	build := strings.Builder{}
 
@@ -216,12 +216,12 @@ func (cr *createRoot) add(path []RulePath, target string) error {
 }
 
 type createChecker struct {
-	checker  http.Checker
+	checker  http_service.Checker
 	nexts    createNodes
 	endpoint *tEndpoint
 }
 
-func newCreateChecker(checker http.Checker) *createChecker {
+func newCreateChecker(checker http_service.Checker) *createChecker {
 	return &createChecker{
 		checker:  checker,
 		nexts:    make(createNodes),
@@ -278,7 +278,7 @@ func (cn *createNode) toRouter(helper ICreateHelper) IRouter {
 	tmp := make([]*createChecker, 0, len(cn.checkers))
 
 	for _, c := range cn.checkers {
-		if c.checker.CheckType() == http.CheckTypeEqual {
+		if c.checker.CheckType() == http_service.CheckTypeEqual {
 			r := c.toRouter(helper)
 			if r != nil {
 				equals[c.checker.Value()] = r
@@ -291,7 +291,7 @@ func (cn *createNode) toRouter(helper ICreateHelper) IRouter {
 	sort.Sort(createCheckers(tmp))
 
 	rs := make([]IRouter, 0, len(tmp))
-	cs := make([]http.Checker, 0, len(tmp))
+	cs := make([]http_service.Checker, 0, len(tmp))
 	for _, c := range tmp {
 		r := c.toRouter(helper)
 		if r != nil {
@@ -309,7 +309,7 @@ func (cn *createNode) toRouter(helper ICreateHelper) IRouter {
 }
 
 //add 将路由指标加入到节点中
-func (cn *createNode) add(checker http.Checker, path []RulePath, endpoint *tEndpoint) error {
+func (cn *createNode) add(checker http_service.Checker, path []RulePath, endpoint *tEndpoint) error {
 	// 若路由指标的值在该节点已存在则加入，否则生成一个新的子节点
 	k := checker.Key()
 	cc, has := cn.checkers[k]
