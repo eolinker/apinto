@@ -4,7 +4,7 @@ import "strings"
 
 //Config 静态服务发现配置
 type Config struct {
-	//Name     string            `json:"name"`
+	//Name     string            `json:"factoryName"`
 	//Driver   string            `json:"driver"`
 	//Labels   map[string]string `json:"labels"`
 	Scheme   string        `json:"scheme"`
