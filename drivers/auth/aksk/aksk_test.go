@@ -58,7 +58,7 @@ func createTestContext() {
 
 	// fast http-service
 	request1 := fasthttp.AcquireRequest()
-	request1.SetRequestURI("http-service://www.demo.com/demo/login?parm1=value1&parm2=")
+	request1.SetRequestURI("http://www.demo.com/demo/login?parm1=value1&parm2=")
 	request1.Header.SetMethod(fasthttp.MethodGet)
 	request1.Header.Set("Authorization-Type", "ak/sk")
 	request1.Header.Set("Content-Type", "application/json")
@@ -86,7 +86,7 @@ func createTestContext() {
 
 	// https
 	request2 := fasthttp.AcquireRequest()
-	request2.SetRequestURI("http-service://www.demo.com/demo/login?parm1=value1&parm2=")
+	request2.SetRequestURI("http://www.demo.com/demo/login?parm1=value1&parm2=")
 	request2.Header.SetMethod(fasthttp.MethodGet)
 	request2.Header.Set("Authorization-Type", "ak/sk")
 	request2.Header.Set("Content-Type", "application/json")
@@ -113,7 +113,7 @@ func createTestContext() {
 
 	// fast http-service
 	request3 := fasthttp.AcquireRequest()
-	request3.SetRequestURI("http-service://www.demo.com/demo/login?parm1=value1&parm2=")
+	request3.SetRequestURI("http://www.demo.com/demo/login?parm1=value1&parm2=")
 	request3.Header.SetMethod(fasthttp.MethodGet)
 	request3.Header.Set("Authorization-Type", "ak/sk")
 	request3.Header.Set("Content-Type", "application/json")

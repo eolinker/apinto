@@ -101,7 +101,7 @@ func getConfig(target service.IService, cf *DriverConfig) *router_http.Config {
 		methods = []string{"*"}
 	}
 
-	//protocol := "http-service"
+	//protocol := "http"
 	//if cf.Protocol == "https" {
 	//	protocol = "https"
 	//}

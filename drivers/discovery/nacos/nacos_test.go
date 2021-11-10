@@ -11,7 +11,7 @@ func TestGetApp(t *testing.T) {
 	serviceName := "nacos.naming.serviceName"
 	cfg := Config{
 		Name:   "nacos",
-		Scheme: "http-service",
+		Scheme: "http",
 		Config: AccessConfig{
 			Address: []string{
 				"10.1.94.48:8848",

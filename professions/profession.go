@@ -23,8 +23,8 @@ func GokuProfession() []*eosc.ProfessionConfig {
 			Drivers: []*eosc.DriverConfig{
 				{
 					Id:     "eolinker.com:goku:http_router",
-					Name:   "http-service",
-					Label:  "http-service",
+					Name:   "http",
+					Label:  "http",
 					Desc:   "http路由",
 					Params: nil,
 				},
@@ -41,7 +41,7 @@ func GokuProfession() []*eosc.ProfessionConfig {
 			Drivers: []*eosc.DriverConfig{
 				{
 					Id:    "eolinker.com:goku:service_http",
-					Name:  "http-service",
+					Name:  "http",
 					Label: "service",
 					Desc:  "服务",
 				},

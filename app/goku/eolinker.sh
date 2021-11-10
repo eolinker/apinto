@@ -3,7 +3,7 @@ curl -X POST http://127.0.0.1:9400/api/service --data '{
 
     "name": "gokuapi",
 
-    "driver": "http-service",
+    "driver": "http",
 
     "desc": "访问官网",
 
@@ -24,9 +24,9 @@ curl -X POST http://127.0.0.1:9400/api/router --data '{
 
     "name": "gokuapi",
 
-    "driver": "http-service",
+    "driver": "http",
 
-    "desc": "http-service",
+    "desc": "http",
 
     "listen": 8888,
 

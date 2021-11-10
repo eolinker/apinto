@@ -21,8 +21,8 @@ type AccessConfig struct {
 
 func (c *Config) getScheme() string {
 	scheme := strings.ToLower(c.Scheme)
-	if scheme != "http-service" && scheme != "https" {
-		scheme = "http-service"
+	if scheme != "http" && scheme != "https" {
+		scheme = "http"
 	}
 	return scheme
 }

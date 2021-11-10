@@ -45,7 +45,7 @@ func (c *Config) rebuild() {
 	}
 
 	if !checkValidParams(strings.ToUpper(c.Scheme), validScheme) {
-		c.Scheme = "http-service"
+		c.Scheme = "http"
 	}
 }
 

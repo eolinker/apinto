@@ -12,7 +12,7 @@ import (
 func TestHTTPLog(t *testing.T) {
 	c := &httplog_transporter.Config{
 		Method:  "POST",
-		Url:     "http-service://127.0.0.1:8080/test",
+		Url:     "http://127.0.0.1:8080/test",
 		Headers: http.Header{"a": []string{"1"}},
 		Level:   4, // info
 	}
@@ -44,7 +44,7 @@ func TestHTTPLog(t *testing.T) {
 		Name:          "Testhttplog",
 		Driver:        "httplog",
 		Method:        "GET",
-		URL:           "http-service://127.0.0.1:8081/test",
+		URL:           "http://127.0.0.1:8081/test",
 		Headers:       map[string]string{},
 		Level:         "info",
 		FormatterName: "json",
