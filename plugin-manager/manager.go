@@ -3,7 +3,8 @@ package plugin_manager
 import (
 	"errors"
 	"fmt"
-	"strings"
+
+	"github.com/eolinker/eosc/common/bean"
 
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/http"
@@ -12,27 +13,45 @@ import (
 )
 
 var (
-	id        = "plugin@setting"
-	errConfig = errors.New("invalid config")
+	errConfig          = errors.New("invalid config")
+	ErrorDriverNotExit = errors.New("drive not exit")
 )
 
-func RegisterFilter(factory IPluginFactory) {
-	if factory == nil {
-		return
-	}
-	manager.factories.Set(factory.Name(), factory)
+type IPluginChain interface {
+	filter.IChain
+	Destroy()
+}
+type IPluginManager interface {
+	CreateRouter(id string, conf map[string]*OrdinaryPlugin) IPluginChain
+	CreateService(id string, conf map[string]*OrdinaryPlugin) IPluginChain
+	CreateUpstream(id string, conf map[string]*OrdinaryPlugin) IPluginChain
 }
 
-var manager = NewPluginManager()
-
 type PluginManager struct {
-	factories  eosc.IUntyped
-	plugins    []*GlobalPlugin
-	pluginObjs eosc.IUntyped
+	id string
+
+	profession      string
+	name            string
+	extenderDrivers eosc.IExtenderDrivers
+	plugins         Plugins
+	pluginObjs      eosc.IUntyped
+}
+
+func (p *PluginManager) CreateRouter(id string, conf map[string]*OrdinaryPlugin) IPluginChain {
+	return p.newChain(id, conf, pluginRouter)
+}
+
+func (p *PluginManager) CreateService(id string, conf map[string]*OrdinaryPlugin) IPluginChain {
+	return p.newChain(id, conf, pluginService)
+}
+
+func (p *PluginManager) CreateUpstream(id string, conf map[string]*OrdinaryPlugin) IPluginChain {
+	return p.newChain(id, conf, pluginUpstream)
 }
 
 func (p *PluginManager) Id() string {
-	return id
+
+	return p.id
 }
 
 func (p *PluginManager) Start() error {
@@ -40,11 +59,14 @@ func (p *PluginManager) Start() error {
 }
 
 func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	cfg, ok := conf.(Plugins)
-	if !ok {
-		return errConfig
+
+	plugins, err := p.check(conf)
+	if err != nil {
+		return err
 	}
-	p.plugins = cfg
+
+	p.plugins = plugins
+
 	// 遍历，全量更新
 	for _, obj := range p.pluginObjs.All() {
 		v, ok := obj.(*PluginObj)
@@ -65,24 +87,8 @@ func (p *PluginManager) CheckSkill(skill string) bool {
 	return false
 }
 
-func DefaultManager() *PluginManager {
-	return manager
-}
-
-type IPluginManager interface {
-	CreateRouter(id string, conf map[string]*OrdinaryPlugin) filter.IChain
-	CreateService(id string, conf map[string]*OrdinaryPlugin) filter.IChain
-	CreateUpstream(id string, conf map[string]*OrdinaryPlugin) filter.IChain
-}
-
-type PluginObj struct {
-	filter.IChainHandler
-	id   string
-	t    string
-	conf map[string]*OrdinaryPlugin
-}
-
 func (p *PluginManager) RemoveObj(id string) (*PluginObj, bool) {
+
 	value, ok := p.pluginObjs.Del(id)
 	if !ok {
 		return nil, false
@@ -93,38 +99,33 @@ func (p *PluginManager) RemoveObj(id string) (*PluginObj, bool) {
 
 func (p *PluginManager) createFilters(conf map[string]*OrdinaryPlugin, t string) []http.IFilter {
 	filters := make([]http.IFilter, 0, len(conf))
-	for _, cfg := range p.plugins {
-		if cfg.Status == StatusDisable || cfg.Status == "" || cfg.Type != t {
+	for _, plugin := range p.plugins {
+		if plugin.Status == StatusDisable || plugin.Status == "" || plugin.Type != t {
 			// 当插件类型不匹配，跳过
 			continue
 		}
-		c := cfg.Config
-		if v, ok := conf[cfg.ID]; ok {
+		c := plugin.Config
+		if v, ok := conf[plugin.Name]; ok {
 			if v.Disable {
 				// 不启用该插件
 				continue
 			}
-			if cfg.Status != StatusGlobal && cfg.Status != StatusEnable {
+			if plugin.Status != StatusGlobal && plugin.Status != StatusEnable {
 				continue
 			}
 			c = v
-		} else if cfg.Status != StatusGlobal && cfg.Status != StatusEnable {
+		} else if plugin.Status != StatusGlobal && plugin.Status != StatusEnable {
 			continue
 		}
 
-		f, has := p.factories.Get(cfg.ID)
-		if !has {
-			log.Warn("plugin manager: no plugin factory,id is ", cfg.ID)
-			continue
-		}
-		factory, ok := f.(IPluginFactory)
-		if !ok {
-			log.Warn("plugin manager: no implement factory interface,id is ", cfg.ID)
-			continue
-		}
-		fi, err := factory.Create(c)
+		worker, err := plugin.drive.Create(fmt.Sprintf("%s@%s", plugin.Name, p.name), plugin.Name, c, nil)
 		if err != nil {
 			log.Error("plugin manager: fail to createFilters filter,error is ", err)
+			continue
+		}
+		fi, ok := worker.(http.IFilter)
+		if !ok {
+			log.Error("extender ", plugin.ID, " not plugin for http.Filter")
 			continue
 		}
 		filters = append(filters, fi)
@@ -132,7 +133,7 @@ func (p *PluginManager) createFilters(conf map[string]*OrdinaryPlugin, t string)
 	return filters
 }
 
-func (p *PluginManager) new(id string, conf map[string]*OrdinaryPlugin, t string) filter.IChain {
+func (p *PluginManager) newChain(id string, conf map[string]*OrdinaryPlugin, t string) *PluginObj {
 	chain := filter.NewChain(p.createFilters(conf, t))
 	obj := &PluginObj{
 		IChainHandler: chain,
@@ -141,48 +142,48 @@ func (p *PluginManager) new(id string, conf map[string]*OrdinaryPlugin, t string
 		t:             t,
 	}
 	p.pluginObjs.Set(fmt.Sprintf("%s:%s", id, t), obj)
-	return chain
+	return obj
 }
 
-func (p *PluginManager) CreateRouter(id string, conf map[string]*OrdinaryPlugin) filter.IChain {
-	return p.new(id, conf, pluginRouter)
-}
-
-func (p *PluginManager) CreateService(id string, conf map[string]*OrdinaryPlugin) filter.IChain {
-	return p.new(id, conf, pluginService)
-}
-
-func (p *PluginManager) CreateUpstream(id string, conf map[string]*OrdinaryPlugin) filter.IChain {
-	return p.new(id, conf, pluginUpstream)
-}
-
-func (p *PluginManager) Check(conf interface{}) error {
-	cfg, ok := conf.(Plugins)
+func (p *PluginManager) check(conf interface{}) (Plugins, error) {
+	cfg, ok := conf.(*PluginWorkerConfig)
 	if !ok {
-		return errConfig
+		return nil, errConfig
 	}
-	plugins := make([]string, 0, len(cfg))
-	for _, pl := range cfg {
-		_, has := p.factories.Get(pl.ID)
-		if !has {
-			plugins = append(plugins, pl.ID)
+
+	plugins := make(Plugins, 0, len(cfg.Plugins))
+	for _, cf := range cfg.Plugins {
+		plugin, err := p.newPlugin(cf)
+		if err != nil {
+			return nil, err
 		}
+		plugins = append(plugins, plugin)
 	}
-	if len(plugins) < 1 {
-		return nil
+	return plugins, nil
+
+}
+func (p *PluginManager) Check(conf interface{}) error {
+	_, err := p.check(conf)
+	if err != nil {
+		return err
 	}
-	return errors.New(fmt.Sprintf("plugins(%s) are not exist", strings.Join(plugins, ",")))
+	return nil
 }
 
 func (p *PluginManager) IsExists(id string) bool {
-	_, has := p.factories.Get(id)
+	_, has := p.extenderDrivers.GetDriver(id)
 	return has
 }
 
-func NewPluginManager() *PluginManager {
-	return &PluginManager{
-		factories:  eosc.NewUntyped(),
-		plugins:    make([]*GlobalPlugin, 0),
+func NewPluginManager(profession, name string) *PluginManager {
+
+	pm := &PluginManager{
+		id:         fmt.Sprintf("%s@%s", name, profession),
+		profession: profession,
+		name:       name,
+		plugins:    nil,
 		pluginObjs: eosc.NewUntyped(),
 	}
+	bean.Autowired(&pm.extenderDrivers)
+	return pm
 }
