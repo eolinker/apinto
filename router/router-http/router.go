@@ -22,17 +22,13 @@ type IRouter interface {
 	Handler(ctx *fasthttp.RequestCtx)
 }
 
-type IRouterFilter interface {
-	DoFilter(ctx *http_context.Context) (isContinue bool, err error)
-}
-
 //Router 实现了路由树接口
 type Router struct {
 	locker  sync.Locker
 	data    eosc.IUntyped
 	match   IMatcher
 	handler fasthttp.RequestHandler
-	chain   []IRouterFilter
+	//chain   []IRouterFilter
 }
 
 //NewRouter 新建路由树
@@ -65,9 +61,6 @@ func (r *Router) Handler(requestCtx *fasthttp.RequestCtx) {
 		return
 	}
 	h.Handle(ctx, NewEndPoint(e))
-	for _, c := range r.chain {
-
-	}
 
 }
 

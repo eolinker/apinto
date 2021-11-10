@@ -1,6 +1,6 @@
 package checker
 
-import "github.com/eolinker/eosc/http"
+import http_service "github.com/eolinker/eosc/http-service"
 
 var globalCheckerAll = &checkerAll{}
 
@@ -25,8 +25,8 @@ func (t *checkerAll) Check(v string, has bool) bool {
 }
 
 //CheckType 返回检查器的类型值
-func (t *checkerAll) CheckType() http.CheckType {
-	return http.CheckTypeAll
+func (t *checkerAll) CheckType() http_service.CheckType {
+	return http_service.CheckTypeAll
 }
 
 //newCheckerAll 创建一个任意匹配类型的检查器

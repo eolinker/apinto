@@ -1,28 +1,56 @@
 package plugin_manager
 
-const (
-	StatusDisable = "disable"
-	StatusEnable  = "enable"
-	StatusGlobal  = "global"
+import (
+	"fmt"
 
-	pluginRouter   = "router"
-	pluginService  = "service"
-	pluginUpstream = "upstream"
+	"github.com/eolinker/eosc/log"
+
+	"github.com/eolinker/eosc"
 )
 
-type Plugins []*GlobalPlugin
+type Plugins []*Plugin
 
-//GlobalPlugin 全局插件配置
-type GlobalPlugin struct {
-	Name   string      `json:"name"`
-	ID     string      `json:"id"`
-	Type   string      `json:"type"`
-	Status string      `json:"status"`
-	Config interface{} `json:"config"`
+type Plugin struct {
+	*PluginConfig
+	drive eosc.IExtenderDriver
 }
 
-//OrdinaryPlugin 普通插件配置，在router、service、upstream的插件格式
-type OrdinaryPlugin struct {
-	Disable bool        `json:"disable"`
-	Config  interface{} `json:"config"`
+func (p *PluginManager) newPlugin(conf *PluginConfig) (*Plugin, error) {
+
+	d, err := p.getExtenderDriver(conf)
+	if err != nil {
+		return nil, err
+	}
+	if conf.Status == StatusGlobal && conf.Config != nil {
+		return nil, ErrorGlobalPluginMastConfig
+	}
+	if conf.Status == StatusGlobal {
+		v, err := toConfig(conf.Config, d.ConfigType())
+		if err != nil {
+			log.Info("global plugin:", conf.Name, "config:", err)
+			return nil, fmt.Errorf("%s:%w", conf.Name, ErrorGlobalPluginConfigInvalid)
+		}
+		if dc, ok := d.(eosc.IExtenderConfigChecker); ok {
+			errCheck := dc.Check(v, nil)
+			if errCheck != nil {
+				return nil, errCheck
+			}
+		}
+
+	}
+
+	return &Plugin{
+		PluginConfig: conf,
+		drive:        d,
+	}, nil
+
+}
+
+func (p *PluginManager) getExtenderDriver(config *PluginConfig) (eosc.IExtenderDriver, error) {
+
+	driverFactory, has := p.extenderDrivers.GetDriver(config.ID)
+	if !has {
+		return nil, fmt.Errorf("id:%w", ErrorDriverNotExit)
+	}
+	return driverFactory.Create(p.id, config.Name, config.Name, config.Type, nil)
 }

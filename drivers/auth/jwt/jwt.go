@@ -3,9 +3,10 @@ package jwt
 import (
 	"fmt"
 
+	http_service "github.com/eolinker/eosc/http-service"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/goku/auth"
-	http_context "github.com/eolinker/goku/node/http-context"
 )
 
 //supportTypes 当前驱动支持的authorization type值
@@ -57,7 +58,7 @@ func (j *jwt) CheckSkill(skill string) bool {
 	return auth.CheckSkill(skill)
 }
 
-func (j *jwt) Auth(context *http_context.Context) error {
+func (j *jwt) Auth(context http_service.IHttpContext) error {
 	authorizationType, has := context.Request().Header().Get(auth.AuthorizationType)
 	if !has {
 		return auth.ErrorInvalidType

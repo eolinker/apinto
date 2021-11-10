@@ -1,8 +1,9 @@
 package consul
 
 import (
-	"github.com/hashicorp/consul/api"
 	"strings"
+
+	"github.com/hashicorp/consul/api"
 )
 
 //Config consul驱动配置

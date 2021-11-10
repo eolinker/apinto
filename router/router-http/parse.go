@@ -1,7 +1,7 @@
 package router_http
 
 import (
-	"github.com/eolinker/eosc/http"
+	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/goku/router"
 	"github.com/eolinker/goku/service"
 )
@@ -27,7 +27,7 @@ func parse(cs []*Config) (IMatcher, error) {
 		//根据路由指标hosts、methods生成相应检查器并封装成RulePath
 		hosts := make([]router.RulePath, 0, len(c.Hosts))
 		for _, h := range c.Hosts {
-			hck, e := http.Parse(h)
+			hck, e := http_service.Parse(h)
 			if e != nil {
 				return nil, e
 			}
@@ -38,7 +38,7 @@ func parse(cs []*Config) (IMatcher, error) {
 		}
 		methods := make([]router.RulePath, 0, len(c.Methods))
 		for _, m := range c.Methods {
-			mck, e := http.Parse(m)
+			mck, e := http_service.Parse(m)
 			if e != nil {
 				return nil, e
 			}

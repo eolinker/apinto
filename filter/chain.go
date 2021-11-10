@@ -1,32 +1,23 @@
 package filter
 
-import "github.com/eolinker/eosc/http"
+import http_service "github.com/eolinker/eosc/http-service"
 
-type ChainItem struct {
-	filter http.IFilter
-	next   http.IChain
+type IChainReset interface {
+	Reset(filters ...http_service.IFilter)
 }
 
-func create(filters []http.IFilter) *ChainItem {
-	if len(filters) == 0 {
-		return &ChainItem{
-			filter: nil,
-			next:   nil,
-		}
-	}
-	return &ChainItem{
-		filter: filters[0],
-		next:   create(filters[1:]),
-	}
+type IChain interface {
+	http_service.IChain
+	ToFilter() http_service.IFilter
+	Append(filters ...http_service.IFilter) IChain
+	Insert(filters ...http_service.IFilter) IChain
 }
-func (c *ChainItem) DoFilter(ctx http.IHttpContext) error {
-	if c == nil {
-		return nil
-	}
-	if c.filter != nil {
-		err := c.filter.DoFilter(ctx, c.next)
-		return err
-	}
 
-	return nil
+type IChainHandler interface {
+	IChain
+	IChainReset
+}
+
+func NewChain(filters []http_service.IFilter) IChainHandler {
+	return createHandler(filters)
 }
