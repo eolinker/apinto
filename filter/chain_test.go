@@ -117,11 +117,11 @@ func (t *TestContext) DelHeader(key string) {
 	panic("implement me")
 }
 
-func (t *TestContext) Set() http_service.Header {
+func (t *TestContext) Set() http_service.IHeader {
 	panic("implement me")
 }
 
-func (t *TestContext) Append() http_service.Header {
+func (t *TestContext) Append() http_service.IHeader {
 	panic("implement me")
 }
 
@@ -161,11 +161,11 @@ func (t *TestContext) RequestId() string {
 	panic("implement me")
 }
 
-func (t *TestContext) Request() http_service.RequestReader {
+func (t *TestContext) Request() http_service.IRequestReader {
 	panic("implement me")
 }
 
-func (t *TestContext) Proxy() http_service.Request {
+func (t *TestContext) Proxy() http_service.IRequest {
 	panic("implement me")
 }
 
@@ -173,7 +173,7 @@ func (t *TestContext) Labels() map[string]string {
 	panic("implement me")
 }
 
-func (t *TestContext) ProxyResponse() http_service.ResponseReader {
+func (t *TestContext) ProxyResponse() http_service.IResponseReader {
 	panic("implement me")
 }
 

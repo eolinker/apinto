@@ -120,7 +120,7 @@ func (s *serviceWorker) ProxyAddr() string {
 }
 
 //Handle 将服务发送到负载
-func (s *serviceWorker) Handle(ctx *http_context.Context, router service.IRouterEndpoint) error {
+func (s *serviceWorker) Handle(ctx http_service.IHttpContext) error {
 	// 构造context
 	defer func() {
 		if e := recover(); e != nil {

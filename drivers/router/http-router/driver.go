@@ -15,7 +15,7 @@ type HTTPRouterDriver struct {
 }
 
 //NewHTTPRouter 创建一个http路由驱动
-func NewHTTPRouter(profession, name, label, desc string, params map[string]string) *HTTPRouterDriver {
+func NewHTTPRouter() *HTTPRouterDriver {
 	return &HTTPRouterDriver{
 		configType: reflect.TypeOf(new(DriverConfig)),
 	}

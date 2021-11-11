@@ -1,4 +1,4 @@
-package auth
+package rewrite
 
 import (
 	"reflect"
@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	Name = "auth"
+	Name = "url_rewrite"
 )
 
 func Register(register eosc.IExtenderDriverRegister) {
