@@ -11,7 +11,7 @@ package router_http
 import (
 	"sync"
 
-	"github.com/eolinker/eosc/http"
+	http_service "github.com/eolinker/eosc/http-service"
 
 	"github.com/eolinker/goku/router"
 	"github.com/eolinker/goku/service"
@@ -29,12 +29,12 @@ type EndPoint struct {
 }
 
 //Header 通过header的key返回对应指标值的checker
-func (e *EndPoint) Header(name string) (http.Checker, bool) {
+func (e *EndPoint) Header(name string) (http_service.Checker, bool) {
 	return e.endpoint.Get(toHeader(name))
 }
 
 //Query 通过query的key返回对应指标值的checker
-func (e *EndPoint) Query(name string) (http.Checker, bool) {
+func (e *EndPoint) Query(name string) (http_service.Checker, bool) {
 	return e.endpoint.Get(toQuery(name))
 }
 
@@ -74,6 +74,6 @@ func NewEndPoint(endpoint router.IEndPoint) *EndPoint {
 }
 
 //Location 返回location指标的checker
-func (e *EndPoint) Location() (http.Checker, bool) {
+func (e *EndPoint) Location() (http_service.Checker, bool) {
 	return e.endpoint.Get(cmdLocation)
 }

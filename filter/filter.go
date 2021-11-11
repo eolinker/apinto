@@ -1,52 +1,44 @@
 package filter
 
-import (
-	"github.com/eolinker/eosc/http"
-)
+import http_service "github.com/eolinker/eosc/http-service"
 
-type IChain interface {
-	http.IChain
-	Append(filters ...http.IFilter) IChain
-	Insert(filters ...http.IFilter) IChain
-	Merge(chain IChain) IChain
-	Reset(filters []http.IFilter)
+type _ChainFilter struct {
+	startNode *_ChainNode
 }
 
-var _ IChain = (*Chain)(nil)
-
-type Chain struct {
-	*ChainItem
-	filters []http.IFilter
+func toFilter(filters []http_service.IFilter) *_ChainFilter {
+	c := &_ChainFilter{}
+	c.Reset(filters...)
+	return c
 }
 
-func (c *Chain) Reset(filters []http.IFilter) {
+func (c *_ChainFilter) Reset(filters ...http_service.IFilter) {
 
+	c.startNode = createNode(filters, c)
 }
 
-func Create(filters []http.IFilter) IChain {
-	return &Chain{
-		ChainItem: create(filters),
-		filters:   filters,
+func (c *_ChainFilter) DoChain(ctx http_service.IHttpContext) error {
+	value := ctx.Value(c)
+	if value == nil {
+		return nil
 	}
+	if next, ok := value.(http_service.IChain); ok {
+
+		return next.DoChain(ctx)
+	}
+	return nil
 }
 
-func (c *Chain) Append(filters ...http.IFilter) IChain {
-	nf := make([]http.IFilter, 0, len(filters)+len(c.filters))
-	nf = append(nf, c.filters...)
-	nf = append(nf, filters...)
-	return Create(nf)
-}
+func (c *_ChainFilter) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
 
-func (c *Chain) Insert(filters ...http.IFilter) IChain {
-	nf := make([]http.IFilter, 0, len(filters)+len(c.filters))
-	nf = append(nf, filters...)
-	nf = append(nf, c.filters...)
-	return Create(nf)
-}
-
-func (c *Chain) Merge(chain IChain) IChain {
-
-	return c.Append(&NextFilter{
-		next: chain,
-	})
+	if c.startNode != nil {
+		if next != nil {
+			ctx.WithValue(c, next)
+		}
+		return c.startNode.DoChain(ctx)
+	}
+	if next != nil {
+		return next.DoChain(ctx)
+	}
+	return nil
 }

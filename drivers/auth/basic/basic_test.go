@@ -2,10 +2,11 @@ package basic
 
 import (
 	"errors"
-	"github.com/valyala/fasthttp"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/valyala/fasthttp"
 
 	"github.com/eolinker/goku/auth"
 
@@ -64,7 +65,7 @@ func TestSuccessAuthorization(t *testing.T) {
 		"authorization-type": "basic",
 		"authorization":      "Basic bGl1OjEyMzQ1Ng==",
 	}
-	// http
+	// http-service
 	//req, err := buildRequest(headers)
 	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 	//if err != nil {
@@ -72,7 +73,7 @@ func TestSuccessAuthorization(t *testing.T) {
 	//	return
 	//}
 
-	// fast http
+	// fast http-service
 	req, err := buildFastRequest(headers)
 	if err != nil {
 		t.Error(err)
@@ -98,7 +99,7 @@ func TestExpireAuthorization(t *testing.T) {
 		"authorization-type": "basic",
 		"authorization":      "Basic d3U6MTIzNDU2",
 	}
-	// http
+	// http-service
 	//req, err := buildRequest(headers)
 	//if err != nil {
 	//	t.Error(err)
@@ -106,7 +107,7 @@ func TestExpireAuthorization(t *testing.T) {
 	//}
 	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
-	// fast http
+	// fast http-service
 	req, err := buildFastRequest(headers)
 	if err != nil {
 		t.Error(err)
@@ -131,7 +132,7 @@ func TestNoAuthorization(t *testing.T) {
 	headers := map[string]string{
 		"authorization-type": "basic",
 	}
-	// http
+	// http-service
 	//req, err := buildRequest(headers)
 	//if err != nil {
 	//	t.Error(err)
@@ -139,7 +140,7 @@ func TestNoAuthorization(t *testing.T) {
 	//}
 	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
-	// fast http
+	// fast http-service
 	req, err := buildFastRequest(headers)
 	if err != nil {
 		t.Error(err)
@@ -160,7 +161,7 @@ func TestNoAuthorizationType(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	// http
+	// http-service
 	//req, err := buildRequest(nil)
 	//if err != nil {
 	//	t.Error(err)
@@ -168,7 +169,7 @@ func TestNoAuthorizationType(t *testing.T) {
 	//}
 	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
-	// fast http
+	// fast http-service
 	headers := map[string]string{}
 	req, err := buildFastRequest(headers)
 	if err != nil {
@@ -195,9 +196,9 @@ func buildRequest(headers map[string]string) (*http.Request, error) {
 	return req, err
 }
 
-func buildFastRequest(headers map[string]string)  (*fasthttp.RequestCtx, error){
+func buildFastRequest(headers map[string]string) (*fasthttp.RequestCtx, error) {
 	context := &fasthttp.RequestCtx{
-		Request: *fasthttp.AcquireRequest(),
+		Request:  *fasthttp.AcquireRequest(),
 		Response: *fasthttp.AcquireResponse(),
 	}
 	context.Request.Header.SetMethod(fasthttp.MethodPost)

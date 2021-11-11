@@ -4,7 +4,7 @@ import (
 	"github.com/eolinker/eosc"
 )
 
-//Config http-proxy驱动配置结构体
+//Config http-service-proxy驱动配置结构体
 type Config struct {
 	Desc      string         `json:"desc"`
 	Scheme    string         `json:"scheme"`

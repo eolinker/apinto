@@ -3,7 +3,7 @@ package service
 import (
 	"time"
 
-	"github.com/eolinker/eosc/http"
+	http_service "github.com/eolinker/eosc/http-service"
 
 	http_context "github.com/eolinker/goku/node/http-context"
 )
@@ -20,9 +20,9 @@ type IService interface {
 
 //IRouterEndpoint 实现了返回路由规则信息方法的接口，如返回location、Host、Header、Query
 type IRouterEndpoint interface {
-	Location() (http.Checker, bool)
-	Header(name string) (http.Checker, bool)
-	Query(name string) (http.Checker, bool)
+	Location() (http_service.Checker, bool)
+	Header(name string) (http_service.Checker, bool)
+	Query(name string) (http_service.Checker, bool)
 	Headers() []string
 	Queries() []string
 }

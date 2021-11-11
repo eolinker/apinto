@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/eolinker/eosc/http"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 func TestCreateChecker(t *testing.T) {
@@ -28,7 +28,7 @@ func TestCreateChecker(t *testing.T) {
 		args    args
 		vs      valueSuccess
 		vf      valueFail
-		want    http.Checker
+		want    http_service.Checker
 		wantErr bool
 	}{
 		{
@@ -426,7 +426,7 @@ func TestCreateChecker(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			checker, err := http.Parse(tt.args.pattern)
+			checker, err := http_service.Parse(tt.args.pattern)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
 				return
