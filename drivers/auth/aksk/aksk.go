@@ -56,8 +56,8 @@ func (a *aksk) CheckSkill(skill string) bool {
 }
 
 func (a *aksk) Auth(context http_service.IHttpContext) error {
-	authorizationType, has := context.Request().Header().Get(auth.AuthorizationType)
-	if !has {
+	authorizationType := context.Request().Headers().Get(auth.AuthorizationType)
+	if authorizationType == "" {
 		return auth.ErrorInvalidType
 	}
 	err := auth.CheckAuthorizationType(supportTypes, authorizationType)
@@ -83,7 +83,7 @@ func (a *aksk) Auth(context http_service.IHttpContext) error {
 
 						//若隐藏证书信息
 						if a.hideCredential {
-							context.ProxyRequest().Header.Del(auth.Authorization)
+							context.Proxy().Headers().Del(auth.Authorization)
 						}
 						return nil
 					}

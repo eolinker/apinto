@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	http_context "github.com/eolinker/goku/node/http-context"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 type jwtToken struct {
@@ -506,11 +506,11 @@ func typeOfData(data interface{}) reflect.Kind {
 }
 
 //retrieveJWTToken 获取jwtToken字符串
-func (j *jwt) retrieveJWTToken(context *http_context.Context) (string, error) {
+func (j *jwt) retrieveJWTToken(context http_service.IHttpContext) (string, error) {
 	const tokenName = "jwt_token"
-	if authorizationHeader, has := context.Request().Header().Get("Authorization"); has {
+	if authorizationHeader := context.Request().Headers().Get("Authorization"); authorizationHeader != "" {
 		if j.hideCredentials {
-			context.ProxyRequest().Header.Del("Authorization")
+			context.Proxy().Headers().Del("Authorization")
 		}
 		if strings.Contains(authorizationHeader, "bearer ") {
 			authorizationHeader = authorizationHeader[7:]
@@ -518,21 +518,21 @@ func (j *jwt) retrieveJWTToken(context *http_context.Context) (string, error) {
 		return authorizationHeader, nil
 	}
 
-	if value, ok := context.Request().Query().Get(tokenName); ok {
+	if value := context.Request().URL().Query().Get(tokenName); value != "" {
 		if j.hideCredentials {
-			context.ProxyRequest().URI().QueryArgs().Del(tokenName)
+			context.Proxy().Querys().Del(tokenName)
 		}
 		return value, nil
 	}
 
-	formData, err := context.BodyHandler().BodyForm()
+	formData, err := context.Proxy().BodyForm()
 	if err != nil {
 		return "", errors.New("[jwt_auth] cannot find token in request")
 	}
 	if value, ok := formData[tokenName]; ok {
 		if j.hideCredentials {
 			delete(formData, tokenName)
-			context.BodyHandler().SetForm(formData)
+			context.Proxy().SetForm(formData)
 		}
 		return value[0], nil
 	}
@@ -540,7 +540,7 @@ func (j *jwt) retrieveJWTToken(context *http_context.Context) (string, error) {
 }
 
 //doJWTAuthentication 进行JWT鉴权
-func (j *jwt) doJWTAuthentication(context *http_context.Context) error {
+func (j *jwt) doJWTAuthentication(context http_service.IHttpContext) error {
 	tokenStr, err := j.retrieveJWTToken(context)
 	if err != nil {
 		return errors.New("[jwt_auth] Unrecognizable token")
