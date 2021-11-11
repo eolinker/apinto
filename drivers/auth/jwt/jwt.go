@@ -59,8 +59,8 @@ func (j *jwt) CheckSkill(skill string) bool {
 }
 
 func (j *jwt) Auth(context http_service.IHttpContext) error {
-	authorizationType, has := context.Request().Header().Get(auth.AuthorizationType)
-	if !has {
+	authorizationType := context.Request().Headers().Get(auth.AuthorizationType)
+	if authorizationType == "" {
 		return auth.ErrorInvalidType
 	}
 	err := auth.CheckAuthorizationType(supportTypes, authorizationType)

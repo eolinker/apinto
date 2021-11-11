@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"testing"
 
+	http_service "github.com/eolinker/eosc/http-service"
+
 	"github.com/valyala/fasthttp"
 
 	http_context "github.com/eolinker/goku/node/http-context"
@@ -17,7 +19,7 @@ var akskConfig = []AKSKConfig{{
 	Expire: 1658740726, //2022-07-25 17:18:46
 }}
 
-var testContexts = make([]*http_context.Context, 0, 10)
+var testContexts = make([]http_service.IHttpContext, 0, 10)
 
 func TestAKSK(t *testing.T) {
 	testAKSK := &aksk{
