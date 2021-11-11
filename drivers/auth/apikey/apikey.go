@@ -81,7 +81,7 @@ func (a *apikey) getAuthValue(ctx http_service.IHttpContext) (string, error) {
 	// 判断鉴权值是否在query
 	if authorization := ctx.Request().URL().Query().Get("Apikey"); authorization != "" {
 		if a.hideCredential {
-			ctx.Proxy().Querys().Del("Apikey")
+			ctx.Proxy().Queries().Del("Apikey")
 		}
 		return authorization, nil
 	}
