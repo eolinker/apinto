@@ -16,8 +16,8 @@ type RouterDriverFactory struct {
 }
 
 //Create 创建http路由驱动
-func (r *RouterDriverFactory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IExtenderDriver, error) {
-	return NewHTTPRouter(profession, name, label, desc, params), nil
+func (r *RouterDriverFactory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
+	return NewHTTPRouter(), nil
 }
 
 //NewRouterDriverFactory 创建一个http路由驱动工厂

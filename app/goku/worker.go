@@ -15,6 +15,7 @@ import (
 	"github.com/eolinker/goku/drivers/log/httplog"
 	"github.com/eolinker/goku/drivers/log/stdlog"
 	"github.com/eolinker/goku/drivers/log/syslog"
+	"github.com/eolinker/goku/drivers/plugins/auth"
 	http_router "github.com/eolinker/goku/drivers/router/http-router"
 	service_http "github.com/eolinker/goku/drivers/service/service-http"
 	upstream_http "github.com/eolinker/goku/drivers/upstream/upstream-http"
@@ -50,4 +51,6 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	httplog.Register(extenderRegister)
 	syslog.Register(extenderRegister)
 	stdlog.Register(extenderRegister)
+
+	auth.Register(extenderRegister)
 }

@@ -22,7 +22,7 @@ func (p *PluginManager) Create(id, name string, v interface{}, workers map[eosc.
 	return p, nil
 }
 
-func (p *PluginFactory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IExtenderDriver, error) {
+func (p *PluginFactory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 
 	pm := NewPluginManager(profession, name)
 

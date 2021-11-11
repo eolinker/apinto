@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"strings"
 
+	http_service "github.com/eolinker/eosc/http-service"
+
 	"github.com/eolinker/goku/auth"
 	http_context "github.com/eolinker/goku/node/http-context"
 )
@@ -15,10 +17,10 @@ import (
 const dateHeader = "x-gateway-date"
 
 //buildToSign 构建待加密的签名所需字符串
-func buildToSign(ctx *http_context.Context, encType string, signedHeaders []string) string {
+func buildToSign(ctx http_service.IHttpContext, encType string, signedHeaders []string) string {
 	toSign := strings.Builder{}
 	toSign.WriteString(encType + "\n")
-	dh, _ := ctx.Request().Header().Get(dateHeader)
+	dh := ctx.Request().Headers().Get(dateHeader)
 	toSign.WriteString(dh + "\n")
 
 	cr := buildHexCanonicalRequest(ctx, signedHeaders)
@@ -27,7 +29,7 @@ func buildToSign(ctx *http_context.Context, encType string, signedHeaders []stri
 }
 
 //buildHexCanonicalRequest 构建规范消息头
-func buildHexCanonicalRequest(ctx *http_context.Context, signedHeaders []string) string {
+func buildHexCanonicalRequest(ctx http_service.IHttpContext, signedHeaders []string) string {
 	cr := strings.Builder{}
 
 	cr.WriteString(strings.ToUpper(ctx.Request().Method()) + "\n")
