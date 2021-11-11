@@ -10,10 +10,10 @@ import (
 )
 
 type Auth struct {
-	driver *Driver
-	id     string
-	name   string
-	auths  []auth.IAuth
+	*Driver
+	id    string
+	name  string
+	auths []auth.IAuth
 }
 
 func (a *Auth) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
@@ -57,11 +57,11 @@ func (a *Auth) Start() error {
 }
 
 func (a *Auth) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	confObj, err := a.driver.check(conf)
+	confObj, err := a.check(conf)
 	if err != nil {
 		return err
 	}
-	list, err := a.driver.getList(confObj.Auth)
+	list, err := a.getList(confObj.Auth)
 	if err != nil {
 		return err
 	}
