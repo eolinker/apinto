@@ -16,11 +16,12 @@ type PluginWorkerConfig struct {
 
 //PluginConfig 全局插件配置
 type PluginConfig struct {
-	Name   string      `json:"name"`
-	ID     string      `json:"id"`
-	Type   string      `json:"type"`
-	Status string      `json:"status"`
-	Config interface{} `json:"config"`
+	Name       string                 `json:"name"`
+	ID         string                 `json:"id"`
+	Type       string                 `json:"type"`
+	Status     string                 `json:"status"`
+	Config     interface{}            `json:"config"`
+	InitConfig map[string]interface{} `json:"init_config"`
 }
 
 //OrdinaryPlugin 普通插件配置，在router、service、upstream的插件格式

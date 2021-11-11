@@ -1,8 +1,9 @@
 package jwt
 
 import (
-	"github.com/eolinker/eosc"
 	"reflect"
+
+	"github.com/eolinker/eosc"
 )
 
 const (
@@ -17,7 +18,6 @@ type driver struct {
 	label      string
 	desc       string
 	configType reflect.Type
-	params     map[string]string
 }
 
 //ConfigType 返回jwt鉴权驱动配置的反射类型

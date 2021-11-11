@@ -1,27 +1,70 @@
 package http_context
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/valyala/fasthttp"
 
-	access_field "github.com/eolinker/goku/node/common/access-field"
+	http_service "github.com/eolinker/eosc/http-service"
 	uuid "github.com/satori/go.uuid"
 )
 
-//Context context
+var _ http_service.IHttpContext = (*Context)(nil)
+
+//Context requestCtx
 type Context struct {
-	context       *fasthttp.RequestCtx
-	requestOrg    *fasthttp.Request
-	proxyRequest  *fasthttp.Request
+	requestCtx *fasthttp.RequestCtx
+	requestOrg *fasthttp.Request
+
+	proxyRequest *ProxyRequest
+
 	proxyResponse *fasthttp.Response
-	Body          []byte
+	body          []byte
 	requestID     string
 	RestfulParam  map[string]string
-	LogFields     *access_field.Fields
-	request       IRequest
-	labels        map[string]string
-	bodyHandler   *BodyRequestHandler
+	code          int
+	status        string
+	response      *Response
+	requestReader *RequestReader
+	ctx           context.Context
+}
+
+func (ctx *Context) Context() context.Context {
+	if ctx.ctx == nil {
+		ctx.ctx = context.Background()
+	}
+	return ctx.ctx
+}
+
+func (ctx *Context) Value(key interface{}) interface{} {
+	return ctx.Context().Value(key)
+}
+
+func (ctx *Context) WithValue(key, val interface{}) {
+	ctx.ctx = context.WithValue(ctx.Context(), key, val)
+}
+
+func (ctx *Context) Response() http_service.IResponse {
+	if ctx.response == nil {
+		ctx.response = NewResponse(ctx.proxyResponse)
+	}
+	return ctx.response
+}
+
+func (ctx *Context) Proxy() http_service.IRequest {
+	return ctx.proxyRequest
+}
+
+func (ctx *Context) SetStatus(code int, status string) {
+	ctx.code, ctx.status = code, status
+}
+
+func (ctx *Context) Request() http_service.IRequestReader {
+	if ctx.requestReader == nil {
+		ctx.requestReader = NewRequestReader(ctx.requestOrg, ctx.requestCtx.RemoteAddr().String())
+	}
+	return ctx.requestReader
 }
 
 //NewContext 创建Context
@@ -30,39 +73,16 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 	requestID := id.String()
 	newRequest := &ctx.Request
 	newCtx := &Context{
-		context:      ctx,
-		requestOrg:   fasthttp.AcquireRequest(),
-		proxyRequest: fasthttp.AcquireRequest(),
-		requestID:    requestID,
-		LogFields:    access_field.NewFields(),
+		requestCtx: ctx,
+		requestOrg: fasthttp.AcquireRequest(),
+		requestID:  requestID,
 	}
+	proxyRequest := fasthttp.AcquireRequest()
 	newRequest.CopyTo(newCtx.requestOrg)
-	newRequest.CopyTo(newCtx.proxyRequest)
+	newRequest.CopyTo(proxyRequest)
 
-	newCtx.LogFields.RequestHeader = newCtx.requestOrg.Header.String()
-	newCtx.LogFields.RequestMsg = string(newCtx.Body)
-	newCtx.LogFields.RequestMsgSize = len(newCtx.Body)
-	newCtx.LogFields.RequestUri = string(newCtx.requestOrg.RequestURI())
-	newCtx.LogFields.RequestID = requestID
+	newCtx.proxyRequest = NewProxyRequest(NewRequestReader(proxyRequest, ""))
 	return newCtx
-}
-
-func (ctx *Context) Labels() map[string]string {
-	if ctx.labels == nil {
-		ctx.labels = map[string]string{}
-	}
-	return ctx.labels
-}
-
-func (ctx *Context) SetLabels(labels map[string]string) {
-	if ctx.labels == nil {
-		ctx.labels = make(map[string]string)
-	}
-	if labels != nil {
-		for k, v := range labels {
-			ctx.labels[k] = v
-		}
-	}
 }
 
 //RequestId 请求ID
@@ -70,47 +90,18 @@ func (ctx *Context) RequestId() string {
 	return ctx.requestID
 }
 
-func (ctx *Context) Request() IRequest {
-	if ctx.request == nil {
-		ctx.request = newRequest(ctx.requestOrg)
-	}
-	return ctx.request
-}
-
-func (ctx *Context) RequestOrg() *fasthttp.Request {
-	return ctx.requestOrg
-}
-
-func (ctx *Context) ProxyRequest() *fasthttp.Request {
-	return ctx.proxyRequest
-}
-
-func (ctx *Context) ProxyResponse() *fasthttp.Response {
-	return ctx.proxyResponse
-}
-
-func (ctx *Context) BodyHandler() *BodyRequestHandler {
-	if ctx.bodyHandler == nil {
-		r := ctx.Request()
-		ctx.bodyHandler = newBodyRequestHandler(r.ContentType(), r.RawBody())
-	}
-	return ctx.bodyHandler
-}
-
 func (ctx *Context) SetBody(body []byte) {
-	ctx.context.SetBody(body)
+	ctx.requestCtx.SetBody(body)
 }
 
 func (ctx *Context) SetResponse(response *fasthttp.Response) {
-	ctx.Body = response.Body()
+	ctx.body = response.Body()
 	ctx.proxyResponse = response
 }
 
 //Finish finish
 func (ctx *Context) Finish() {
-	ctx.LogFields.ResponseMsg = string(ctx.Body)
-	ctx.LogFields.ResponseMsgSize = len(ctx.Body)
-	ctx.proxyResponse.CopyTo(&ctx.context.Response)
+	ctx.proxyResponse.CopyTo(&ctx.requestCtx.Response)
 	return
 }
 
@@ -120,10 +111,10 @@ func (ctx *Context) SetError(err error) {
 		"msg":    err.Error(),
 	}
 	errByte, _ := json.Marshal(result)
-	ctx.Body = errByte
+	ctx.body = errByte
 }
 
 func NotFound(ctx *Context) {
-	ctx.context.SetStatusCode(404)
-	ctx.context.SetBody([]byte("404 Not Found"))
+	ctx.requestCtx.SetStatusCode(404)
+	ctx.requestCtx.SetBody([]byte("404 Not Found"))
 }

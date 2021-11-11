@@ -14,15 +14,10 @@ func Register(register eosc.IExtenderDriverRegister) {
 }
 
 type factory struct {
-	profession string
-	name       string
-	label      string
-	desc       string
-	params     map[string]string
 }
 
 //Create 创建apikey驱动
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IExtenderDriver, error) {
+func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 	return &driver{
 		profession: profession,
 		name:       name,
@@ -30,7 +25,6 @@ func (f *factory) Create(profession string, name string, label string, desc stri
 		desc:       desc,
 		driver:     driverName,
 		configType: reflect.TypeOf((*Config)(nil)),
-		params:     params,
 	}, nil
 }
 

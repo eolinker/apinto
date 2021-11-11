@@ -52,5 +52,5 @@ func (p *PluginManager) getExtenderDriver(config *PluginConfig) (eosc.IExtenderD
 	if !has {
 		return nil, fmt.Errorf("id:%w", ErrorDriverNotExit)
 	}
-	return driverFactory.Create(p.id, config.Name, config.Name, config.Type, nil)
+	return driverFactory.Create(p.id, config.Name, config.Name, config.Type, config.InitConfig)
 }
