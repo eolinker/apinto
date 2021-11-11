@@ -30,7 +30,7 @@ func NewFactory() eosc.IExtenderDriverFactory {
 }
 
 //Create 创建http_proxy驱动
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IExtenderDriver, error) {
+func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 	return &driver{
 		profession: profession,
 		name:       name,

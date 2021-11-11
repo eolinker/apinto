@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	http_service "github.com/eolinker/eosc/http-service"
+
 	"github.com/eolinker/goku/auth"
+	http_context "github.com/eolinker/goku/node/http-context"
 )
 
 const dateHeader = "x-gateway-date"
@@ -31,21 +33,21 @@ func buildHexCanonicalRequest(ctx http_service.IHttpContext, signedHeaders []str
 	cr := strings.Builder{}
 
 	cr.WriteString(strings.ToUpper(ctx.Request().Method()) + "\n")
-	cr.WriteString(buildPath(ctx.Request().URL().Path) + "\n")
-	cr.WriteString(ctx.Request().URL().RawQuery + "\n")
+	cr.WriteString(buildPath(ctx.Request().Path()) + "\n")
+	cr.WriteString(ctx.Request().RawQuery() + "\n")
 
 	for _, header := range signedHeaders {
 		if strings.ToLower(header) == "host" {
 			cr.WriteString(buildHeaders(header, ctx.Request().Host()) + "\n")
 			continue
 		}
-		v := ctx.Request().Headers().Get(header)
+		v, _ := ctx.Request().Header().Get(header)
 		cr.WriteString(buildHeaders(header, v+"\n"))
 	}
 	cr.WriteString("\n")
 	cr.WriteString(strings.Join(signedHeaders, ";") + "\n")
-	body, _ := ctx.Request().RawBody()
-	cr.WriteString(hexEncode(body))
+
+	cr.WriteString(hexEncode(ctx.Request().RawBody()))
 
 	return hexEncode([]byte(cr.String()))
 }
@@ -72,8 +74,8 @@ func hmaxBySHA256(secretKey, toSign string) string {
 	return hex.EncodeToString(hm.Sum(nil))
 }
 
-func parseAuthorization(ctx http_service.IHttpContext) (encType string, accessKey string, signHeaders []string, signature string, err error) {
-	authStr := ctx.Request().Headers().Get(auth.Authorization)
+func parseAuthorization(ctx *http_context.Context) (encType string, accessKey string, signHeaders []string, signature string, err error) {
+	authStr, _ := ctx.Request().Header().Get(auth.Authorization)
 
 	infos := strings.Split(authStr, ",")
 	if len(infos) < 3 {

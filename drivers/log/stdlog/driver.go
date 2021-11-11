@@ -2,9 +2,10 @@ package stdlog
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/eolinker/eosc"
 	transporter_manager "github.com/eolinker/eosc/log/transporter-manager"
-	"reflect"
 )
 
 const (
@@ -19,7 +20,6 @@ type driver struct {
 	label      string
 	desc       string
 	configType reflect.Type
-	params     map[string]string
 }
 
 //ConfigType 返回stdlog驱动配置的反射类型
