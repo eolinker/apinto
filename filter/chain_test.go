@@ -3,7 +3,6 @@ package filter
 import (
 	"context"
 	"fmt"
-	http2 "net/http"
 	"strconv"
 	"strings"
 	"testing"
@@ -82,6 +81,22 @@ type TestContext struct {
 	ctx context.Context
 }
 
+func (t *TestContext) RequestId() string {
+	panic("implement me")
+}
+
+func (t *TestContext) Request() http_service.IRequestReader {
+	panic("implement me")
+}
+
+func (t *TestContext) Proxy() http_service.IRequest {
+	panic("implement me")
+}
+
+func (t *TestContext) Response() http_service.IResponse {
+	panic("implement me")
+}
+
 func (t *TestContext) Context() context.Context {
 	if t.ctx == nil {
 		t.ctx = context.Background()
@@ -95,124 +110,6 @@ func (t *TestContext) Value(key interface{}) interface{} {
 
 func (t *TestContext) WithValue(key, val interface{}) {
 	t.ctx = context.WithValue(t.Context(), key, val)
-}
-
-func (t *TestContext) GetHeader(name string) string {
-	panic("implement me")
-}
-
-func (t *TestContext) Headers() http2.Header {
-	panic("implement me")
-}
-
-func (t *TestContext) SetHeader(key, value string) {
-	panic("implement me")
-}
-
-func (t *TestContext) AddHeader(key, value string) {
-	panic("implement me")
-}
-
-func (t *TestContext) DelHeader(key string) {
-	panic("implement me")
-}
-
-func (t *TestContext) Set() http_service.IHeader {
-	panic("implement me")
-}
-
-func (t *TestContext) Append() http_service.IHeader {
-	panic("implement me")
-}
-
-func (t *TestContext) Cookie(name string) (*http2.Cookie, error) {
-	panic("implement me")
-}
-
-func (t *TestContext) Cookies() []*http2.Cookie {
-	panic("implement me")
-}
-
-func (t *TestContext) AddCookie(c *http2.Cookie) {
-	panic("implement me")
-}
-
-func (t *TestContext) StatusCode() int {
-	panic("implement me")
-}
-
-func (t *TestContext) Status() string {
-	panic("implement me")
-}
-
-func (t *TestContext) SetStatus(code int, status string) {
-	panic("implement me")
-}
-
-func (t *TestContext) SetBody(bytes []byte) {
-	panic("implement me")
-}
-
-func (t *TestContext) GetBody() []byte {
-	panic("implement me")
-}
-
-func (t *TestContext) RequestId() string {
-	panic("implement me")
-}
-
-func (t *TestContext) Request() http_service.IRequestReader {
-	panic("implement me")
-}
-
-func (t *TestContext) Proxy() http_service.IRequest {
-	panic("implement me")
-}
-
-func (t *TestContext) Labels() map[string]string {
-	panic("implement me")
-}
-
-func (t *TestContext) ProxyResponse() http_service.IResponseReader {
-	panic("implement me")
-}
-
-func (t *TestContext) SetStoreValue(key string, value interface{}) error {
-	panic("implement me")
-}
-
-func (t *TestContext) GetStoreValue(key string) (interface{}, bool) {
-	panic("implement me")
-}
-
-func TestAppendCell(t *testing.T) {
-	out := NewOut(t)
-	filters1 := make([]http_service.IFilter, 5)
-	for i := range filters1 {
-
-		filters1[i] = NewTestFilter(out, fmt.Sprint("org-", i+1))
-	}
-	filters2 := make([]http_service.IFilter, 5)
-	for i := range filters2 {
-
-		filters2[i] = NewTestFilter(out, fmt.Sprint("append-", i+1))
-	}
-
-	org := NewChain(filters1)
-	app := NewChain(filters2)
-
-	target := org.Append(app.ToFilter())
-
-	out.Test(org, "org")
-	out.Test(app, "app")
-	out.Test(target, "target")
-
-	org.Reset(NewTestFilter(out, "org"))
-	out.Test(target, "target-reset org")
-
-	app.Reset(NewTestFilter(out, "app"))
-	out.Test(target, "target-reset app")
-
 }
 
 func TestReset(t *testing.T) {
