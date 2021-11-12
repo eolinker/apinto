@@ -81,6 +81,14 @@ type TestContext struct {
 	ctx context.Context
 }
 
+func (t *TestContext) Response() (http_service.IResponse, error) {
+	panic("implement me")
+}
+
+func (t *TestContext) SendTo(address string) error {
+	panic("implement me")
+}
+
 func (t *TestContext) RequestId() string {
 	panic("implement me")
 }
@@ -90,10 +98,6 @@ func (t *TestContext) Request() http_service.IRequestReader {
 }
 
 func (t *TestContext) Proxy() http_service.IRequest {
-	panic("implement me")
-}
-
-func (t *TestContext) Response() http_service.IResponse {
 	panic("implement me")
 }
 

@@ -16,9 +16,10 @@ import (
 )
 
 type ServiceHandler struct {
-	orgPlugin plugin.IPlugin
-	executor  filter.IChain
-	upstream  upstream.IUpstream
+	orgPlugin   plugin.IPlugin
+	executor    filter.IChain
+	upstream    upstream.IUpstream
+	proxyMethod string
 }
 
 func (s *ServiceHandler) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
@@ -27,30 +28,19 @@ func (s *ServiceHandler) DoFilter(ctx http_service.IHttpContext, next http_servi
 		if e := recover(); e != nil {
 			log.Warn(e)
 		}
-		if ctx.StatusCode() == 0 {
-			ctx.SetStatus(200, "200")
-		}
 	}()
-	path := s.rewriteURL
 
 	if s.proxyMethod != "" {
-		ctx.ProxyRequest().Header.SetMethod(s.proxyMethod)
+		ctx.Proxy().SetMethod(s.proxyMethod)
 	}
-	body, err := ctx.BodyHandler().RawBody()
-	if err != nil {
-		ctx.SetBody([]byte(err.Error()))
-		ctx.SetStatus(500)
-		return err
-	}
-	ctx.ProxyRequest().SetBody(body)
-	var response *fasthttp.Response
+
 	response, err = s.send(ctx, s, path, string(ctx.RequestOrg().URI().QueryString()))
 	if err != nil {
 		ctx.SetBody([]byte(err.Error()))
 		ctx.SetStatus(500)
 		return err
 	}
-	ctx.se(response)
+
 	if next != nil {
 		next.DoChain(ctx)
 	}

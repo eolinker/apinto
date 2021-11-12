@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 
+	upstream_http "github.com/eolinker/goku/drivers/upstream/upstream-http"
+	"github.com/eolinker/goku/plugin"
+
 	"time"
 
 	"github.com/eolinker/eosc"
@@ -13,8 +16,9 @@ import (
 )
 
 var (
-	ErrorStructType   = errors.New("error struct type")
-	ErrorNeedUpstream = errors.New("need upstream")
+	ErrorStructType      = errors.New("error struct type")
+	ErrorNeedUpstream    = errors.New("need upstream")
+	ErrorInvalidUpstream = errors.New("not upstream")
 )
 
 type serviceWorker struct {
@@ -28,6 +32,8 @@ type serviceWorker struct {
 	proxyMethod string
 
 	upstream upstream.IUpstreamCreate
+
+	pluginConfig map[string]*plugin.Config
 }
 
 //Id 返回服务实例 worker id
@@ -49,10 +55,19 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	if data.Upstream == "" && data.UpstreamAnonymous == "" {
 		return ErrorNeedUpstream
 	}
-
-	upstreamWork, has := workers[data.Upstream]
-	if !has {
-		upstreamWork = defaultDiscovery.GetApp(data.UpstreamAnonymous)
+	var upstreamCreate upstream.IUpstreamCreate
+	if upstreamWork, has := workers[data.Upstream]; has {
+		if up, ok := upstreamWork.(upstream.IUpstreamCreate); ok {
+			upstreamCreate = up
+		} else {
+			return fmt.Errorf("%s:%w", data.Upstream, ErrorInvalidUpstream)
+		}
+	} else {
+		anonymous, err := defaultDiscovery.GetApp(data.UpstreamAnonymous)
+		if err != nil {
+			return err
+		}
+		upstreamCreate = upstream_http.NewUpstream(s.scheme)
 	}
 
 	//
@@ -63,15 +78,8 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	s.scheme = data.Scheme
 	s.proxyMethod = data.ProxyMethod
 	s.upstream = nil
-	if worker, has := workers[data.Upstream]; has {
-		u, ok := worker.(upstream.IUpstreamCreate)
-		if ok {
-			s.upstream = u
-			return nil
-		}
-	} else {
-		s.proxyAddr = string(data.Upstream)
-	}
+
+	upstreamWork.(upstream.IUpstreamCreate).Create()
 
 	return nil
 
