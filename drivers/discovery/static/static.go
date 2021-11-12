@@ -41,13 +41,8 @@ func (s *static) Start() error {
 
 	return nil
 }
+func (s *static) reset(cfg *Config) error {
 
-//Reset 重置静态服务发现实例配置
-func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	cfg, ok := conf.(*Config)
-	if !ok {
-		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), errorStructType)
-	}
 	s.scheme = cfg.getScheme()
 	if cfg.Health == nil {
 		s.healthOn = false
@@ -83,8 +78,16 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 			s.checker = nil
 		}
 	}
-
 	return nil
+}
+
+//Reset 重置静态服务发现实例配置
+func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+	cfg, ok := conf.(*Config)
+	if !ok {
+		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), errorStructType)
+	}
+	return s.reset(cfg)
 }
 
 //Stop 停止服务发现

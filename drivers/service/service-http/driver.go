@@ -28,6 +28,7 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		name:   name,
 		driver: d.driver,
 	}
+
 	err := w.Reset(v, workers)
 	if err != nil {
 		return nil, err
