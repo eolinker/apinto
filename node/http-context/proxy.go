@@ -20,6 +20,11 @@ type ProxyRequest struct {
 	method      string
 }
 
+func (r *ProxyRequest) SetPath(s string) {
+	r.initUrl()
+	r.uri.Path = s
+}
+
 func NewProxyRequest(requestReader *RequestReader) *ProxyRequest {
 	return &ProxyRequest{RequestReader: requestReader}
 }
@@ -91,19 +96,20 @@ func (r *ProxyRequest) SetRaw(contentType string, body []byte) {
 }
 
 func (r *ProxyRequest) TargetServer() string {
-	if r.uri == nil {
-		uri := r.URL()
-		r.uri = &uri
-	}
+	r.initUrl()
 	return r.uri.Host
 }
 
 func (r *ProxyRequest) TargetURL() string {
+	r.initUrl()
+	return r.uri.Path
+}
+
+func (r *ProxyRequest) initUrl() {
 	if r.uri == nil {
 		uri := r.URL()
 		r.uri = &uri
 	}
-	return r.uri.Path
 }
 
 func (r *ProxyRequest) SetMethod(s string) {

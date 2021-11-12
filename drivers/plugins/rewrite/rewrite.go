@@ -23,12 +23,11 @@ func (r *Rewrite) DoFilter(ctx http_service.IHttpContext, next http_service.ICha
 		location, has := router.Location()
 
 		if has && location.CheckType() == http_service.CheckTypePrefix {
-			path := recombinePath(string(ctx.Request().URL().Path), location.Value(), r.path)
-			ctx.Request().URL().Path = path
+			ctx.Proxy().SetPath(recombinePath(string(ctx.Request().URL().Path), location.Value(), r.path))
 		}
 	} else {
 		if r.path != "" {
-			ctx.Request().URL().Path = r.path
+			ctx.Proxy().SetPath(r.path)
 		}
 	}
 	if next != nil {
