@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/eolinker/goku/plugin"
+
 	"github.com/eolinker/eosc/common/bean"
 
 	"github.com/eolinker/eosc"
@@ -21,16 +23,6 @@ var (
 	ErrorGlobalPluginConfigInvalid = errors.New("invalid global config")
 )
 
-type IPluginChain interface {
-	filter.IChain
-	Destroy()
-}
-type IPluginManager interface {
-	CreateRouter(id string, conf map[string]*OrdinaryPlugin) IPluginChain
-	CreateService(id string, conf map[string]*OrdinaryPlugin) IPluginChain
-	CreateUpstream(id string, conf map[string]*OrdinaryPlugin) IPluginChain
-}
-
 type PluginManager struct {
 	id string
 
@@ -41,15 +33,15 @@ type PluginManager struct {
 	pluginObjs      eosc.IUntyped
 }
 
-func (p *PluginManager) CreateRouter(id string, conf map[string]*OrdinaryPlugin) IPluginChain {
+func (p *PluginManager) CreateRouter(id string, conf map[string]*plugin.Config) plugin.IPlugin {
 	return p.newChain(id, conf, pluginRouter)
 }
 
-func (p *PluginManager) CreateService(id string, conf map[string]*OrdinaryPlugin) IPluginChain {
+func (p *PluginManager) CreateService(id string, conf map[string]*plugin.Config) plugin.IPlugin {
 	return p.newChain(id, conf, pluginService)
 }
 
-func (p *PluginManager) CreateUpstream(id string, conf map[string]*OrdinaryPlugin) IPluginChain {
+func (p *PluginManager) CreateUpstream(id string, conf map[string]*plugin.Config) plugin.IPlugin {
 	return p.newChain(id, conf, pluginUpstream)
 }
 
@@ -101,7 +93,7 @@ func (p *PluginManager) RemoveObj(id string) (*PluginObj, bool) {
 	return v, ok
 }
 
-func (p *PluginManager) createFilters(conf map[string]*OrdinaryPlugin, t string) []http_service.IFilter {
+func (p *PluginManager) createFilters(conf map[string]*plugin.Config, t string) []http_service.IFilter {
 	filters := make([]http_service.IFilter, 0, len(conf))
 	for _, plugin := range p.plugins {
 		if plugin.Status == StatusDisable || plugin.Status == "" || plugin.Type != t {
@@ -141,7 +133,7 @@ func (p *PluginManager) createFilters(conf map[string]*OrdinaryPlugin, t string)
 	return filters
 }
 
-func (p *PluginManager) newChain(id string, conf map[string]*OrdinaryPlugin, t string) *PluginObj {
+func (p *PluginManager) newChain(id string, conf map[string]*plugin.Config, t string) *PluginObj {
 	chain := filter.NewChain(p.createFilters(conf, t))
 	obj := &PluginObj{
 		IChainHandler: chain,

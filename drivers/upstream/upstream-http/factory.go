@@ -16,11 +16,6 @@ func Register(register eosc.IExtenderDriverRegister) {
 }
 
 type factory struct {
-	profession string
-	name       string
-	label      string
-	desc       string
-	params     map[string]string
 }
 
 //NewFactory 创建http_proxy驱动工厂
@@ -38,6 +33,5 @@ func (f *factory) Create(profession string, name string, label string, desc stri
 		desc:       desc,
 		driver:     driverName,
 		configType: reflect.TypeOf((*Config)(nil)),
-		params:     params,
 	}, nil
 }

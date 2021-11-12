@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 
 	http_service "github.com/eolinker/eosc/http-service"
 
@@ -17,11 +16,6 @@ import (
 )
 
 const defaultMultipartMemory = 32 << 20 // 32 MB
-var (
-	errorNotForm      = errors.New("contentType is not Form")
-	errorNotMultipart = errors.New("contentType is not Multipart")
-	errorNotAllowRaw  = errors.New("contentType is not allow Raw")
-)
 
 const (
 	MultipartForm  = "multipart/form-data"
@@ -201,7 +195,7 @@ func (b *BodyRequestHandler) SetToForm(key, value string) error {
 
 	contentType, _, _ := mime.ParseMediaType(b.contentType)
 	if contentType != FormData && contentType != MultipartForm {
-		return errorNotForm
+		return ErrorNotForm
 	}
 
 	err := b.parse()
@@ -223,7 +217,7 @@ func (b *BodyRequestHandler) SetToForm(key, value string) error {
 func (b *BodyRequestHandler) AddForm(key, value string) error {
 	contentType, _, _ := mime.ParseMediaType(b.contentType)
 	if contentType != FormData && contentType != MultipartForm {
-		return errorNotForm
+		return ErrorNotForm
 	}
 	err := b.parse()
 	if err != nil {
@@ -243,7 +237,7 @@ func (b *BodyRequestHandler) AddFile(key string, file *http_service.FileHeader) 
 
 	contentType, _, _ := mime.ParseMediaType(b.contentType)
 	if contentType != FormData && contentType != MultipartForm {
-		return errorNotMultipart
+		return ErrorNotMultipart
 	}
 	err := b.parse()
 	if err != nil {
@@ -337,7 +331,7 @@ func (b *BodyRequestHandler) SetForm(values url.Values) error {
 
 	contentType, _, _ := mime.ParseMediaType(b.contentType)
 	if contentType != FormData && contentType != MultipartForm {
-		return errorNotForm
+		return ErrorNotForm
 	}
 	b.parse()
 	b.form = values
@@ -351,7 +345,7 @@ func (b *BodyRequestHandler) SetFile(files map[string]*http_service.FileHeader) 
 
 	contentType, _, _ := mime.ParseMediaType(b.contentType)
 	if contentType != FormData && contentType != MultipartForm {
-		return errorNotForm
+		return ErrorNotForm
 	}
 	b.parse()
 	b.files = files

@@ -1,134 +1,62 @@
 package upstream_http
 
 import (
-	"errors"
 	"fmt"
+	"time"
 
-	"github.com/valyala/fasthttp"
-
+	"github.com/eolinker/goku/plugin"
 	"github.com/eolinker/goku/upstream"
 
-	"github.com/eolinker/eosc"
+	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/goku/discovery"
-
-	"github.com/eolinker/goku/service"
-
 	"github.com/eolinker/goku/upstream/balance"
-
-	http_proxy "github.com/eolinker/goku/node/http-proxy"
-
-	http_context "github.com/eolinker/goku/node/http-context"
-
-	"github.com/eolinker/goku/utils"
 )
 
 var (
-	errorScheme       = errors.New("error scheme.only support http-service or https")
-	ErrorStructType   = errors.New("error struct type")
-	errorCreateWorker = errors.New("fail to create upstream worker")
+	_ upstream.IUpstreamCreate = (*Upstream)(nil)
 )
 
-//Http org
-type httpUpstream struct {
-	id          string
-	name        string
-	driver      string
-	desc        string
-	scheme      string
-	balanceType string
-	app         discovery.IApp
-	handler     balance.IBalanceHandler
+type Upstream struct {
+	scheme  string
+	app     discovery.IApp
+	handler balance.IBalanceHandler
+	retry   int
+	timeout time.Duration
 }
 
-//Id 返回worker id
-func (h *httpUpstream) Id() string {
-	return h.id
+func (up *Upstream) Create(id string, configs map[string]*plugin.Config) upstream.IUpstream {
+	panic("implement me")
 }
 
-func (h *httpUpstream) Start() error {
-	return nil
-}
-
-//Reset 重新设置http_proxy负载的配置
-func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	cfg, ok := conf.(*Config)
-	if !ok || cfg == nil {
-		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), ErrorStructType)
-	}
-	if factory, has := workers[cfg.Discovery]; has {
-		f, ok := factory.(discovery.IDiscovery)
-		if ok {
-			if cfg.Scheme != "http" && cfg.Scheme != "https" {
-				return errorScheme
-			}
-			app, err := f.GetApp(cfg.Config)
-			if err != nil {
-				return err
-			}
-			h.desc = cfg.Desc
-			h.scheme = cfg.Scheme
-			h.balanceType = cfg.Type
-			h.app = app
-
-			if err != nil {
-				return err
-			}
-			f, err := balance.GetFactory(h.balanceType)
-			if err != nil {
-				return err
-			}
-			h.handler, err = f.Create(h.app)
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-	}
-	return errorCreateWorker
-}
-
-//Stop 停止http_proxy负载，并关闭相应的app
-func (h *httpUpstream) Stop() error {
-	h.app.Close()
-	return nil
-}
-
-//CheckSkill 检查目标能力是否存在
-func (h *httpUpstream) CheckSkill(skill string) bool {
-	return upstream.CheckSkill(skill)
+func NewUpstream(scheme string, app discovery.IApp, handler balance.IBalanceHandler) *Upstream {
+	return &Upstream{scheme: scheme, app: app, handler: handler}
 }
 
 //Send 请求发送，忽略重试
-func (h *httpUpstream) Send(ctx *http_context.Context, serviceDetail service.IServiceDetail, uri string, query string) (*fasthttp.Response, error) {
-	var response *fasthttp.Response
-	var err error
+func (up *Upstream) Send(ctx http_service.IHttpContext) error {
 
-	path := utils.TrimPrefixAll(uri, "/")
-	request := ctx.ProxyRequest()
-	for doTrice := serviceDetail.Retry() + 1; doTrice > 0; doTrice-- {
-		var node discovery.INode
-		node, err = h.handler.Next()
+	var lastErr error
+	for doTrice := up.retry + 1; doTrice > 0; doTrice-- {
+
+		node, err := up.handler.Next()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		scheme := node.Scheme()
 		if scheme != "http" && scheme != "https" {
-			scheme = h.scheme
+			scheme = up.scheme
 		}
-		request.SetRequestURI(fmt.Sprintf("%s://%s/%s", scheme, node.Addr(), path))
-		response, err = http_proxy.DoRequest(request, serviceDetail.Timeout())
 
-		if err != nil {
-			if response == nil {
-				node.Down()
-			}
+		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
+		lastErr = ctx.SendTo(addr, up.timeout)
+		if lastErr != nil {
+			node.Down()
 			//处理不可用节点
-			h.app.NodeError(node.ID())
+			up.app.NodeError(node.ID())
+
 			continue
-		} else {
-			return response, nil
 		}
 	}
 
-	return response, err
+	return lastErr
 }

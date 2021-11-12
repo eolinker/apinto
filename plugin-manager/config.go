@@ -23,9 +23,3 @@ type PluginConfig struct {
 	Config     interface{}            `json:"config"`
 	InitConfig map[string]interface{} `json:"init_config"`
 }
-
-//OrdinaryPlugin 普通插件配置，在router、service、upstream的插件格式
-type OrdinaryPlugin struct {
-	Disable bool        `json:"disable"`
-	Config  interface{} `json:"config"`
-}
