@@ -2,6 +2,7 @@ package service
 
 import (
 	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/goku/checker"
 	"github.com/eolinker/goku/plugin"
 )
 
@@ -12,7 +13,8 @@ func CheckSkill(skill string) bool {
 
 //IService github.com/eolinker/goku/service.service.IService
 type IService interface {
-	http_service.IFilter
+	http_service.IChain
+	Destroy()
 	//Handle(ctx http_service.IHttpContext, router IRouterEndpoint) error
 }
 type IServiceCreate interface {
@@ -21,9 +23,9 @@ type IServiceCreate interface {
 
 //IRouterEndpoint 实现了返回路由规则信息方法的接口，如返回location、Host、Header、Query
 type IRouterEndpoint interface {
-	Location() (http_service.Checker, bool)
-	Header(name string) (http_service.Checker, bool)
-	Query(name string) (http_service.Checker, bool)
+	Location() (checker.Checker, bool)
+	Header(name string) (checker.Checker, bool)
+	Query(name string) (checker.Checker, bool)
 	Headers() []string
 	Queries() []string
 }

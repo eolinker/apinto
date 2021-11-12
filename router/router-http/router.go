@@ -63,8 +63,10 @@ func (r *Router) Handler(requestCtx *fasthttp.RequestCtx) {
 		return
 	}
 	service.AddEndpoint(ctx, NewEndPoint(e))
-	h.DoFilter(ctx, nil)
-
+	err := h.DoChain(ctx)
+	if err != nil {
+		log.Warn(err)
+	}
 	ctx.Finish()
 }
 

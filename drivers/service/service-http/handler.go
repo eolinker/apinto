@@ -3,8 +3,6 @@ package service_http
 import (
 	"fmt"
 
-	"github.com/eolinker/goku/upstream"
-
 	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/goku/filter"
@@ -16,9 +14,9 @@ import (
 )
 
 type ServiceHandler struct {
-	orgPlugin   plugin.IPlugin
-	executor    filter.IChain
-	upstream    upstream.IUpstream
+	orgPlugin plugin.IPlugin
+	executor  filter.IChain
+
 	proxyMethod string
 }
 
@@ -34,16 +32,6 @@ func (s *ServiceHandler) DoFilter(ctx http_service.IHttpContext, next http_servi
 		ctx.Proxy().SetMethod(s.proxyMethod)
 	}
 
-	response, err = s.send(ctx, s, path, string(ctx.RequestOrg().URI().QueryString()))
-	if err != nil {
-		ctx.SetBody([]byte(err.Error()))
-		ctx.SetStatus(500)
-		return err
-	}
-
-	if next != nil {
-		next.DoChain(ctx)
-	}
 	return nil
 }
 

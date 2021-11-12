@@ -109,12 +109,12 @@ func (m *Manager) Add(port int, id string, config *Config) error {
 	if err != nil {
 		return err
 	}
-	service, has := m.tf.Get(port)
+	serviceTF, has := m.tf.Get(port)
 	if !has {
 		log.Debug("not has port")
 		return nil
 	}
-	service.Set(router.Handler)
+	serviceTF.Set(router.Handler)
 
 	return nil
 }
