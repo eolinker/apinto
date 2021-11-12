@@ -42,7 +42,7 @@ type Config struct {
 	Rules   []Rule
 }
 
-//toPath 根据路由指标Location、Header、Query生成相应Checker并封装成RulePath切片返回
+//toPath 根据路由指标Location、IHeader、Query生成相应Checker并封装成RulePath切片返回
 func (r *Rule) toPath() ([]router.RulePath, error) {
 
 	path := make([]router.RulePath, 0, len(r.Header)+len(r.Query)+1)

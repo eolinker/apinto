@@ -1,65 +1,84 @@
 package http_context
 
 import (
+	"net/http"
+	"net/url"
 	"strings"
+
+	http_service "github.com/eolinker/eosc/http-service"
 
 	"github.com/valyala/fasthttp"
 )
 
-type Value map[string]string
+var _ http_service.IRequestReader = (*RequestReader)(nil)
 
-func (h Value) Get(key string) (string, bool) {
-	v, ok := h[key]
-	return v, ok
-}
-
-type IRequest interface {
-	Host() string
-	Method() string
-	Path() string
-	ContentType() string
-	Header() Value
-	Query() Value
-	RawQuery() string
-	RawBody() []byte
-}
-
-type Request struct {
+type RequestReader struct {
 	req         *fasthttp.Request
-	path        string
+	bodyHandler *BodyRequestHandler
+	remoteAddr  string
+	clientIP    string
 	host        string
 	method      string
-	header      Value
-	query       Value
-	rawQuery    string
 	rawBody     []byte
+	headers     http.Header
+	scheme      string
+	uri         *url.URL
 	contentType string
 }
 
-func (r *Request) Host() string {
-	if r.host == "" {
-		r.host = strings.Split(string(r.req.Header.Host()), ":")[0]
-	}
-	return r.host
+func NewRequestReader(req *fasthttp.Request, remoteAddr string) *RequestReader {
+	return &RequestReader{req: req, remoteAddr: remoteAddr}
 }
 
-func (r *Request) Method() string {
-	if r.method == "" {
-		r.method = string(r.req.Header.Method())
+func (r *RequestReader) ContentType() string {
+	if r.contentType == "" {
+		r.contentType = string(r.req.Header.ContentType())
 	}
-	return r.method
+	return r.contentType
 }
 
-func (r *Request) Path() string {
-	if r.path == "" {
-		r.path = string(r.req.URI().Path())
+func (r *RequestReader) BodyForm() (url.Values, error) {
+	if r.bodyHandler == nil {
+		r.bodyHandler = newBodyRequestHandler(r.ContentType(), r.req.Body())
 	}
-	return r.path
+	return r.bodyHandler.BodyForm()
 }
 
-func (r *Request) Header() Value {
-	if r.header == nil {
-		r.header = make(Value)
+func (r *RequestReader) Files() (map[string]*http_service.FileHeader, error) {
+	if r.bodyHandler == nil {
+		r.bodyHandler = newBodyRequestHandler(r.ContentType(), r.req.Body())
+	}
+	return r.bodyHandler.Files()
+}
+
+func (r *RequestReader) GetForm(key string) string {
+	if r.bodyHandler == nil {
+		r.bodyHandler = newBodyRequestHandler(r.ContentType(), r.req.Body())
+	}
+	return r.bodyHandler.GetForm(key)
+}
+
+func (r *RequestReader) GetFile(key string) (file *http_service.FileHeader, has bool) {
+	if r.bodyHandler == nil {
+		r.bodyHandler = newBodyRequestHandler(r.ContentType(), r.req.Body())
+	}
+	return r.bodyHandler.GetFile(key)
+}
+
+func (r *RequestReader) RawBody() ([]byte, error) {
+	if r.bodyHandler == nil {
+		r.bodyHandler = newBodyRequestHandler(r.ContentType(), r.req.Body())
+	}
+	return r.bodyHandler.RawBody()
+}
+
+func (r *RequestReader) GetHeader(name string) string {
+	return r.Headers().Get(name)
+}
+
+func (r *RequestReader) Headers() http.Header {
+	if r.headers == nil {
+		r.headers = make(http.Header)
 		hs := strings.Split(r.req.Header.String(), "\r\n")
 		for _, h := range hs {
 			vs := strings.Split(h, ":")
@@ -67,62 +86,66 @@ func (r *Request) Header() Value {
 				if vs[0] == "" {
 					continue
 				}
-				r.header[vs[0]] = ""
+				r.headers[vs[0]] = []string{""}
 				continue
 			}
-			r.header[vs[0]] = strings.TrimSpace(vs[1])
+			r.headers[vs[0]] = []string{strings.TrimSpace(vs[1])}
 
 		}
 	}
-	return r.header
+	return r.headers
 }
 
-func (r *Request) Query() Value {
-	if r.rawQuery == "" {
-		r.rawQuery = string(r.req.URI().QueryString())
+func (r *RequestReader) Method() string {
+	if r.method == "" {
+		r.method = string(r.req.Header.Method())
 	}
-	if r.query == nil {
-		r.query = make(Value)
-		qs := strings.Split(r.rawQuery, "&")
-		for _, q := range qs {
-			vs := strings.Split(q, "=")
-			if len(vs) < 2 {
-				if vs[0] == "" {
-					continue
-				}
-				r.query[vs[0]] = ""
-				continue
-			}
-			r.query[vs[0]] = strings.TrimSpace(vs[1])
+	return r.method
+}
+
+func (r *RequestReader) URL() url.URL {
+	if r.uri == nil {
+		r.uri, _ = url.Parse(r.req.URI().String())
+	}
+	return *r.uri
+}
+
+func (r *RequestReader) RequestURI() string {
+	return string(r.req.RequestURI())
+}
+
+func (r *RequestReader) Host() string {
+	if r.host == "" {
+		r.host = strings.Split(string(r.req.Header.Host()), ":")[0]
+	}
+	return r.host
+}
+
+func (r *RequestReader) RemoteAddr() string {
+	if r.clientIP == "" {
+		clientIP := string(r.req.Header.Peek("X-Forwarded-For"))
+		if index := strings.IndexByte(clientIP, ','); index >= 0 {
+			clientIP = clientIP[0:index]
 		}
+		clientIP = strings.TrimSpace(clientIP)
+		if len(clientIP) < 1 {
+			clientIP = strings.TrimSpace(string(r.req.Header.Peek("X-Real-Ip")))
+			if len(clientIP) < 1 {
+				clientIP = r.remoteAddr
+			}
+		}
+		r.clientIP = clientIP
 	}
-	return r.query
+	return r.clientIP
 }
 
-func (r *Request) RawQuery() string {
-	if r.rawQuery == "" {
-		r.rawQuery = string(r.req.URI().QueryString())
+func (r *RequestReader) Scheme() string {
+	if r.scheme == "" {
+		r.scheme = string(r.req.URI().Scheme())
 	}
-	return r.rawQuery
+	return r.scheme
 }
 
-func (r *Request) RawBody() []byte {
-	if r.rawBody == nil {
-		r.rawBody = r.req.Body()
-	}
-	return r.rawBody
-}
-
-func (r *Request) ContentType() string {
-	if r.contentType == "" {
-		r.contentType = string(r.req.Header.ContentType())
-	}
-	return r.contentType
-}
-
-func newRequest(req *fasthttp.Request) IRequest {
-	newReq := &Request{
-		req: req,
-	}
-	return newReq
+func (r *RequestReader) Request() *fasthttp.Request {
+	return r.req
 }

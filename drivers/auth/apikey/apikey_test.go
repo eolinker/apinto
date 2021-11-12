@@ -231,7 +231,7 @@ func TestFormAuthorization(t *testing.T) {
 		"Content-Type":       "application/x-www-form-urlencoded",
 	}
 	// http-service
-	//req, err := buildRequest(headers, nil, formBody.Encode())
+	//req, err := buildRequest(headers, nil, formBody.encode())
 	//if err != nil {
 	//	t.Error(err)
 	//	return

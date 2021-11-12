@@ -293,22 +293,22 @@ func decodeSegment(seg string) ([]byte, error) {
 	return base64.URLEncoding.DecodeString(seg)
 }
 
-// Encode JWT specific base64url encoding with padding stripped
+// encode JWT specific base64url encoding with padding stripped
 func encodeSegment(seg []byte) string {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(seg), "=")
 }
 
-//ParseRSAPublicKeyFromPEM Parse PEM encoded PKCS1 or PKCS8 public key
+//ParseRSAPublicKeyFromPEM parse PEM encoded PKCS1 or PKCS8 public key
 func ParseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 	var err error
 
-	// Parse PEM block
+	// parse PEM block
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {
 		return nil, errKeyMustBePEMEncoded
 	}
 
-	// Parse the key
+	// parse the key
 	var parsedKey interface{}
 	if parsedKey, err = x509.ParsePKIXPublicKey(block.Bytes); err != nil {
 		if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
@@ -327,17 +327,17 @@ func ParseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 	return pkey, nil
 }
 
-//ParseECPublicKeyFromPEM Parse PEM encoded PKCS1 or PKCS8 public key
+//ParseECPublicKeyFromPEM parse PEM encoded PKCS1 or PKCS8 public key
 func ParseECPublicKeyFromPEM(key []byte) (*ecdsa.PublicKey, error) {
 	var err error
 
-	// Parse PEM block
+	// parse PEM block
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {
 		return nil, errKeyMustBePEMEncoded
 	}
 
-	// Parse the key
+	// parse the key
 	var parsedKey interface{}
 	if parsedKey, err = x509.ParsePKIXPublicKey(block.Bytes); err != nil {
 		if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
@@ -520,7 +520,7 @@ func (j *jwt) retrieveJWTToken(context http_service.IHttpContext) (string, error
 
 	if value := context.Request().URL().Query().Get(tokenName); value != "" {
 		if j.hideCredentials {
-			context.Proxy().Querys().Del(tokenName)
+			context.Proxy().Queries().Del(tokenName)
 		}
 		return value, nil
 	}
