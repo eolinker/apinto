@@ -4,10 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	upstream_http "github.com/eolinker/goku/drivers/upstream/upstream-http"
-	"github.com/eolinker/goku/plugin"
+	"github.com/eolinker/goku/upstream/balance"
 
 	"time"
+
+	upstream_http "github.com/eolinker/goku/drivers/upstream/upstream-http"
 
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/goku/upstream"
@@ -22,18 +23,11 @@ var (
 )
 
 type serviceWorker struct {
-	id          string
-	name        string
-	desc        string
-	driver      string
-	timeout     time.Duration
-	retry       int
-	scheme      string
-	proxyMethod string
-
-	upstream upstream.IUpstream
-
-	pluginConfig map[string]*plugin.Config
+	Service
+	id     string
+	name   string
+	desc   string
+	driver string
 }
 
 //Id 返回服务实例 worker id
@@ -52,7 +46,8 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
 	data.rebuild()
-	if data.Upstream == "" && data.UpstreamAnonymous == "" {
+
+	if data.Upstream == "" && data.UpstreamAnonymous == nil {
 		return ErrorNeedUpstream
 	}
 	var upstreamCreate upstream.IUpstream
@@ -63,23 +58,31 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 			return fmt.Errorf("%s:%w", data.Upstream, ErrorInvalidUpstream)
 		}
 	} else {
-		anonymous, err := defaultDiscovery.GetApp(data.UpstreamAnonymous)
+		balanceFactory, err := balance.GetFactory(data.UpstreamAnonymous.Type)
 		if err != nil {
 			return err
 		}
-		upstreamCreate = upstream_http.NewUpstream(s.scheme)
+
+		anonymous, err := defaultDiscovery.GetApp(data.UpstreamAnonymous.Config)
+		if err != nil {
+			return err
+		}
+		balanceHandler, err := balanceFactory.Create(anonymous)
+		if err != nil {
+			return err
+		}
+		upstreamCreate = upstream_http.NewUpstream(s.scheme, anonymous, balanceHandler, nil)
 	}
 
 	//
 	s.desc = data.Desc
-	s.timeout = time.Duration(data.Timeout) * time.Millisecond
+	s.Service.timeout = time.Duration(data.Timeout) * time.Millisecond
 
-	s.retry = data.Retry
-	s.scheme = data.Scheme
-	s.proxyMethod = data.ProxyMethod
-	s.upstream = nil
+	s.Service.retry = data.Retry
+	s.Service.scheme = data.Scheme
+	s.Service.proxyMethod = data.ProxyMethod
 
-	upstreamWork.(upstream.IUpstream).Create()
+	s.Service.reset(upstreamCreate, data.PluginConfig)
 
 	return nil
 

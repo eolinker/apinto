@@ -12,6 +12,10 @@ func CheckSkill(skill string) bool {
 	return skill == "github.com/eolinker/goku/upstream.upstream.IUpstream"
 }
 
+type IUpstreamHandler interface {
+	http_service.IChain
+	Destroy()
+}
 type IUpstream interface {
-	Create(id string, configs map[string]*plugin.Config, retry int, time time.Duration) (http_service.IChain, error)
+	Create(id string, configs map[string]*plugin.Config, retry int, time time.Duration) (IUpstreamHandler, error)
 }

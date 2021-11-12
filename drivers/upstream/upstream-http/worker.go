@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/goku/plugin"
 
 	"github.com/eolinker/eosc/log"
@@ -35,11 +34,11 @@ type httpUpstream struct {
 	lastError error
 }
 
-func (h *httpUpstream) Create(id string, configs map[string]*plugin.Config, retry int, time time.Duration) (http_service.IChain, error) {
+func (h *httpUpstream) Create(id string, configs map[string]*plugin.Config, retry int, time time.Duration) (upstream.IUpstreamHandler, error) {
 	if h.upstream == nil {
 		return nil, ErrorUpstreamNotInit
 	}
-	return h.upstream.Create(id, configs, retry, time), nil
+	return h.upstream.create(id, configs, retry, time), nil
 }
 
 //Id 返回worker id

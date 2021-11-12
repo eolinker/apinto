@@ -19,6 +19,15 @@ type UpstreamHandler struct {
 	orgFilter     plugin.IPlugin
 }
 
+func (u *UpstreamHandler) Destroy() {
+
+	if u.orgFilter != nil {
+		u.orgFilter.Destroy()
+		u.orgFilter = nil
+	}
+
+}
+
 func NewUpstreamHandler(id string, upstream *Upstream, retry int, timeout time.Duration, pluginsSource map[string]*plugin.Config) *UpstreamHandler {
 	uh := &UpstreamHandler{
 		id:            id,

@@ -3,9 +3,10 @@ package upstream_http
 import (
 	"time"
 
+	"github.com/eolinker/goku/upstream"
+
 	"github.com/eolinker/eosc"
 
-	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/goku/discovery"
 	"github.com/eolinker/goku/plugin"
 	"github.com/eolinker/goku/upstream/balance"
@@ -21,7 +22,10 @@ type Upstream struct {
 	pluginConf map[string]*plugin.Config
 }
 
-func (up *Upstream) Create(id string, configs map[string]*plugin.Config, retry int, timeout time.Duration) http_service.IChain {
+func (up *Upstream) Create(id string, configs map[string]*plugin.Config, retry int, timeout time.Duration) (upstream.IUpstreamHandler, error) {
+	return up.create(id, configs, retry, timeout), nil
+}
+func (up *Upstream) create(id string, configs map[string]*plugin.Config, retry int, timeout time.Duration) *UpstreamHandler {
 	nh := NewUpstreamHandler(id, up, retry, timeout, configs)
 	up.handlers.Set(id, nh)
 	return nh
