@@ -3,6 +3,10 @@ package upstream_http
 import (
 	"errors"
 	"fmt"
+	"time"
+
+	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/goku/plugin"
 
 	"github.com/eolinker/eosc/log"
 
@@ -15,17 +19,27 @@ import (
 )
 
 var (
-	errorScheme       = errors.New("error scheme.only support http-service or https")
-	ErrorStructType   = errors.New("error struct type")
-	errorCreateWorker = errors.New("fail to create upstream worker")
+	errorScheme          = errors.New("error scheme.only support http-service or https")
+	ErrorStructType      = errors.New("error struct type")
+	errorCreateWorker    = errors.New("fail to create upstream worker")
+	ErrorUpstreamNotInit = errors.New("upstream not init")
 )
+var _ upstream.IUpstreamCreate = (*httpUpstream)(nil)
 
 //Http org
 type httpUpstream struct {
-	*Upstream
-	id   string
-	name string
-	desc string
+	upstream  *Upstream
+	id        string
+	name      string
+	desc      string
+	lastError error
+}
+
+func (h *httpUpstream) Create(id string, configs map[string]*plugin.Config, retry int, time time.Duration) (http_service.IChain, error) {
+	if h.upstream == nil {
+		return nil, ErrorUpstreamNotInit
+	}
+	return h.upstream.Create(id, configs, retry, time), nil
 }
 
 //Id 返回worker id
@@ -43,6 +57,7 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 	if !ok || cfg == nil {
 		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), ErrorStructType)
 	}
+
 	if factory, has := workers[cfg.Discovery]; has {
 		discoveryFactory, ok := factory.(discovery.IDiscovery)
 		if ok {
@@ -58,20 +73,25 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 			if err != nil {
 				return err
 			}
-			balanceHandler, err := balanceFactory.Create(h.app)
+			balanceHandler, err := balanceFactory.Create(app)
 			if err != nil {
 				return err
 			}
 
 			h.desc = cfg.Desc
 
-			old := h.Upstream
-			h.Upstream = NewUpstream(cfg.Scheme, app, balanceHandler)
-			closeError := old.app.Close()
-			if closeError != nil {
+			if h.upstream == nil {
+				old := h.upstream.app
+				h.upstream = NewUpstream(cfg.Scheme, app, balanceHandler, cfg.Plugins)
+				closeError := old.Close()
+				if closeError != nil {
 
-				log.Warn("close app:", closeError)
+					log.Warn("close app:", closeError)
+				}
+			} else {
+				h.upstream.Reset(cfg.Scheme, app, balanceHandler, cfg.Plugins)
 			}
+
 			return nil
 		}
 	}
@@ -80,9 +100,11 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 
 //Stop 停止http_proxy负载，并关闭相应的app
 func (h *httpUpstream) Stop() error {
-	if h.Upstream != nil {
-		h.Upstream.app.Close()
-		h.Upstream = nil
+	if h.upstream != nil {
+		h.upstream.app.Close()
+
+		h.upstream.destroy()
+		h.upstream = nil
 	}
 
 	return nil
