@@ -1,9 +1,8 @@
 package service
 
 import (
-	"github.com/eolinker/goku/plugin"
-
 	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/goku/plugin"
 )
 
 //CheckSkill 检查目标技能是否符合
@@ -29,6 +28,10 @@ type IRouterEndpoint interface {
 	Queries() []string
 }
 
+type routerEndpointKey struct{}
+
+var RouterEndpointKey = routerEndpointKey{}
+
 ////IServiceDetail 实现了返回服务信息方法的接口，如返回服务名，服务描述，重试次数间等..
 //type IServiceDetail interface {
 //	Name() string
@@ -38,3 +41,15 @@ type IRouterEndpoint interface {
 //	Scheme() string
 //	ProxyAddr() string
 //}
+
+func EndpointFromContext(ctx http_service.IHttpContext) (IRouterEndpoint, bool) {
+	value := ctx.Value(RouterEndpointKey)
+	if value != nil {
+		ep, ok := value.(IRouterEndpoint)
+		return ep, ok
+	}
+	return nil, false
+}
+func AddEndpoint(ctx http_service.IHttpContext, endpoint IRouterEndpoint) {
+	ctx.WithValue(RouterEndpointKey, endpoint)
+}

@@ -3,6 +3,8 @@ package router_http
 import (
 	"sync"
 
+	"github.com/eolinker/goku/service"
+
 	"github.com/eolinker/eosc/log"
 
 	http_context "github.com/eolinker/goku/node/http-context"
@@ -60,8 +62,10 @@ func (r *Router) Handler(requestCtx *fasthttp.RequestCtx) {
 		requestCtx.NotFound()
 		return
 	}
-	h.Handle(ctx, NewEndPoint(e))
+	service.AddEndpoint(ctx, NewEndPoint(e))
+	h.DoFilter(ctx, nil)
 
+	ctx.Finish()
 }
 
 //SetRouter 将路由配置加入到路由树中

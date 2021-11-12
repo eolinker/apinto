@@ -2,8 +2,6 @@ package checker
 
 import (
 	"fmt"
-
-	http_service "github.com/eolinker/eosc/http-service"
 )
 
 //checkerAll 实现了Checker接口，能进行非等匹配
@@ -31,8 +29,8 @@ func (e *checkerNotEqual) Check(v string, has bool) bool {
 }
 
 //CheckType 返回检查器的类型值
-func (e *checkerNotEqual) CheckType() http_service.CheckType {
-	return http_service.CheckTypeNotEqual
+func (e *checkerNotEqual) CheckType() CheckType {
+	return CheckTypeNotEqual
 }
 
 //newCheckerAll 创建一个非等匹配类型的检查器
