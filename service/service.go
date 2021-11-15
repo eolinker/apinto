@@ -14,7 +14,6 @@ func CheckSkill(skill string) bool {
 //IService github.com/eolinker/goku/service.service.IService
 type IService interface {
 	http_service.IChain
-	Destroy()
 	//Handle(ctx http_service.IHttpContext, router IRouterEndpoint) error
 }
 type IServiceCreate interface {
