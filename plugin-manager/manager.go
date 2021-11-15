@@ -31,6 +31,7 @@ type PluginManager struct {
 	extenderDrivers eosc.IExtenderDrivers
 	plugins         Plugins
 	pluginObjs      eosc.IUntyped
+	workers         eosc.IWorkers
 }
 
 func (p *PluginManager) CreateRouter(id string, conf map[string]*plugin.Config) plugin.IPlugin {

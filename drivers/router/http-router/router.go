@@ -19,6 +19,12 @@ type Router struct {
 	service service.IService
 }
 
+func (r *Router) Destroy() {
+	if r.service != nil {
+		r.service.Destroy()
+	}
+}
+
 func (r *Router) DoChain(ctx http_service.IHttpContext) error {
 	if r.service == nil {
 		return nil

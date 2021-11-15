@@ -9,6 +9,8 @@ import (
 	"github.com/eolinker/goku/auth"
 )
 
+var _ http_service.IFilter = (*Auth)(nil)
+
 type Auth struct {
 	*Driver
 	id    string
@@ -16,11 +18,20 @@ type Auth struct {
 	auths []auth.IAuth
 }
 
+func (a *Auth) Destroy() {
+
+}
+
 func (a *Auth) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
 	err := a.doAuth(ctx)
 	if err != nil {
-		ctx.SetBody([]byte(err.Error()))
-		ctx.SetStatus(403, "403")
+		resp, er := ctx.Response()
+		if er != nil {
+			log.Error("auth:", er)
+			return er
+		}
+		resp.SetBody([]byte(err.Error()))
+		resp.SetStatus(403, "403")
 		return err
 	}
 	if next != nil {

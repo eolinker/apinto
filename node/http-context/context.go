@@ -16,15 +16,12 @@ var _ http_service.IHttpContext = (*Context)(nil)
 type Context struct {
 	fastHttpRequestCtx *fasthttp.RequestCtx
 	requestOrg         *fasthttp.Request
-
-	proxyRequest *ProxyRequest
-
-	requestID string
-
-	response      *Response
-	responseError error
-	requestReader *RequestReader
-	ctx           context.Context
+	proxyRequest       *ProxyRequest
+	requestID          string
+	response           *Response
+	responseError      error
+	requestReader      *RequestReader
+	ctx                context.Context
 }
 
 func (ctx *Context) Response() (http_service.IResponse, error) {
@@ -69,9 +66,10 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 		fastHttpRequestCtx: ctx,
 		requestOrg:         fasthttp.AcquireRequest(),
 		requestID:          requestID,
-		responseError:      ErrorNotSend,
 		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteAddr().String()),
 		proxyRequest:       NewProxyRequest(proxyRequest),
+		response:           NewResponse(fasthttp.AcquireResponse()),
+		responseError:      nil,
 	}
 
 	return newCtx
@@ -80,10 +78,6 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 //RequestId 请求ID
 func (ctx *Context) RequestId() string {
 	return ctx.requestID
-}
-
-func (ctx *Context) SetBody(body []byte) {
-	ctx.fastHttpRequestCtx.SetBody(body)
 }
 
 func (ctx *Context) SetResponse(response *fasthttp.Response) {

@@ -14,7 +14,6 @@ func CheckSkill(skill string) bool {
 
 type IUpstreamHandler interface {
 	http_service.IChain
-	Destroy()
 }
 type IUpstream interface {
 	Create(id string, configs map[string]*plugin.Config, retry int, time time.Duration) (IUpstreamHandler, error)

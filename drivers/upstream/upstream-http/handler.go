@@ -70,8 +70,9 @@ func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
 		if u.orgFilter == nil {
 			lastErr = filterSender.DoFilter(ctx, nil)
 		} else {
-			u.orgFilter.Append(filterSender)
+			lastErr = u.orgFilter.Append(filterSender).DoChain(ctx)
 		}
+
 	}
 
 	return lastErr
@@ -80,6 +81,10 @@ func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
 type SendAddr struct {
 	timeout time.Duration
 	addr    string
+}
+
+func (s *SendAddr) Destroy() {
+
 }
 
 func NewSendAddr(addr string, timeout time.Duration) *SendAddr {
