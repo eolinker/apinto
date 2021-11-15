@@ -14,7 +14,7 @@ func (c *_ChainHandler) Destroy() {
 }
 
 func createHandler(filters []http_service.IFilter) *_ChainHandler {
-	orgFilter := toFilter(filters)
+	orgFilter := ToFilter(filters)
 	return &_ChainHandler{
 		orgFilter:    orgFilter,
 		resetHandler: orgFilter,

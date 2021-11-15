@@ -17,7 +17,7 @@ func (c *_ChainFilter) Destroy() {
 
 }
 
-func toFilter(filters []http_service.IFilter) *_ChainFilter {
+func ToFilter(filters []http_service.IFilter) *_ChainFilter {
 	c := &_ChainFilter{}
 	c.Reset(filters...)
 	return c

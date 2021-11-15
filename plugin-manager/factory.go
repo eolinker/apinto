@@ -18,6 +18,10 @@ var (
 type PluginFactory struct {
 }
 
+func (p *PluginFactory) Check(v interface{}, workers map[eosc.RequireId]interface{}) error {
+	return nil
+}
+
 func (p *PluginManager) ConfigType() reflect.Type {
 	return reflect.TypeOf(new(PluginWorkerConfig))
 }

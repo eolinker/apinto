@@ -16,4 +16,5 @@ type PluginObj struct {
 
 func (p *PluginObj) Destroy() {
 	p.manager.RemoveObj(p.id)
+	p.IChainHandler.Destroy()
 }
