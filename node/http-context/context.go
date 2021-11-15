@@ -2,6 +2,7 @@ package http_context
 
 import (
 	"context"
+	"time"
 
 	"github.com/valyala/fasthttp"
 
@@ -30,7 +31,7 @@ func (ctx *Context) Response() (http_service.IResponse, error) {
 	return ctx.response, ctx.responseError
 }
 
-func (ctx *Context) SendTo(address string) error {
+func (ctx *Context) SendTo(address string, timeout time.Duration) error {
 	panic("implement me")
 }
 

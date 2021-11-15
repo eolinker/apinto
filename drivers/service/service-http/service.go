@@ -1,95 +1,45 @@
 package service_http
 
 import (
-	"errors"
-	"fmt"
-
-	upstream_http "github.com/eolinker/goku/drivers/upstream/upstream-http"
-	"github.com/eolinker/goku/plugin"
-
 	"time"
 
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku/upstream"
-
+	"github.com/eolinker/goku/plugin"
 	"github.com/eolinker/goku/service"
+	"github.com/eolinker/goku/upstream"
 )
 
-var (
-	ErrorStructType      = errors.New("error struct type")
-	ErrorNeedUpstream    = errors.New("need upstream")
-	ErrorInvalidUpstream = errors.New("not upstream")
-)
+type Service struct {
+	upstream upstream.IUpstream
+	configs  map[string]*plugin.Config
+	handlers *Handlers
+	retry    int
+	timeout  time.Duration
 
-type serviceWorker struct {
-	id          string
-	name        string
-	desc        string
-	driver      string
-	timeout     time.Duration
-	retry       int
 	scheme      string
 	proxyMethod string
-
-	upstream upstream.IUpstreamCreate
-
-	pluginConfig map[string]*plugin.Config
 }
 
-//Id 返回服务实例 worker id
-func (s *serviceWorker) Id() string {
-	return s.id
-}
+func (s *Service) reset(upstream upstream.IUpstream, config map[string]*plugin.Config) {
+	s.configs = config
+	s.upstream = upstream
 
-func (s *serviceWorker) Start() error {
+	for _, h := range s.handlers.List() {
+		h.rebuild(upstream)
+	}
+}
+func (s *Service) mergePluginConfig(config map[string]*plugin.Config) map[string]*plugin.Config {
+	return plugin.MergeConfig(config, s.configs)
+}
+func (s *Service) Create(id string, configs map[string]*plugin.Config) service.IService {
+	h := s.newHandler(id, configs)
+	h.rebuild(s.upstream)
 	return nil
 }
 
-//Reset 重置服务实例的配置
-func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	data, ok := conf.(*Config)
-	if !ok {
-		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
+func (s *Service) newHandler(id string, config map[string]*plugin.Config) *ServiceHandler {
+	return &ServiceHandler{
+		service: s,
+		id:      id,
+		config:  config,
 	}
-	data.rebuild()
-	if data.Upstream == "" && data.UpstreamAnonymous == "" {
-		return ErrorNeedUpstream
-	}
-	var upstreamCreate upstream.IUpstreamCreate
-	if upstreamWork, has := workers[data.Upstream]; has {
-		if up, ok := upstreamWork.(upstream.IUpstreamCreate); ok {
-			upstreamCreate = up
-		} else {
-			return fmt.Errorf("%s:%w", data.Upstream, ErrorInvalidUpstream)
-		}
-	} else {
-		anonymous, err := defaultDiscovery.GetApp(data.UpstreamAnonymous)
-		if err != nil {
-			return err
-		}
-		upstreamCreate = upstream_http.NewUpstream(s.scheme)
-	}
-
-	//
-	s.desc = data.Desc
-	s.timeout = time.Duration(data.Timeout) * time.Millisecond
-
-	s.retry = data.Retry
-	s.scheme = data.Scheme
-	s.proxyMethod = data.ProxyMethod
-	s.upstream = nil
-
-	upstreamWork.(upstream.IUpstreamCreate).Create()
-
-	return nil
-
-}
-
-func (s *serviceWorker) Stop() error {
-	return nil
-}
-
-//CheckSkill 检查目标能力是否存在
-func (s *serviceWorker) CheckSkill(skill string) bool {
-	return service.CheckSkill(skill)
 }
