@@ -11,8 +11,8 @@
   drivers:
     -
       id: eolinker:goku:http_router
-      name: http
-      label: http
+      name: http-service
+      label: http-service
       desc: http路由
 -
   name: service
@@ -25,7 +25,7 @@
   drivers:
     -
       id: eolinker:goku:service_http
-      name: http
+      name: http-service
       label: service
       desc: 服务
 -
@@ -120,3 +120,18 @@
       name: stdlog
       label: 标准输出日志
       desc: 标准输出日志
+-
+  name: setting
+  label: 全局设置
+  desc: 全局设置
+  append_label: null
+  mode: factory
+  drivers:
+    - id: eolinker:goku:service_plugin
+      name: service_plugin
+      label: 插件
+      desc: 插件
+    - id: eolinker:goku:upstream_plugin
+      name: upstream_plugin
+      label: 插件
+      desc: 插件

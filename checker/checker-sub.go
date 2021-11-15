@@ -3,6 +3,8 @@ package checker
 import (
 	"fmt"
 	"strings"
+
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 //SubChecker 实现了Checker接口，能进行子串匹配
@@ -30,8 +32,8 @@ func (p *SubChecker) Check(v string, has bool) bool {
 }
 
 //CheckType 返回检查器的类型值
-func (p *SubChecker) CheckType() CheckType {
-	return CheckTypeSub
+func (p *SubChecker) CheckType() http_service.CheckType {
+	return http_service.CheckTypeSub
 }
 
 //newCheckerAll 创建一个子串匹配类型的检查器

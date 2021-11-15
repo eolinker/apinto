@@ -4,18 +4,20 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 //checkerAll 实现了Checker接口，能进行正则匹配
 type checkerRegexp struct {
 	pattern string
 	rex     *regexp.Regexp
-	tp      CheckType
+	tp      http_service.CheckType
 }
 
 //Key 返回路由指标检查器带有完整规则符号的检测值
 func (t *checkerRegexp) Key() string {
-	if t.tp == CheckTypeRegularG {
+	if t.tp == http_service.CheckTypeRegularG {
 		return fmt.Sprintf("~*= %s", t.pattern)
 	}
 	return fmt.Sprintf("~= %s", t.pattern)
@@ -32,7 +34,7 @@ func newCheckerRegexp(pattern string) (*checkerRegexp, error) {
 	return &checkerRegexp{
 		pattern: pattern,
 		rex:     rex,
-		tp:      CheckTypeRegular,
+		tp:      http_service.CheckTypeRegular,
 	}, nil
 }
 
@@ -51,7 +53,7 @@ func newCheckerRegexpG(pattern string) (*checkerRegexp, error) {
 	return &checkerRegexp{
 		pattern: pattern,
 		rex:     rex,
-		tp:      CheckTypeRegularG,
+		tp:      http_service.CheckTypeRegularG,
 	}, nil
 }
 
@@ -71,7 +73,7 @@ func (t *checkerRegexp) Check(v string, has bool) bool {
 }
 
 //CheckType 返回检查器的类型值
-func (t *checkerRegexp) CheckType() CheckType {
+func (t *checkerRegexp) CheckType() http_service.CheckType {
 	return t.tp
 }
 

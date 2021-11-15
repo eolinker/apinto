@@ -1,11 +1,12 @@
 package httplog
 
 import (
+	"net/http"
+	"testing"
+
 	"github.com/eolinker/eosc/log"
 	transporter_manager "github.com/eolinker/eosc/log/transporter-manager"
 	httplog_transporter "github.com/eolinker/goku/log-transport/httplog"
-	"net/http"
-	"testing"
 )
 
 func TestHTTPLog(t *testing.T) {

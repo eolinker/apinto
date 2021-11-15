@@ -1,8 +1,11 @@
 package router_http
 
 import (
+	"crypto/tls"
 	"errors"
 	"sync"
+
+	"github.com/eolinker/eosc/config"
 
 	"github.com/eolinker/eosc/log"
 
@@ -28,12 +31,14 @@ var manager iManager
 
 func init() {
 	var tf traffic.ITraffic
+	var cfg *config.ListensMsg
 	bean.Autowired(&tf)
+	bean.Autowired(&cfg)
 
 	bean.AddInitializingBeanFunc(func() {
 		log.Debug("init router manager")
 
-		manager = NewManager(tf)
+		manager = NewManager(tf, cfg)
 	})
 }
 
@@ -56,12 +61,31 @@ func (m *Manager) Cancel() {
 }
 
 //NewManager 创建路由管理器
-func NewManager(tf traffic.ITraffic) *Manager {
-
+func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg) *Manager {
+	log.Debug("new router manager")
 	m := &Manager{
 		routers: NewRouters(),
 		tf:      traffic_http_fast.NewHttpTraffic(tf),
 		locker:  sync.Mutex{},
+	}
+
+	for _, cfg := range listenCfg.Listens {
+		port := int(cfg.Port)
+		l, err := tf.ListenTcp("", port)
+		if err != nil {
+			log.Warn("worker listen tcp error:", err)
+			continue
+		}
+		if cfg.Scheme == "https" {
+			cert, err := config.NewCert(cfg.Certificate, listenCfg.Dir)
+			if err != nil {
+				log.Warn("worker create certificate error:", err)
+				continue
+			}
+			m.tf.Set(port, traffic_http_fast.NewHttpService(tls.NewListener(l, &tls.Config{GetCertificate: cert.GetCertificate})))
+			continue
+		}
+		m.tf.Set(port, traffic_http_fast.NewHttpService(l))
 	}
 	return m
 }
@@ -70,18 +94,27 @@ func NewManager(tf traffic.ITraffic) *Manager {
 func (m *Manager) Add(port int, id string, config *Config) error {
 	m.locker.Lock()
 	defer m.locker.Unlock()
-
+	if port == 0 {
+		srv := m.tf.All()
+		for p, s := range srv {
+			router, _, err := m.routers.Set(p, id, config)
+			if err != nil {
+				return err
+			}
+			s.Set(router.Handler)
+		}
+		return nil
+	}
 	router, _, err := m.routers.Set(port, id, config)
 	if err != nil {
 		return err
 	}
-	if config.Protocol == "https" {
-		certs := newCerts(config.Cert)
-		m.tf.Get(port).SetHttps(router.Handler(), certs.certs)
-
-	} else {
-		m.tf.Get(port).SetHttp(router.Handler())
+	service, has := m.tf.Get(port)
+	if !has {
+		log.Debug("not has port")
+		return nil
 	}
+	service.Set(router.Handler)
 
 	return nil
 }

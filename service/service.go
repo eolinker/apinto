@@ -3,8 +3,7 @@ package service
 import (
 	"time"
 
-	http_context "github.com/eolinker/goku/node/http-context"
-	"github.com/eolinker/goku/router/checker"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 //CheckSkill 检查目标技能是否符合
@@ -14,14 +13,14 @@ func CheckSkill(skill string) bool {
 
 //IService github.com/eolinker/goku/service.service.IService
 type IService interface {
-	Handle(ctx *http_context.Context, router IRouterEndpoint) error
+	Handle(ctx http_service.IHttpContext) error
 }
 
-//IRouterEndpoint 实现了返回路由规则信息方法的接口，如返回location、Host、Header、Query
+//IRouterEndpoint 实现了返回路由规则信息方法的接口，如返回location、Host、IHeader、Query
 type IRouterEndpoint interface {
-	Location() (checker.Checker, bool)
-	Header(name string) (checker.Checker, bool)
-	Query(name string) (checker.Checker, bool)
+	Location() (http_service.Checker, bool)
+	Header(name string) (http_service.Checker, bool)
+	Query(name string) (http_service.Checker, bool)
 	Headers() []string
 	Queries() []string
 }

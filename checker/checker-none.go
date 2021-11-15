@@ -1,6 +1,10 @@
 package checker
 
-import "strings"
+import (
+	"strings"
+
+	http_service "github.com/eolinker/eosc/http-service"
+)
 
 var (
 	globalCheckerNone = &checkerNone{}
@@ -8,7 +12,6 @@ var (
 
 //checkerAll 实现了Checker接口，能进行空值匹配
 type checkerNone struct {
-
 }
 
 //Key 返回路由指标检查器带有完整规则符号的检测值
@@ -24,15 +27,15 @@ func (t *checkerNone) Value() string {
 //Check 判断待检测的路由指标值是否满足检查器的匹配规则
 func (t *checkerNone) Check(v string, has bool) bool {
 	//当待检测的路由指标值存在且值为空时匹配成功
-	if !has{
+	if !has {
 		return false
 	}
 	return strings.TrimSpace(v) == ""
 }
 
 //CheckType 返回检查器的类型值
-func (t *checkerNone) CheckType() CheckType {
-	return CheckTypeNone
+func (t *checkerNone) CheckType() http_service.CheckType {
+	return http_service.CheckTypeNone
 }
 
 //newCheckerAll 创建一个空值匹配类型的检查器

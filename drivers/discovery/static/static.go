@@ -16,8 +16,6 @@ import (
 	"github.com/eolinker/goku/discovery"
 )
 
-const name = "static"
-
 var (
 	errorStructType = errors.New("error struct type")
 )

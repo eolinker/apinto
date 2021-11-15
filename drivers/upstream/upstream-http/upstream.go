@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	errorScheme       = errors.New("error scheme.only support http or https")
+	errorScheme       = errors.New("error scheme.only support http-service or https")
 	ErrorStructType   = errors.New("error struct type")
 	errorCreateWorker = errors.New("fail to create upstream worker")
 )

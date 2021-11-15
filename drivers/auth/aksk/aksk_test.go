@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"testing"
 
+	http_service "github.com/eolinker/eosc/http-service"
+
 	"github.com/valyala/fasthttp"
 
 	http_context "github.com/eolinker/goku/node/http-context"
@@ -17,7 +19,7 @@ var akskConfig = []AKSKConfig{{
 	Expire: 1658740726, //2022-07-25 17:18:46
 }}
 
-var testContexts = make([]*http_context.Context, 0, 10)
+var testContexts = make([]http_service.IHttpContext, 0, 10)
 
 func TestAKSK(t *testing.T) {
 	testAKSK := &aksk{
@@ -48,15 +50,15 @@ func TestAKSK(t *testing.T) {
 func createTestContext() {
 	//使用正确sk加密后的签名
 
-	// http
-	//request1, _ := http.NewRequest("GET", "http://www.demo.com/demo/login?parm1=value1&parm2=", &body{})
-	//request1.Header.SetDriver("Authorization-Type", "ak/sk")
-	//request1.Header.SetDriver("Content-Type", "application/json")
-	//request1.Header.SetDriver("x-gateway-date", "20200605T104456Z")
-	//request1.Header.SetDriver("Authorization", "HMAC-SHA256 Access=4c897cfdfca60a59983adc2627942e7e, SignedHeaders=content-type;host;x-gateway-date, Signature=0c3d2598d931f36ca7d261d52dcd29f09d6573671bd593b7cbc55f73eb942758")
+	// http-service
+	//request1, _ := http-service.NewRequest("GET", "http://www.demo.com/demo/login?parm1=value1&parm2=", &body{})
+	//request1.IHeader.SetDriver("Authorization-Type", "ak/sk")
+	//request1.IHeader.SetDriver("Content-Type", "application/json")
+	//request1.IHeader.SetDriver("x-gateway-date", "20200605T104456Z")
+	//request1.IHeader.SetDriver("Authorization", "HMAC-SHA256 Access=4c897cfdfca60a59983adc2627942e7e, SignedHeaders=content-type;host;x-gateway-date, Signature=0c3d2598d931f36ca7d261d52dcd29f09d6573671bd593b7cbc55f73eb942758")
 	//Context1 := http_context.NewContext(request1, &writer{})
 
-	// fast http
+	// fast http-service
 	request1 := fasthttp.AcquireRequest()
 	request1.SetRequestURI("http://www.demo.com/demo/login?parm1=value1&parm2=")
 	request1.Header.SetMethod(fasthttp.MethodGet)
@@ -76,12 +78,12 @@ func createTestContext() {
 
 	//使用错误sk加密后的签名
 
-	// http
-	//request2, _ := http.NewRequest("GET", "http://www.demo.com/demo/login?parm1=value1&parm2=", &body{})
-	//request2.Header.SetDriver("Authorization-Type", "ak/sk")
-	//request2.Header.SetDriver("Content-Type", "application/json")
-	//request2.Header.SetDriver("x-gateway-date", "20200605T104456Z")
-	//request2.Header.SetDriver("Authorization", "HMAC-SHA256 Access=4c897cfdfca60a59983adc2627942e7e, SignedHeaders=content-type;host;x-gateway-date, Signature=bb18110ddf327a9c1222a551527896d59cb854ca9084078cfa3a6eb23de3ddb8")
+	// http-service
+	//request2, _ := http-service.NewRequest("GET", "http://www.demo.com/demo/login?parm1=value1&parm2=", &body{})
+	//request2.IHeader.SetDriver("Authorization-Type", "ak/sk")
+	//request2.IHeader.SetDriver("Content-Type", "application/json")
+	//request2.IHeader.SetDriver("x-gateway-date", "20200605T104456Z")
+	//request2.IHeader.SetDriver("Authorization", "HMAC-SHA256 Access=4c897cfdfca60a59983adc2627942e7e, SignedHeaders=content-type;host;x-gateway-date, Signature=bb18110ddf327a9c1222a551527896d59cb854ca9084078cfa3a6eb23de3ddb8")
 	//Context2 := http_context.NewContext(request2, &writer{})
 
 	// https
@@ -102,16 +104,16 @@ func createTestContext() {
 	testContexts = append(testContexts, Context2)
 
 	//传输了不存在的ak
-	// http
-	//request3, _ := http.NewRequest("GET", "http://www.demo.com/demo/login?parm1=value1&parm2=", &body{})
-	//request3.Header.SetDriver("Authorization-Type", "ak/sk")
-	//request3.Header.SetDriver("Content-Type", "application/json")
-	//request3.Header.SetDriver("x-gateway-date", "20200605T104456Z")
-	//request3.Header.SetDriver("Authorization", "HMAC-SHA256 Access=dsaasdasda, SignedHeaders=content-type;host;x-gateway-date, Signature=0c3d2598d931f36ca7d261d52dcd29f09d6573671bd593b7cbc55f73eb942758")
+	// http-service
+	//request3, _ := http-service.NewRequest("GET", "http://www.demo.com/demo/login?parm1=value1&parm2=", &body{})
+	//request3.IHeader.SetDriver("Authorization-Type", "ak/sk")
+	//request3.IHeader.SetDriver("Content-Type", "application/json")
+	//request3.IHeader.SetDriver("x-gateway-date", "20200605T104456Z")
+	//request3.IHeader.SetDriver("Authorization", "HMAC-SHA256 Access=dsaasdasda, SignedHeaders=content-type;host;x-gateway-date, Signature=0c3d2598d931f36ca7d261d52dcd29f09d6573671bd593b7cbc55f73eb942758")
 	//Context3 := http_context.NewContext(request3, &writer{})
 	//testContexts = append(testContexts, Context3)
 
-	// fast http
+	// fast http-service
 	request3 := fasthttp.AcquireRequest()
 	request3.SetRequestURI("http://www.demo.com/demo/login?parm1=value1&parm2=")
 	request3.Header.SetMethod(fasthttp.MethodGet)

@@ -8,17 +8,18 @@ import (
 	"fmt"
 	"strings"
 
+	http_service "github.com/eolinker/eosc/http-service"
+
 	"github.com/eolinker/goku/auth"
-	http_context "github.com/eolinker/goku/node/http-context"
 )
 
 const dateHeader = "x-gateway-date"
 
 //buildToSign 构建待加密的签名所需字符串
-func buildToSign(ctx *http_context.Context, encType string, signedHeaders []string) string {
+func buildToSign(ctx http_service.IHttpContext, encType string, signedHeaders []string) string {
 	toSign := strings.Builder{}
 	toSign.WriteString(encType + "\n")
-	dh, _ := ctx.Request().Header().Get(dateHeader)
+	dh := ctx.Request().Headers().Get(dateHeader)
 	toSign.WriteString(dh + "\n")
 
 	cr := buildHexCanonicalRequest(ctx, signedHeaders)
@@ -27,25 +28,25 @@ func buildToSign(ctx *http_context.Context, encType string, signedHeaders []stri
 }
 
 //buildHexCanonicalRequest 构建规范消息头
-func buildHexCanonicalRequest(ctx *http_context.Context, signedHeaders []string) string {
+func buildHexCanonicalRequest(ctx http_service.IHttpContext, signedHeaders []string) string {
 	cr := strings.Builder{}
 
 	cr.WriteString(strings.ToUpper(ctx.Request().Method()) + "\n")
-	cr.WriteString(buildPath(ctx.Request().Path()) + "\n")
-	cr.WriteString(ctx.Request().RawQuery() + "\n")
+	cr.WriteString(buildPath(ctx.Request().URL().Path) + "\n")
+	cr.WriteString(ctx.Request().URL().RawQuery + "\n")
 
 	for _, header := range signedHeaders {
 		if strings.ToLower(header) == "host" {
 			cr.WriteString(buildHeaders(header, ctx.Request().Host()) + "\n")
 			continue
 		}
-		v, _ := ctx.Request().Header().Get(header)
+		v := ctx.Request().Headers().Get(header)
 		cr.WriteString(buildHeaders(header, v+"\n"))
 	}
 	cr.WriteString("\n")
 	cr.WriteString(strings.Join(signedHeaders, ";") + "\n")
-
-	cr.WriteString(hexEncode(ctx.Request().RawBody()))
+	body, _ := ctx.Request().RawBody()
+	cr.WriteString(hexEncode(body))
 
 	return hexEncode([]byte(cr.String()))
 }
@@ -72,8 +73,8 @@ func hmaxBySHA256(secretKey, toSign string) string {
 	return hex.EncodeToString(hm.Sum(nil))
 }
 
-func parseAuthorization(ctx *http_context.Context) (encType string, accessKey string, signHeaders []string, signature string, err error) {
-	authStr, _ := ctx.Request().Header().Get(auth.Authorization)
+func parseAuthorization(ctx http_service.IHttpContext) (encType string, accessKey string, signHeaders []string, signature string, err error) {
+	authStr := ctx.Request().Headers().Get(auth.Authorization)
 
 	infos := strings.Split(authStr, ",")
 	if len(infos) < 3 {

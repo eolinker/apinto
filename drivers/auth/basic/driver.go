@@ -14,11 +14,10 @@ const (
 type driver struct {
 	profession string
 	name       string
-	driver     string
+
 	label      string
 	desc       string
 	configType reflect.Type
-	params     map[string]string
 }
 
 //ConfigType 返回http_proxy驱动配置的反射类型
