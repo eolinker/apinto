@@ -11,11 +11,17 @@ import (
 	"github.com/eolinker/goku/service"
 )
 
+var _ http_service.IFilter = (*Rewrite)(nil)
+
 type Rewrite struct {
 	*Driver
 	id   string
 	name string
 	path string
+}
+
+func (r *Rewrite) Destroy() {
+
 }
 
 func (r *Rewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
@@ -64,17 +70,6 @@ func (r *Rewrite) Stop() error {
 
 func (r *Rewrite) CheckSkill(skill string) bool {
 	return http_service.FilterSkillName == skill
-}
-
-func getEndpoint(ctx http_service.IHttpContext) service.IRouterEndpoint {
-	value := ctx.Value("router.endpoint")
-	if value == nil {
-		return nil
-	}
-	if router, ok := value.(service.IRouterEndpoint); ok {
-		return router
-	}
-	return nil
 }
 
 //recombinePath 生成新的目标URL

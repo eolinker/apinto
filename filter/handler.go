@@ -2,9 +2,15 @@ package filter
 
 import http_service "github.com/eolinker/eosc/http-service"
 
+var _ IChainHandler = (*_ChainHandler)(nil)
+
 type _ChainHandler struct {
 	orgFilter    *_ChainFilter
 	resetHandler IChainReset
+}
+
+func (c *_ChainHandler) Destroy() {
+	c.orgFilter.Destroy()
 }
 
 func createHandler(filters []http_service.IFilter) *_ChainHandler {

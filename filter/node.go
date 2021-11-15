@@ -2,9 +2,25 @@ package filter
 
 import http_service "github.com/eolinker/eosc/http-service"
 
+var _ http_service.IChain = (*_ChainNode)(nil)
+
 type _ChainNode struct {
 	filter http_service.IFilter
 	next   http_service.IChain
+}
+
+func (c *_ChainNode) Destroy() {
+	if c == nil {
+		return
+	}
+	if c.filter != nil {
+		c.filter.Destroy()
+		c.filter = nil
+	}
+	if c.next != nil {
+		c.next.Destroy()
+		c.next = nil
+	}
 }
 
 func createNode(filters []http_service.IFilter, end http_service.IChain) *_ChainNode {
