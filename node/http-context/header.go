@@ -16,6 +16,10 @@ type RequestHeader struct {
 	tmp    http.Header
 }
 
+func NewRequestHeader(header *fasthttp.RequestHeader) *RequestHeader {
+	return &RequestHeader{header: header}
+}
+
 func (h *RequestHeader) initHeader() {
 	if h.tmp == nil {
 		h.tmp = make(http.Header)
@@ -36,10 +40,6 @@ func (h *RequestHeader) initHeader() {
 
 func (h *RequestHeader) Host() string {
 	return string(h.header.Host())
-}
-
-func NewRequestHeader(header *fasthttp.RequestHeader) *RequestHeader {
-	return &RequestHeader{header: header}
 }
 
 func (h *RequestHeader) GetHeader(name string) string {
@@ -77,4 +77,58 @@ func (h *RequestHeader) SetHost(host string) {
 		h.tmp.Set("Host", host)
 	}
 	h.header.SetHost(host)
+}
+
+type ResponseHeader struct {
+	header *fasthttp.ResponseHeader
+	tmp    http.Header
+}
+
+func NewResponseHeader(header *fasthttp.ResponseHeader) *ResponseHeader {
+	return &ResponseHeader{header: header}
+}
+
+func (r *ResponseHeader) GetHeader(name string) string {
+	return r.Headers().Get(name)
+}
+
+func (r *ResponseHeader) Headers() http.Header {
+
+	if r.tmp == nil {
+		r.tmp = make(http.Header)
+		hs := strings.Split(r.header.String(), "\r\n")
+		for _, t := range hs {
+			vs := strings.Split(t, ":")
+			if len(vs) < 2 {
+				if vs[0] == "" {
+					continue
+				}
+				r.tmp[vs[0]] = []string{""}
+				continue
+			}
+			r.tmp[vs[0]] = []string{strings.TrimSpace(vs[1])}
+		}
+	}
+	return r.tmp
+}
+
+func (r *ResponseHeader) SetHeader(key, value string) {
+	if r.tmp != nil {
+		r.tmp.Set(key, value)
+	}
+	r.header.Set(key, value)
+}
+
+func (r *ResponseHeader) AddHeader(key, value string) {
+	if r.tmp != nil {
+		r.tmp.Add(key, value)
+	}
+	r.header.Add(key, value)
+}
+
+func (r *ResponseHeader) DelHeader(key string) {
+	if r.tmp != nil {
+		r.tmp.Del(key)
+	}
+	r.header.Del(key)
 }

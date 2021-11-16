@@ -71,8 +71,8 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 		fastHttpRequestCtx: ctx,
 		requestOrg:         fasthttp.AcquireRequest(),
 		requestID:          requestID,
-		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteAddr().String()),
-		proxyRequest:       NewProxyRequest(&ctx.Request),
+		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteIP().String()),
+		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteIP().String()),
 		response:           NewResponse(fasthttp.AcquireResponse()),
 		responseError:      nil,
 	}

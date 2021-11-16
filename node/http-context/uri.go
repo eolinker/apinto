@@ -1,9 +1,6 @@
 package http_context
 
 import (
-	"net/url"
-	"strings"
-
 	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/valyala/fasthttp"
 )
@@ -11,66 +8,60 @@ import (
 var _ http_service.IURIWriter = (*URIRequest)(nil)
 
 type URIRequest struct {
-	uri   *fasthttp.URI
-	query *url.Values
+	uri *fasthttp.URI
 }
 
-func (U *URIRequest) initQuery() {
+func (ur *URIRequest) Host() string {
+	return string(ur.uri.Host())
+}
 
-	if U.query == nil {
-		U.query = make(url.Values)
-		qs := strings.Split(r.rawQuery, "&")
-		for _, q := range qs {
-			vs := strings.Split(q, "=")
-			if len(vs) < 2 {
-				if vs[0] == "" {
-					continue
-				}
-				r.query[vs[0]] = ""
-				continue
-			}
-			r.query[vs[0]] = strings.TrimSpace(vs[1])
-		}
-	}
-	return r.query
+func (ur *URIRequest) SetQuery(key, value string) {
+
+	ur.uri.QueryArgs().Set(key, value)
+}
+
+func (ur *URIRequest) AddQuery(key, value string) {
+	ur.uri.QueryArgs().Add(key, value)
+}
+
+func (ur *URIRequest) DelQuery(key string) {
+	ur.uri.QueryArgs().Del(key)
+}
+
+func (ur *URIRequest) SetRawQuery(raw string) {
+	ur.uri.SetQueryString(raw)
 }
 
 func NewURIRequest(uri *fasthttp.URI) *URIRequest {
 	return &URIRequest{uri: uri}
 }
 
-func (U *URIRequest) RequestURI() string {
-	return string(U.uri.RequestURI())
+func (ur *URIRequest) RequestURI() string {
+	return string(ur.uri.RequestURI())
 }
 
-func (U *URIRequest) Scheme() string {
-	return string(U.uri.Scheme())
+func (ur *URIRequest) Scheme() string {
+	return string(ur.uri.Scheme())
 }
 
-func (U *URIRequest) RawURL() string {
-	return string(U.uri.FullURI())
+func (ur *URIRequest) RawURL() string {
+	return string(ur.uri.FullURI())
 }
 
-func (U *URIRequest) GetQuery(key string) string {
-	panic("implement me")
+func (ur *URIRequest) GetQuery(key string) string {
+
+	return string(ur.uri.QueryArgs().Peek(key))
 }
 
-func (U *URIRequest) RawQuery() string {
-	panic("implement me")
+func (ur *URIRequest) RawQuery() string {
+	return string(ur.uri.QueryString())
 }
 
-func (U *URIRequest) SetMethod(method string) {
-	panic("implement me")
+func (ur *URIRequest) SetPath(s string) {
+	ur.uri.SetPath(s)
+
 }
 
-func (U *URIRequest) SetRequestURI(uri string) {
-	panic("implement me")
-}
-
-func (U *URIRequest) SetPath(s string) {
-	panic("implement me")
-}
-
-func (U *URIRequest) SetHost(host string) {
-	panic("implement me")
+func (ur *URIRequest) SetHost(host string) {
+	ur.uri.SetHost(host)
 }

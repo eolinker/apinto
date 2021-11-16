@@ -21,6 +21,18 @@ type Response struct {
 	headersCache http.Header
 }
 
+func (r *Response) Header() http_service.IHeaderWriter {
+	panic("implement me")
+}
+
+func (r *Response) Host() string {
+	panic("implement me")
+}
+
+func (r *Response) SetHost(host string) {
+	panic("implement me")
+}
+
 func (r *Response) Headers() http.Header {
 	r.initHeader()
 	return r.headersCache
