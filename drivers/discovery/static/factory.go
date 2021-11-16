@@ -28,7 +28,7 @@ func (f *factory) Create(profession string, name string, label string, desc stri
 		name:       name,
 		label:      label,
 		desc:       desc,
-		driver:     driverName,
+
 		configType: reflect.TypeOf((*Config)(nil)),
 	}, nil
 }

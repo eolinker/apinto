@@ -4,16 +4,22 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
-	http_service "github.com/eolinker/eosc/http-service"
 )
 
 var (
 	errorUnknownExpression = errors.New("unknown expression")
 )
 
+//Checker 路由指标检查器接口
+type Checker interface {
+	Check(v string, has bool) bool
+	Key() string
+	CheckType() CheckType
+	Value() string
+}
+
 //Parse 可根据路由指标字符串生成相应的检查器
-func Parse(pattern string) (http_service.Checker, error) {
+func Parse(pattern string) (Checker, error) {
 	i := strings.Index(pattern, "=")
 
 	if i < 0 {
@@ -46,7 +52,7 @@ func Parse(pattern string) (http_service.Checker, error) {
 }
 
 //parseValue 根据不带等号的指标字符串生成检查器
-func parseValue(v string) (http_service.Checker, error) {
+func parseValue(v string) (Checker, error) {
 	switch v {
 	case "*": //任意
 		return newCheckerAll(), nil

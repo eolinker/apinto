@@ -1,15 +1,14 @@
 package router_http
 
 import (
-	http_context "github.com/eolinker/goku/node/http-context"
-
+	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/goku/router"
 	"github.com/eolinker/goku/service"
 )
 
 //IMatcher IMatcher接口实现了Match方法：根据http请求返回服务接口
 type IMatcher interface {
-	Match(req http_context.IRequest) (service.IService, router.IEndPoint, bool)
+	Match(req http_service.IRequestReader) (service.IService, router.IEndPoint, bool)
 }
 
 //Matcher Matcher结构体，实现了根据请求返回服务接口的方法
@@ -19,7 +18,7 @@ type Matcher struct {
 }
 
 //Match 对http请求进行路由匹配，并返回服务
-func (m *Matcher) Match(req http_context.IRequest) (service.IService, router.IEndPoint, bool) {
+func (m *Matcher) Match(req http_service.IRequestReader) (service.IService, router.IEndPoint, bool) {
 
 	sources := newHTTPSources(req)
 	endpoint, has := m.r.Router(sources)
@@ -34,10 +33,10 @@ func (m *Matcher) Match(req http_context.IRequest) (service.IService, router.IEn
 
 //HTTPSources 封装http请求的结构体
 type HTTPSources struct {
-	req http_context.IRequest
+	req http_service.IRequestReader
 }
 
-func newHTTPSources(req http_context.IRequest) *HTTPSources {
+func newHTTPSources(req http_service.IRequestReader) *HTTPSources {
 	return &HTTPSources{req: req}
 }
 
@@ -50,26 +49,25 @@ func (h *HTTPSources) Get(cmd string) (string, bool) {
 		return h.req.Method(), true
 	}
 
+	u := h.req.URL()
 	if isLocation(cmd) {
-		return h.req.Path(), true
+		return u.Path, true
 	}
 
 	if hn, yes := headerName(cmd); yes {
-		if vs, has := h.req.Header().Get(hn); has {
-			if len(vs) == 0 {
-				return "", true
-			}
-			return vs, true
+		vs := h.req.GetHeader(hn)
+		if len(vs) == 0 {
+			return "", true
 		}
 	}
 
 	if qn, yes := queryName(cmd); yes {
-		if vs, has := h.req.Query().Get(qn); has {
-			if len(vs) == 0 {
-				return "", true
-			}
-			return vs, true
+		query := u.Query()
+		vs := query.Get(qn)
+		if len(vs) == 0 {
+			return "", true
 		}
+		return vs, true
 	}
 	return "", false
 }

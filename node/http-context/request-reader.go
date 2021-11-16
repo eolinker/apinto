@@ -13,8 +13,8 @@ import (
 var _ http_service.IRequestReader = (*RequestReader)(nil)
 
 type RequestReader struct {
+	*BodyRequestHandler
 	req         *fasthttp.Request
-	bodyHandler *BodyRequestHandler
 	remoteAddr  string
 	clientIP    string
 	host        string
@@ -27,7 +27,9 @@ type RequestReader struct {
 }
 
 func NewRequestReader(req *fasthttp.Request, remoteAddr string) *RequestReader {
-	return &RequestReader{req: req, remoteAddr: remoteAddr}
+	r := &RequestReader{req: req, remoteAddr: remoteAddr}
+	r.BodyRequestHandler = newBodyRequestHandler(r.ContentType(), req.Body())
+	return r
 }
 
 func (r *RequestReader) ContentType() string {
@@ -35,41 +37,6 @@ func (r *RequestReader) ContentType() string {
 		r.contentType = string(r.req.Header.ContentType())
 	}
 	return r.contentType
-}
-
-func (r *RequestReader) BodyForm() (url.Values, error) {
-	if r.bodyHandler == nil {
-		r.bodyHandler = newBodyRequestHandler(r.ContentType(), r.req.Body())
-	}
-	return r.bodyHandler.BodyForm()
-}
-
-func (r *RequestReader) Files() (map[string]*http_service.FileHeader, error) {
-	if r.bodyHandler == nil {
-		r.bodyHandler = newBodyRequestHandler(r.ContentType(), r.req.Body())
-	}
-	return r.bodyHandler.Files()
-}
-
-func (r *RequestReader) GetForm(key string) string {
-	if r.bodyHandler == nil {
-		r.bodyHandler = newBodyRequestHandler(r.ContentType(), r.req.Body())
-	}
-	return r.bodyHandler.GetForm(key)
-}
-
-func (r *RequestReader) GetFile(key string) (file *http_service.FileHeader, has bool) {
-	if r.bodyHandler == nil {
-		r.bodyHandler = newBodyRequestHandler(r.ContentType(), r.req.Body())
-	}
-	return r.bodyHandler.GetFile(key)
-}
-
-func (r *RequestReader) RawBody() ([]byte, error) {
-	if r.bodyHandler == nil {
-		r.bodyHandler = newBodyRequestHandler(r.ContentType(), r.req.Body())
-	}
-	return r.bodyHandler.RawBody()
 }
 
 func (r *RequestReader) GetHeader(name string) string {

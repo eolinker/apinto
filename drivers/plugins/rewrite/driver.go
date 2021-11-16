@@ -43,7 +43,7 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		Driver: d,
 		id:     id,
 		name:   name,
-		url:    conf.ReWriteUrl,
+		path:   conf.ReWriteUrl,
 	}
 
 	return rw, nil

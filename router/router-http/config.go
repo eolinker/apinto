@@ -2,8 +2,8 @@ package router_http
 
 import (
 	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/goku/checker"
 	"github.com/eolinker/goku/router"
-	"github.com/eolinker/goku/service"
 )
 
 //HeaderItem HeaderItem
@@ -38,7 +38,7 @@ type Config struct {
 	//Cert    []Cert
 	Hosts   []string
 	Methods []string
-	Target  service.IService
+	Target  http_service.IChain
 	Rules   []Rule
 }
 
@@ -48,7 +48,7 @@ func (r *Rule) toPath() ([]router.RulePath, error) {
 	path := make([]router.RulePath, 0, len(r.Header)+len(r.Query)+1)
 
 	if len(r.Location) > 0 {
-		locationChecker, err := http_service.Parse(r.Location)
+		locationChecker, err := checker.Parse(r.Location)
 		if err != nil {
 			return nil, err
 		}
@@ -59,7 +59,7 @@ func (r *Rule) toPath() ([]router.RulePath, error) {
 	}
 
 	for _, h := range r.Header {
-		ck, err := http_service.Parse(h.Pattern)
+		ck, err := checker.Parse(h.Pattern)
 		if err != nil {
 			return nil, err
 		}
@@ -70,7 +70,7 @@ func (r *Rule) toPath() ([]router.RulePath, error) {
 	}
 
 	for _, h := range r.Query {
-		ck, err := http_service.Parse(h.Pattern)
+		ck, err := checker.Parse(h.Pattern)
 		if err != nil {
 			return nil, err
 		}

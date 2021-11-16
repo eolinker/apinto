@@ -1,7 +1,7 @@
 package router
 
 import (
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/goku/checker"
 )
 
 //ISource 实现了从源对象中获取相应指标的值的方法
@@ -33,8 +33,8 @@ type Node struct {
 
 	equals map[string]IRouter //存放使用全等匹配的指标节点
 
-	checkers []http_service.Checker //按优先顺序存放除全等匹配外的checker，顺序与nodes对应
-	nodes    []IRouter              //按优先顺序存放使用除全等匹配外的指标节点
+	checkers []checker.Checker //按优先顺序存放除全等匹配外的checker，顺序与nodes对应
+	nodes    []IRouter         //按优先顺序存放使用除全等匹配外的指标节点
 }
 
 //Router 路由方法
