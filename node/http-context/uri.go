@@ -11,6 +11,14 @@ type URIRequest struct {
 	uri *fasthttp.URI
 }
 
+func (ur *URIRequest) Path() string {
+	return string(ur.uri.Path())
+}
+
+func (ur *URIRequest) SetScheme(scheme string) {
+	ur.uri.SetScheme(scheme)
+}
+
 func (ur *URIRequest) Host() string {
 	return string(ur.uri.Host())
 }

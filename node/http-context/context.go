@@ -100,7 +100,7 @@ func (ctx *Context) Finish() {
 		return
 	}
 
-	ctx.response.WriteTo(ctx.fastHttpRequestCtx)
+	ctx.response.response.WriteTo(ctx.fastHttpRequestCtx)
 
 	return
 }
