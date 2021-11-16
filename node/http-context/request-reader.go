@@ -14,11 +14,11 @@ var _ http_service.IRequestReader = (*RequestReader)(nil)
 
 type RequestReader struct {
 	*BodyRequestHandler
-	req         *fasthttp.Request
-	remoteAddr  string
-	clientIP    string
-	host        string
-	method      string
+	req        *fasthttp.Request
+	remoteAddr string
+	clientIP   string
+	host       string
+
 	rawBody     []byte
 	headers     http.Header
 	scheme      string
@@ -64,10 +64,7 @@ func (r *RequestReader) Headers() http.Header {
 }
 
 func (r *RequestReader) Method() string {
-	if r.method == "" {
-		r.method = string(r.req.Header.Method())
-	}
-	return r.method
+	return string(r.req.Header.Method())
 }
 
 func (r *RequestReader) URL() url.URL {

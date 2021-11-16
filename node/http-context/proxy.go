@@ -28,8 +28,10 @@ func (r *ProxyRequest) SetPath(s string) {
 }
 
 func NewProxyRequest(request *fasthttp.Request) *ProxyRequest {
+	proxyRequest := fasthttp.AcquireRequest()
+	request.CopyTo(proxyRequest)
 	return &ProxyRequest{
-		RequestReader: NewRequestReader(request, ""),
+		RequestReader: NewRequestReader(proxyRequest, ""),
 	}
 }
 
