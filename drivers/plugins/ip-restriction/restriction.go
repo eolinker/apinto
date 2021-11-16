@@ -67,7 +67,10 @@ func (I *IPHandler) responseEncode(origin string, statusCode int) string {
 	}
 	return origin
 }
-
+func (I *IPHandler) Destroy() {
+	I.filter = nil
+	I.responseType = ""
+}
 
 func (I *IPHandler) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
 	err := I.doRestriction(ctx)

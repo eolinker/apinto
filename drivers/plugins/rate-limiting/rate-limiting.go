@@ -24,6 +24,8 @@ type RateLimiting struct {
 	responseType     string
 }
 
+
+
 func (r *RateLimiting) doLimit() (bool, string, int) {
 	info := r.rateInfo
 	if info == nil {
@@ -54,6 +56,12 @@ func (r *RateLimiting) doLimit() (bool, string, int) {
 		}
 	}
 	return true, "", 200
+}
+
+func (r *RateLimiting) Destroy() {
+	r.responseType = ""
+	r.rateInfo.close()
+	r.rateInfo = nil
 }
 
 func (r *RateLimiting) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {

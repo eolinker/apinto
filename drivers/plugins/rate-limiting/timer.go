@@ -23,6 +23,13 @@ type rateInfo struct {
 	day    *rateTimer
 }
 
+func (r *rateInfo) close()  {
+	r.second = nil
+	r.minute = nil
+	r.hour = nil
+	r.day = nil
+}
+
 type rateTimer struct {
 	// 已请求数量
 	requestCount     int64
