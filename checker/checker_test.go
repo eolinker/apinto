@@ -426,11 +426,11 @@ func TestCreateChecker(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			checker, err := Parse(tt.args.pattern)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Parse() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("parse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(checker, tt.want) {
-				t.Errorf("Parse() got = %v, want %v", checker, tt.want)
+				t.Errorf("parse() got = %v, want %v", checker, tt.want)
 			}
 			//验证check
 			if checker != nil {

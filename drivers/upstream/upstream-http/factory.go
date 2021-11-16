@@ -2,30 +2,43 @@ package upstream_http
 
 import (
 	"reflect"
+	"sync"
+
+	"github.com/eolinker/eosc/common/bean"
+	"github.com/eolinker/goku/plugin"
+
+	round_robin "github.com/eolinker/goku/upstream/round-robin"
 
 	"github.com/eolinker/eosc"
 )
 
+var name = "upstream_http_proxy"
+var (
+	pluginManager plugin.IPluginManager
+	once          sync.Once
+)
+
 //Register 注册http_proxy驱动工厂
-func Register() {
-	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:upstream_http_proxy", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver(name, NewFactory())
+
 }
 
 type factory struct {
-	profession string
-	name       string
-	label      string
-	desc       string
-	params     map[string]string
 }
 
 //NewFactory 创建http_proxy驱动工厂
-func NewFactory() eosc.IProfessionDriverFactory {
+func NewFactory() eosc.IExtenderDriverFactory {
+	round_robin.Register()
 	return &factory{}
 }
 
 //Create 创建http_proxy驱动
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
+func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
+
+	once.Do(func() {
+		bean.Autowired(&pluginManager)
+	})
 	return &driver{
 		profession: profession,
 		name:       name,
@@ -33,6 +46,5 @@ func (f *factory) Create(profession string, name string, label string, desc stri
 		desc:       desc,
 		driver:     driverName,
 		configType: reflect.TypeOf((*Config)(nil)),
-		params:     params,
 	}, nil
 }

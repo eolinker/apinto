@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	http_service "github.com/eolinker/eosc/http-service"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/goku/auth"
-	http_context "github.com/eolinker/goku/node/http-context"
 )
 
 //supportTypes 当前驱动支持的authorization type值
@@ -54,9 +55,9 @@ func (a *aksk) CheckSkill(skill string) bool {
 	return auth.CheckSkill(skill)
 }
 
-func (a *aksk) Auth(context *http_context.Context) error {
-	authorizationType, has := context.Request().Header().Get(auth.AuthorizationType)
-	if !has {
+func (a *aksk) Auth(context http_service.IHttpContext) error {
+	authorizationType := context.Request().Headers().Get(auth.AuthorizationType)
+	if authorizationType == "" {
 		return auth.ErrorInvalidType
 	}
 	err := auth.CheckAuthorizationType(supportTypes, authorizationType)
@@ -82,7 +83,7 @@ func (a *aksk) Auth(context *http_context.Context) error {
 
 						//若隐藏证书信息
 						if a.hideCredential {
-							context.ProxyRequest().Header.Del(auth.Authorization)
+							context.Proxy().Headers().Del(auth.Authorization)
 						}
 						return nil
 					}

@@ -3,8 +3,6 @@ package upstream_http
 import (
 	"reflect"
 
-	round_robin "github.com/eolinker/goku/upstream/round-robin"
-
 	"github.com/eolinker/eosc"
 )
 
@@ -20,7 +18,6 @@ type driver struct {
 	label      string
 	desc       string
 	configType reflect.Type
-	params     map[string]string
 }
 
 //ConfigType 返回http_proxy驱动配置的反射类型
@@ -30,11 +27,10 @@ func (d *driver) ConfigType() reflect.Type {
 
 //Create 创建http_proxy驱动的实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
-	round_robin.Register()
+
 	w := &httpUpstream{
-		id:     id,
-		name:   name,
-		driver: driverName,
+		id:   id,
+		name: name,
 	}
 	err := w.Reset(v, workers)
 	if err != nil {

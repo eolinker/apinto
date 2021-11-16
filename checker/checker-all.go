@@ -4,7 +4,6 @@ var globalCheckerAll = &checkerAll{}
 
 //checkerAll 实现了Checker接口，能进行任意匹配
 type checkerAll struct {
-
 }
 
 //Key 返回路由指标检查器带有完整规则符号的检测值

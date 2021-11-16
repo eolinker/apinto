@@ -11,8 +11,9 @@ package router_http
 import (
 	"sync"
 
+	"github.com/eolinker/goku/checker"
+
 	"github.com/eolinker/goku/router"
-	"github.com/eolinker/goku/router/checker"
 	"github.com/eolinker/goku/service"
 )
 

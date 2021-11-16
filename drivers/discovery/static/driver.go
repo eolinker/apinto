@@ -1,8 +1,11 @@
 package static
 
 import (
-	"github.com/eolinker/eosc"
 	"reflect"
+
+	"github.com/eolinker/goku/discovery"
+
+	"github.com/eolinker/eosc"
 )
 
 const (
@@ -13,11 +16,9 @@ const (
 type driver struct {
 	profession string
 	name       string
-	driver     string
 	label      string
 	desc       string
 	configType reflect.Type
-	params     map[string]string
 }
 
 //ConfigType 返回驱动配置的反射类型
@@ -28,9 +29,15 @@ func (d *driver) ConfigType() reflect.Type {
 //Create 创建静态服务发现驱动的实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	s := &static{
-		id:     id,
-		name:   name,
+		id:   id,
+		name: name,
 	}
 	s.Reset(v, workers)
 	return s, nil
+}
+
+func CreateAnonymous(conf *Config) discovery.IDiscovery {
+	s := &static{}
+	s.reset(conf)
+	return s
 }

@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
+	http_service "github.com/eolinker/eosc/http-service"
+
 	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/goku/auth"
-	http_context "github.com/eolinker/goku/node/http-context"
 )
 
 //supportTypes 当前驱动支持的authorization type值
@@ -73,18 +74,18 @@ func (b *basic) CheckSkill(skill string) bool {
 	return auth.CheckSkill(skill)
 }
 
-func (b *basic) Auth(ctx *http_context.Context) error {
-	authorizationType, has := ctx.Request().Header().Get(auth.AuthorizationType)
-	if !has {
+func (b *basic) Auth(ctx http_service.IHttpContext) error {
+	authorizationType := ctx.Request().Headers().Get(auth.AuthorizationType)
+	if authorizationType == "" {
 		return auth.ErrorInvalidType
 	}
 	err := auth.CheckAuthorizationType(supportTypes, authorizationType)
 	if err != nil {
 		return err
 	}
-	authorization, _ := ctx.Request().Header().Get(auth.Authorization)
+	authorization := ctx.Request().Headers().Get(auth.Authorization)
 	if b.hideCredential {
-		ctx.ProxyRequest().Header.Del(auth.Authorization)
+		ctx.Proxy().Headers().Del(auth.Authorization)
 	}
 
 	username, password, err := retrieveCredentials(authorization)

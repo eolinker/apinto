@@ -54,7 +54,7 @@ func TestHeaderAuthorization(t *testing.T) {
 		"authorization-type": "Apikey",
 		"authorization":      "eolinker",
 	}
-	// http
+	// http-service
 	//req, err := buildRequest(headers, nil, "")
 	//if err != nil {
 	//	t.Error(err)
@@ -62,7 +62,7 @@ func TestHeaderAuthorization(t *testing.T) {
 	//}
 	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
-	// fast http
+	// fast http-service
 	req, err := buildFastRequest(headers, nil, "")
 	if err != nil {
 		t.Error(err)
@@ -88,7 +88,7 @@ func TestQueryAuthorization(t *testing.T) {
 	query := map[string]string{
 		"Apikey": "eolinker",
 	}
-	// http
+	// http-service
 	//req, err := buildRequest(headers, query, "")
 	//if err != nil {
 	//	t.Error(err)
@@ -96,7 +96,7 @@ func TestQueryAuthorization(t *testing.T) {
 	//}
 	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
-	// fast http
+	// fast http-service
 	req, err := buildFastRequest(headers, query, "")
 	if err != nil {
 		t.Error(err)
@@ -132,8 +132,8 @@ func TestBodyAuthorization(t *testing.T) {
 		"authorization-type": "Apikey",
 		"Content-Type":       "application/json",
 	}
-	// http
-	//req, err := http.NewRequest(http.MethodPost, "localhost:8081", bytes.NewReader(body))
+	// http-service
+	//req, err := http-service.NewRequest(http-service.MethodPost, "localhost:8081", bytes.NewReader(body))
 	//if err != nil {
 	//	t.Error(err)
 	//	return
@@ -143,7 +143,7 @@ func TestBodyAuthorization(t *testing.T) {
 	//}
 	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
-	// fast http
+	// fast http-service
 	req := fasthttp.AcquireRequest()
 	req.SetRequestURI("localhost:8081")
 	req.Header.SetMethod(fasthttp.MethodPost)
@@ -182,8 +182,8 @@ func TestMultipartFormAuthorization(t *testing.T) {
 	headers := map[string]string{
 		"authorization-type": "Apikey",
 	}
-	// http
-	//req, err := http.NewRequest(http.MethodPost, "localhost:8081", buf)
+	// http-service
+	//req, err := http-service.NewRequest(http-service.MethodPost, "localhost:8081", buf)
 	//if err != nil {
 	//	t.Error(err)
 	//	return
@@ -194,8 +194,8 @@ func TestMultipartFormAuthorization(t *testing.T) {
 	//req.Header.SetDriver("Content-Type", w.FormDataContentType())
 	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
-	// fast http
-	// fast http
+	// fast http-service
+	// fast http-service
 	req := fasthttp.AcquireRequest()
 	req.SetRequestURI("localhost:8081")
 	req.Header.SetMethod(fasthttp.MethodPost)
@@ -230,15 +230,15 @@ func TestFormAuthorization(t *testing.T) {
 		"authorization-type": "Apikey",
 		"Content-Type":       "application/x-www-form-urlencoded",
 	}
-	// http
-	//req, err := buildRequest(headers, nil, formBody.Encode())
+	// http-service
+	//req, err := buildRequest(headers, nil, formBody.encode())
 	//if err != nil {
 	//	t.Error(err)
 	//	return
 	//}
 	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
-	// fast http
+	// fast http-service
 	req, err := buildFastRequest(headers, nil, formBody.Encode())
 	if err != nil {
 		t.Error(err)

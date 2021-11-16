@@ -6,21 +6,23 @@ import (
 	"github.com/eolinker/eosc"
 )
 
+var name = "log_syslog"
+
 //Register 注册syslog驱动工厂
-func Register() {
-	eosc.DefaultProfessionDriverRegister.RegisterProfessionDriver("eolinker:goku:log_syslog", NewFactory())
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver(name, NewFactory())
 }
 
 type factory struct {
 }
 
 //NewFactory 创建syslog驱动工厂
-func NewFactory() eosc.IProfessionDriverFactory {
+func NewFactory() eosc.IExtenderDriverFactory {
 	return &factory{}
 }
 
 //Create 创建syslog驱动
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]string) (eosc.IProfessionDriver, error) {
+func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 	return &driver{
 		profession: profession,
 		name:       name,
@@ -28,6 +30,5 @@ func (f *factory) Create(profession string, name string, label string, desc stri
 		desc:       desc,
 		driver:     driverName,
 		configType: reflect.TypeOf((*DriverConfig)(nil)),
-		params:     params,
 	}, nil
 }

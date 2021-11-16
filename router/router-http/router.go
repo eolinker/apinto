@@ -3,6 +3,8 @@ package router_http
 import (
 	"sync"
 
+	"github.com/eolinker/goku/service"
+
 	"github.com/eolinker/eosc/log"
 
 	http_context "github.com/eolinker/goku/node/http-context"
@@ -19,7 +21,7 @@ type IRouter interface {
 	SetRouter(id string, config *Config) error
 	Count() int
 	Del(id string) int
-	Handler() fasthttp.RequestHandler
+	Handler(ctx *fasthttp.RequestCtx)
 }
 
 //Router 实现了路由树接口
@@ -28,6 +30,7 @@ type Router struct {
 	data    eosc.IUntyped
 	match   IMatcher
 	handler fasthttp.RequestHandler
+	//chain   []IRouterFilter
 }
 
 //NewRouter 新建路由树
@@ -45,22 +48,26 @@ func (r *Router) Count() int {
 }
 
 //Handler 路由树的handler方法
-func (r *Router) Handler() fasthttp.RequestHandler {
-	return func(requestCtx *fasthttp.RequestCtx) {
-		match := r.match
-		if match == nil {
-			requestCtx.NotFound()
-			return
-		}
-		log.Debug("router handler", requestCtx.Request.String())
-		ctx := http_context.NewContext(requestCtx)
-		h, e, has := match.Match(ctx.Request())
-		if !has {
-			requestCtx.NotFound()
-			return
-		}
-		h.Handle(ctx, NewEndPoint(e))
+func (r *Router) Handler(requestCtx *fasthttp.RequestCtx) {
+	match := r.match
+	if r.match == nil {
+		requestCtx.NotFound()
+		return
 	}
+	log.Debug("router handler", requestCtx.Request.String())
+	ctx := http_context.NewContext(requestCtx)
+	// TODO: 执行全局的Filter
+	h, e, has := match.Match(ctx.Request())
+	if !has {
+		requestCtx.NotFound()
+		return
+	}
+	service.AddEndpoint(ctx, NewEndPoint(e))
+	err := h.DoChain(ctx)
+	if err != nil {
+		log.Warn(err)
+	}
+	ctx.Finish()
 }
 
 //SetRouter 将路由配置加入到路由树中
@@ -112,5 +119,4 @@ func parseData(data eosc.IUntyped) (IMatcher, error) {
 		cs = append(cs, i.(*Config))
 	}
 	return parse(cs)
-
 }

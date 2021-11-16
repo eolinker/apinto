@@ -1,7 +1,7 @@
 package router
 
 import (
-	"github.com/eolinker/goku/router/checker"
+	"github.com/eolinker/goku/checker"
 )
 
 //ISource 实现了从源对象中获取相应指标的值的方法

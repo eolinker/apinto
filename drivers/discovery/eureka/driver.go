@@ -21,7 +21,6 @@ type driver struct {
 	label      string
 	desc       string
 	configType reflect.Type
-	params     map[string]string
 }
 
 //ConfigType 返回eureka驱动配置的反射类型

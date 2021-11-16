@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	http_context "github.com/eolinker/goku/node/http-context"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 type jwtToken struct {
@@ -293,22 +293,22 @@ func decodeSegment(seg string) ([]byte, error) {
 	return base64.URLEncoding.DecodeString(seg)
 }
 
-// Encode JWT specific base64url encoding with padding stripped
+// encode JWT specific base64url encoding with padding stripped
 func encodeSegment(seg []byte) string {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(seg), "=")
 }
 
-//ParseRSAPublicKeyFromPEM Parse PEM encoded PKCS1 or PKCS8 public key
+//ParseRSAPublicKeyFromPEM parse PEM encoded PKCS1 or PKCS8 public key
 func ParseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 	var err error
 
-	// Parse PEM block
+	// parse PEM block
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {
 		return nil, errKeyMustBePEMEncoded
 	}
 
-	// Parse the key
+	// parse the key
 	var parsedKey interface{}
 	if parsedKey, err = x509.ParsePKIXPublicKey(block.Bytes); err != nil {
 		if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
@@ -327,17 +327,17 @@ func ParseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 	return pkey, nil
 }
 
-//ParseECPublicKeyFromPEM Parse PEM encoded PKCS1 or PKCS8 public key
+//ParseECPublicKeyFromPEM parse PEM encoded PKCS1 or PKCS8 public key
 func ParseECPublicKeyFromPEM(key []byte) (*ecdsa.PublicKey, error) {
 	var err error
 
-	// Parse PEM block
+	// parse PEM block
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {
 		return nil, errKeyMustBePEMEncoded
 	}
 
-	// Parse the key
+	// parse the key
 	var parsedKey interface{}
 	if parsedKey, err = x509.ParsePKIXPublicKey(block.Bytes); err != nil {
 		if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
@@ -506,33 +506,36 @@ func typeOfData(data interface{}) reflect.Kind {
 }
 
 //retrieveJWTToken 获取jwtToken字符串
-func (j *jwt) retrieveJWTToken(context *http_context.Context) (string, error) {
+func (j *jwt) retrieveJWTToken(context http_service.IHttpContext) (string, error) {
 	const tokenName = "jwt_token"
-	if authorizationHeader, has := context.Request().Header().Get("Authorization"); has {
+	if authorizationHeader := context.Request().Headers().Get("Authorization"); authorizationHeader != "" {
 		if j.hideCredentials {
-			context.ProxyRequest().Header.Del("Authorization")
+			context.Proxy().Headers().Del("Authorization")
 		}
 		if strings.Contains(authorizationHeader, "bearer ") {
 			authorizationHeader = authorizationHeader[7:]
 		}
 		return authorizationHeader, nil
 	}
-
-	if value, ok := context.Request().Query().Get(tokenName); ok {
+	url := context.Proxy().URL()
+	query := url.Query()
+	if value := query.Get(tokenName); value != "" {
 		if j.hideCredentials {
-			context.ProxyRequest().URI().QueryArgs().Del(tokenName)
+			query.Del(tokenName)
+			url.RawQuery = query.Encode()
+			context.Proxy().SetURL(url)
 		}
 		return value, nil
 	}
 
-	formData, err := context.BodyHandler().BodyForm()
+	formData, err := context.Proxy().BodyForm()
 	if err != nil {
 		return "", errors.New("[jwt_auth] cannot find token in request")
 	}
 	if value, ok := formData[tokenName]; ok {
 		if j.hideCredentials {
 			delete(formData, tokenName)
-			context.BodyHandler().SetForm(formData)
+			context.Proxy().SetForm(formData)
 		}
 		return value[0], nil
 	}
@@ -540,7 +543,7 @@ func (j *jwt) retrieveJWTToken(context *http_context.Context) (string, error) {
 }
 
 //doJWTAuthentication 进行JWT鉴权
-func (j *jwt) doJWTAuthentication(context *http_context.Context) error {
+func (j *jwt) doJWTAuthentication(context http_service.IHttpContext) error {
 	tokenStr, err := j.retrieveJWTToken(context)
 	if err != nil {
 		return errors.New("[jwt_auth] Unrecognizable token")

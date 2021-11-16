@@ -1,9 +1,9 @@
 package router_http
 
 import (
+	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/goku/checker"
 	"github.com/eolinker/goku/router"
-	"github.com/eolinker/goku/router/checker"
-	"github.com/eolinker/goku/service"
 )
 
 //HeaderItem HeaderItem
@@ -33,17 +33,16 @@ type Cert struct {
 
 //Config http路由实例配置结构体
 type Config struct {
-	ID       string
-	Name     string
-	Protocol string
-	Cert     []Cert
-	Hosts    []string
-	Methods  []string
-	Target   service.IService
-	Rules    []Rule
+	ID   string
+	Name string
+	//Cert    []Cert
+	Hosts   []string
+	Methods []string
+	Target  http_service.IChain
+	Rules   []Rule
 }
 
-//toPath 根据路由指标Location、Header、Query生成相应Checker并封装成RulePath切片返回
+//toPath 根据路由指标Location、IHeader、Query生成相应Checker并封装成RulePath切片返回
 func (r *Rule) toPath() ([]router.RulePath, error) {
 
 	path := make([]router.RulePath, 0, len(r.Header)+len(r.Query)+1)

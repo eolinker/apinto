@@ -2,6 +2,7 @@ package http_router
 
 import (
 	"github.com/eolinker/eosc"
+	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/eosc/log"
 	router_http "github.com/eolinker/goku/router/router-http"
 	"github.com/eolinker/goku/service"
@@ -14,26 +15,52 @@ type Router struct {
 	port int
 	conf *router_http.Config
 
-	driver *HTTPRouterDriver
+	driver  *HTTPRouterDriver
+	service service.IService
 }
 
-func (r *Router) Ports() []int {
-
-	return []int{r.port}
+func (r *Router) Destroy() {
+	if r.service != nil {
+		r.service.Destroy()
+	}
 }
+
+func (r *Router) DoChain(ctx http_service.IHttpContext) error {
+	if r.service == nil {
+		return nil
+	}
+	return r.service.DoChain(ctx)
+}
+
+//func (r *Router) Ports() []int {
+//
+//	return []int{r.port}
+//}
 
 //Reset 重置http路由配置
+func (r *Router) reset(cf *DriverConfig, target service.IServiceCreate) (*router_http.Config, service.IService, error) {
+
+	newConf := getConfig(cf)
+	newConf.ID = r.id
+	newConf.Name = r.name
+	serviceHandler := target.Create(r.id, cf.Plugins)
+	newConf.Target = r
+	return newConf, serviceHandler, nil
+}
 func (r *Router) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	cf, target, err := r.driver.check(conf, workers)
+	cf, s, err := r.driver.check(conf, workers)
 	if err != nil {
 		return err
 	}
-
-	newConf := getConfig(target, cf)
-	newConf.ID = r.id
-	newConf.Name = r.name
-	err = router_http.Add(cf.Listen, r.id, newConf)
+	newConfig, serviceHandler, err := r.reset(cf, s)
 	if err != nil {
+		serviceHandler.Destroy()
+		return err
+	}
+
+	err = router_http.Add(cf.Listen, r.id, newConfig)
+	if err != nil {
+		serviceHandler.Destroy()
 		return err
 	}
 
@@ -42,8 +69,8 @@ func (r *Router) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	}
 
 	r.port = cf.Listen
-	r.conf = newConf
-
+	r.conf = newConfig
+	r.service = serviceHandler
 	return nil
 }
 
@@ -68,7 +95,7 @@ func (r *Router) Stop() error {
 	return router_http.Del(r.port, r.id)
 }
 
-func getConfig(target service.IService, cf *DriverConfig) *router_http.Config {
+func getConfig(cf *DriverConfig) *router_http.Config {
 
 	rules := make([]router_http.Rule, 0, len(cf.Rules))
 	for _, r := range cf.Rules {
@@ -101,40 +128,11 @@ func getConfig(target service.IService, cf *DriverConfig) *router_http.Config {
 		methods = []string{"*"}
 	}
 
-	protocol := "http"
-	if cf.Protocol == "https" {
-		protocol = "https"
-	}
-
-	certs := make([]router_http.Cert, 0, len(cf.Cert))
-	for _, c := range cf.Cert {
-		certs = append(certs, router_http.Cert{Key: c.Key, Crt: c.Crt})
-	}
-
 	return &router_http.Config{
-		//ID:     cf.ID,
-		//Name:   cf.Name,
-		Cert:     certs,
-		Protocol: protocol,
-		Methods:  methods,
-		Hosts:    hosts,
-		Target:   target,
-		Rules:    rules,
+		//Cert:    certs,
+		Methods: methods,
+		Hosts:   hosts,
+		Rules:   rules,
 	}
 
-}
-
-//NewRouter 创建http路由驱动实例
-func NewRouter(id, name string, c *DriverConfig, target service.IService, driver *HTTPRouterDriver) *Router {
-	conf := getConfig(target, c)
-	conf.ID = id
-	conf.Name = name
-
-	return &Router{
-		id:     id,
-		name:   name,
-		port:   c.Listen,
-		conf:   conf,
-		driver: driver,
-	}
 }
