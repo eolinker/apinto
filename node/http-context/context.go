@@ -2,6 +2,7 @@ package http_context
 
 import (
 	"context"
+	"net/url"
 	"time"
 
 	"github.com/valyala/fasthttp"
@@ -15,13 +16,13 @@ var _ http_service.IHttpContext = (*Context)(nil)
 //Context fasthttpRequestCtx
 type Context struct {
 	fastHttpRequestCtx *fasthttp.RequestCtx
-	requestOrg         *fasthttp.Request
-	proxyRequest       *ProxyRequest
-	requestID          string
-	response           *Response
-	responseError      error
-	requestReader      *RequestReader
-	ctx                context.Context
+
+	proxyRequest  *ProxyRequest
+	requestID     string
+	response      *Response
+	responseError error
+	requestReader *RequestReader
+	ctx           context.Context
 }
 
 func (ctx *Context) Response() http_service.IResponse {
@@ -32,7 +33,37 @@ func (ctx *Context) ResponseError() error {
 	return ctx.responseError
 }
 
+type Finish interface {
+	Finish() error
+}
+
 func (ctx *Context) SendTo(address string, timeout time.Duration) error {
+
+	target, err := url.Parse(address)
+	if err != nil {
+		ctx.responseError = err
+		return err
+	}
+
+	request := ctx.proxyRequest.Request()
+	backUrl := fasthttp.AcquireURI()
+	request.URI().CopyTo(backUrl)
+
+	defer backUrl.CopyTo(request.URI())
+
+	request.URI().SetScheme(target.Scheme)
+	request.URI().SetHost(target.Host)
+
+	tem := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(tem)
+	err = fasthttp.DoTimeout(request, tem, timeout)
+
+	if err != nil {
+		ctx.responseError = err
+		return err
+	}
+
+	ctx.SetResponse(tem)
 
 	return nil
 
@@ -69,11 +100,10 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 
 	newCtx := &Context{
 		fastHttpRequestCtx: ctx,
-		requestOrg:         fasthttp.AcquireRequest(),
 		requestID:          requestID,
 		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteIP().String()),
 		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteIP().String()),
-		response:           NewResponse(fasthttp.AcquireResponse()),
+		response:           NewResponse(),
 		responseError:      nil,
 	}
 
@@ -87,7 +117,7 @@ func (ctx *Context) RequestId() string {
 
 func (ctx *Context) SetResponse(response *fasthttp.Response) {
 
-	ctx.response = NewResponse(response)
+	ctx.response.Set(response)
 	ctx.responseError = nil
 }
 
@@ -100,8 +130,11 @@ func (ctx *Context) Finish() {
 		return
 	}
 
-	ctx.response.response.WriteTo(ctx.fastHttpRequestCtx)
+	ctx.response.WriteTo(ctx.fastHttpRequestCtx)
 
+	ctx.response.Finish()
+	ctx.requestReader.Finish()
+	ctx.proxyRequest.Finish()
 	return
 }
 

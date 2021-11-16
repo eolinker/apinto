@@ -11,32 +11,45 @@ import (
 var _ http_service.IResponse = (*Response)(nil)
 
 type Response struct {
-	ResponseHeader
-	response *fasthttp.Response
+	*ResponseHeader
+	*fasthttp.Response
 }
 
-func NewResponse(response *fasthttp.Response) *Response {
-	return &Response{response: response, ResponseHeader: ResponseHeader{
-		header: &response.Header,
-	}}
+func (r *Response) Finish() error {
+
+	fasthttp.ReleaseResponse(r.Response)
+	return nil
+}
+
+func NewResponse() *Response {
+	response := fasthttp.AcquireResponse()
+	return &Response{Response: fasthttp.AcquireResponse(), ResponseHeader: NewResponseHeader(&response.Header)}
 }
 
 func (r *Response) GetBody() []byte {
-	return r.response.Body()
+	return r.Response.Body()
 }
 
 func (r *Response) StatusCode() int {
-	return r.response.StatusCode()
+	return r.Response.StatusCode()
 }
 
 func (r *Response) Status() string {
-	return strconv.Itoa(r.response.StatusCode())
+	return strconv.Itoa(r.Response.StatusCode())
 }
 
 func (r *Response) SetStatus(code int, status string) {
-	r.response.SetStatusCode(code)
+	r.Response.SetStatusCode(code)
 }
 
 func (r *Response) SetBody(bytes []byte) {
-	r.response.SetBody(bytes)
+	r.Response.SetBody(bytes)
+}
+func (r *Response) Set(response *fasthttp.Response) {
+	if response != nil {
+		r.Response.Reset()
+		response.CopyTo(r.Response)
+		r.ResponseHeader = NewResponseHeader(&r.Response.Header)
+	}
+
 }

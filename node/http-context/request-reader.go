@@ -20,6 +20,10 @@ type RequestReader struct {
 	realIP     string
 }
 
+func (r *RequestReader) Finish() error {
+	return nil
+}
+
 func (r *RequestReader) Method() string {
 	return r.headers.Host()
 }

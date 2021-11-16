@@ -12,12 +12,16 @@ type ProxyRequest struct {
 	*RequestReader
 }
 
+func (r *ProxyRequest) Finish() error {
+	fasthttp.ReleaseRequest(r.req)
+	return nil
+}
 func (r *ProxyRequest) Header() http_service.IHeaderWriter {
 	return r.headers
 }
 
 func (r *ProxyRequest) Body() http_service.IBodyDataWriter {
-	panic("implement me")
+	return r.body
 }
 
 func (r *ProxyRequest) URI() http_service.IURIWriter {
