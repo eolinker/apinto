@@ -35,6 +35,12 @@ service:
           body:
           status_code:
           header:
+auth:
+  - name: apikey_1
+    driver: apikey
+    users:
+      - apikey: asdwhrfj
+        expire: 0
 
 upstream:
   -
