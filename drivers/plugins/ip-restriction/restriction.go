@@ -44,6 +44,7 @@ func (I *IPHandler) Reset(conf interface{}, workers map[eosc.RequireId]interface
 		return err
 	}
 	I.filter = confObj.genFilter()
+	I.responseType = confObj.ResponseType
 	return nil
 }
 
@@ -71,9 +72,13 @@ func (I *IPHandler) responseEncode(origin string, statusCode int) string {
 func (I *IPHandler) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
 	err := I.doRestriction(ctx)
 	if err != nil {
+		resp, err := ctx.Response()
+		if err != nil {
+			return err
+		}
 		info := I.responseEncode(err.Error(), 403)
-		ctx.SetStatus(403, "403")
-		ctx.SetBody([]byte(info))
+		resp.SetStatus(403, "403")
+		resp.SetBody([]byte(info))
 		return err
 	}
 	if next != nil {

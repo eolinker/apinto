@@ -9,7 +9,4 @@ type Config struct {
 	ResponseType     string `json:"responseType"`	  // 插件返回报错的类型
 }
 
-func (c *Config) doCheck()  {
-
-}
 

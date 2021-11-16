@@ -29,13 +29,21 @@ func (d *Driver) check(v interface{}) (*Config, error) {
 	if !ok {
 		return nil, eosc.ErrorConfigFieldUnknown
 	}
-	err := conf.doCheck()
-	if err != nil {
-		return nil, err
-	}
 	return conf, nil
 }
 
 func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	conf, err := d.check(v)
+	if err != nil {
+		return nil, err
+	}
+	l := &RateLimiting{
+		Driver: d,
+		id:     id,
+		name:   name,
+		rateInfo: CreateRateInfo(conf),
+		hideClientHeader: conf.HideClientHeader,
+		responseType: conf.ResponseType,
+	}
+	return l, nil
 }
