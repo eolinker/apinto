@@ -69,10 +69,7 @@ func (r *RateLimiting) DoFilter(ctx http_service.IHttpContext, next http_service
 	flag, result, status := r.doLimit()
 	if !flag {
 		// 超过限制
-		resp, err := ctx.Response()
-		if err != nil {
-			return err
-		}
+		resp := ctx.Response()
 		result = r.responseEncode(result, status)
 		resp.SetStatus(403, "403")
 		resp.SetBody([]byte(result))
@@ -146,7 +143,7 @@ func (r *RateLimiting) addRateHeader(ctx http_service.IHttpContext, rateType str
 	if rate == nil || rate.limitCount == 0 || rate.requestCount == 0 {
 		return
 	}
-	resp, _ := ctx.Response()
+	resp := ctx.Response()
 	resp.SetHeader(fmt.Sprintf("X-RateLimit-Limit-%s", rateType), strconv.FormatInt(rate.limitCount, 10))
 	resp.SetHeader(fmt.Sprintf("X-RateLimit-Remaining-%s", rateType), strconv.FormatInt(rate.limitCount-  rate.requestCount, 10))
 	return

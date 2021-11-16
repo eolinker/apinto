@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/http-service"
-	"strings"
 )
 
 type IPHandler struct {
@@ -16,13 +15,9 @@ type IPHandler struct {
 }
 
 func (I *IPHandler) doRestriction(ctx http_service.IHttpContext) error {
-	remoteAddr := ctx.Request().RemoteAddr()
-	if realIP, ok := ctx.Request().Headers()["X-Real-Ip"]; ok {
-		remoteAddr = strings.Join(realIP, ",")
-	}
-	ip := strings.Split(remoteAddr, ":")[0]
+	realIP := ctx.Request().ReadIP()
 	if I.filter != nil {
-		ok, err :=  I.filter(ip)
+		ok, err :=  I.filter(realIP)
 		if !ok {
 			return err
 		}
@@ -75,10 +70,7 @@ func (I *IPHandler) Destroy() {
 func (I *IPHandler) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
 	err := I.doRestriction(ctx)
 	if err != nil {
-		resp, err := ctx.Response()
-		if err != nil {
-			return err
-		}
+		resp := ctx.Response()
 		info := I.responseEncode(err.Error(), 403)
 		resp.SetStatus(403, "403")
 		resp.SetBody([]byte(info))
