@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"encoding/xml"
 
+	"github.com/valyala/fasthttp"
+
 	http_service "github.com/eolinker/eosc/http-service"
 
 	"io/ioutil"
@@ -30,6 +32,7 @@ const (
 
 //BodyRequestHandler body请求处理器
 type BodyRequestHandler struct {
+	request         *fasthttp.Request
 	form            url.Values
 	rawBody         []byte
 	orgContentParam map[string]string
@@ -40,6 +43,10 @@ type BodyRequestHandler struct {
 	isWriteRaw bool
 
 	object interface{}
+}
+
+func NewBodyRequestHandler(request *fasthttp.Request) *BodyRequestHandler {
+	return &BodyRequestHandler{request: request}
 }
 
 //GetForm 获取表单参数
@@ -256,12 +263,12 @@ func (b *BodyRequestHandler) AddFile(key string, file *http_service.FileHeader) 
 	return nil
 }
 
-//Clone 克隆body
-func (b *BodyRequestHandler) Clone() *BodyRequestHandler {
-	rawBody, _ := b.RawBody()
-	return newBodyRequestHandler(b.contentType, rawBody)
-
-}
+////Clone 克隆body
+//func (b *BodyRequestHandler) Clone() *BodyRequestHandler {
+//	rawBody, _ := b.RawBody()
+//	return newBodyRequestHandler(b.contentType, rawBody)
+//
+//}
 
 //BodyInterface 获取请求体对象
 func (b *BodyRequestHandler) BodyInterface() (interface{}, error) {
@@ -362,12 +369,12 @@ func (b *BodyRequestHandler) SetRaw(contentType string, body []byte) {
 
 }
 
-//newBodyRequestHandler 创建body请求处理器
-func newBodyRequestHandler(contentType string, body []byte) *BodyRequestHandler {
-	b := new(BodyRequestHandler)
-	b.SetRaw(contentType, body)
-	return b
-}
+////newBodyRequestHandler 创建body请求处理器
+//func newBodyRequestHandler(contentType string, body []byte) *BodyRequestHandler {
+//	b := new(BodyRequestHandler)
+//	b.SetRaw(contentType, body)
+//	return b
+//}
 
 func multipartReader(contentType string, allowMixed bool, raw []byte) (*multipart.Reader, error) {
 
