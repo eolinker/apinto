@@ -93,11 +93,7 @@ func (ctx *Context) SetResponse(response *fasthttp.Response) {
 
 //Finish finish
 func (ctx *Context) Finish() {
-	//
-	//ctx.proxyResponse.CopyTo(&ctx.fastHttpRequestCtx.Response)
-	//
-	//fasthttp.ReleaseResponse(ctx.proxyResponse)
-	//fasthttp.ReleaseRequest(ctx.proxyRequest.req)
+
 	if ctx.response == nil {
 		ctx.fastHttpRequestCtx.SetStatusCode(502)
 		ctx.fastHttpRequestCtx.SetBodyString(ctx.responseError.Error())
@@ -105,7 +101,7 @@ func (ctx *Context) Finish() {
 	}
 
 	ctx.response.WriteTo(ctx.fastHttpRequestCtx)
-	ctx.fastHttpRequestCtx.NotModified()
+
 	return
 }
 
