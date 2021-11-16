@@ -1,7 +1,5 @@
 package checker
 
-import http_service "github.com/eolinker/eosc/http-service"
-
 var (
 	globalCheckerExist    = &checkerExist{}
 	globalCheckerNotExist = &checkerNotExits{}
@@ -28,8 +26,8 @@ func (t *checkerExist) Check(v string, has bool) bool {
 }
 
 //CheckType 返回检查器的类型值
-func (t *checkerExist) CheckType() http_service.CheckType {
-	return http_service.CheckTypeExist
+func (t *checkerExist) CheckType() CheckType {
+	return CheckTypeExist
 }
 
 //newCheckerAll 创建一个存在匹配类型的检查器
@@ -58,8 +56,8 @@ func (c *checkerNotExits) Check(v string, has bool) bool {
 }
 
 //CheckType 返回检查器的类型值
-func (c *checkerNotExits) CheckType() http_service.CheckType {
-	return http_service.CheckTypeNotExist
+func (c *checkerNotExits) CheckType() CheckType {
+	return CheckTypeNotExist
 }
 
 //newCheckerAll 创建一个不存在匹配类型的检查器

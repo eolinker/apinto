@@ -2,7 +2,7 @@ package http_context
 
 import (
 	"context"
-	"encoding/json"
+	"time"
 
 	"github.com/valyala/fasthttp"
 
@@ -12,22 +12,24 @@ import (
 
 var _ http_service.IHttpContext = (*Context)(nil)
 
-//Context requestCtx
+//Context fasthttpRequestCtx
 type Context struct {
-	requestCtx *fasthttp.RequestCtx
-	requestOrg *fasthttp.Request
+	fastHttpRequestCtx *fasthttp.RequestCtx
+	requestOrg         *fasthttp.Request
+	proxyRequest       *ProxyRequest
+	requestID          string
+	response           *Response
+	responseError      error
+	requestReader      *RequestReader
+	ctx                context.Context
+}
 
-	proxyRequest *ProxyRequest
+func (ctx *Context) Response() (http_service.IResponse, error) {
+	return ctx.response, ctx.responseError
+}
 
-	proxyResponse *fasthttp.Response
-	body          []byte
-	requestID     string
-	RestfulParam  map[string]string
-	code          int
-	status        string
-	response      *Response
-	requestReader *RequestReader
-	ctx           context.Context
+func (ctx *Context) SendTo(address string, timeout time.Duration) error {
+	panic("implement me")
 }
 
 func (ctx *Context) Context() context.Context {
@@ -45,25 +47,12 @@ func (ctx *Context) WithValue(key, val interface{}) {
 	ctx.ctx = context.WithValue(ctx.Context(), key, val)
 }
 
-func (ctx *Context) Response() http_service.IResponse {
-	if ctx.response == nil {
-		ctx.response = NewResponse(ctx.proxyResponse)
-	}
-	return ctx.response
-}
-
 func (ctx *Context) Proxy() http_service.IRequest {
 	return ctx.proxyRequest
 }
 
-func (ctx *Context) SetStatus(code int, status string) {
-	ctx.code, ctx.status = code, status
-}
-
 func (ctx *Context) Request() http_service.IRequestReader {
-	if ctx.requestReader == nil {
-		ctx.requestReader = NewRequestReader(ctx.requestOrg, ctx.requestCtx.RemoteAddr().String())
-	}
+
 	return ctx.requestReader
 }
 
@@ -71,17 +60,18 @@ func (ctx *Context) Request() http_service.IRequestReader {
 func NewContext(ctx *fasthttp.RequestCtx) *Context {
 	id := uuid.NewV4()
 	requestID := id.String()
-	newRequest := &ctx.Request
-	newCtx := &Context{
-		requestCtx: ctx,
-		requestOrg: fasthttp.AcquireRequest(),
-		requestID:  requestID,
-	}
 	proxyRequest := fasthttp.AcquireRequest()
-	newRequest.CopyTo(newCtx.requestOrg)
-	newRequest.CopyTo(proxyRequest)
+	ctx.Request.CopyTo(proxyRequest)
+	newCtx := &Context{
+		fastHttpRequestCtx: ctx,
+		requestOrg:         fasthttp.AcquireRequest(),
+		requestID:          requestID,
+		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteAddr().String()),
+		proxyRequest:       NewProxyRequest(proxyRequest),
+		response:           NewResponse(fasthttp.AcquireResponse()),
+		responseError:      nil,
+	}
 
-	newCtx.proxyRequest = NewProxyRequest(NewRequestReader(proxyRequest, ""))
 	return newCtx
 }
 
@@ -90,31 +80,31 @@ func (ctx *Context) RequestId() string {
 	return ctx.requestID
 }
 
-func (ctx *Context) SetBody(body []byte) {
-	ctx.requestCtx.SetBody(body)
-}
-
 func (ctx *Context) SetResponse(response *fasthttp.Response) {
-	ctx.body = response.Body()
-	ctx.proxyResponse = response
+
+	ctx.response = NewResponse(response)
+	ctx.responseError = nil
 }
 
 //Finish finish
 func (ctx *Context) Finish() {
-	ctx.proxyResponse.CopyTo(&ctx.requestCtx.Response)
+	//
+	//ctx.proxyResponse.CopyTo(&ctx.fastHttpRequestCtx.Response)
+	//
+	//fasthttp.ReleaseResponse(ctx.proxyResponse)
+	//fasthttp.ReleaseRequest(ctx.proxyRequest.req)
+	if ctx.response == nil {
+		ctx.fastHttpRequestCtx.SetStatusCode(502)
+		ctx.fastHttpRequestCtx.SetBodyString(ctx.responseError.Error())
+		return
+	}
+
+	ctx.response.WriteTo(ctx.fastHttpRequestCtx)
+	ctx.fastHttpRequestCtx.NotModified()
 	return
 }
 
-func (ctx *Context) SetError(err error) {
-	result := map[string]string{
-		"status": "error",
-		"msg":    err.Error(),
-	}
-	errByte, _ := json.Marshal(result)
-	ctx.body = errByte
-}
-
 func NotFound(ctx *Context) {
-	ctx.requestCtx.SetStatusCode(404)
-	ctx.requestCtx.SetBody([]byte("404 Not Found"))
+	ctx.fastHttpRequestCtx.SetStatusCode(404)
+	ctx.fastHttpRequestCtx.SetBody([]byte("404 Not Found"))
 }

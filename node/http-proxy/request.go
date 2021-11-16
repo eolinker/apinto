@@ -15,5 +15,6 @@ func DoRequest(req *fasthttp.Request, timeout time.Duration) (*fasthttp.Response
 	if err != nil {
 		return nil, err
 	}
+
 	return response, nil
 }

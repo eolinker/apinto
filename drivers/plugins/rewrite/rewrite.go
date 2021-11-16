@@ -4,10 +4,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/eolinker/goku/checker"
+
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/goku/service"
 )
+
+var _ http_service.IFilter = (*Rewrite)(nil)
 
 type Rewrite struct {
 	*Driver
@@ -16,18 +20,25 @@ type Rewrite struct {
 	path string
 }
 
-func (r *Rewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
-	router := getEndpoint(ctx)
-	if router != nil {
-		// 设置目标URL
-		location, has := router.Location()
+func (r *Rewrite) Destroy() {
 
-		if has && location.CheckType() == http_service.CheckTypePrefix {
-			ctx.Proxy().SetPath(recombinePath(string(ctx.Request().URL().Path), location.Value(), r.path))
-		}
-	} else {
-		if r.path != "" {
-			ctx.Proxy().SetPath(r.path)
+}
+
+func (r *Rewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+	router, has := service.EndpointFromContext(ctx)
+	if has {
+
+		if router != nil {
+			// 设置目标URL
+			location, has := router.Location()
+
+			if has && location.CheckType() == checker.CheckTypePrefix {
+				ctx.Proxy().SetPath(recombinePath(string(ctx.Request().URL().Path), location.Value(), r.path))
+			}
+		} else {
+			if r.path != "" {
+				ctx.Proxy().SetPath(r.path)
+			}
 		}
 	}
 	if next != nil {
@@ -59,17 +70,6 @@ func (r *Rewrite) Stop() error {
 
 func (r *Rewrite) CheckSkill(skill string) bool {
 	return http_service.FilterSkillName == skill
-}
-
-func getEndpoint(ctx http_service.IHttpContext) service.IRouterEndpoint {
-	value := ctx.Value("router.endpoint")
-	if value == nil {
-		return nil
-	}
-	if router, ok := value.(service.IRouterEndpoint); ok {
-		return router
-	}
-	return nil
 }
 
 //recombinePath 生成新的目标URL

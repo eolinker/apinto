@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/valyala/fasthttp"
+
 	http_service "github.com/eolinker/eosc/http-service"
 )
 
@@ -25,8 +27,10 @@ func (r *ProxyRequest) SetPath(s string) {
 	r.uri.Path = s
 }
 
-func NewProxyRequest(requestReader *RequestReader) *ProxyRequest {
-	return &ProxyRequest{RequestReader: requestReader}
+func NewProxyRequest(request *fasthttp.Request) *ProxyRequest {
+	return &ProxyRequest{
+		RequestReader: NewRequestReader(request, ""),
+	}
 }
 
 func (r *ProxyRequest) SetHeader(key, value string) {

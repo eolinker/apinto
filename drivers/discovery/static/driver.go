@@ -3,6 +3,8 @@ package static
 import (
 	"reflect"
 
+	"github.com/eolinker/goku/discovery"
+
 	"github.com/eolinker/eosc"
 )
 
@@ -14,7 +16,6 @@ const (
 type driver struct {
 	profession string
 	name       string
-	driver     string
 	label      string
 	desc       string
 	configType reflect.Type
@@ -33,4 +34,10 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	}
 	s.Reset(v, workers)
 	return s, nil
+}
+
+func CreateAnonymous(conf *Config) discovery.IDiscovery {
+	s := &static{}
+	s.reset(conf)
+	return s
 }
