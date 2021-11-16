@@ -24,12 +24,18 @@ type Context struct {
 	ctx                context.Context
 }
 
-func (ctx *Context) Response() (http_service.IResponse, error) {
-	return ctx.response, ctx.responseError
+func (ctx *Context) Response() http_service.IResponse {
+	return ctx.response
+}
+
+func (ctx *Context) ResponseError() error {
+	return ctx.responseError
 }
 
 func (ctx *Context) SendTo(address string, timeout time.Duration) error {
-	panic("implement me")
+
+	return nil
+
 }
 
 func (ctx *Context) Context() context.Context {
@@ -60,14 +66,13 @@ func (ctx *Context) Request() http_service.IRequestReader {
 func NewContext(ctx *fasthttp.RequestCtx) *Context {
 	id := uuid.NewV4()
 	requestID := id.String()
-	proxyRequest := fasthttp.AcquireRequest()
-	ctx.Request.CopyTo(proxyRequest)
+
 	newCtx := &Context{
 		fastHttpRequestCtx: ctx,
 		requestOrg:         fasthttp.AcquireRequest(),
 		requestID:          requestID,
 		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteAddr().String()),
-		proxyRequest:       NewProxyRequest(proxyRequest),
+		proxyRequest:       NewProxyRequest(&ctx.Request),
 		response:           NewResponse(fasthttp.AcquireResponse()),
 		responseError:      nil,
 	}
