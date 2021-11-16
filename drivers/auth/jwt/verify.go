@@ -508,34 +508,31 @@ func typeOfData(data interface{}) reflect.Kind {
 //retrieveJWTToken 获取jwtToken字符串
 func (j *jwt) retrieveJWTToken(context http_service.IHttpContext) (string, error) {
 	const tokenName = "jwt_token"
-	if authorizationHeader := context.Request().Headers().Get("Authorization"); authorizationHeader != "" {
+	if authorizationHeader := context.Request().Header().GetHeader("Authorization"); authorizationHeader != "" {
 		if j.hideCredentials {
-			context.Proxy().Headers().Del("Authorization")
+			context.Proxy().Header().DelHeader("Authorization")
 		}
 		if strings.Contains(authorizationHeader, "bearer ") {
 			authorizationHeader = authorizationHeader[7:]
 		}
 		return authorizationHeader, nil
 	}
-	url := context.Proxy().URL()
-	query := url.Query()
-	if value := query.Get(tokenName); value != "" {
+
+	if value := context.Proxy().URI().GetQuery(tokenName); value != "" {
 		if j.hideCredentials {
-			query.Del(tokenName)
-			url.RawQuery = query.Encode()
-			context.Proxy().SetURL(url)
+			context.Proxy().URI().DelQuery(tokenName)
 		}
 		return value, nil
 	}
 
-	formData, err := context.Proxy().BodyForm()
+	formData, err := context.Proxy().Body().BodyForm()
 	if err != nil {
 		return "", errors.New("[jwt_auth] cannot find token in request")
 	}
 	if value, ok := formData[tokenName]; ok {
 		if j.hideCredentials {
 			delete(formData, tokenName)
-			context.Proxy().SetForm(formData)
+			context.Proxy().Body().SetForm(formData)
 		}
 		return value[0], nil
 	}
