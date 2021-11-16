@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"encoding/xml"
 
+	"github.com/valyala/fasthttp"
+
 	http_service "github.com/eolinker/eosc/http-service"
 
 	"io/ioutil"
@@ -30,16 +32,19 @@ const (
 
 //BodyRequestHandler body请求处理器
 type BodyRequestHandler struct {
-	form            url.Values
-	rawBody         []byte
-	orgContentParam map[string]string
-	contentType     string
-	files           map[string]*http_service.FileHeader
+	request     *fasthttp.Request
+	form        url.Values
+	contentType string
+	files       map[string]*http_service.FileHeader
 
 	isInit     bool
 	isWriteRaw bool
 
 	object interface{}
+}
+
+func NewBodyRequestHandler(request *fasthttp.Request) *BodyRequestHandler {
+	return &BodyRequestHandler{request: request, contentType: string(request.Header.ContentType())}
 }
 
 //GetForm 获取表单参数
@@ -79,7 +84,7 @@ func (b *BodyRequestHandler) RawBody() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return b.rawBody, nil
+	return b.rawBody(), nil
 
 }
 
@@ -113,14 +118,14 @@ func (b *BodyRequestHandler) parse() error {
 	switch contentType {
 	case JSON:
 		{
-			e := json.Unmarshal(b.rawBody, &b.object)
+			e := json.Unmarshal(b.rawBody(), &b.object)
 			if e != nil {
 				return e
 			}
 		}
 	case AppLicationXML, TextXML:
 		{
-			e := xml.Unmarshal(b.rawBody, &b.object)
+			e := xml.Unmarshal(b.rawBody(), &b.object)
 			if e != nil {
 				return e
 			}
@@ -129,7 +134,7 @@ func (b *BodyRequestHandler) parse() error {
 
 	case MultipartForm:
 		{
-			r, err := multipartReader(b.contentType, false, b.rawBody)
+			r, err := multipartReader(b.contentType, false, b.rawBody())
 			if err != nil {
 				return err
 			}
@@ -170,7 +175,7 @@ func (b *BodyRequestHandler) parse() error {
 		}
 	case FormData:
 		{
-			form, err := url.ParseQuery(string(b.rawBody))
+			form, err := url.ParseQuery(string(b.rawBody()))
 			if err != nil {
 				return err
 			}
@@ -256,12 +261,12 @@ func (b *BodyRequestHandler) AddFile(key string, file *http_service.FileHeader) 
 	return nil
 }
 
-//Clone 克隆body
-func (b *BodyRequestHandler) Clone() *BodyRequestHandler {
-	rawBody, _ := b.RawBody()
-	return newBodyRequestHandler(b.contentType, rawBody)
-
-}
+////Clone 克隆body
+//func (b *BodyRequestHandler) Clone() *BodyRequestHandler {
+//	rawBody, _ := b.RawBody()
+//	return newBodyRequestHandler(b.contentType, rawBody)
+//
+//}
 
 //BodyInterface 获取请求体对象
 func (b *BodyRequestHandler) BodyInterface() (interface{}, error) {
@@ -314,13 +319,13 @@ func (b *BodyRequestHandler) encode() error {
 			return err
 		}
 		b.contentType = writer.FormDataContentType()
-		b.rawBody = body.Bytes()
+		b.request.SetBodyRaw(body.Bytes())
 		b.isWriteRaw = true
 	} else {
 		if b.form != nil {
-			b.rawBody = []byte(b.form.Encode())
+			b.request.SetBodyRaw([]byte(b.form.Encode()))
 		} else {
-			b.rawBody = make([]byte, 0, 0)
+			b.request.ResetBody()
 		}
 	}
 	return nil
@@ -357,17 +362,21 @@ func (b *BodyRequestHandler) SetFile(files map[string]*http_service.FileHeader) 
 
 //SetRaw 设置raw数据
 func (b *BodyRequestHandler) SetRaw(contentType string, body []byte) {
-	b.rawBody, b.contentType, b.isInit, b.isWriteRaw = body, contentType, false, true
+	b.request.SetBody(body)
+	b.contentType, b.isInit, b.isWriteRaw = contentType, false, true
 	return
 
 }
-
-//newBodyRequestHandler 创建body请求处理器
-func newBodyRequestHandler(contentType string, body []byte) *BodyRequestHandler {
-	b := new(BodyRequestHandler)
-	b.SetRaw(contentType, body)
-	return b
+func (b *BodyRequestHandler) rawBody() []byte {
+	return b.request.Body()
 }
+
+////newBodyRequestHandler 创建body请求处理器
+//func newBodyRequestHandler(contentType string, body []byte) *BodyRequestHandler {
+//	b := new(BodyRequestHandler)
+//	b.SetRaw(contentType, body)
+//	return b
+//}
 
 func multipartReader(contentType string, allowMixed bool, raw []byte) (*multipart.Reader, error) {
 

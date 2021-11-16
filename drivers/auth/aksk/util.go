@@ -19,7 +19,7 @@ const dateHeader = "x-gateway-date"
 func buildToSign(ctx http_service.IHttpContext, encType string, signedHeaders []string) string {
 	toSign := strings.Builder{}
 	toSign.WriteString(encType + "\n")
-	dh := ctx.Request().Headers().Get(dateHeader)
+	dh := ctx.Request().Header().GetHeader(dateHeader)
 	toSign.WriteString(dh + "\n")
 
 	cr := buildHexCanonicalRequest(ctx, signedHeaders)
@@ -32,20 +32,20 @@ func buildHexCanonicalRequest(ctx http_service.IHttpContext, signedHeaders []str
 	cr := strings.Builder{}
 
 	cr.WriteString(strings.ToUpper(ctx.Request().Method()) + "\n")
-	cr.WriteString(buildPath(ctx.Request().URL().Path) + "\n")
-	cr.WriteString(ctx.Request().URL().RawQuery + "\n")
+	cr.WriteString(buildPath(ctx.Request().URI().Path()) + "\n")
+	cr.WriteString(ctx.Request().URI().RawQuery() + "\n")
 
 	for _, header := range signedHeaders {
 		if strings.ToLower(header) == "host" {
-			cr.WriteString(buildHeaders(header, ctx.Request().Host()) + "\n")
+			cr.WriteString(buildHeaders(header, ctx.Request().Header().Host()) + "\n")
 			continue
 		}
-		v := ctx.Request().Headers().Get(header)
+		v := ctx.Request().Header().GetHeader(header)
 		cr.WriteString(buildHeaders(header, v+"\n"))
 	}
 	cr.WriteString("\n")
 	cr.WriteString(strings.Join(signedHeaders, ";") + "\n")
-	body, _ := ctx.Request().RawBody()
+	body, _ := ctx.Request().Body().RawBody()
 	cr.WriteString(hexEncode(body))
 
 	return hexEncode([]byte(cr.String()))
@@ -74,7 +74,7 @@ func hmaxBySHA256(secretKey, toSign string) string {
 }
 
 func parseAuthorization(ctx http_service.IHttpContext) (encType string, accessKey string, signHeaders []string, signature string, err error) {
-	authStr := ctx.Request().Headers().Get(auth.Authorization)
+	authStr := ctx.Request().Header().GetHeader(auth.Authorization)
 
 	infos := strings.Split(authStr, ",")
 	if len(infos) < 3 {

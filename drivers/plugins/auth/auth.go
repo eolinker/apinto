@@ -25,11 +25,8 @@ func (a *Auth) Destroy() {
 func (a *Auth) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
 	err := a.doAuth(ctx)
 	if err != nil {
-		resp, er := ctx.Response()
-		if er != nil {
-			log.Error("auth:", er)
-			return er
-		}
+		resp := ctx.Response()
+
 		resp.SetBody([]byte(err.Error()))
 		resp.SetStatus(403, "403")
 		return err

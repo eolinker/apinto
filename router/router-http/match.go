@@ -43,27 +43,27 @@ func newHTTPSources(req http_service.IRequestReader) *HTTPSources {
 //Get 由传入的指标key来获取请求中的指标值
 func (h *HTTPSources) Get(cmd string) (string, bool) {
 	if isHost(cmd) {
-		return h.req.Host(), true
+		return h.req.Header().Host(), true
 	}
 	if isMethod(cmd) {
 		return h.req.Method(), true
 	}
 
-	u := h.req.URL()
+	u := h.req.URI()
 	if isLocation(cmd) {
-		return u.Path, true
+		return u.Path(), true
 	}
 
 	if hn, yes := headerName(cmd); yes {
-		vs := h.req.GetHeader(hn)
+		vs := h.req.Header().GetHeader(hn)
 		if len(vs) == 0 {
 			return "", true
 		}
 	}
 
 	if qn, yes := queryName(cmd); yes {
-		query := u.Query()
-		vs := query.Get(qn)
+
+		vs := h.req.URI().GetQuery(qn)
 		if len(vs) == 0 {
 			return "", true
 		}

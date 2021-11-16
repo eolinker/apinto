@@ -32,7 +32,7 @@ type apikey struct {
 
 //Auth 鉴权处理
 func (a *apikey) Auth(ctx http_service.IHttpContext) error {
-	authorizationType := ctx.Request().Headers().Get(auth.AuthorizationType)
+	authorizationType := ctx.Request().Header().GetHeader(auth.AuthorizationType)
 	if authorizationType == "" {
 		return auth.ErrorInvalidType
 	}
@@ -71,37 +71,36 @@ func TOfData(data interface{}) reflect.Kind {
 func (a *apikey) getAuthValue(ctx http_service.IHttpContext) (string, error) {
 	// 判断鉴权值是否在header
 
-	if authorization := ctx.Request().Headers().Get(auth.Authorization); authorization != "" {
+	if authorization := ctx.Proxy().Header().GetHeader(auth.Authorization); authorization != "" {
 		if a.hideCredential {
-			ctx.Proxy().Headers().Del(auth.Authorization)
+			ctx.Proxy().Header().DelHeader(auth.Authorization)
 		}
 		return authorization, nil
 	}
 
 	// 判断鉴权值是否在query
-	url := ctx.Proxy().URL()
-	if authorization := url.Query().Get("Apikey"); authorization != "" {
+	if authorization := ctx.Proxy().URI().GetQuery("Apikey"); authorization != "" {
 		if a.hideCredential {
-			url.Query().Del("Apikey")
-			ctx.Proxy().SetURL(url)
+			ctx.Proxy().URI().DelQuery("Apikey")
+
 		}
 		return authorization, nil
 	}
 	var authorization string
-	contentType := ctx.Request().Headers().Get("Content-Type")
+	contentType := ctx.Request().Header().GetHeader("Content-Type")
 	if strings.Contains(contentType, "application/x-www-form-urlencoded") || strings.Contains(contentType, "multipart/form-data") {
-		formParams, err := ctx.Proxy().BodyForm()
+		formParams, err := ctx.Proxy().Body().BodyForm()
 		if err != nil {
 			return "", err
 		}
 		authorization = formParams.Get("Apikey")
 		if a.hideCredential {
 			delete(formParams, "Apikey")
-			ctx.Proxy().SetForm(formParams)
+			ctx.Proxy().Body().SetForm(formParams)
 		}
 	} else if strings.Contains(contentType, "application/json") {
 		var body map[string]interface{}
-		rawBody, err := ctx.Proxy().RawBody()
+		rawBody, err := ctx.Proxy().Body().RawBody()
 		if err != nil {
 			return "", err
 		}
@@ -123,7 +122,7 @@ func (a *apikey) getAuthValue(ctx http_service.IHttpContext) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			ctx.Proxy().SetRaw(contentType, newBody)
+			ctx.Proxy().Body().SetRaw(contentType, newBody)
 		}
 
 	} else {
