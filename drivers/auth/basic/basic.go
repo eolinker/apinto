@@ -75,7 +75,7 @@ func (b *basic) CheckSkill(skill string) bool {
 }
 
 func (b *basic) Auth(ctx http_service.IHttpContext) error {
-	authorizationType := ctx.Request().Headers().Get(auth.AuthorizationType)
+	authorizationType := ctx.Request().Header().GetHeader(auth.AuthorizationType)
 	if authorizationType == "" {
 		return auth.ErrorInvalidType
 	}
@@ -83,9 +83,9 @@ func (b *basic) Auth(ctx http_service.IHttpContext) error {
 	if err != nil {
 		return err
 	}
-	authorization := ctx.Request().Headers().Get(auth.Authorization)
+	authorization := ctx.Request().Header().GetHeader(auth.Authorization)
 	if b.hideCredential {
-		ctx.Proxy().Headers().Del(auth.Authorization)
+		ctx.Proxy().Header().DelHeader(auth.Authorization)
 	}
 
 	username, password, err := retrieveCredentials(authorization)

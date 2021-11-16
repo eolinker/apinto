@@ -33,11 +33,11 @@ func (r *Rewrite) DoFilter(ctx http_service.IHttpContext, next http_service.ICha
 			location, has := router.Location()
 
 			if has && location.CheckType() == checker.CheckTypePrefix {
-				ctx.Proxy().SetPath(recombinePath(string(ctx.Request().URL().Path), location.Value(), r.path))
+				ctx.Proxy().URI().SetPath(recombinePath(string(ctx.Request().URI().Path()), location.Value(), r.path))
 			}
 		} else {
 			if r.path != "" {
-				ctx.Proxy().SetPath(r.path)
+				ctx.Proxy().URI().SetPath(r.path)
 			}
 		}
 	}
