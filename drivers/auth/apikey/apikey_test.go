@@ -139,7 +139,7 @@ func TestBodyAuthorization(t *testing.T) {
 	//	return
 	//}
 	//for key, value := range headers {
-	//	req.Header.SetDriver(key, value)
+	//	req.RequestHeader.SetDriver(key, value)
 	//}
 	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
@@ -189,9 +189,9 @@ func TestMultipartFormAuthorization(t *testing.T) {
 	//	return
 	//}
 	//for key, value := range headers {
-	//	req.Header.SetDriver(key, value)
+	//	req.RequestHeader.SetDriver(key, value)
 	//}
-	//req.Header.SetDriver("Content-Type", w.FormDataContentType())
+	//req.RequestHeader.SetDriver("Content-Type", w.FormDataContentType())
 	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
 	// fast http-service
