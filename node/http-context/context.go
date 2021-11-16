@@ -46,17 +46,22 @@ func (ctx *Context) SendTo(address string, timeout time.Duration) error {
 	}
 
 	request := ctx.proxyRequest.Request()
-	backUrl := fasthttp.AcquireURI()
-	request.URI().CopyTo(backUrl)
 
-	defer backUrl.CopyTo(request.URI())
+	backScheme := string(request.URI().Scheme())
 
 	request.URI().SetScheme(target.Scheme)
-	request.URI().SetHost(target.Host)
 
 	tem := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseResponse(tem)
-	err = fasthttp.DoTimeout(request, tem, timeout)
+	defer func() {
+
+		request.URI().SetScheme(backScheme)
+		fasthttp.ReleaseResponse(tem)
+	}()
+	c := fasthttp.HostClient{
+		Addr: target.Host,
+	}
+
+	err = c.DoTimeout(request, tem, timeout)
 
 	if err != nil {
 		ctx.responseError = err
