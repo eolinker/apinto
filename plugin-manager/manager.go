@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/eolinker/goku/plugin"
+
 	"github.com/eolinker/eosc/common/bean"
 
 	"github.com/eolinker/eosc"
@@ -21,16 +23,6 @@ var (
 	ErrorGlobalPluginConfigInvalid = errors.New("invalid global config")
 )
 
-type IPluginChain interface {
-	filter.IChain
-	Destroy()
-}
-type IPluginManager interface {
-	CreateRouter(id string, conf map[string]*OrdinaryPlugin) IPluginChain
-	CreateService(id string, conf map[string]*OrdinaryPlugin) IPluginChain
-	CreateUpstream(id string, conf map[string]*OrdinaryPlugin) IPluginChain
-}
-
 type PluginManager struct {
 	id string
 
@@ -39,17 +31,18 @@ type PluginManager struct {
 	extenderDrivers eosc.IExtenderDrivers
 	plugins         Plugins
 	pluginObjs      eosc.IUntyped
+	workers         eosc.IWorkers
 }
 
-func (p *PluginManager) CreateRouter(id string, conf map[string]*OrdinaryPlugin) IPluginChain {
+func (p *PluginManager) CreateRouter(id string, conf map[string]*plugin.Config) plugin.IPlugin {
 	return p.newChain(id, conf, pluginRouter)
 }
 
-func (p *PluginManager) CreateService(id string, conf map[string]*OrdinaryPlugin) IPluginChain {
+func (p *PluginManager) CreateService(id string, conf map[string]*plugin.Config) plugin.IPlugin {
 	return p.newChain(id, conf, pluginService)
 }
 
-func (p *PluginManager) CreateUpstream(id string, conf map[string]*OrdinaryPlugin) IPluginChain {
+func (p *PluginManager) CreateUpstream(id string, conf map[string]*plugin.Config) plugin.IPlugin {
 	return p.newChain(id, conf, pluginUpstream)
 }
 
@@ -77,7 +70,7 @@ func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]inter
 		if !ok {
 			continue
 		}
-		v.IChainHandler.Reset(p.createFilters(v.conf, v.t)...)
+		v.IChainHandler.Reset(p.createFilters(v.conf, v.filterType)...)
 	}
 
 	return nil
@@ -101,39 +94,39 @@ func (p *PluginManager) RemoveObj(id string) (*PluginObj, bool) {
 	return v, ok
 }
 
-func (p *PluginManager) createFilters(conf map[string]*OrdinaryPlugin, t string) []http_service.IFilter {
+func (p *PluginManager) createFilters(conf map[string]*plugin.Config, filterType string) []http_service.IFilter {
 	filters := make([]http_service.IFilter, 0, len(conf))
-	for _, plugin := range p.plugins {
-		if plugin.Status == StatusDisable || plugin.Status == "" || plugin.Type != t {
+	for _, plg := range p.plugins {
+		if plg.Status == StatusDisable || plg.Status == "" || plg.Type != filterType {
 			// 当插件类型不匹配，跳过
 			continue
 		}
-		c := plugin.Config
-		if v, ok := conf[plugin.Name]; ok {
+		c := plg.Config
+		if v, ok := conf[plg.Name]; ok {
 			if v.Disable {
 				// 不启用该插件
 				continue
 			}
-			if plugin.Status != StatusGlobal && plugin.Status != StatusEnable {
+			if plg.Status != StatusGlobal && plg.Status != StatusEnable {
 				continue
 			}
 			c = v
-		} else if plugin.Status != StatusGlobal && plugin.Status != StatusEnable {
+		} else if plg.Status != StatusGlobal && plg.Status != StatusEnable {
 			continue
 		}
-		confObj, err := toConfig(c, plugin.drive.ConfigType())
+		confObj, err := toConfig(c, plg.drive.ConfigType())
 		if err != nil {
-			log.Error("plugin manager: fail to createFilters filter,error is ", err)
+			log.Error("plg manager: fail to createFilters filter,error is ", err)
 			continue
 		}
-		worker, err := plugin.drive.Create(fmt.Sprintf("%s@%s", plugin.Name, p.name), plugin.Name, confObj, nil)
+		worker, err := plg.drive.Create(fmt.Sprintf("%s@%s", plg.Name, p.name), plg.Name, confObj, nil)
 		if err != nil {
-			log.Error("plugin manager: fail to createFilters filter,error is ", err)
+			log.Error("plg manager: fail to createFilters filter,error is ", err)
 			continue
 		}
 		fi, ok := worker.(http_service.IFilter)
 		if !ok {
-			log.Error("extender ", plugin.ID, " not plugin for http-service.Filter")
+			log.Error("extender ", plg.ID, " not plg for http-service.Filter")
 			continue
 		}
 		filters = append(filters, fi)
@@ -141,15 +134,16 @@ func (p *PluginManager) createFilters(conf map[string]*OrdinaryPlugin, t string)
 	return filters
 }
 
-func (p *PluginManager) newChain(id string, conf map[string]*OrdinaryPlugin, t string) *PluginObj {
-	chain := filter.NewChain(p.createFilters(conf, t))
+func (p *PluginManager) newChain(id string, conf map[string]*plugin.Config, filterType string) *PluginObj {
+	chain := filter.NewChain(p.createFilters(conf, filterType))
 	obj := &PluginObj{
 		IChainHandler: chain,
 		id:            id,
 		conf:          conf,
-		t:             t,
+		filterType:    filterType,
+		manager:       p,
 	}
-	p.pluginObjs.Set(fmt.Sprintf("%s:%s", id, t), obj)
+	p.pluginObjs.Set(fmt.Sprintf("%s:%s", id, filterType), obj)
 	return obj
 }
 

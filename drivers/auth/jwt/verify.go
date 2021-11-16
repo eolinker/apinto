@@ -517,10 +517,13 @@ func (j *jwt) retrieveJWTToken(context http_service.IHttpContext) (string, error
 		}
 		return authorizationHeader, nil
 	}
-
-	if value := context.Request().URL().Query().Get(tokenName); value != "" {
+	url := context.Proxy().URL()
+	query := url.Query()
+	if value := query.Get(tokenName); value != "" {
 		if j.hideCredentials {
-			context.Proxy().Queries().Del(tokenName)
+			query.Del(tokenName)
+			url.RawQuery = query.Encode()
+			context.Proxy().SetURL(url)
 		}
 		return value, nil
 	}

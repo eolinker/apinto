@@ -2,11 +2,22 @@ package filter
 
 import http_service "github.com/eolinker/eosc/http-service"
 
+var _ http_service.IFilter = (*_ChainFilter)(nil)
+
 type _ChainFilter struct {
 	startNode *_ChainNode
 }
 
-func toFilter(filters []http_service.IFilter) *_ChainFilter {
+func (c *_ChainFilter) Destroy() {
+	if c.startNode != nil {
+		n := c.startNode
+		c.startNode = nil
+		n.Destroy()
+	}
+
+}
+
+func ToFilter(filters []http_service.IFilter) *_ChainFilter {
 	c := &_ChainFilter{}
 	c.Reset(filters...)
 	return c

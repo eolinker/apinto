@@ -2,8 +2,6 @@ package checker
 
 import (
 	"strings"
-
-	http_service "github.com/eolinker/eosc/http-service"
 )
 
 var (
@@ -34,8 +32,8 @@ func (t *checkerNone) Check(v string, has bool) bool {
 }
 
 //CheckType 返回检查器的类型值
-func (t *checkerNone) CheckType() http_service.CheckType {
-	return http_service.CheckTypeNone
+func (t *checkerNone) CheckType() CheckType {
+	return CheckTypeNone
 }
 
 //newCheckerAll 创建一个空值匹配类型的检查器
