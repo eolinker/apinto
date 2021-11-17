@@ -2,8 +2,9 @@ package http_context
 
 import (
 	"context"
-	"net/url"
 	"time"
+
+	fasthttp_client "github.com/eolinker/goku/node/fasthttp-client"
 
 	"github.com/valyala/fasthttp"
 
@@ -39,38 +40,11 @@ type Finish interface {
 
 func (ctx *Context) SendTo(address string, timeout time.Duration) error {
 
-	target, err := url.Parse(address)
-	if err != nil {
-		ctx.responseError = err
-		return err
-	}
-
 	request := ctx.proxyRequest.Request()
 
-	backScheme := string(request.URI().Scheme())
+	ctx.responseError = fasthttp_client.ProxyTimeout(address, request, &ctx.fastHttpRequestCtx.Response, timeout)
 
-	request.URI().SetScheme(target.Scheme)
-
-	tem := fasthttp.AcquireResponse()
-	defer func() {
-
-		request.URI().SetScheme(backScheme)
-		fasthttp.ReleaseResponse(tem)
-	}()
-	c := fasthttp.HostClient{
-		Addr: target.Host,
-	}
-
-	err = c.DoTimeout(request, tem, timeout)
-
-	if err != nil {
-		ctx.responseError = err
-		return err
-	}
-
-	ctx.SetResponse(tem)
-
-	return nil
+	return ctx.responseError
 
 }
 
@@ -108,7 +82,7 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 		requestID:          requestID,
 		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteIP().String()),
 		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteIP().String()),
-		response:           NewResponse(),
+		response:           NewResponse(ctx),
 		responseError:      nil,
 	}
 
@@ -120,12 +94,6 @@ func (ctx *Context) RequestId() string {
 	return ctx.requestID
 }
 
-func (ctx *Context) SetResponse(response *fasthttp.Response) {
-
-	ctx.response.Set(response)
-	ctx.responseError = nil
-}
-
 //Finish finish
 func (ctx *Context) Finish() {
 
@@ -135,9 +103,6 @@ func (ctx *Context) Finish() {
 		return
 	}
 
-	ctx.response.WriteTo(ctx.fastHttpRequestCtx)
-
-	ctx.response.Finish()
 	ctx.requestReader.Finish()
 	ctx.proxyRequest.Finish()
 	return

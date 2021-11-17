@@ -15,15 +15,13 @@ type Response struct {
 	*fasthttp.Response
 }
 
-func (r *Response) Finish() error {
-
-	fasthttp.ReleaseResponse(r.Response)
+func (r *Response) reset() error {
+	r.ResponseHeader.tmp = nil
 	return nil
 }
 
-func NewResponse() *Response {
-	response := fasthttp.AcquireResponse()
-	return &Response{Response: fasthttp.AcquireResponse(), ResponseHeader: NewResponseHeader(&response.Header)}
+func NewResponse(ctx *fasthttp.RequestCtx) *Response {
+	return &Response{Response: &ctx.Response, ResponseHeader: NewResponseHeader(&ctx.Response.Header)}
 }
 
 func (r *Response) GetBody() []byte {
@@ -44,12 +42,4 @@ func (r *Response) SetStatus(code int, status string) {
 
 func (r *Response) SetBody(bytes []byte) {
 	r.Response.SetBody(bytes)
-}
-func (r *Response) Set(response *fasthttp.Response) {
-	if response != nil {
-		r.Response.Reset()
-		response.CopyTo(r.Response)
-		r.ResponseHeader = NewResponseHeader(&r.Response.Header)
-	}
-
 }
