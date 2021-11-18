@@ -54,7 +54,7 @@ func (r *Router) Handler(requestCtx *fasthttp.RequestCtx) {
 		requestCtx.NotFound()
 		return
 	}
-	log.Debug("router handler", requestCtx.Request.String())
+	log.Debugf("router handler\n%s", requestCtx.Request.String())
 	ctx := http_context.NewContext(requestCtx)
 	// TODO: 执行全局的Filter
 	h, e, has := match.Match(ctx.Request())

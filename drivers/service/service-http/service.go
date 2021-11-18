@@ -33,7 +33,7 @@ func (s *Service) mergePluginConfig(config map[string]*plugin.Config) map[string
 func (s *Service) Create(id string, configs map[string]*plugin.Config) service.IService {
 	h := s.newHandler(id, configs)
 	h.rebuild(s.upstream)
-	return nil
+	return h
 }
 
 func (s *Service) newHandler(id string, config map[string]*plugin.Config) *ServiceHandler {

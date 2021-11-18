@@ -58,6 +58,9 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 			return fmt.Errorf("%s:%w", data.Upstream, ErrorInvalidUpstream)
 		}
 	} else {
+		if data.UpstreamAnonymous == nil {
+			return ErrorNeedUpstream
+		}
 		balanceFactory, err := balance.GetFactory(data.UpstreamAnonymous.Type)
 		if err != nil {
 			return err

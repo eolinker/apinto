@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/eolinker/eosc/log"
+
 	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/goku/plugin"
 )
@@ -50,7 +52,7 @@ func (u *UpstreamHandler) reset() {
 	u.orgFilter = iPlugin
 }
 
-//Send 请求发送
+//DoChain 请求发送
 func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
 
 	var lastErr error
@@ -64,7 +66,7 @@ func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
 		if scheme != "http" && scheme != "https" {
 			scheme = u.upstrem.scheme
 		}
-
+		log.Debug("node: ", node.Addr())
 		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
 		filterSender := NewSendAddr(addr, u.timeout)
 		if u.orgFilter == nil {
@@ -73,6 +75,10 @@ func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
 			lastErr = u.orgFilter.Append(filterSender).DoChain(ctx)
 		}
 
+		if lastErr == nil {
+			return nil
+		}
+		log.Error("http upstream send error: ", lastErr)
 	}
 
 	return lastErr
@@ -92,5 +98,7 @@ func NewSendAddr(addr string, timeout time.Duration) *SendAddr {
 }
 
 func (s *SendAddr) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
-	return ctx.SendTo(s.addr, s.timeout)
+	err = ctx.SendTo(s.addr, s.timeout)
+	log.Error("Send addr error: ", err, " addr is ", s.addr, " timeout is ", s.timeout)
+	return
 }
