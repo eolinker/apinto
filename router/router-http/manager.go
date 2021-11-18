@@ -3,6 +3,7 @@ package router_http
 import (
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/eolinker/eosc/config"
@@ -71,11 +72,13 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg) *Manager {
 
 	for _, cfg := range listenCfg.Listens {
 		port := int(cfg.Port)
+
 		l, err := tf.ListenTcp("", port)
 		if err != nil {
 			log.Warn("worker listen tcp error:", err)
 			continue
 		}
+		fmt.Println("new http service ", port, cfg, l)
 		if cfg.Scheme == "https" {
 			cert, err := config.NewCert(cfg.Certificate, listenCfg.Dir)
 			if err != nil {

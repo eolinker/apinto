@@ -20,6 +20,7 @@ import (
 	http_router "github.com/eolinker/goku/drivers/router/http-router"
 	service_http "github.com/eolinker/goku/drivers/service/service-http"
 	upstream_http "github.com/eolinker/goku/drivers/upstream/upstream-http"
+	plugin_manager "github.com/eolinker/goku/plugin-manager"
 )
 
 func registerInnerExtenders() {
@@ -53,6 +54,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	syslog.Register(extenderRegister)
 	stdlog.Register(extenderRegister)
 
+	plugin_manager.Register(extenderRegister)
 	auth.Register(extenderRegister)
 	rewrite.Register(extenderRegister)
 }

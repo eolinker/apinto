@@ -15,7 +15,15 @@ var (
 	once      sync.Once
 )
 
+func Register(register eosc.IExtenderDriverRegister) {
+	register.RegisterExtenderDriver("plugin", NewPluginFactory())
+}
+
 type PluginFactory struct {
+}
+
+func NewPluginFactory() *PluginFactory {
+	return &PluginFactory{}
 }
 
 func (p *PluginFactory) Check(v interface{}, workers map[eosc.RequireId]interface{}) error {

@@ -167,7 +167,7 @@ func GokuProfession() []*eosc.ProfessionConfig {
 			AppendLabels: nil,
 			Drivers: []*eosc.DriverConfig{
 				{
-					Id:     "eolinker:goku:plugin_manager",
+					Id:     "eolinker.com:goku:plugin",
 					Name:   "plugin",
 					Label:  "plugin",
 					Desc:   "插件管理器",
