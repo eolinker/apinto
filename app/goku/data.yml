@@ -84,7 +84,7 @@ accessLog:
       fields: #当长度为0时默认输出所有字段
 
 setting:
-  - name: service_plugin
+  - name: plugin
     driver: plugin
     plugins:
       - id: "eolinker.com:goku:auth"
@@ -95,12 +95,10 @@ setting:
           - jwt@auth
           - apikey@auth
         init_config:    # 初始化配置，不可覆盖
-
-
       - id: "eolinker.com:goku:access_log"
         name: accessLog
         type: service
-        status: enable
+        status: global
         config:
           labers:
             service: demo服务
