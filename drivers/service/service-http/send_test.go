@@ -15,7 +15,7 @@ func TestSend(t *testing.T) {
 		return
 	}
 
-	anonymous, err := defaultDiscovery.GetApp("www.gokuapi.com")
+	anonymous, err := defaultDiscovery.GetApp("www.baidu.com")
 	if err != nil {
 		t.Error(err)
 		return

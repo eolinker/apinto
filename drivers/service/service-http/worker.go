@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/eolinker/eosc/log"
+
 	"github.com/eolinker/goku/upstream/balance"
 
 	"time"
@@ -61,6 +63,7 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 		if data.UpstreamAnonymous == nil {
 			return ErrorNeedUpstream
 		}
+		log.Debug("reset anonymous upstream,config is ", data.UpstreamAnonymous.Config)
 		balanceFactory, err := balance.GetFactory(data.UpstreamAnonymous.Type)
 		if err != nil {
 			return err
@@ -84,7 +87,7 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	s.Service.retry = data.Retry
 	s.Service.scheme = data.Scheme
 	s.Service.proxyMethod = data.ProxyMethod
-
+	log.Debug("reset service:", data.PluginConfig)
 	s.Service.reset(upstreamCreate, data.PluginConfig)
 
 	return nil

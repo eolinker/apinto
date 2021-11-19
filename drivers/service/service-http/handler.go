@@ -2,6 +2,7 @@ package service_http
 
 import (
 	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/goku/filter"
 	"github.com/eolinker/goku/plugin"
 	"github.com/eolinker/goku/upstream"
@@ -48,6 +49,7 @@ func (s *ServiceHandler) rebuild(upstream upstream.IUpstream) {
 
 	ps, err := upstream.Create(s.id, s.service.mergePluginConfig(s.config), s.service.retry, s.service.timeout)
 	if err != nil {
+		log.Error("rebuild error: ", err)
 		return
 	}
 	s.upstreamHandler = ps
