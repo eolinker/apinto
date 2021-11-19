@@ -19,7 +19,7 @@ import (
 var (
 	errConfig                      = errors.New("invalid config")
 	ErrorDriverNotExit             = errors.New("drive not exit")
-	ErrorGlobalPluginMastConfig    = errors.New("global mast have config")
+	ErrorGlobalPluginMastConfig    = errors.New("global must have config")
 	ErrorGlobalPluginConfigInvalid = errors.New("invalid global config")
 )
 
