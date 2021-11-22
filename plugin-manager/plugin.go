@@ -21,7 +21,7 @@ func (p *PluginManager) newPlugin(conf *PluginConfig) (*Plugin, error) {
 	if err != nil {
 		return nil, err
 	}
-	if conf.Status == StatusGlobal && conf.Config != nil {
+	if conf.Status == StatusGlobal && conf.Config == nil {
 		return nil, ErrorGlobalPluginMastConfig
 	}
 	if conf.Status == StatusGlobal {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	fasthttp_client "github.com/eolinker/goku/node/fasthttp-client"
+
 	"github.com/valyala/fasthttp"
 
 	http_service "github.com/eolinker/eosc/http-service"
@@ -15,21 +17,35 @@ var _ http_service.IHttpContext = (*Context)(nil)
 //Context fasthttpRequestCtx
 type Context struct {
 	fastHttpRequestCtx *fasthttp.RequestCtx
-	requestOrg         *fasthttp.Request
-	proxyRequest       *ProxyRequest
-	requestID          string
-	response           *Response
-	responseError      error
-	requestReader      *RequestReader
-	ctx                context.Context
+
+	proxyRequest  *ProxyRequest
+	requestID     string
+	response      *Response
+	responseError error
+	requestReader *RequestReader
+	ctx           context.Context
 }
 
-func (ctx *Context) Response() (http_service.IResponse, error) {
-	return ctx.response, ctx.responseError
+func (ctx *Context) Response() http_service.IResponse {
+	return ctx.response
+}
+
+func (ctx *Context) ResponseError() error {
+	return ctx.responseError
+}
+
+type Finish interface {
+	Finish() error
 }
 
 func (ctx *Context) SendTo(address string, timeout time.Duration) error {
-	panic("implement me")
+
+	request := ctx.proxyRequest.Request()
+
+	ctx.responseError = fasthttp_client.ProxyTimeout(address, request, &ctx.fastHttpRequestCtx.Response, timeout)
+
+	return ctx.responseError
+
 }
 
 func (ctx *Context) Context() context.Context {
@@ -60,15 +76,13 @@ func (ctx *Context) Request() http_service.IRequestReader {
 func NewContext(ctx *fasthttp.RequestCtx) *Context {
 	id := uuid.NewV4()
 	requestID := id.String()
-	proxyRequest := fasthttp.AcquireRequest()
-	ctx.Request.CopyTo(proxyRequest)
+
 	newCtx := &Context{
 		fastHttpRequestCtx: ctx,
-		requestOrg:         fasthttp.AcquireRequest(),
 		requestID:          requestID,
-		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteAddr().String()),
-		proxyRequest:       NewProxyRequest(proxyRequest),
-		response:           NewResponse(fasthttp.AcquireResponse()),
+		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteIP().String()),
+		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteIP().String()),
+		response:           NewResponse(ctx),
 		responseError:      nil,
 	}
 
@@ -80,27 +94,17 @@ func (ctx *Context) RequestId() string {
 	return ctx.requestID
 }
 
-func (ctx *Context) SetResponse(response *fasthttp.Response) {
-
-	ctx.response = NewResponse(response)
-	ctx.responseError = nil
-}
-
 //Finish finish
 func (ctx *Context) Finish() {
-	//
-	//ctx.proxyResponse.CopyTo(&ctx.fastHttpRequestCtx.Response)
-	//
-	//fasthttp.ReleaseResponse(ctx.proxyResponse)
-	//fasthttp.ReleaseRequest(ctx.proxyRequest.req)
+
 	if ctx.response == nil {
 		ctx.fastHttpRequestCtx.SetStatusCode(502)
 		ctx.fastHttpRequestCtx.SetBodyString(ctx.responseError.Error())
 		return
 	}
 
-	ctx.response.WriteTo(ctx.fastHttpRequestCtx)
-	ctx.fastHttpRequestCtx.NotModified()
+	ctx.requestReader.Finish()
+	ctx.proxyRequest.Finish()
 	return
 }
 

@@ -25,7 +25,7 @@ func MergeConfig(high, low map[string]*Config) map[string]*Config {
 		return clone(low)
 	}
 	if low == nil {
-		return clone(low)
+		return clone(high)
 	}
 
 	mv := clone(low)

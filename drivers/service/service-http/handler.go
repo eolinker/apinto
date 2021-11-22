@@ -2,6 +2,7 @@ package service_http
 
 import (
 	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/goku/filter"
 	"github.com/eolinker/goku/plugin"
 	"github.com/eolinker/goku/upstream"
@@ -30,7 +31,7 @@ func (s *ServiceHandler) DoChain(ctx http_service.IHttpContext) error {
 		ctx.Proxy().SetMethod(s.service.proxyMethod)
 	}
 	if s.pluginExec != nil {
-		s.pluginExec.DoChain(ctx)
+		return s.pluginExec.DoChain(ctx)
 	}
 	return nil
 }
@@ -40,14 +41,19 @@ func (s *ServiceHandler) Destroy() {
 		s.pluginExec.Destroy()
 		s.pluginExec = nil
 	}
+
+	s.service.handlers.Del(s.id)
+	s.service = nil
+
 }
 
 func (s *ServiceHandler) rebuild(upstream upstream.IUpstream) {
-	serviceFilter := pluginManger.CreateService(s.id, s.config)
+	serviceFilter := pluginManger.CreateService(s.id, s.service.mergePluginConfig(s.config))
 	s.pluginExec = serviceFilter.Append(filter.ToFilter([]http_service.IFilter{s}))
 
 	ps, err := upstream.Create(s.id, s.service.mergePluginConfig(s.config), s.service.retry, s.service.timeout)
 	if err != nil {
+		log.Error("rebuild error: ", err)
 		return
 	}
 	s.upstreamHandler = ps
