@@ -12,12 +12,12 @@ type Config struct {
 }
 
 type TransParam struct {
-	ParamName             string `json:"paramName"`
-	ParamPosition         string `json:"paramPosition"`
-	ProxyParamName        string `json:"proxyParamName"`
-	ProxyParamPosition    string `json:"proxyParamPosition"`
+	ParamName             string `json:"name"`
+	ParamPosition         string `json:"position"`
+	ProxyParamName        string `json:"proxy_name"`
+	ProxyParamPosition    string `json:"proxy_position"`
 	Required              bool   `json:"required"`
-	ParamConflictSolution string `json:"paramConflictSolution"`
+	ParamConflictSolution string `json:"conflict"`
 }
 
 func (c *Config) doCheck() error {

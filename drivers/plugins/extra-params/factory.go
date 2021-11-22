@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	Name = "goku-extra_params"
+	Name = "extra_params"
 )
 
 func Register(register eosc.IExtenderDriverRegister) {

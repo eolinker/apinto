@@ -16,6 +16,11 @@ import (
 	"github.com/eolinker/goku/drivers/log/stdlog"
 	"github.com/eolinker/goku/drivers/log/syslog"
 	"github.com/eolinker/goku/drivers/plugins/auth"
+	extra_params "github.com/eolinker/goku/drivers/plugins/extra-params"
+	ip_restriction "github.com/eolinker/goku/drivers/plugins/ip-restriction"
+	params_transformer "github.com/eolinker/goku/drivers/plugins/params-transformer"
+	proxy_rewrite "github.com/eolinker/goku/drivers/plugins/proxy-rewrite"
+	rate_limiting "github.com/eolinker/goku/drivers/plugins/rate-limiting"
 	"github.com/eolinker/goku/drivers/plugins/rewrite"
 	http_router "github.com/eolinker/goku/drivers/router/http-router"
 	service_http "github.com/eolinker/goku/drivers/service/service-http"
@@ -57,4 +62,10 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	plugin_manager.Register(extenderRegister)
 	auth.Register(extenderRegister)
 	rewrite.Register(extenderRegister)
+
+	extra_params.Register(extenderRegister)
+	params_transformer.Register(extenderRegister)
+	proxy_rewrite.Register(extenderRegister)
+	ip_restriction.Register(extenderRegister)
+	rate_limiting.Register(extenderRegister)
 }

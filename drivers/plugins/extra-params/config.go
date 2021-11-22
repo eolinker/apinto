@@ -7,14 +7,14 @@ import (
 
 type Config struct {
 	Params       []*ExtraParam `json:"params"`
-	ResponseType string        `json:"responseType"`
+	ResponseType string        `json:"response_type"`
 }
 
 type ExtraParam struct {
-	ParamName             string      `json:"paramName"`
-	ParamPosition         string      `json:"paramPosition"`
-	ParamValue            interface{} `json:"paramValue"`
-	ParamConflictSolution string      `json:"paramConflictSolution"`
+	ParamName             string      `json:"name"`
+	ParamPosition         string      `json:"position"`
+	ParamValue            interface{} `json:"value"`
+	ParamConflictSolution string      `json:"conflict"`
 }
 
 func (c *Config) doCheck() error {
