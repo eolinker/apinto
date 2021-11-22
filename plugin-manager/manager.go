@@ -111,7 +111,10 @@ func (p *PluginManager) createFilters(conf map[string]*plugin.Config, filterType
 			if plg.Status != StatusGlobal && plg.Status != StatusEnable {
 				continue
 			}
-			c = v
+			if v.Config == nil &&  plg.Status != StatusGlobal {
+				continue
+			}
+			c = v.Config
 		} else if plg.Status != StatusGlobal && plg.Status != StatusEnable {
 			continue
 		}
