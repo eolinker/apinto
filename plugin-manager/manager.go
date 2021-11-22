@@ -96,7 +96,8 @@ func (p *PluginManager) RemoveObj(id string) (*PluginObj, bool) {
 
 func (p *PluginManager) createFilters(conf map[string]*plugin.Config, filterType string) []http_service.IFilter {
 	filters := make([]http_service.IFilter, 0, len(conf))
-	for _, plg := range p.plugins {
+	plugins := p.plugins
+	for _, plg := range plugins {
 		if plg.Status == StatusDisable || plg.Status == "" || plg.Type != filterType {
 			// 当插件类型不匹配，跳过
 			continue
