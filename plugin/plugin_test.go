@@ -62,6 +62,27 @@ func TestMergeConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "high",
+			args: args{
+				high: map[string]*Config{
+					"high": {Disable: false, Config: "high"},
+					"low":  {Disable: false, Config: "high"},
+				}, low: map[string]*Config{
+					"low": {
+						Disable: false,
+						Config:  "low",
+					},
+				},
+			},
+			want: map[string]*Config{
+				"high": {Disable: false, Config: "high"},
+				"low": {
+					Disable: false,
+					Config:  "high",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
