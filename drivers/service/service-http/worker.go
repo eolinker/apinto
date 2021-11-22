@@ -95,6 +95,9 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 }
 
 func (s *serviceWorker) Stop() error {
+	for _, h := range s.handlers.List() {
+		h.Destroy()
+	}
 	return nil
 }
 

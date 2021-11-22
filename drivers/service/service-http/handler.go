@@ -41,6 +41,10 @@ func (s *ServiceHandler) Destroy() {
 		s.pluginExec.Destroy()
 		s.pluginExec = nil
 	}
+
+	s.service.handlers.Del(s.id)
+	s.service = nil
+
 }
 
 func (s *ServiceHandler) rebuild(upstream upstream.IUpstream) {
