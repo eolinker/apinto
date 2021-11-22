@@ -31,7 +31,7 @@ func (s *ServiceHandler) DoChain(ctx http_service.IHttpContext) error {
 		ctx.Proxy().SetMethod(s.service.proxyMethod)
 	}
 	if s.pluginExec != nil {
-		s.pluginExec.DoChain(ctx)
+		return s.pluginExec.DoChain(ctx)
 	}
 	return nil
 }
@@ -48,7 +48,7 @@ func (s *ServiceHandler) Destroy() {
 }
 
 func (s *ServiceHandler) rebuild(upstream upstream.IUpstream) {
-	serviceFilter := pluginManger.CreateService(s.id, s.config)
+	serviceFilter := pluginManger.CreateService(s.id, s.service.mergePluginConfig(s.config))
 	s.pluginExec = serviceFilter.Append(filter.ToFilter([]http_service.IFilter{s}))
 
 	ps, err := upstream.Create(s.id, s.service.mergePluginConfig(s.config), s.service.retry, s.service.timeout)

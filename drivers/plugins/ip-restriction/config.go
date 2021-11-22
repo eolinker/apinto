@@ -20,7 +20,7 @@ type Config struct {
 }
 
 func (c *Config) doCheck() error {
-	if c.IPListType == "while" || c.IPListType == "black" {
+	if c.IPListType == "white" || c.IPListType == "black" {
 		return nil
 	}
 	return ErrorConfigTypeError
@@ -30,7 +30,7 @@ func (c *Config) doCheck() error {
 type IPFilter func(ip string) (bool, error)
 
 func (c *Config) genFilter() IPFilter {
-	if c.IPListType == "while" {
+	if c.IPListType == "white" {
 		return func(ip string) (bool, error) {
 			flag := false
 			var err error
