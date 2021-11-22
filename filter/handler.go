@@ -1,6 +1,10 @@
 package filter
 
-import http_service "github.com/eolinker/eosc/http-service"
+import (
+	"github.com/eolinker/eosc"
+	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/log"
+)
 
 var _ IChainHandler = (*_ChainHandler)(nil)
 
@@ -27,6 +31,7 @@ func (c *_ChainHandler) ToFilter() http_service.IFilter {
 }
 
 func (c *_ChainHandler) DoChain(ctx http_service.IHttpContext) error {
+	log.Debug("do chain handler: ", c, eosc.TypeNameOf(c.orgFilter))
 	return c.orgFilter.DoFilter(ctx, nil)
 }
 

@@ -1,6 +1,10 @@
 package filter
 
-import http_service "github.com/eolinker/eosc/http-service"
+import (
+	"github.com/eolinker/eosc"
+	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/log"
+)
 
 var _ http_service.IChain = (*_ChainNode)(nil)
 
@@ -24,6 +28,7 @@ func (c *_ChainNode) Destroy() {
 }
 
 func createNode(filters []http_service.IFilter, end http_service.IChain) *_ChainNode {
+
 	if len(filters) == 0 {
 		return nil
 	}
@@ -34,7 +39,7 @@ func createNode(filters []http_service.IFilter, end http_service.IChain) *_Chain
 	return &_ChainNode{filter: filters[0], next: createNode(filters[1:], end)}
 }
 func (c *_ChainNode) DoChain(ctx http_service.IHttpContext) error {
-
+	log.Debug(" chain: ", c, "filter: ", eosc.TypeNameOf(c.filter))
 	if c == nil {
 		return nil
 	}

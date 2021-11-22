@@ -127,7 +127,7 @@
   append_label: null
   mode: factory
   drivers:
-    - id: eolinker:goku:service_plugin
+    - id: eolinker:goku:plugin
       name: service_plugin
       label: 插件
       desc: 插件

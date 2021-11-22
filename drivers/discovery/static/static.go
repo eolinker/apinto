@@ -160,12 +160,15 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 				vs := strings.Split(word, ":")
 				// 先判断是否是IP端口模式
 				if !validIP(vs[0]) {
-					// 若不是IP端口模式，则计入全局的属性
-					args := strings.Split(vs[0], "=")
-					if len(args) > 1 {
-						node.labels[args[0]] = args[1]
+					if strings.Contains(vs[0], "=") {
+						// 计入全局的属性
+						args := strings.Split(vs[0], "=")
+						if len(args) > 1 {
+							node.labels[args[0]] = args[1]
+						}
+						break
 					}
-					break
+
 				}
 				if len(vs) > 2 {
 					return nil, fmt.Errorf("decode ip:port failt for[%s]", word)
