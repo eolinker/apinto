@@ -2,9 +2,10 @@ package proxy_rewrite
 
 import (
 	"fmt"
+	"regexp"
+
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/http-service"
-	"regexp"
 )
 
 var _ http_service.IFilter = (*ProxyRewrite)(nil)
@@ -51,7 +52,7 @@ func (p *ProxyRewrite) rewrite(ctx http_service.IHttpContext) error {
 
 	//修改header中的host
 	if p.host != "" {
-		ctx.Proxy().Header().SetHeader("Host", p.host)
+		ctx.Proxy().URI().SetHost(p.host)
 	}
 
 	//修改转发至上游的header，v可设置为空字符串，此时代表删掉header中对应的key. 若header某个key已存在则重写
