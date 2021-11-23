@@ -35,6 +35,7 @@ func (p *PluginManager) ConfigType() reflect.Type {
 }
 
 func (p *PluginManager) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+	p.Reset(v, workers)
 	return p, nil
 }
 
