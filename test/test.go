@@ -48,7 +48,7 @@ type Config struct {
 
 	Request *RequestConfig
 
-	Response ResponseConfig
+	Response ResponseDO
 }
 
 func (c *Config) Create() http_service.IHttpContext {
@@ -56,7 +56,6 @@ func (c *Config) Create() http_service.IHttpContext {
 	if err != nil {
 		panic(err)
 	}
-	c.Request.Header.Set("contend-type", c.Response.ContendType)
 	if c.Request == nil {
 		c.Request = &RequestConfig{
 			ContentType: "",
@@ -68,14 +67,15 @@ func (c *Config) Create() http_service.IHttpContext {
 			c.Request.Header = make(http.Header)
 		}
 	}
-	c.Request.Header.Set("contend-type", c.Response.ContendType)
+	c.Request.Header.Set("contend-type", c.Request.ContentType)
 	c.Request.Header.Set("content-length", strconv.Itoa(len(c.Request.Body)))
 	return &Context{
 
-		proxyRequest:  &ProxyRequest{},
-		requestID:     uuid.NewV4().String(),
-		response:      NewResponse(),
-		responseError: nil,
+		proxyRequest:    &ProxyRequest{},
+		requestID:       uuid.NewV4().String(),
+		response:        NewResponse(),
+		responseHandler: c.Response,
+		responseError:   nil,
 		requestReader: &RequestReader{
 			headers: &RequestHeader{
 				header: c.Request.Header,
@@ -93,7 +93,7 @@ func (c *Config) Create() http_service.IHttpContext {
 		ctx: nil,
 	}
 }
-func NewGet(url string, response ResponseConfig) http_service.IHttpContext {
+func NewGet(url string, response ResponseDO) http_service.IHttpContext {
 	c := &Config{
 		Method:   http.MethodGet,
 		Url:      url,
@@ -102,7 +102,7 @@ func NewGet(url string, response ResponseConfig) http_service.IHttpContext {
 	}
 	return c.Create()
 }
-func NewPostJson(url string, body interface{}, response ResponseConfig) http_service.IHttpContext {
+func NewPostJson(url string, body interface{}, response ResponseDO) http_service.IHttpContext {
 	bodyData, _ := json.Marshal(body)
 
 	c := &Config{
