@@ -33,7 +33,11 @@ func (ur *URIRequest) AddQuery(key, value string) {
 }
 
 func (ur *URIRequest) DelQuery(key string) {
-	ur.uri.QueryArgs().Del(key)
+	queryArgs := ur.uri.QueryArgs()
+	queryArgs.Del(key)
+	if queryArgs.Len() == 0 {
+		ur.uri.SetQueryStringBytes(nil)
+	}
 }
 
 func (ur *URIRequest) SetRawQuery(raw string) {
