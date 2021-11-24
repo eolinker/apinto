@@ -59,6 +59,7 @@ func (p *ProxyRewrite) rewrite(ctx http_service.IHttpContext) error {
 	for k, v := range p.headers {
 		if v == "" {
 			ctx.Proxy().Header().DelHeader(k)
+			continue
 		}
 		ctx.Proxy().Header().SetHeader(k, v)
 	}
