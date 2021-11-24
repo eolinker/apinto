@@ -13,6 +13,7 @@ type ServiceHandler struct {
 	id              string
 	config          map[string]*plugin.Config
 	pluginExec      http_service.IChain
+	pluginOrg       plugin.IPlugin
 	upstreamHandler upstream.IUpstreamHandler
 }
 
@@ -37,19 +38,21 @@ func (s *ServiceHandler) DoChain(ctx http_service.IHttpContext) error {
 }
 
 func (s *ServiceHandler) Destroy() {
-	if s.pluginExec != nil {
-		s.pluginExec.Destroy()
-		s.pluginExec = nil
+	plg := s.pluginOrg
+	if plg != nil {
+		s.pluginOrg = nil
+		plg.Destroy()
 	}
-
-	s.service.handlers.Del(s.id)
-	s.service = nil
-
+	ser := s.service
+	if ser != nil {
+		s.service = nil
+		ser.handlers.Del(s.id)
+	}
 }
 
 func (s *ServiceHandler) rebuild(upstream upstream.IUpstream) {
-	serviceFilter := pluginManger.CreateService(s.id, s.service.mergePluginConfig(s.config))
-	s.pluginExec = serviceFilter.Append(filter.ToFilter([]http_service.IFilter{s}))
+	s.pluginOrg = pluginManger.CreateService(s.id, s.service.mergePluginConfig(s.config))
+	s.pluginExec = s.pluginOrg.Append(filter.ToFilter([]http_service.IFilter{s}))
 
 	ps, err := upstream.Create(s.id, s.service.mergePluginConfig(s.config), s.service.retry, s.service.timeout)
 	if err != nil {
