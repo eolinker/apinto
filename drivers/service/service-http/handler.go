@@ -28,11 +28,16 @@ func (s *ServiceHandler) DoFilter(ctx http_service.IHttpContext, next http_servi
 }
 
 func (s *ServiceHandler) DoChain(ctx http_service.IHttpContext) error {
-	if s.service.proxyMethod != "" {
-		ctx.Proxy().SetMethod(s.service.proxyMethod)
+	service := s.service
+	if service == nil {
+		return nil
 	}
-	if s.pluginExec != nil {
-		return s.pluginExec.DoChain(ctx)
+	if service.proxyMethod != "" {
+		ctx.Proxy().SetMethod(service.proxyMethod)
+	}
+	exec := s.pluginExec
+	if exec != nil {
+		return exec.DoChain(ctx)
 	}
 	return nil
 }
