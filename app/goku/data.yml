@@ -34,7 +34,8 @@ service:
                     api: asdh
       auth:
         config:
-          - basic@auth
+          auth:
+            - apikey_1@auth
       rewrite_response:
         disable: true
         config:
