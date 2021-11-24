@@ -14,7 +14,12 @@ type _ChainHandler struct {
 }
 
 func (c *_ChainHandler) Destroy() {
-	c.orgFilter.Destroy()
+	orgFilter := c.orgFilter
+	if orgFilter != nil {
+		c.orgFilter = nil
+		orgFilter.Destroy()
+	}
+
 }
 
 func createHandler(filters []http_service.IFilter) *_ChainHandler {
@@ -32,13 +37,19 @@ func (c *_ChainHandler) ToFilter() http_service.IFilter {
 
 func (c *_ChainHandler) DoChain(ctx http_service.IHttpContext) error {
 	log.Debug("do chain handler: ", c, eosc.TypeNameOf(c.orgFilter))
-	return c.orgFilter.DoFilter(ctx, nil)
+	orgFilter := c.orgFilter
+	if orgFilter != nil {
+		return orgFilter.DoFilter(ctx, nil)
+	}
+	return nil
 }
 
 func (c *_ChainHandler) Append(filters ...http_service.IFilter) IChain {
 	pre := c.ToFilter()
 	fs := make([]http_service.IFilter, 0, len(filters)+1)
-	fs = append(fs, pre)
+	if pre != nil {
+		fs = append(fs, pre)
+	}
 	fs = append(fs, filters...)
 	n := createHandler(fs)
 	n.resetHandler = c.resetHandler
@@ -47,18 +58,29 @@ func (c *_ChainHandler) Append(filters ...http_service.IFilter) IChain {
 
 func (c *_ChainHandler) Insert(filters ...http_service.IFilter) IChain {
 	pre := c.ToFilter()
+
 	fs := make([]http_service.IFilter, 0, len(filters)+1)
 	fs = append(fs, filters...)
-	fs = append(fs, pre)
+	if pre != nil {
+		fs = append(fs, pre)
+	}
 	n := createHandler(fs)
 	n.resetHandler = c.resetHandler
 	return n
 }
 
 func (c *_ChainHandler) Reset(filters ...http_service.IFilter) {
-	if c.resetHandler == nil {
-		c.orgFilter.Reset(filters...)
+
+	if c.resetHandler != nil {
+
+		c.resetHandler.Reset(filters...)
 		return
 	}
-	c.resetHandler.Reset(filters...)
+	filter := c.orgFilter
+	if filter != nil {
+		filter.Reset(filters...)
+	} else {
+		c.orgFilter = ToFilter(filters)
+	}
+	return
 }
