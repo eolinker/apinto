@@ -15,6 +15,9 @@ service:
       access_log:
         disable: false
         config:
+          transports:
+            - filelog@transport
+            - httplog@transport
           labers:
             service: demo服务
             api: asdh
@@ -55,15 +58,16 @@ upstream:
     scheme: http-service  #必填，负载所使用的scheme，仅支持http或https
     type: round-robin  #必填，所使用的负载均衡算法
 
-log:
+
+transport:
   - name: filelog
     driver: filelog
     config:
       dir: work
       file: node.log
-      level: debug
       period: day
       expire: 3
+
 accessLog:
   - name: fileAccessLog
     driver: fileAccesslog
@@ -100,6 +104,14 @@ setting:
         type: service
         status: global
         config:
+          transports:
+            - name: filelog@transport
+              format: json # json | text
+              fileds:
+                - real_ip
+                - origin
+              meta:
+                real_ip: $remote_ip
           labers:
             service: demo服务
             api: asdh
@@ -121,4 +133,10 @@ setting:
           transports:
             - fileAccessLog
             - httpAccessLog
+  - name: error_log
+    driver: log_manager
+    config:
+      - name: filelog
+        level: debug
+        filter: ^\w$
 
