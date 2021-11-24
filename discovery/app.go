@@ -95,5 +95,8 @@ func (s *app) NodeError(id string) error {
 func (s *app) Close() error {
 	//
 	s.container.Remove(s.id)
-	return s.healthChecker.Stop()
+	if s.healthChecker != nil {
+		return s.healthChecker.Stop()
+	}
+	return nil
 }
