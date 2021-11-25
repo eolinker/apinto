@@ -1,7 +1,0 @@
-listen:
-  - 80
-
-admin:
-  scheme: http
-  listen: 9400
-  ip: 0.0.0.0
