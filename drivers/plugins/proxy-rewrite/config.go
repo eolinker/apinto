@@ -17,9 +17,15 @@ func (c *Config) doCheck() error {
 		return fmt.Errorf(schemeErrInfo, c.Scheme)
 	}
 
-	//RegexURI切片要么为空，要么只有两个值,第一个值为正则匹配值，第二个是用于替换的正则字符串
 	lenRegURI := len(c.RegexURI)
-	if lenRegURI != 0 && lenRegURI != 2 {
+
+	// URI和RegexURI至少选填其一
+	if c.URI == "" && lenRegURI == 0 {
+		return fmt.Errorf(uriErrInfo)
+	}
+
+	//RegexURI切片要么为空，要么只有两个值,第一个值为正则匹配值，第二个是用于替换的正则字符串
+	if lenRegURI > 0 && lenRegURI != 2 {
 		return fmt.Errorf(regexpURIErrInfo, c.RegexURI)
 	}
 

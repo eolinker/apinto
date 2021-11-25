@@ -13,10 +13,10 @@ var _ http_service.IFilter = (*ExtraParams)(nil)
 
 type ExtraParams struct {
 	*Driver
-	id           string
-	name         string
-	params       []*ExtraParam
-	responseType string
+	id        string
+	name      string
+	params    []*ExtraParam
+	errorType string
 }
 
 func (e *ExtraParams) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
@@ -40,48 +40,48 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 	body, _ := ctx.Proxy().Body().RawBody()
 	bodyParams, formParams, err := parseBodyParams(ctx, body, contentType)
 	if err != nil {
-		errinfo := fmt.Sprintf(parseBodyErrInfo, err.Error())
-		err = encodeErr(e.responseType, errinfo, serverErrStatusCode)
+		errInfo := fmt.Sprintf(parseBodyErrInfo, err.Error())
+		err = encodeErr(e.errorType, errInfo, serverErrStatusCode)
 		return serverErrStatusCode, err
 	}
 
 	headers := ctx.Proxy().Header().Headers()
 	// 先判断参数类型
 	for _, param := range e.params {
-		switch param.ParamPosition {
+		switch param.Position {
 		case "query":
 			{
 				value, err := getQueryValue(ctx, param)
 				if err != nil {
-					err = encodeErr(e.responseType, err.Error(), serverErrStatusCode)
-					return serverErrStatusCode, err
+					err = encodeErr(e.errorType, err.Error(), clientErrStatusCode)
+					return clientErrStatusCode, err
 				}
-				ctx.Proxy().URI().SetQuery(param.ParamName, value)
+				ctx.Proxy().URI().SetQuery(param.Name, value)
 			}
 		case "header":
 			{
 				value, err := getHeaderValue(headers, param)
 				if err != nil {
-					err = encodeErr(e.responseType, err.Error(), serverErrStatusCode)
-					return serverErrStatusCode, err
+					err = encodeErr(e.errorType, err.Error(), clientErrStatusCode)
+					return clientErrStatusCode, err
 				}
-				ctx.Proxy().Header().SetHeader(param.ParamName, value)
+				ctx.Proxy().Header().SetHeader(param.Name, value)
 			}
 		case "body":
 			{
 				value, err := getBodyValue(bodyParams, formParams, param, contentType)
 				if err != nil {
-					err = encodeErr(e.responseType, err.Error(), serverErrStatusCode)
-					return serverErrStatusCode, err
+					err = encodeErr(e.errorType, err.Error(), clientErrStatusCode)
+					return clientErrStatusCode, err
 				}
 				if strings.Contains(contentType, FormParamType) {
-					err = ctx.Proxy().Body().SetToForm(param.ParamName, value.(string))
+					err = ctx.Proxy().Body().SetToForm(param.Name, value.(string))
 					if err != nil {
-						err = encodeErr(e.responseType, err.Error(), clientErrStatusCode)
+						err = encodeErr(e.errorType, err.Error(), clientErrStatusCode)
 						return clientErrStatusCode, err
 					}
 				} else if strings.Contains(contentType, JsonType) {
-					bodyParams[param.ParamName] = value
+					bodyParams[param.Name] = value
 				}
 			}
 		}
@@ -109,7 +109,7 @@ func (e *ExtraParams) Reset(conf interface{}, workers map[eosc.RequireId]interfa
 	}
 
 	e.params = confObj.Params
-	e.responseType = confObj.ResponseType
+	e.errorType = confObj.ErrorType
 
 	return nil
 }
@@ -120,7 +120,7 @@ func (e *ExtraParams) Stop() error {
 
 func (e *ExtraParams) Destroy() {
 	e.params = nil
-	e.responseType = ""
+	e.errorType = ""
 }
 
 func (e *ExtraParams) CheckSkill(skill string) bool {

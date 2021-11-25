@@ -96,9 +96,8 @@ func (ctx *Context) RequestId() string {
 
 //Finish finish
 func (ctx *Context) Finish() {
-
-	if ctx.response == nil {
-		ctx.fastHttpRequestCtx.SetStatusCode(502)
+	if ctx.responseError != nil {
+		ctx.fastHttpRequestCtx.SetStatusCode(504)
 		ctx.fastHttpRequestCtx.SetBodyString(ctx.responseError.Error())
 		return
 	}

@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	respTypeErrInfo         = `[plugin params-transformer config err] responseType must be in the set ["text","json"]. err responseType: %s `
+	respTypeErrInfo         = `[plugin params-transformer config err] errorType must be in the set ["text","json"]. err errorType: %s `
 	paramPositionErrInfo    = `[plugin params-transformer config err] param position must be in the set ["query","header",body]. err position: %s `
 	conflictSolutionErrInfo = `[plugin params-transformer config err] param conflictSolution must be in the set ["origin","convert","error"]. err conflictSolution: %s`
 )
@@ -40,7 +40,7 @@ func encodeErr(ent string, origin string, code int) error {
 		info, _ := json.Marshal(tmp)
 		return fmt.Errorf("%s", info)
 	}
-	return fmt.Errorf("%s statusCode: %s", origin, code)
+	return fmt.Errorf("%s statusCode: %d", origin, code)
 }
 
 func parseBodyParams(ctx http_service.IHttpContext, contentType string) (interface{}, map[string][]string, map[string]*http_service.FileHeader, error) {

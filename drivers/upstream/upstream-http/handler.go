@@ -14,7 +14,7 @@ var _ http_service.IChain = (*UpstreamHandler)(nil)
 
 type UpstreamHandler struct {
 	id            string
-	upstrem       *Upstream
+	upstream      *Upstream
 	retry         int
 	timeout       time.Duration
 	pluginsSource map[string]*plugin.Config
@@ -22,10 +22,17 @@ type UpstreamHandler struct {
 }
 
 func (u *UpstreamHandler) Destroy() {
+	org := u.orgFilter
 
-	if u.orgFilter != nil {
-		u.orgFilter.Destroy()
+	if org != nil {
 		u.orgFilter = nil
+		org.Destroy()
+	}
+
+	upstream := u.upstream
+	if upstream != nil {
+		u.upstream = nil
+		upstream.handlers.Del(u.id)
 	}
 
 }
@@ -33,7 +40,7 @@ func (u *UpstreamHandler) Destroy() {
 func NewUpstreamHandler(id string, upstream *Upstream, retry int, timeout time.Duration, pluginsSource map[string]*plugin.Config) *UpstreamHandler {
 	uh := &UpstreamHandler{
 		id:            id,
-		upstrem:       upstream,
+		upstream:      upstream,
 		retry:         retry,
 		timeout:       timeout,
 		pluginsSource: pluginsSource,
@@ -45,7 +52,7 @@ func NewUpstreamHandler(id string, upstream *Upstream, retry int, timeout time.D
 
 func (u *UpstreamHandler) reset() {
 
-	configs := u.upstrem.pluginConfig(u.pluginsSource)
+	configs := u.upstream.pluginConfig(u.pluginsSource)
 
 	iPlugin := pluginManager.CreateUpstream(u.id, configs)
 
@@ -58,13 +65,13 @@ func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
 	var lastErr error
 	for doTrice := u.retry + 1; doTrice > 0; doTrice-- {
 
-		node, err := u.upstrem.handler.Next()
+		node, err := u.upstream.handler.Next()
 		if err != nil {
 			return err
 		}
 		scheme := node.Scheme()
 		if scheme != "http" && scheme != "https" {
-			scheme = u.upstrem.scheme
+			scheme = u.upstream.scheme
 		}
 		log.Debug("node: ", node.Addr())
 		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())

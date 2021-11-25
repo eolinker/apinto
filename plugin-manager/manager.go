@@ -35,15 +35,15 @@ type PluginManager struct {
 }
 
 func (p *PluginManager) CreateRouter(id string, conf map[string]*plugin.Config) plugin.IPlugin {
-	return p.newChain(id, conf, pluginRouter)
+	return p.createChain(id, conf, pluginRouter)
 }
 
 func (p *PluginManager) CreateService(id string, conf map[string]*plugin.Config) plugin.IPlugin {
-	return p.newChain(id, conf, pluginService)
+	return p.createChain(id, conf, pluginService)
 }
 
 func (p *PluginManager) CreateUpstream(id string, conf map[string]*plugin.Config) plugin.IPlugin {
-	return p.newChain(id, conf, pluginUpstream)
+	return p.createChain(id, conf, pluginUpstream)
 }
 
 func (p *PluginManager) Id() string {
@@ -63,9 +63,9 @@ func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	}
 
 	p.plugins = plugins
-
+	list := p.pluginObjs.List()
 	// 遍历，全量更新
-	for _, obj := range p.pluginObjs.All() {
+	for _, obj := range list {
 		v, ok := obj.(*PluginObj)
 		if !ok {
 			continue
@@ -82,16 +82,6 @@ func (p *PluginManager) Stop() error {
 
 func (p *PluginManager) CheckSkill(skill string) bool {
 	return false
-}
-
-func (p *PluginManager) RemoveObj(id string) (*PluginObj, bool) {
-
-	value, ok := p.pluginObjs.Del(id)
-	if !ok {
-		return nil, false
-	}
-	v, ok := value.(*PluginObj)
-	return v, ok
 }
 
 func (p *PluginManager) createFilters(conf map[string]*plugin.Config, filterType string) []http_service.IFilter {
@@ -111,7 +101,7 @@ func (p *PluginManager) createFilters(conf map[string]*plugin.Config, filterType
 			if plg.Status != StatusGlobal && plg.Status != StatusEnable {
 				continue
 			}
-			if v.Config == nil &&  plg.Status != StatusGlobal {
+			if v.Config == nil && plg.Status != StatusGlobal {
 				continue
 			}
 			c = v.Config
@@ -138,17 +128,17 @@ func (p *PluginManager) createFilters(conf map[string]*plugin.Config, filterType
 	return filters
 }
 
-func (p *PluginManager) newChain(id string, conf map[string]*plugin.Config, filterType string) *PluginObj {
+func (p *PluginManager) createChain(id string, conf map[string]*plugin.Config, filterType string) plugin.IPlugin {
 	chain := filter.NewChain(p.createFilters(conf, filterType))
-	obj := &PluginObj{
-		IChainHandler: chain,
-		id:            id,
-		conf:          conf,
-		filterType:    filterType,
-		manager:       p,
+
+	obj, has := p.pluginObjs.Del(fmt.Sprintf("%s:%s", id, filterType))
+	if has {
+		o := obj.(*PluginObj)
+		o.Destroy()
 	}
-	p.pluginObjs.Set(fmt.Sprintf("%s:%s", id, filterType), obj)
-	return obj
+	obj = NewPluginObj(chain, id, filterType, conf, p.pluginObjs)
+
+	return obj.(*PluginObj)
 }
 
 func (p *PluginManager) check(conf interface{}) (Plugins, error) {
@@ -159,11 +149,11 @@ func (p *PluginManager) check(conf interface{}) (Plugins, error) {
 
 	plugins := make(Plugins, 0, len(cfg.Plugins))
 	for _, cf := range cfg.Plugins {
-		plugin, err := p.newPlugin(cf)
+		newPlugin, err := p.newPlugin(cf)
 		if err != nil {
 			return nil, err
 		}
-		plugins = append(plugins, plugin)
+		plugins = append(plugins, newPlugin)
 	}
 	return plugins, nil
 

@@ -22,7 +22,7 @@ const (
 )
 
 var (
-	respTypeErrInfo         = `[plugin extra-params config err] responseType must be in the set ["text","json"]. err responseType: %s `
+	respTypeErrInfo         = `[plugin extra-params config err] errorType must be in the set ["text","json"]. err errorType: %s `
 	paramPositionErrInfo    = `[plugin extra-params config err] param position must be in the set ["query","header",body]. err position: %s `
 	conflictSolutionErrInfo = `[plugin extra-params config err] param conflictSolution must be in the set ["origin","convert","error"]. err conflictSolution: %s`
 	parseBodyErrInfo        = `[extra_params] Fail to parse body! [err]: %s`
@@ -37,7 +37,7 @@ func encodeErr(ent string, origin string, statusCode int) error {
 		info, _ := json.Marshal(tmp)
 		return fmt.Errorf("%s", info)
 	}
-	return fmt.Errorf("%s statusCode: %s", origin, statusCode)
+	return fmt.Errorf("%s statusCode: %d", origin, statusCode)
 }
 
 func parseBodyParams(ctx http_service.IHttpContext, body []byte, contentType string) (map[string]interface{}, map[string][]string, error) {
@@ -62,32 +62,32 @@ func parseBodyParams(ctx http_service.IHttpContext, body []byte, contentType str
 }
 
 func getHeaderValue(headers map[string][]string, param *ExtraParam) (string, error) {
-	paramName := ConvertHearderKey(param.ParamName)
-	if _, ok := param.ParamValue.(string); !ok {
-		errInfo := "[extra_params] Header param " + param.ParamName + " must be a string"
+	paramName := ConvertHeaderKey(param.Name)
+	if _, ok := param.Value.(string); !ok {
+		errInfo := "[extra_params] Header param " + param.Name + " must be a string"
 		return "", errors.New(errInfo)
 	}
-	if param.ParamConflictSolution == "" {
-		param.ParamConflictSolution = paramConvert
+	if param.Conflict == "" {
+		param.Conflict = paramConvert
 	}
 
 	var paramValue string
 
 	if _, ok := headers[paramName]; !ok {
-		param.ParamConflictSolution = paramConvert
+		param.Conflict = paramConvert
 	} else {
 		paramValue = headers[paramName][0]
 	}
 
-	if param.ParamConflictSolution == paramConvert {
-		if value, ok := param.ParamValue.(string); ok {
+	if param.Conflict == paramConvert {
+		if value, ok := param.Value.(string); ok {
 			paramValue = value
 		} else {
-			errInfo := `[extra_params] Illegal "paramValue" in "` + param.ParamName + `"`
+			errInfo := `[extra_params] Illegal "paramValue" in "` + param.Name + `"`
 			return "", errors.New(errInfo)
 		}
-	} else if param.ParamConflictSolution == paramError {
-		errInfo := `[extra_params] "` + param.ParamName + `" has a conflict.`
+	} else if param.Conflict == paramError {
+		errInfo := `[extra_params] "` + param.Name + `" has a conflict.`
 		return "", errors.New(errInfo)
 	}
 
@@ -117,26 +117,26 @@ func hasQueryValue(rawQuery string, paramName string) bool {
 }
 
 func getQueryValue(ctx http_service.IHttpContext, param *ExtraParam) (string, error) {
-	if _, ok := param.ParamValue.(string); !ok {
-		errInfo := "[extra_params] Query param " + param.ParamName + " must be a string"
+	if _, ok := param.Value.(string); !ok {
+		errInfo := "[extra_params] Query param " + param.Name + " must be a string"
 		return "", errors.New(errInfo)
 	}
 	value := ""
-	if param.ParamConflictSolution == "" {
-		param.ParamConflictSolution = paramConvert
+	if param.Conflict == "" {
+		param.Conflict = paramConvert
 	}
 
 	//判断请求中是否包含对应的query参数
-	if !hasQueryValue(ctx.Proxy().URI().RawQuery(), param.ParamName) {
-		param.ParamConflictSolution = paramConvert
+	if !hasQueryValue(ctx.Proxy().URI().RawQuery(), param.Name) {
+		param.Conflict = paramConvert
 	} else {
-		value = ctx.Proxy().URI().GetQuery(param.ParamName)
+		value = ctx.Proxy().URI().GetQuery(param.Name)
 	}
 
-	if param.ParamConflictSolution == paramConvert {
-		value = param.ParamValue.(string)
-	} else if param.ParamConflictSolution == paramError {
-		errInfo := `[extra_params] "` + param.ParamName + `" has a conflict.`
+	if param.Conflict == paramConvert {
+		value = param.Value.(string)
+	} else if param.Conflict == paramError {
+		errInfo := `[extra_params] "` + param.Name + `" has a conflict.`
 		return "", errors.New(errInfo)
 	}
 
@@ -145,37 +145,37 @@ func getQueryValue(ctx http_service.IHttpContext, param *ExtraParam) (string, er
 
 func getBodyValue(bodyParams map[string]interface{}, formParams map[string][]string, param *ExtraParam, contentType string) (interface{}, error) {
 	var value interface{} = nil
-	if param.ParamConflictSolution == "" {
-		param.ParamConflictSolution = paramConvert
+	if param.Conflict == "" {
+		param.Conflict = paramConvert
 	}
 	if strings.Contains(contentType, FormParamType) {
-		if _, ok := param.ParamValue.(string); !ok {
-			errInfo := "[extra_params] Body param " + param.ParamName + " must be a string"
+		if _, ok := param.Value.(string); !ok {
+			errInfo := "[extra_params] Body param " + param.Name + " must be a string"
 			return "", errors.New(errInfo)
 		}
-		if _, ok := formParams[param.ParamName]; !ok {
-			param.ParamConflictSolution = paramConvert
+		if _, ok := formParams[param.Name]; !ok {
+			param.Conflict = paramConvert
 		} else {
-			value = formParams[param.ParamName][0]
+			value = formParams[param.Name][0]
 		}
 	} else if strings.Contains(contentType, JsonType) {
-		if _, ok := bodyParams[param.ParamName]; !ok {
-			param.ParamConflictSolution = paramConvert
+		if _, ok := bodyParams[param.Name]; !ok {
+			param.Conflict = paramConvert
 		} else {
-			value = bodyParams[param.ParamName]
+			value = bodyParams[param.Name]
 		}
 	}
-	if param.ParamConflictSolution == paramConvert {
-		value = param.ParamValue
-	} else if param.ParamConflictSolution == paramError {
-		errInfo := `[extra_params] "` + param.ParamName + `" has a conflict.`
+	if param.Conflict == paramConvert {
+		value = param.Value
+	} else if param.Conflict == paramError {
+		errInfo := `[extra_params] "` + param.Name + `" has a conflict.`
 		return "", errors.New(errInfo)
 	}
 
 	return value, nil
 }
 
-func ConvertHearderKey(header string) string {
+func ConvertHeaderKey(header string) string {
 	header = strings.ToLower(header)
 	headerArray := strings.Split(header, "-")
 	h := ""

@@ -13,6 +13,7 @@ type ServiceHandler struct {
 	id              string
 	config          map[string]*plugin.Config
 	pluginExec      http_service.IChain
+	pluginOrg       plugin.IPlugin
 	upstreamHandler upstream.IUpstreamHandler
 }
 
@@ -27,29 +28,36 @@ func (s *ServiceHandler) DoFilter(ctx http_service.IHttpContext, next http_servi
 }
 
 func (s *ServiceHandler) DoChain(ctx http_service.IHttpContext) error {
-	if s.service.proxyMethod != "" {
-		ctx.Proxy().SetMethod(s.service.proxyMethod)
+	service := s.service
+	if service == nil {
+		return nil
 	}
-	if s.pluginExec != nil {
-		return s.pluginExec.DoChain(ctx)
+	if service.proxyMethod != "" {
+		ctx.Proxy().SetMethod(service.proxyMethod)
+	}
+	exec := s.pluginExec
+	if exec != nil {
+		return exec.DoChain(ctx)
 	}
 	return nil
 }
 
 func (s *ServiceHandler) Destroy() {
-	if s.pluginExec != nil {
-		s.pluginExec.Destroy()
-		s.pluginExec = nil
+	plg := s.pluginOrg
+	if plg != nil {
+		s.pluginOrg = nil
+		plg.Destroy()
 	}
-
-	s.service.handlers.Del(s.id)
-	s.service = nil
-
+	ser := s.service
+	if ser != nil {
+		s.service = nil
+		ser.handlers.Del(s.id)
+	}
 }
 
 func (s *ServiceHandler) rebuild(upstream upstream.IUpstream) {
-	serviceFilter := pluginManger.CreateService(s.id, s.service.mergePluginConfig(s.config))
-	s.pluginExec = serviceFilter.Append(filter.ToFilter([]http_service.IFilter{s}))
+	s.pluginOrg = pluginManger.CreateService(s.id, s.service.mergePluginConfig(s.config))
+	s.pluginExec = s.pluginOrg.Append(filter.ToFilter([]http_service.IFilter{s}))
 
 	ps, err := upstream.Create(s.id, s.service.mergePluginConfig(s.config), s.service.retry, s.service.timeout)
 	if err != nil {
