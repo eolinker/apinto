@@ -47,13 +47,13 @@ func CreateRateInfo(conf *Config) *rateInfo {
 		info.second = createTimer(rateSecond, conf.Second)
 	}
 	if conf.Minute > 0 {
-		info.second = createTimer(rateMinute, conf.Minute)
+		info.minute = createTimer(rateMinute, conf.Minute)
 	}
 	if conf.Hour > 0 {
-		info.second = createTimer(rateHour, conf.Hour)
+		info.hour = createTimer(rateHour, conf.Hour)
 	}
 	if conf.Day > 0 {
-		info.second = createTimer(rateDay, conf.Day)
+		info.day = createTimer(rateDay, conf.Day)
 	}
 	return info
 }

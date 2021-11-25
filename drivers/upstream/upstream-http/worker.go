@@ -80,15 +80,15 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 			h.desc = cfg.Desc
 
 			if h.upstream == nil {
-				old := h.upstream.app
 				h.upstream = NewUpstream(cfg.Scheme, app, balanceHandler, cfg.Plugins)
+			} else {
+				old := h.upstream.app
+				h.upstream.Reset(cfg.Scheme, app, balanceHandler, cfg.Plugins)
 				closeError := old.Close()
 				if closeError != nil {
 
 					log.Warn("close app:", closeError)
 				}
-			} else {
-				h.upstream.Reset(cfg.Scheme, app, balanceHandler, cfg.Plugins)
 			}
 
 			return nil

@@ -13,11 +13,11 @@ var _ http_service.IFilter = (*ParamsTransformer)(nil)
 
 type ParamsTransformer struct {
 	*Driver
-	id                     string
-	name                   string
-	params                 []*TransParam
-	removeAfterTransformed bool
-	responseType           string
+	id        string
+	name      string
+	params    []*TransParam
+	remove    bool
+	errorType string
 }
 
 func (p *ParamsTransformer) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
@@ -43,14 +43,14 @@ func (p *ParamsTransformer) access(ctx http_service.IHttpContext) (int, error) {
 		headerValue := ""
 		queryValue := ""
 		var bodyValue interface{} = nil
-		switch param.ParamPosition {
+		switch param.Position {
 		case "header":
 			{
 				var err error
-				headerValue, err = getHeaderValue(param.ParamName, ctx, p.removeAfterTransformed)
+				headerValue, err = getHeaderValue(param.Name, ctx, p.remove)
 				if err != nil {
 					if param.Required {
-						err = encodeErr(p.responseType, err.Error(), clientErrStatusCode)
+						err = encodeErr(p.errorType, err.Error(), clientErrStatusCode)
 						return clientErrStatusCode, err
 					}
 				}
@@ -58,10 +58,10 @@ func (p *ParamsTransformer) access(ctx http_service.IHttpContext) (int, error) {
 		case "query":
 			{
 				var err error
-				queryValue, err = getQueryValue(param.ParamName, ctx, p.removeAfterTransformed)
+				queryValue, err = getQueryValue(param.Name, ctx, p.remove)
 				if err != nil {
 					if param.Required {
-						err = encodeErr(p.responseType, err.Error(), clientErrStatusCode)
+						err = encodeErr(p.errorType, err.Error(), clientErrStatusCode)
 						return clientErrStatusCode, err
 					}
 				}
@@ -69,42 +69,42 @@ func (p *ParamsTransformer) access(ctx http_service.IHttpContext) (int, error) {
 		case "body":
 			{
 				var err error
-				bh, bodyValue, err = getBodyValue(bh, param.ParamName, contentType, ctx, p.removeAfterTransformed)
+				bh, bodyValue, err = getBodyValue(bh, param.Name, contentType, ctx, p.remove)
 				if err != nil {
 					if param.Required {
-						err = encodeErr(p.responseType, err.Error(), clientErrStatusCode)
+						err = encodeErr(p.errorType, err.Error(), clientErrStatusCode)
 						return clientErrStatusCode, err
 					}
 				}
 			}
 		}
 
-		switch param.ProxyParamPosition {
+		switch param.ProxyPosition {
 		case "header":
 			{
-				value, _, err := getProxyValue(param.ParamPosition, param.ProxyParamPosition, contentType, headerValue, queryValue, bodyValue)
+				value, _, err := getProxyValue(param.Position, param.ProxyPosition, contentType, headerValue, queryValue, bodyValue)
 				if err != nil {
-					err = encodeErr(p.responseType, err.Error(), clientErrStatusCode)
+					err = encodeErr(p.errorType, err.Error(), clientErrStatusCode)
 					return clientErrStatusCode, err
 				}
-				if ctx.Proxy().Header().GetHeader(param.ProxyParamName) != "" {
-					ctx.Proxy().Header().AddHeader(param.ProxyParamName, value)
+				if ctx.Proxy().Header().GetHeader(param.ProxyName) != "" {
+					ctx.Proxy().Header().AddHeader(param.ProxyName, value)
 				} else {
-					ctx.Proxy().Header().SetHeader(param.ProxyParamName, value)
+					ctx.Proxy().Header().SetHeader(param.ProxyName, value)
 				}
 			}
 		case "query":
 			{
-				value, _, err := getProxyValue(param.ParamPosition, param.ProxyParamPosition, contentType, headerValue, queryValue, bodyValue)
+				value, _, err := getProxyValue(param.Position, param.ProxyPosition, contentType, headerValue, queryValue, bodyValue)
 				if err != nil {
-					err = encodeErr(p.responseType, err.Error(), clientErrStatusCode)
+					err = encodeErr(p.errorType, err.Error(), clientErrStatusCode)
 					return clientErrStatusCode, err
 				}
 
-				if ctx.Proxy().URI().GetQuery(param.ProxyParamName) != "" {
-					ctx.Proxy().URI().AddQuery(param.ProxyParamName, value)
+				if ctx.Proxy().URI().GetQuery(param.ProxyName) != "" {
+					ctx.Proxy().URI().AddQuery(param.ProxyName, value)
 				} else {
-					ctx.Proxy().URI().SetQuery(param.ProxyParamName, value)
+					ctx.Proxy().URI().SetQuery(param.ProxyName, value)
 				}
 
 			}
@@ -122,39 +122,43 @@ func (p *ParamsTransformer) access(ctx http_service.IHttpContext) (int, error) {
 					}
 				}
 
-				value, bv, err := getProxyValue(param.ParamPosition, param.ProxyParamPosition, contentType, headerValue, queryValue, bodyValue)
+				value, bv, err := getProxyValue(param.Position, param.ProxyPosition, contentType, headerValue, queryValue, bodyValue)
 				if err != nil {
-					err = encodeErr(p.responseType, err.Error(), clientErrStatusCode)
+					err = encodeErr(p.errorType, err.Error(), clientErrStatusCode)
 					return clientErrStatusCode, err
 				}
 				if strings.Contains(contentType, FormParamType) {
-					if _, ok := bh.formParams[param.ProxyParamName]; ok {
-						bh.formParams[param.ProxyParamName] = append(bh.formParams[param.ProxyParamName], value)
+					if _, ok := bh.formParams[param.ProxyName]; ok {
+						bh.formParams[param.ProxyName] = append(bh.formParams[param.ProxyName], value)
 					} else {
-						bh.formParams[param.ProxyParamName] = []string{value}
+						bh.formParams[param.ProxyName] = []string{value}
 					}
 				} else if strings.Contains(contentType, JsonType) {
-					paramName := param.ProxyParamName
+					paramName := param.ProxyName
 					if !strings.HasPrefix(paramName, "$.") {
 						paramName = "$." + paramName
 					}
 
 					x, err := jp.ParseString(paramName)
 					if err != nil {
-						err = encodeErr(p.responseType, err.Error(), clientErrStatusCode)
+						err = encodeErr(p.errorType, err.Error(), clientErrStatusCode)
 						return clientErrStatusCode, err
+					}
+					if param.Position != "body" {
+						x.Set(bh.body, value)
+						continue
 					}
 					x.Set(bh.body, bv)
 				} else if strings.Contains(contentType, MultipartType) {
 					if len(value) > 0 {
-						if _, ok := bh.formParams[param.ProxyParamName]; ok {
-							bh.formParams[param.ProxyParamName] = append(bh.formParams[param.ProxyParamName], value)
+						if _, ok := bh.formParams[param.ProxyName]; ok {
+							bh.formParams[param.ProxyName] = append(bh.formParams[param.ProxyName], value)
 						} else {
-							bh.formParams[param.ProxyParamName] = []string{value}
+							bh.formParams[param.ProxyName] = []string{value}
 						}
 					} else {
-						//ctx.Proxy().AddFile(param.ProxyParamName, bv.(*goku_plugin.FileHeader))
-						bh.files[param.ProxyParamName] = bv.(*http_service.FileHeader)
+						//ctx.Proxy().AddFile(param.ProxyName, bv.(*goku_plugin.FileHeader))
+						bh.files[param.ProxyName] = bv.(*http_service.FileHeader)
 					}
 				} else {
 					continue
@@ -191,8 +195,8 @@ func (p *ParamsTransformer) Reset(conf interface{}, workers map[eosc.RequireId]i
 	}
 
 	p.params = confObj.Params
-	p.removeAfterTransformed = confObj.RemoveAfterTransformed
-	p.responseType = confObj.ResponseType
+	p.remove = confObj.Remove
+	p.errorType = confObj.ErrorType
 
 	return nil
 }
@@ -203,7 +207,7 @@ func (p *ParamsTransformer) Stop() error {
 
 func (p *ParamsTransformer) Destroy() {
 	p.params = nil
-	p.responseType = ""
+	p.errorType = ""
 }
 
 func (p *ParamsTransformer) CheckSkill(skill string) bool {

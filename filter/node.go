@@ -17,13 +17,15 @@ func (c *_ChainNode) Destroy() {
 	if c == nil {
 		return
 	}
-	if c.filter != nil {
-		c.filter.Destroy()
+	filter := c.filter
+	if filter != nil {
 		c.filter = nil
+		filter.Destroy()
 	}
-	if c.next != nil {
-		c.next.Destroy()
+	next := c.next
+	if next != nil {
 		c.next = nil
+		next.Destroy()
 	}
 }
 
@@ -43,8 +45,9 @@ func (c *_ChainNode) DoChain(ctx http_service.IHttpContext) error {
 	if c == nil {
 		return nil
 	}
-	if c.filter == nil {
+	filter := c.filter
+	if filter == nil {
 		return nil
 	}
-	return c.filter.DoFilter(ctx, c.next)
+	return filter.DoFilter(ctx, c.next)
 }

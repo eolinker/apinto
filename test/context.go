@@ -16,6 +16,9 @@ var (
 )
 var _ http_service.IHttpContext = (*Context)(nil)
 
+type ResponseDO interface {
+	Response(request *RequestReader) (*Response, error)
+}
 type Context struct {
 	proxyRequest  *ProxyRequest
 	requestID     string
@@ -23,6 +26,8 @@ type Context struct {
 	responseError error
 	requestReader *RequestReader
 	ctx           context.Context
+
+	responseHandler ResponseDO
 }
 
 func (c *Context) RequestId() string {
@@ -61,5 +66,10 @@ func (c *Context) ResponseError() error {
 }
 
 func (c *Context) SendTo(address string, timeout time.Duration) error {
-	return nil
+
+	if c.responseHandler != nil {
+		c.response, c.responseError = c.responseHandler.Response(c.proxyRequest.RequestReader)
+	}
+
+	return c.responseError
 }
