@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/eolinker/eosc v0.3.2
-	github.com/ghodss/yaml v1.0.0
 	github.com/go-basic/uuid v1.0.0
 	github.com/hashicorp/consul/api v1.9.1
 	github.com/ohler55/ojg v1.12.9
