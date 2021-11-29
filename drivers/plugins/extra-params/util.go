@@ -22,10 +22,9 @@ const (
 )
 
 var (
-	respTypeErrInfo         = `[plugin extra-params config err] errorType must be in the set ["text","json"]. err errorType: %s `
-	paramPositionErrInfo    = `[plugin extra-params config err] param position must be in the set ["query","header",body]. err position: %s `
-	conflictSolutionErrInfo = `[plugin extra-params config err] param conflictSolution must be in the set ["origin","convert","error"]. err conflictSolution: %s`
-	parseBodyErrInfo        = `[extra_params] Fail to parse body! [err]: %s`
+	paramPositionErrInfo = `[plugin extra-params config err] param position must be in the set ["query","header",body]. err position: %s `
+	parseBodyErrInfo     = `[extra_params] Fail to parse body! [err]: %s`
+	paramNameErrInfo     = `[plugin params-transformer config err] param name must be not null. `
 )
 
 func encodeErr(ent string, origin string, statusCode int) error {

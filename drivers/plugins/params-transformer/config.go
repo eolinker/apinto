@@ -21,29 +21,28 @@ type TransParam struct {
 }
 
 func (c *Config) doCheck() error {
-	errType := strings.ToLower(c.ErrorType)
-	c.ErrorType = errType
-	if errType != "" && errType != "text" && errType != "json" {
-		return fmt.Errorf(respTypeErrInfo, errType)
+	c.ErrorType = strings.ToLower(c.ErrorType)
+	if c.ErrorType != "text" && c.ErrorType != "json" {
+		c.ErrorType = "text"
 	}
 
 	for _, param := range c.Params {
-		requestPosition := strings.ToLower(param.Position)
-		param.Position = requestPosition
-		if requestPosition != "query" && requestPosition != "header" && requestPosition != "body" {
-			return fmt.Errorf(paramPositionErrInfo, requestPosition)
+		param.Position = strings.ToLower(param.Position)
+		if param.Position != "query" && param.Position != "header" && param.Position != "body" {
+			return fmt.Errorf(paramPositionErrInfo, param.Position)
 		}
 
-		proxyPosition := strings.ToLower(param.Position)
-		param.Position = proxyPosition
-		if proxyPosition != "query" && proxyPosition != "header" && proxyPosition != "body" {
-			return fmt.Errorf(paramPositionErrInfo, proxyPosition)
+		param.ProxyPosition = strings.ToLower(param.ProxyPosition)
+		if param.ProxyPosition != "query" && param.ProxyPosition != "header" && param.ProxyPosition != "body" {
+			return fmt.Errorf(paramPositionErrInfo, param.ProxyPosition)
 		}
 
-		conflictSolution := strings.ToLower(param.Conflict)
-		param.Conflict = conflictSolution
-		if conflictSolution != paramOrigin && conflictSolution != paramConvert && conflictSolution != paramError {
-			return fmt.Errorf(conflictSolutionErrInfo, conflictSolution)
+		if param.Name == "" {
+			return fmt.Errorf(paramNameErrInfo)
+		}
+
+		if param.ProxyName == "" {
+			return fmt.Errorf(paramProxyNameErrInfo)
 		}
 	}
 
