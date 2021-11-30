@@ -25,7 +25,7 @@ func (r *RequestReader) Finish() error {
 }
 
 func (r *RequestReader) Method() string {
-	return r.headers.Host()
+	return string(r.req.Header.Method())
 }
 
 func (r *RequestReader) Header() http_service.IHeaderReader {
