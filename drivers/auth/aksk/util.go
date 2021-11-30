@@ -41,7 +41,7 @@ func buildHexCanonicalRequest(ctx http_service.IHttpContext, signedHeaders []str
 			continue
 		}
 		v := ctx.Request().Header().GetHeader(header)
-		cr.WriteString(buildHeaders(header, v+"\n"))
+		cr.WriteString(buildHeaders(header, v) + "\n")
 	}
 	cr.WriteString("\n")
 	cr.WriteString(strings.Join(signedHeaders, ";") + "\n")
