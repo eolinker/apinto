@@ -44,7 +44,7 @@ func main() {
 	//	log.Close()
 	//}()
 	if process.Run() {
-		//log.Close()
+		log.Close()
 		return
 	}
 	if env.IsDebug() {
@@ -53,7 +53,7 @@ func main() {
 		} else {
 			log.Warn("debug not exist")
 		}
-		//log.Close()
+		log.Close()
 		return
 	}
 	app := eoscli.NewApp()
