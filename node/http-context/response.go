@@ -2,6 +2,7 @@ package http_context
 
 import (
 	"strconv"
+	"strings"
 
 	http_service "github.com/eolinker/eosc/http-service"
 
@@ -25,6 +26,11 @@ func NewResponse(ctx *fasthttp.RequestCtx) *Response {
 }
 
 func (r *Response) GetBody() []byte {
+	if strings.Contains(r.GetHeader("Content-Encoding"), "gzip") {
+		body, _ := r.BodyGunzip()
+		r.Headers().Del("Content-Encoding")
+		r.Response.SetBody(body)
+	}
 	return r.Response.Body()
 }
 
