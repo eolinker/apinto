@@ -29,6 +29,10 @@ func (g *Gzip) DoFilter(ctx http_service.IHttpContext, next http_service.IChain)
 func (g *Gzip) doCompress(ctx http_service.IHttpContext) error {
 	flag := false
 	resp := ctx.Response()
+	if resp.BodyLen() < g.conf.MinLength {
+		// 小于要求的最低长度，不压缩
+		return nil
+	}
 	contentType := resp.GetHeader("Content-Type")
 	if len(g.conf.Types) == 0 {
 		flag = true
@@ -41,13 +45,7 @@ func (g *Gzip) doCompress(ctx http_service.IHttpContext) error {
 		}
 	}
 	if flag {
-		// 类型符合才压缩
-		body := resp.GetBody()
-		if len(body) < g.conf.MinLength {
-			// 小于要求的最低长度，不压缩
-			return nil
-		}
-		res, err := g.compress(body)
+		res, err := g.compress(resp.GetBody())
 		if err != nil {
 			return err
 		}
