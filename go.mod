@@ -1,18 +1,15 @@
-module github.com/eolinker/goku-eosc
+module github.com/eolinker/goku
 
-go 1.15
+go 1.16
 
 require (
-	github.com/eolinker/eosc v0.0.6
-	github.com/eolinker/goku-plugin v0.1.4 // indirect
-	github.com/eolinker/goku-standard-plugin v0.1.5
-	github.com/ghodss/yaml v1.0.0
+	github.com/eolinker/eosc v0.3.5
 	github.com/go-basic/uuid v1.0.0
 	github.com/hashicorp/consul/api v1.9.1
-	github.com/nacos-group/nacos-sdk-go v1.0.8 // indirect
-	github.com/pkg/sftp v1.13.2
-	github.com/robertkrimen/otto v0.0.0-20210614181706-373ff5438452
-	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
-	gopkg.in/sourcemap.v1 v1.0.5 // indirect
+	github.com/ohler55/ojg v1.12.9
+	github.com/pkg/sftp v1.13.4
+	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
+	github.com/satori/go.uuid v1.2.0
+	github.com/valyala/fasthttp v1.31.0
+	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 )
-

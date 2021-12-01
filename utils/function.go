@@ -85,14 +85,29 @@ func Md5(encodeString string) string {
 	return hex.EncodeToString(h.Sum(nil)) // 输出加密结果
 }
 
-//GetRandomString 生成随机字符串
-func GetRandomString(num int) string {
+//GetRandomStringBack 生成随机字符串
+func GetRandomStringBack(num int) string {
 	str := "123456789abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ"
 	bytes := []byte(str)
 	result := []byte{}
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < num; i++ {
 		result = append(result, bytes[r.Intn(len(bytes))])
+	}
+	return string(result)
+}
+
+var (
+	randManager = rand.New(rand.NewSource(time.Now().UnixNano()))
+	randBytes   = []byte("123456789abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ")
+	randSize    = len(randBytes)
+)
+
+//GetRandomString 生成随机字符串
+func GetRandomString(num int) string {
+	result := make([]byte, num)
+	for i := 0; i < num; i++ {
+		result[i] = randBytes[int(randManager.Int31())%randSize]
 	}
 	return string(result)
 }
@@ -135,6 +150,7 @@ func GetMac() (bool, string) {
 	return false, ""
 }
 
+//GzipCompress 转成Gzip
 func GzipCompress(origin []byte) ([]byte, error) {
 	var b bytes.Buffer
 	gz := gzip.NewWriter(&b)

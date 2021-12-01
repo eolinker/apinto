@@ -1,53 +1,45 @@
 package http_context
 
 import (
-	"io/ioutil"
-	"net/http"
+	"strconv"
+
+	http_service "github.com/eolinker/eosc/http-service"
+
+	"github.com/valyala/fasthttp"
 )
 
-//ResponseReader 响应结构体
-type ResponseReader struct {
-	*CookiesHandler
-	*Header
-	*BodyHandler
-	*StatusHandler
+var _ http_service.IResponse = (*Response)(nil)
+
+type Response struct {
+	*ResponseHeader
+	*fasthttp.Response
 }
 
-func newResponseReader(response *http.Response) *ResponseReader {
-	if response == nil {
-		return nil
-	}
-	r := new(ResponseReader)
-	r.Header = NewHeader(response.Header)
-	r.CookiesHandler = newCookieHandle(response.Header)
-	r.StatusHandler = NewStatusHandler()
-	r.SetStatus(response.StatusCode, response.Status)
-	// if response.ContentLength > 0 {
-	// 	body, _ := ioutil.ReadAll(response.body)
-	// 	r.BodyHandler = NewBodyHandler(body)
-	// } else {
-	// 	r.BodyHandler = NewBodyHandler(nil)
-	// }
-	body, _ := ioutil.ReadAll(response.Body)
-	r.BodyHandler = NewBodyHandler(body)
-
-	return r
+func (r *Response) reset() error {
+	r.ResponseHeader.tmp = nil
+	return nil
 }
 
-//NewResponseReader 新增ResponseReader
-func NewResponseReader(header http.Header, statusCode int, status string, body []byte) *ResponseReader {
-	r := new(ResponseReader)
-	r.Header = NewHeader(header)
-	r.CookiesHandler = newCookieHandle(header)
-	r.StatusHandler = NewStatusHandler()
-	r.SetStatus(statusCode, status)
-	// if response.ContentLength > 0 {
-	// 	body, _ := ioutil.ReadAll(response.body)
-	// 	r.BodyHandler = NewBodyHandler(body)
-	// } else {
-	// 	r.BodyHandler = NewBodyHandler(nil)
-	// }
+func NewResponse(ctx *fasthttp.RequestCtx) *Response {
+	return &Response{Response: &ctx.Response, ResponseHeader: NewResponseHeader(&ctx.Response.Header)}
+}
 
-	r.BodyHandler = NewBodyHandler(body)
-	return r
+func (r *Response) GetBody() []byte {
+	return r.Response.Body()
+}
+
+func (r *Response) StatusCode() int {
+	return r.Response.StatusCode()
+}
+
+func (r *Response) Status() string {
+	return strconv.Itoa(r.Response.StatusCode())
+}
+
+func (r *Response) SetStatus(code int, status string) {
+	r.Response.SetStatusCode(code)
+}
+
+func (r *Response) SetBody(bytes []byte) {
+	r.Response.SetBody(bytes)
 }

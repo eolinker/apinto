@@ -1,75 +1,80 @@
 package http_context
 
 import (
-	"io/ioutil"
-	"net/http"
-	"net/url"
+	"fmt"
+	"strings"
+
+	http_service "github.com/eolinker/eosc/http-service"
+
+	"github.com/valyala/fasthttp"
 )
 
-//RequestReader 请求reader
+var _ http_service.IRequestReader = (*RequestReader)(nil)
+
 type RequestReader struct {
-	*Header
-	*BodyRequestHandler
-	req *http.Request
+	body       *BodyRequestHandler
+	req        *fasthttp.Request
+	headers    *RequestHeader
+	uri        *URIRequest
+	remoteAddr string
+	realIP     string
 }
 
-//Proto 获取协议
-func (r *RequestReader) Proto() string {
-	return r.req.Proto
+func (r *RequestReader) Finish() error {
+	return nil
 }
 
-//NewRequestReader 创建RequestReader
-func NewRequestReader(req *http.Request) *RequestReader {
-	r := new(RequestReader)
-	r.req = req
-	r.ParseRequest()
+func (r *RequestReader) Method() string {
+	return string(r.req.Header.Method())
+}
+
+func (r *RequestReader) Header() http_service.IHeaderReader {
+	return r.headers
+}
+
+func (r *RequestReader) Body() http_service.IBodyDataReader {
+	return r.body
+}
+
+func (r *RequestReader) URI() http_service.IURIReader {
+	return r.uri
+}
+
+func (r *RequestReader) ReadIP() string {
+	return r.realIP
+}
+
+func (r *RequestReader) ForwardIP() string {
+	return r.headers.GetHeader("x-forwarded-for")
+}
+
+func (r *RequestReader) RemoteAddr() string {
+	return r.remoteAddr
+}
+
+func NewRequestReader(req *fasthttp.Request, remoteAddr string) *RequestReader {
+	r := &RequestReader{
+		body:       NewBodyRequestHandler(req),
+		req:        req,
+		headers:    NewRequestHeader(&req.Header),
+		uri:        NewURIRequest(req.URI()),
+		remoteAddr: remoteAddr,
+	}
+	forwardedFor := r.ForwardIP()
+	if len(forwardedFor) > 0 {
+		if i := strings.Index(forwardedFor, ","); i > 0 {
+			r.realIP = forwardedFor[:i]
+		} else {
+			r.realIP = forwardedFor
+		}
+		r.headers.SetHeader("x-forwarded-for", fmt.Sprint(forwardedFor, ",", r.remoteAddr))
+	} else {
+		r.headers.SetHeader("x-forwarded-for", fmt.Sprint(r.remoteAddr))
+		r.realIP = remoteAddr
+	}
 	return r
 }
 
-//ParseRequest 解析请求
-func (r *RequestReader) ParseRequest() {
-
-	r.Header = NewHeader(r.req.Header)
-	body, err := ioutil.ReadAll(r.req.Body)
-	_ = r.req.Body.Close()
-	if err != nil {
-		r.BodyRequestHandler = NewBodyRequestHandler(r.req.Header.Get("Content-Type"), nil)
-	} else {
-		r.BodyRequestHandler = NewBodyRequestHandler(r.req.Header.Get("Content-Type"), body)
-	}
-}
-
-//Cookie 获取cookie
-func (r *RequestReader) Cookie(name string) (*http.Cookie, error) {
-	return r.req.Cookie(name)
-}
-
-//Cookies 获取cookies
-func (r *RequestReader) Cookies() []*http.Cookie {
-	return r.req.Cookies()
-}
-
-//method 获取请求方式
-func (r *RequestReader) Method() string {
-	return r.req.Method
-}
-
-//url url
-func (r *RequestReader) URL() *url.URL {
-	return r.req.URL
-}
-
-//RequestURI 获取请求URI
-func (r *RequestReader) RequestURI() string {
-	return r.req.RequestURI
-}
-
-//Host 获取host
-func (r *RequestReader) Host() string {
-	return r.req.Host
-}
-
-//RemoteAddr 远程地址
-func (r *RequestReader) RemoteAddr() string {
-	return r.req.RemoteAddr
+func (r *RequestReader) Request() *fasthttp.Request {
+	return r.req
 }

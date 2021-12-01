@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	http_context "github.com/eolinker/goku-eosc/node/http-context"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 const (
@@ -12,11 +12,14 @@ const (
 	AuthorizationType = "Authorization-Type"
 	//Authorization 鉴权
 	Authorization = "Authorization"
+
+	AuthSkill = "github.com/eolinker/goku/auth.auth.IAuth"
 )
 
 var (
 	//ErrorInvalidType 非法的鉴权类型
 	ErrorInvalidType = errors.New("invalid authorization type")
+
 	//ErrorInvalidUser 非法用户
 	ErrorInvalidUser = errors.New("invalid user")
 
@@ -26,12 +29,12 @@ var (
 
 //CheckSkill 检查能力
 func CheckSkill(skill string) bool {
-	return skill == "github.com/eolinker/goku-eosc/auth.auth.IAuth"
+	return skill == AuthSkill
 }
 
 //IAuth 鉴权接口声明
 type IAuth interface {
-	Auth(ctx *http_context.Context) error
+	Auth(ctx http_service.IHttpContext) error
 }
 
 //CheckAuthorizationType 检查鉴权类型是否合法

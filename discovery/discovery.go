@@ -8,7 +8,7 @@ var (
 
 //CheckSkill 检查目标技能是否符合
 func CheckSkill(skill string) bool {
-	return skill == "github.com/eolinker/goku-eosc/discovery.discovery.IDiscovery"
+	return skill == "github.com/eolinker/goku/discovery.discovery.IDiscovery"
 }
 
 //IDiscovery 服务发现接口

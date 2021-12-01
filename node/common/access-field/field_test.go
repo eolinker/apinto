@@ -14,7 +14,7 @@ package access_field
 //		TimeIso8601       string
 //		Timestamp         int64
 //		Timing            int64
-//		Service           string
+//		service           string
 //		ServiceTitle      string
 //		Version           string
 //		Api               string
@@ -58,7 +58,7 @@ package access_field
 //				TimeIso8601:       tt.fields.TimeIso8601,
 //				Timestamp:         tt.fields.Timestamp,
 //				Timing:            tt.fields.Timing,
-//				Service:           tt.fields.Service,
+//				service:           tt.fields.service,
 //				ServiceTitle:      tt.fields.ServiceTitle,
 //				Version:           tt.fields.Version,
 //				Api:               tt.fields.Api,

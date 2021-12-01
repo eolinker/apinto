@@ -2,89 +2,133 @@ package http_context
 
 import (
 	"net/http"
-	"net/url"
+	"strings"
 
-	goku_plugin "github.com/eolinker/goku-standard-plugin"
+	http_service "github.com/eolinker/eosc/http-service"
+
+	"github.com/valyala/fasthttp"
 )
 
-//Header header
-type Header struct {
-	header http.Header
+var _ http_service.IHeaderWriter = (*RequestHeader)(nil)
+
+type RequestHeader struct {
+	header *fasthttp.RequestHeader
+	tmp    http.Header
 }
 
-//Headers 获取头部
-func (h *Header) Headers() http.Header {
+func NewRequestHeader(header *fasthttp.RequestHeader) *RequestHeader {
+	return &RequestHeader{header: header}
+}
 
-	n := make(http.Header)
-	for k, v := range h.header {
-		n[k] = v
+func (h *RequestHeader) initHeader() {
+	if h.tmp == nil {
+		h.tmp = make(http.Header)
+		hs := strings.Split(h.header.String(), "\r\n")
+		for _, t := range hs {
+			vs := strings.Split(t, ":")
+			if len(vs) < 2 {
+				if vs[0] == "" {
+					continue
+				}
+				h.tmp[vs[0]] = []string{""}
+				continue
+			}
+			h.tmp[vs[0]] = []string{strings.TrimSpace(vs[1])}
+		}
 	}
-	return n
-}
-func (h *Header) String() string {
-
-	return url.Values(h.header).Encode()
-
 }
 
-//SetHeader 设置请求头部
-func (h *Header) SetHeader(key, value string) {
+func (h *RequestHeader) Host() string {
+	return string(h.header.Host())
+}
+
+func (h *RequestHeader) GetHeader(name string) string {
+	return h.Headers().Get(name)
+}
+
+func (h *RequestHeader) Headers() http.Header {
+	h.initHeader()
+	return h.tmp
+}
+
+func (h *RequestHeader) SetHeader(key, value string) {
+	if h.tmp != nil {
+		h.tmp.Set(key, value)
+	}
 	h.header.Set(key, value)
 }
 
-//AddHeader 新增头部
-func (h *Header) AddHeader(key, value string) {
+func (h *RequestHeader) AddHeader(key, value string) {
+	if h.tmp != nil {
+		h.tmp.Add(key, value)
+	}
 	h.header.Add(key, value)
 }
 
-//DelHeader 删除头部
-func (h *Header) DelHeader(key string) {
+func (h *RequestHeader) DelHeader(key string) {
+	if h.tmp != nil {
+		h.tmp.Del(key)
+	}
 	h.header.Del(key)
 }
 
-//GetHeader 根据名称获取头部
-func (h *Header) GetHeader(name string) string {
-	return h.header.Get(name)
+func (h *RequestHeader) SetHost(host string) {
+	if h.tmp != nil {
+		h.tmp.Set("Host", host)
+	}
+	h.header.SetHost(host)
 }
 
-//NewHeader 创建Header
-func NewHeader(header http.Header) *Header {
-	if header == nil {
-		header = make(http.Header)
-	}
-	return &Header{
-		header: header,
-	}
+type ResponseHeader struct {
+	header *fasthttp.ResponseHeader
+	tmp    http.Header
 }
 
-//PriorityHeader priorityHeader
-type PriorityHeader struct {
-	*Header
-	setHeader    *Header
-	appendHeader *Header
+func NewResponseHeader(header *fasthttp.ResponseHeader) *ResponseHeader {
+	return &ResponseHeader{header: header}
 }
 
-//Set set
-func (h *PriorityHeader) Set() goku_plugin.Header {
-	if h.setHeader == nil {
-		h.setHeader = NewHeader(nil)
-	}
-	return h.setHeader
+func (r *ResponseHeader) GetHeader(name string) string {
+	return r.Headers().Get(name)
 }
 
-//Add append
-func (h *PriorityHeader) Append() goku_plugin.Header {
-	if h.appendHeader == nil {
-		h.appendHeader = NewHeader(nil)
+func (r *ResponseHeader) Headers() http.Header {
+
+	if r.tmp == nil {
+		r.tmp = make(http.Header)
+		hs := strings.Split(r.header.String(), "\r\n")
+		for _, t := range hs {
+			vs := strings.Split(t, ":")
+			if len(vs) < 2 {
+				if vs[0] == "" {
+					continue
+				}
+				r.tmp[vs[0]] = []string{""}
+				continue
+			}
+			r.tmp[vs[0]] = []string{strings.TrimSpace(vs[1])}
+		}
 	}
-	return h.setHeader
+	return r.tmp
 }
 
-//NewPriorityHeader 创建PriorityHeader
-func NewPriorityHeader() *PriorityHeader {
-	return &PriorityHeader{
-		Header:       NewHeader(nil),
-		setHeader:    nil,
-		appendHeader: nil,
+func (r *ResponseHeader) SetHeader(key, value string) {
+	if r.tmp != nil {
+		r.tmp.Set(key, value)
 	}
+	r.header.Set(key, value)
+}
+
+func (r *ResponseHeader) AddHeader(key, value string) {
+	if r.tmp != nil {
+		r.tmp.Add(key, value)
+	}
+	r.header.Add(key, value)
+}
+
+func (r *ResponseHeader) DelHeader(key string) {
+	if r.tmp != nil {
+		r.tmp.Del(key)
+	}
+	r.header.Del(key)
 }
