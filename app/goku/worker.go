@@ -16,6 +16,7 @@ import (
 	"github.com/eolinker/goku/drivers/log/stdlog"
 	"github.com/eolinker/goku/drivers/log/syslog"
 	"github.com/eolinker/goku/drivers/plugins/auth"
+	"github.com/eolinker/goku/drivers/plugins/cors"
 	extra_params "github.com/eolinker/goku/drivers/plugins/extra-params"
 	ip_restriction "github.com/eolinker/goku/drivers/plugins/ip-restriction"
 	params_transformer "github.com/eolinker/goku/drivers/plugins/params-transformer"
@@ -69,6 +70,6 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	proxy_rewrite.Register(extenderRegister)
 	ip_restriction.Register(extenderRegister)
 	rate_limiting.Register(extenderRegister)
-
+	cors.Register(extenderRegister)
 	response_rewrite.Register(extenderRegister)
 }
