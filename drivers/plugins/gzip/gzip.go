@@ -16,7 +16,7 @@ type Gzip struct {
 }
 
 func (g *Gzip) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
-	head := ctx.Request().Header().GetHeader("Accept-encoding")
+	head := ctx.Request().Header().GetHeader("Accept-Encoding")
 	if next != nil {
 		err = next.DoChain(ctx)
 	}

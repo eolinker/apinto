@@ -26,7 +26,7 @@ func NewResponse(ctx *fasthttp.RequestCtx) *Response {
 }
 
 func (r *Response) BodyLen() int {
-	return r.header.Len()
+	return r.header.ContentLength()
 }
 
 func (r *Response) GetBody() []byte {
