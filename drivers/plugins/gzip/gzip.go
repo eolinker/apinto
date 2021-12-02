@@ -29,6 +29,7 @@ func (g *Gzip) DoFilter(ctx http_service.IHttpContext, next http_service.IChain)
 func (g *Gzip) doCompress(ctx http_service.IHttpContext) error {
 	flag := false
 	resp := ctx.Response()
+
 	if resp.BodyLen() < g.conf.MinLength {
 		// 小于要求的最低长度，不压缩
 		return nil
@@ -60,8 +61,15 @@ func (g *Gzip) doCompress(ctx http_service.IHttpContext) error {
 func (g *Gzip) compress(content []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	zw := gzip.NewWriter(&buf)
-	defer zw.Close()
 	_, err := zw.Write(content)
+	if err != nil {
+		return nil, err
+	}
+	err = zw.Flush()
+	if err != nil {
+		return nil, err
+	}
+	err = zw.Close()
 	if err != nil {
 		return nil, err
 	}
