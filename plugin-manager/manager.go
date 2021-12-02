@@ -105,7 +105,7 @@ func (p *PluginManager) createFilters(conf map[string]*plugin.Config, filterType
 				continue
 			}
 			c = v.Config
-		} else if plg.Status != StatusGlobal && plg.Status != StatusEnable {
+		} else if plg.Status != StatusGlobal {
 			continue
 		}
 		confObj, err := toConfig(c, plg.drive.ConfigType())
