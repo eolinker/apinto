@@ -26,9 +26,9 @@ const (
 )
 
 var (
-	respTypeErrInfo         = `[plugin params-transformer config err] errorType must be in the set ["text","json"]. err errorType: %s `
-	paramPositionErrInfo    = `[plugin params-transformer config err] param position must be in the set ["query","header",body]. err position: %s `
-	conflictSolutionErrInfo = `[plugin params-transformer config err] param conflictSolution must be in the set ["origin","convert","error"]. err conflictSolution: %s`
+	paramPositionErrInfo  = `[plugin params-transformer config err] param position must be in the set ["query","header",body]. err position: %s `
+	paramNameErrInfo      = `[plugin params-transformer config err] param name must be not null. `
+	paramProxyNameErrInfo = `[plugin params-transformer config err] param proxy_name must be not null. `
 )
 
 func encodeErr(ent string, origin string, code int) error {

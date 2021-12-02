@@ -18,23 +18,24 @@ type ExtraParam struct {
 }
 
 func (c *Config) doCheck() error {
-	errType := strings.ToLower(c.ErrorType)
-	c.ErrorType = errType
-	if errType != "" && errType != "text" && errType != "json" {
-		return fmt.Errorf(respTypeErrInfo, errType)
+	c.ErrorType = strings.ToLower(c.ErrorType)
+	if c.ErrorType != "text" && c.ErrorType != "json" {
+		c.ErrorType = "text"
 	}
 
 	for _, param := range c.Params {
-		position := strings.ToLower(param.Position)
-		param.Position = position
-		if position != "query" && position != "header" && position != "body" {
-			return fmt.Errorf(paramPositionErrInfo, position)
+		if param.Name == "" {
+			return fmt.Errorf(paramNameErrInfo)
 		}
 
-		conflictSolution := strings.ToLower(param.Conflict)
-		param.Conflict = conflictSolution
-		if conflictSolution != paramOrigin && conflictSolution != paramConvert && conflictSolution != paramError {
-			return fmt.Errorf(conflictSolutionErrInfo, conflictSolution)
+		param.Position = strings.ToLower(param.Position)
+		if param.Position != "query" && param.Position != "header" && param.Position != "body" {
+			return fmt.Errorf(paramPositionErrInfo, param.Position)
+		}
+
+		param.Conflict = strings.ToLower(param.Conflict)
+		if param.Conflict != paramOrigin && param.Conflict != paramConvert && param.Conflict != paramError {
+			param.Conflict = paramConvert
 		}
 	}
 
