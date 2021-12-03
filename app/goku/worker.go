@@ -16,6 +16,7 @@ import (
 	"github.com/eolinker/goku/drivers/log/stdlog"
 	"github.com/eolinker/goku/drivers/log/syslog"
 	"github.com/eolinker/goku/drivers/plugins/auth"
+	circuit_breaker "github.com/eolinker/goku/drivers/plugins/circuit-breaker"
 	"github.com/eolinker/goku/drivers/plugins/cors"
 	extra_params "github.com/eolinker/goku/drivers/plugins/extra-params"
 	"github.com/eolinker/goku/drivers/plugins/gzip"
@@ -74,4 +75,5 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	cors.Register(extenderRegister)
 	gzip.Register(extenderRegister)
 	response_rewrite.Register(extenderRegister)
+	circuit_breaker.Register(extenderRegister)
 }
