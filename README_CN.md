@@ -76,7 +76,8 @@ Goku API Gateway具有以下优势：
 
 #### 2021年迭代计划
 
-![](http://data.eolinker.com/course/tbDpymJ8343df96713b8bb44b053c2088536ad59d7483d3.png)
+![image](https://user-images.githubusercontent.com/25589530/144803357-a8156c26-8099-4ebd-b7af-007477a56a67.png)
+
 
 ### 基准测试
 
