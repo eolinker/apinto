@@ -67,7 +67,8 @@ In a word, Goku API gateway enables the business development team to focus more 
 
 #### RoadMap  for 2021
 
-![image](https://user-images.githubusercontent.com/25589530/131605703-698222c6-42fb-4242-b47d-d962d949cdcf.png)
+![image](https://user-images.githubusercontent.com/25589530/144804508-59d4bd5e-257b-4746-aa61-eb7037eff7f0.png)
+
 
 ### Benchmark
 
