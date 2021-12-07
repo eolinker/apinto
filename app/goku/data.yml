@@ -59,8 +59,7 @@ upstream:
     scheme: http-service  #必填，负载所使用的scheme，仅支持http或https
     type: round-robin  #必填，所使用的负载均衡算法
 
-
-transport:
+output:
   - name: fileAccessLog
     driver: fileAccesslog
     config:
@@ -68,19 +67,19 @@ transport:
       file: access.log
       period: day
       expire: 3
-      formatter:
-        type: line  # line | json
-        fields:   #当长度为0时默认输出所有字段
-          -
+#      formatter:
+#        type: line  # line | json
+#        fields:   #当长度为0时默认输出所有字段
+#          -
   - name: httpAccessLog
     driver: httpAccessLog
     config:
       url: http://xxxx
       method: POST
-      formatter:
-        type: json
-        fields: #当长度为0时默认输出所有字段
-          -
+#      formatter:
+#        type: json
+#        fields: #当长度为0时默认输出所有字段
+#          -
 setting:
   - name: plugin
     driver: plugin
@@ -98,9 +97,11 @@ setting:
         type: router
         status: global
         config:
-          transports:
-            - fileAccessLog@transport
-            - httpAccessLog@transport
+#          transports:
+#            - fileAccessLog@transport
+#            - httpAccessLog@transport
+          output:
+            - xxx@output
       - id: "eolinker.com:goku:labels"
         name: labels
         type: service
