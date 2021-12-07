@@ -25,7 +25,7 @@ func (h *RequestHeader) initHeader() {
 		h.tmp = make(http.Header)
 		hs := strings.Split(h.header.String(), "\r\n")
 		for _, t := range hs {
-			vs := strings.Split(t, ":")
+			vs := strings.SplitN(t, ":", 2)
 			if len(vs) < 2 {
 				if vs[0] == "" {
 					continue
