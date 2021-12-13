@@ -67,8 +67,8 @@ output:
       file: access.log
       period: day
       expire: 3
+      type: line
       formatter:
-        type: line  # line | json
         fields:   #当长度为0时默认输出所有字段
           -
   - name: httpAccessLog
@@ -76,8 +76,8 @@ output:
     config:
       url: http://xxxx
       method: POST
+      type: json
       formatter:
-        type: json
         fields: #当长度为0时默认输出所有字段
           - $http_hedaer_text
           - $read_ip
@@ -108,9 +108,6 @@ setting:
         type: router
         status: global
         config:
-#          transports:
-#            - fileAccessLog@transport
-#            - httpAccessLog@transport
           output:
             - fileAccessLog@output
       - id: "eolinker.com:goku:labels"
