@@ -8,8 +8,8 @@ type Config struct {
 	Config  interface{} `json:"config"`
 }
 
-type IPluginConfig interface {
-	Config() map[string]Config
+type IPluginConfigMerge interface {
+	Merge(high map[string]*Config) map[string]*Config
 }
 
 type IPlugin interface {

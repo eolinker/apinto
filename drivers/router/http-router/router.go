@@ -2,8 +2,8 @@ package http_router
 
 import (
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/eosc/log"
+	"github.com/eolinker/goku/plugin"
 	router_http "github.com/eolinker/goku/router/router-http"
 	"github.com/eolinker/goku/service"
 )
@@ -13,54 +13,41 @@ type Router struct {
 	id   string
 	name string
 	port int
-	conf *router_http.Config
 
 	driver  *HTTPRouterDriver
-	service service.IService
+	handler *RouterHandler
 }
-
-func (r *Router) Destroy() {
-	if r.service != nil {
-		r.service.Destroy()
-	}
-}
-
-func (r *Router) DoChain(ctx http_service.IHttpContext) error {
-	if r.service == nil {
-		return nil
-	}
-	return r.service.DoChain(ctx)
-}
-
-//func (r *Router) Ports() []int {
-//
-//	return []int{r.port}
-//}
 
 //Reset 重置http路由配置
-func (r *Router) reset(cf *DriverConfig, target service.IServiceCreate) (*router_http.Config, service.IService, error) {
+func (r *Router) create(cf *DriverConfig, target service.IServiceCreate) (*RouterHandler, error) {
 
 	newConf := getConfig(cf)
 	newConf.ID = r.id
 	newConf.Name = r.name
-	serviceHandler := target.Create(r.id, cf.Plugins)
-	newConf.Target = r
-	return newConf, serviceHandler, nil
+	config := cf.Plugins
+	if pluginConfigMerge, ok := target.(plugin.IPluginConfigMerge); ok {
+		config = pluginConfigMerge.Merge(config)
+	}
+	routerPlugin := r.driver.pluginManager.CreateRouter(r.id, config)
+
+	serviceHandler := target.Create(r.id, config)
+	handler := NewRouterHandler(newConf, routerPlugin, serviceHandler)
+	return handler, nil
 }
 func (r *Router) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	cf, s, err := r.driver.check(conf, workers)
+	cf, ser, err := r.driver.check(conf, workers)
 	if err != nil {
-		return err
-	}
-	newConfig, serviceHandler, err := r.reset(cf, s)
-	if err != nil {
-		serviceHandler.Destroy()
 		return err
 	}
 
-	err = router_http.Add(cf.Listen, r.id, newConfig)
+	routerHandler, err := r.create(cf, ser)
 	if err != nil {
-		serviceHandler.Destroy()
+		return err
+	}
+
+	err = router_http.Add(cf.Listen, r.id, routerHandler.routerConfig)
+	if err != nil {
+		routerHandler.Destroy()
 		return err
 	}
 
@@ -69,8 +56,7 @@ func (r *Router) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	}
 
 	r.port = cf.Listen
-	r.conf = newConfig
-	r.service = serviceHandler
+	r.handler = routerHandler
 	return nil
 }
 
@@ -87,7 +73,7 @@ func (r *Router) Id() string {
 //Start 启动路由worker，将路由实例加入到路由树中
 func (r *Router) Start() error {
 	log.Debug("router:start")
-	return router_http.Add(r.port, r.id, r.conf)
+	return router_http.Add(r.port, r.id, r.handler.routerConfig)
 }
 
 //Stop 停止路由worker，将路由实例从路由树中删去

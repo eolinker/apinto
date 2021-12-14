@@ -26,15 +26,19 @@ func (s *Service) reset(upstream upstream.IUpstream, config map[string]*plugin.C
 	s.upstream = upstream
 	log.Debug("reset upstream handler...handler size is ", len(s.handlers.List()))
 	for _, h := range s.handlers.List() {
-		h.rebuild(upstream)
+		h.rebuild()
 	}
 }
-func (s *Service) mergePluginConfig(config map[string]*plugin.Config) map[string]*plugin.Config {
-	return plugin.MergeConfig(config, s.configs)
+func (s *Service) Merge(config map[string]*plugin.Config) map[string]*plugin.Config {
+	configs := plugin.MergeConfig(config, s.configs)
+	if mg, ok := s.upstream.(plugin.IPluginConfigMerge); ok {
+		config = mg.Merge(config)
+	}
+	return configs
 }
 func (s *Service) Create(id string, configs map[string]*plugin.Config) service.IService {
 	h := s.newHandler(id, configs)
-	h.rebuild(s.upstream)
+	h.rebuild()
 	s.handlers.Set(id, h)
 	return h
 }

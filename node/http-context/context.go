@@ -101,8 +101,3 @@ func (ctx *Context) Finish() {
 	ctx.proxyRequest.Finish()
 	return
 }
-
-func NotFound(ctx *Context) {
-	ctx.fastHttpRequestCtx.SetStatusCode(404)
-	ctx.fastHttpRequestCtx.SetBody([]byte("404 Not Found"))
-}

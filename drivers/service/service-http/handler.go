@@ -55,11 +55,13 @@ func (s *ServiceHandler) Destroy() {
 	}
 }
 
-func (s *ServiceHandler) rebuild(upstream upstream.IUpstream) {
-	s.pluginOrg = pluginManger.CreateService(s.id, s.service.mergePluginConfig(s.config))
+func (s *ServiceHandler) rebuild() {
+	config := s.service.Merge(s.config)
+
+	s.pluginOrg = pluginManger.CreateService(s.id, config)
 	s.pluginExec = s.pluginOrg.Append(filter.ToFilter([]http_service.IFilter{s}))
 
-	ps, err := upstream.Create(s.id, s.service.mergePluginConfig(s.config), s.service.retry, s.service.timeout)
+	ps, err := s.service.upstream.Create(s.id, config, s.service.retry, s.service.timeout)
 	if err != nil {
 		log.Error("rebuild error: ", err)
 		return

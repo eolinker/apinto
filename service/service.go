@@ -16,7 +16,6 @@ type IService interface {
 	http_service.IChain
 }
 type IServiceCreate interface {
-	plugin.IPluginConfig
 	Create(id string, configs map[string]*plugin.Config) IService
 }
 
