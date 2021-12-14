@@ -19,17 +19,31 @@ var _ http_service.IHttpContext = (*Context)(nil)
 //Context fasthttpRequestCtx
 type Context struct {
 	fastHttpRequestCtx *fasthttp.RequestCtx
+	proxyRequest       *ProxyRequest
+	requestID          string
+	response           *Response
+	responseError      error
+	requestReader      *RequestReader
+	ctx                context.Context
+	entry              *Entry
+}
 
-	proxyRequest  *ProxyRequest
-	requestID     string
-	response      *Response
-	responseError error
-	requestReader *RequestReader
-	ctx           context.Context
+func (ctx *Context) SetField(key, value string) {
+	if ctx.entry == nil {
+		ctx.entry = NewEntry()
+	}
+	ctx.entry.SetField(key, value)
+}
+
+func (ctx *Context) SetChildren(name string, fields []map[string]string) {
+	if ctx.entry == nil {
+		ctx.entry = NewEntry()
+	}
+	ctx.entry.SetChildren(name, fields)
 }
 
 func (ctx *Context) Entry() formatter.IEntry {
-	panic("implement me")
+	return ctx.entry
 }
 
 func (ctx *Context) Response() http_service.IResponse {

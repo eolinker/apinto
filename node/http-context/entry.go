@@ -11,12 +11,14 @@ var (
 	proxiesChild                  = "proxies"
 )
 
-type Fields map[string]string
-
 type Entry struct {
-	fields  Fields
+	fields  map[string]string
 	childes map[string][]*Entry
 	locker  sync.RWMutex
+}
+
+func NewEntry() *Entry {
+	return &Entry{fields: make(map[string]string), childes: nil, locker: sync.RWMutex{}}
 }
 
 func (e *Entry) SetField(key string, value string) {
@@ -24,18 +26,23 @@ func (e *Entry) SetField(key string, value string) {
 	defer e.locker.Unlock()
 	e.fields[key] = value
 }
-func (e *Entry) SetChildren(name string, fields []Fields) {
+
+func (e *Entry) SetChildren(name string, fields []map[string]string) {
+	e.locker.Lock()
+	defer e.locker.Unlock()
+
 	fieldLen := len(fields)
 	entries := make([]*Entry, fieldLen)
 	for i, field := range fields {
-		entries[i] = &Entry{
-			fields:  field,
-			childes: nil,
-			locker:  sync.RWMutex{},
-		}
+		entry := NewEntry()
+		entry.fields = field
+		entries[i] = entry
 	}
 	for key, value := range fields[fieldLen-1] {
 		e.fields[key] = value
+	}
+	if name == "" {
+		name = proxiesChild
 	}
 	e.childes[name] = entries
 }
