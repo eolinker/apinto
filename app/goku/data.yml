@@ -69,8 +69,12 @@ output:
       expire: 3
       type: line
       formatter:
-        fields:   #当长度为0时默认输出所有字段
-          -
+        fields:
+          - $http_hedaer_text
+          - $read_ip
+          - $service
+          - $proxy_header_authorization
+          - $proxy_uri
   - name: httpAccessLog
     driver: httpAccessLog
     config:
