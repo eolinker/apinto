@@ -18,20 +18,16 @@ var _ http_service.IHttpContext = (*Context)(nil)
 type Context struct {
 	fastHttpRequestCtx *fasthttp.RequestCtx
 
-	proxyRequest  *ProxyRequest
-	requestID     string
-	response      *Response
-	responseError error
+	proxyRequest *ProxyRequest
+	requestID    string
+	response     *Response
+
 	requestReader *RequestReader
 	ctx           context.Context
 }
 
 func (ctx *Context) Response() http_service.IResponse {
 	return ctx.response
-}
-
-func (ctx *Context) ResponseError() error {
-	return ctx.responseError
 }
 
 type Finish interface {
@@ -42,9 +38,9 @@ func (ctx *Context) SendTo(address string, timeout time.Duration) error {
 
 	request := ctx.proxyRequest.Request()
 
-	ctx.responseError = fasthttp_client.ProxyTimeout(address, request, &ctx.fastHttpRequestCtx.Response, timeout)
+	ctx.response.responseError = fasthttp_client.ProxyTimeout(address, request, &ctx.fastHttpRequestCtx.Response, timeout)
 
-	return ctx.responseError
+	return ctx.response.responseError
 
 }
 
@@ -83,7 +79,6 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteIP().String()),
 		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteIP().String()),
 		response:           NewResponse(ctx),
-		responseError:      nil,
 	}
 
 	return newCtx
@@ -96,9 +91,9 @@ func (ctx *Context) RequestId() string {
 
 //Finish finish
 func (ctx *Context) Finish() {
-	if ctx.responseError != nil {
+	if ctx.response.responseError != nil {
 		ctx.fastHttpRequestCtx.SetStatusCode(504)
-		ctx.fastHttpRequestCtx.SetBodyString(ctx.responseError.Error())
+		ctx.fastHttpRequestCtx.SetBodyString(ctx.response.responseError.Error())
 		return
 	}
 

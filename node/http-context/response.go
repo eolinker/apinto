@@ -14,6 +14,15 @@ var _ http_service.IResponse = (*Response)(nil)
 type Response struct {
 	*ResponseHeader
 	*fasthttp.Response
+	responseError error
+}
+
+func (r *Response) ResponseError() error {
+	return r.responseError
+}
+
+func (r *Response) ClearError() {
+	r.responseError = nil
 }
 
 func (r *Response) reset() error {
@@ -41,11 +50,14 @@ func (r *Response) GetBody() []byte {
 }
 
 func (r *Response) StatusCode() int {
+	if r.responseError != nil {
+		return 504
+	}
 	return r.Response.StatusCode()
 }
 
 func (r *Response) Status() string {
-	return strconv.Itoa(r.Response.StatusCode())
+	return strconv.Itoa(r.StatusCode())
 }
 
 func (r *Response) SetStatus(code int, status string) {
