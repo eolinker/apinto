@@ -14,9 +14,9 @@ func CheckSkill(skill string) bool {
 //IService github.com/eolinker/goku/service.service.IService
 type IService interface {
 	http_service.IChain
-	//Handle(ctx http_service.IHttpContext, router IRouterEndpoint) error
 }
 type IServiceCreate interface {
+	plugin.IPluginConfig
 	Create(id string, configs map[string]*plugin.Config) IService
 }
 

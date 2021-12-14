@@ -7,6 +7,11 @@ type Config struct {
 	Disable bool        `json:"disable"`
 	Config  interface{} `json:"config"`
 }
+
+type IPluginConfig interface {
+	Config() map[string]Config
+}
+
 type IPlugin interface {
 	filter.IChain
 	Destroy()
