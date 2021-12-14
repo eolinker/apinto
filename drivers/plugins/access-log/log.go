@@ -18,7 +18,7 @@ func (l *accessLog) DoFilter(ctx http_service.IHttpContext, next http_service.IC
 		log.Error(err)
 	}
 	for _, o := range l.output {
-		err = o.Output(ctx)
+		err = o.Output(ctx.Entry())
 		if err != nil {
 			log.Error("access log output error:", err)
 			continue
@@ -28,9 +28,7 @@ func (l *accessLog) DoFilter(ctx http_service.IHttpContext, next http_service.IC
 }
 
 func (l *accessLog) Destroy() {
-	for _, o := range l.output {
-		o.Close()
-	}
+
 }
 
 func (l *accessLog) Id() string {

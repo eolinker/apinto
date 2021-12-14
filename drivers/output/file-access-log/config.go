@@ -1,13 +1,7 @@
 package file_access_log
 
 import (
-	"errors"
-
 	"github.com/eolinker/eosc/formatter"
-)
-
-var (
-	errorConfigType = errors.New("error config type")
 )
 
 type Config struct {

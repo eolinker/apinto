@@ -15,5 +15,9 @@ func (d *Driver) ConfigType() reflect.Type {
 }
 
 func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
-	panic("implement me")
+	worker := &accessLog{
+		id: id,
+	}
+	err := worker.Reset(v, workers)
+	return worker, err
 }

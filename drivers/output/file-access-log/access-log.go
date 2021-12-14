@@ -3,18 +3,23 @@ package file_access_log
 import (
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
-	http_service "github.com/eolinker/eosc/http-service"
 	file_transport "github.com/eolinker/goku/transport/file-transport"
 )
 
 type accessLog struct {
 	id        string
 	cfg       *file_transport.Config
-	formatter formatter.Config
+	formatter formatter.IFormatter
 	transport formatter.ITransport
 }
 
-func (a *accessLog) Output(context http_service.IHttpContext) error {
+func (a *accessLog) Output(entry formatter.IEntry) error {
+	if a.formatter != nil {
+		data := a.formatter.Format(entry)
+		if a.transport != nil {
+			return a.transport.Write(data)
+		}
+	}
 	return nil
 }
 
@@ -31,25 +36,32 @@ func (a *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]interface
 	if !ok {
 		return errorConfigType
 	}
+	factory, has := formatter.GetFormatterFactory(cfg.Type)
+	if !has {
+		return errorFormatterType
+	}
 	c := &file_transport.Config{
 		Dir:    cfg.Dir,
 		File:   cfg.File,
 		Expire: cfg.Expire,
 		Period: file_transport.ParsePeriod(cfg.Period),
 	}
-	if a.cfg.IsUpdate(c) {
+	if a.cfg == nil || a.cfg.IsUpdate(c) {
 		transport := file_transport.NewtTransporter(c)
 		a.transport.Close()
 		a.transport = transport
 		a.cfg = c
 	}
-	a.formatter = cfg.Formatter
+
+	a.formatter = factory.Create(cfg.Formatter)
+
 	return nil
 }
 
 func (a *accessLog) Stop() error {
 	a.transport.Close()
 	a.transport = nil
+	a.formatter = nil
 	return nil
 }
 

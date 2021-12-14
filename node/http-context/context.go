@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/eolinker/eosc/formatter"
+
 	fasthttp_client "github.com/eolinker/goku/node/fasthttp-client"
 
 	"github.com/valyala/fasthttp"
@@ -24,6 +26,10 @@ type Context struct {
 	responseError error
 	requestReader *RequestReader
 	ctx           context.Context
+}
+
+func (ctx *Context) Entry() formatter.IEntry {
+	panic("implement me")
 }
 
 func (ctx *Context) Response() http_service.IResponse {

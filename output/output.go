@@ -1,7 +1,9 @@
 package output
 
-import http_service "github.com/eolinker/eosc/http-service"
+import (
+	"github.com/eolinker/eosc/formatter"
+)
 
 type IOutput interface {
-	Output(http_service.IHttpContext) error
+	Output(entry formatter.IEntry) error
 }
