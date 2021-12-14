@@ -61,15 +61,11 @@ func (r *Response) Status() string {
 }
 
 func (r *Response) SetStatus(code int, status string) {
-	if r.responseError != nil {
-		r.responseError = nil
-	}
 	r.Response.SetStatusCode(code)
+	r.responseError = nil
 }
 
 func (r *Response) SetBody(bytes []byte) {
-	if r.responseError != nil {
-		r.responseError = nil
-	}
 	r.Response.SetBody(bytes)
+	r.responseError = nil
 }
