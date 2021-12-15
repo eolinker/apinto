@@ -16,6 +16,10 @@ type RequestHeader struct {
 	tmp    http.Header
 }
 
+func (h *RequestHeader) RawHeader() string {
+	return h.header.String()
+}
+
 func NewRequestHeader(header *fasthttp.RequestHeader) *RequestHeader {
 	return &RequestHeader{header: header}
 }

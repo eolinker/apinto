@@ -94,7 +94,8 @@ output:
           - $cookie_eolinker
           - $service
           - @proxys:   # proxy info list, type is obeject or array. only json type
-               - $header
+        @proxys:
+          - $header
 setting:
   - name: plugin
     driver: plugin

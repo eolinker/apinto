@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/eolinker/eosc/formatter"
-
 	fasthttp_client "github.com/eolinker/goku/node/fasthttp-client"
 
 	"github.com/valyala/fasthttp"
@@ -20,31 +18,31 @@ var _ http_service.IHttpContext = (*Context)(nil)
 type Context struct {
 	fastHttpRequestCtx *fasthttp.RequestCtx
 	proxyRequest       *ProxyRequest
+	proxyRequests      []http_service.IRequest
 	requestID          string
 	response           *Response
 	responseError      error
 	requestReader      *RequestReader
 	ctx                context.Context
-	entry              *Entry
 }
 
-func (ctx *Context) SetField(key, value string) {
-	if ctx.entry == nil {
-		ctx.entry = NewEntry()
-	}
-	ctx.entry.SetField(key, value)
+func (ctx *Context) Proxies() []http_service.IRequest {
+	return ctx.proxyRequests
 }
 
-func (ctx *Context) SetChildren(name string, fields []map[string]string) {
-	if ctx.entry == nil {
-		ctx.entry = NewEntry()
-	}
-	ctx.entry.SetChildren(name, fields)
-}
-
-func (ctx *Context) Entry() formatter.IEntry {
-	return ctx.entry
-}
+//func (ctx *Context) SetField(key, value string) {
+//	if ctx.entry == nil {
+//		ctx.entry = NewEntry()
+//	}
+//	ctx.entry.SetField(key, value)
+//}
+//
+//func (ctx *Context) SetChildren(name string, fields []map[string]string) {
+//	if ctx.entry == nil {
+//		ctx.entry = NewEntry()
+//	}
+//	ctx.entry.SetChildren(name, fields)
+//}
 
 func (ctx *Context) Response() http_service.IResponse {
 	return ctx.response
@@ -59,7 +57,9 @@ type Finish interface {
 }
 
 func (ctx *Context) SendTo(address string, timeout time.Duration) error {
-
+	clone := ctx.proxyRequest.clone()
+	clone.URI().SetHost(address)
+	ctx.proxyRequests = append(ctx.proxyRequests, clone)
 	request := ctx.proxyRequest.Request()
 
 	ctx.responseError = fasthttp_client.ProxyTimeout(address, request, &ctx.fastHttpRequestCtx.Response, timeout)
@@ -102,6 +102,7 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 		requestID:          requestID,
 		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteIP().String()),
 		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteIP().String()),
+		proxyRequests:      make([]http_service.IRequest, 0, 5),
 		response:           NewResponse(ctx),
 		responseError:      nil,
 	}
@@ -124,6 +125,12 @@ func (ctx *Context) Finish() {
 
 	ctx.requestReader.Finish()
 	ctx.proxyRequest.Finish()
+	for _, request := range ctx.proxyRequests {
+		r, ok := request.(*ProxyRequest)
+		if ok {
+			r.Finish()
+		}
+	}
 	return
 }
 
