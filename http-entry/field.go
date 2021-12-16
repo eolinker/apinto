@@ -1,4 +1,4 @@
-package output
+package http_entry
 
 var (
 	HttpPrefix        = "http_"

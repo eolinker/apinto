@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/eolinker/goku/output"
-
 	"github.com/eolinker/eosc"
 )
 
@@ -36,15 +34,15 @@ func (d *Driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
-func (d *Driver) getList(auths []eosc.RequireId) ([]output.IOutput, error) {
-	ls := make([]output.IOutput, 0, len(auths))
+func (d *Driver) getList(auths []eosc.RequireId) ([]eosc.IOutput, error) {
+	ls := make([]eosc.IOutput, 0, len(auths))
 	for _, id := range auths {
 		worker, has := d.workers.Get(string(id))
 		if !has {
 			return nil, fmt.Errorf("%s:%w", id, eosc.ErrorWorkerNotExits)
 		}
 
-		ls = append(ls, worker.(output.IOutput))
+		ls = append(ls, worker.(eosc.IOutput))
 
 	}
 	return ls, nil

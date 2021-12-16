@@ -9,11 +9,11 @@ import (
 type accessLog struct {
 	id        string
 	cfg       *file_transport.Config
-	formatter formatter.IFormatter
+	formatter eosc.IFormatter
 	transport formatter.ITransport
 }
 
-func (a *accessLog) Output(entry formatter.IEntry) error {
+func (a *accessLog) Output(entry eosc.IEntry) error {
 	if a.formatter != nil {
 		data := a.formatter.Format(entry)
 		if a.transport != nil {
@@ -31,7 +31,7 @@ func (a *accessLog) Start() error {
 	return nil
 }
 
-func (a *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (a *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) (err error) {
 	cfg, ok := conf.(*Config)
 	if !ok {
 		return errorConfigType
@@ -53,9 +53,8 @@ func (a *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]interface
 		a.cfg = c
 	}
 
-	a.formatter = factory.Create(cfg.Formatter)
-
-	return nil
+	a.formatter, err = factory.Create(cfg.Formatter)
+	return
 }
 
 func (a *accessLog) Stop() error {

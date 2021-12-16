@@ -1,16 +1,16 @@
-package output
+package http_entry
 
 import (
 	"strings"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc"
 
-	"github.com/eolinker/eosc/formatter"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 var (
-	_            formatter.IEntry = (*Entry)(nil)
-	proxiesChild                  = "proxies"
+	_            eosc.IEntry = (*Entry)(nil)
+	proxiesChild             = "proxies"
 )
 
 type Entry struct {
@@ -29,13 +29,13 @@ func (e *Entry) Read(pattern string) string {
 	return v
 }
 
-func (e *Entry) Children(child string) []formatter.IEntry {
+func (e *Entry) Children(child string) []eosc.IEntry {
 	switch child {
 	case proxiesChild:
 		fallthrough
 	default:
 		length := len(e.ctx.Proxies())
-		entries := make([]formatter.IEntry, length)
+		entries := make([]eosc.IEntry, length)
 		for i := 0; i <= length; i++ {
 			entries[length] = NewChildEntry(e, i, "proxy_", proxyFields)
 		}
@@ -59,7 +59,7 @@ func (c *ChildEntry) Read(pattern string) string {
 	return c.parent.Read(pattern)
 }
 
-func (c *ChildEntry) Children(child string) []formatter.IEntry {
+func (c *ChildEntry) Children(child string) []eosc.IEntry {
 	return nil
 }
 

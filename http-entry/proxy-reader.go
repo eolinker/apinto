@@ -1,4 +1,4 @@
-package output
+package http_entry
 
 import (
 	http_service "github.com/eolinker/eosc/http-service"
