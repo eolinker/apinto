@@ -5,11 +5,12 @@ import (
 	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/eosc/log"
 	http_entry "github.com/eolinker/goku/http-entry"
+	"github.com/eolinker/goku/output"
 )
 
 type accessLog struct {
 	id     string
-	output []eosc.IOutput
+	output []output.IEntryOutput
 }
 
 func (l *accessLog) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
