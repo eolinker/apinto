@@ -3,7 +3,6 @@ package fileoutput
 import (
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
-	file_transport "github.com/eolinker/goku/transport/file-transport"
 )
 
 type accessLog struct {
