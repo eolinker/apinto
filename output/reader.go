@@ -7,62 +7,48 @@ import (
 )
 
 type IReader interface {
-	Read(name string, index int, ctx http_service.IHttpContext) (string, bool)
+	Read(name string, ctx http_service.IHttpContext) (string, bool)
 }
 
-type ReadFunc func(name string, index int, ctx http_service.IHttpContext) (string, bool)
+type ReadFunc func(name string, ctx http_service.IHttpContext) (string, bool)
 
-func (f ReadFunc) Read(name string, index int, ctx http_service.IHttpContext) (string, bool) {
-	return f(name, index, ctx)
+func (f ReadFunc) Read(name string, ctx http_service.IHttpContext) (string, bool) {
+	return f(name, ctx)
 }
 
 type Fields map[string]IReader
 
-func (f Fields) Read(name string, index int, ctx http_service.IHttpContext) (string, bool) {
+func (f Fields) Read(name string, ctx http_service.IHttpContext) (string, bool) {
 	r, has := f[name]
 	if has {
-		return r.Read("", index, ctx)
+		return r.Read("", ctx)
 	}
 	fs := strings.SplitN(name, "_", 2)
 	if len(fs) != 2 {
-		return r.Read("", index, ctx)
+		return r.Read("", ctx)
 	}
 	r, has = f[fs[0]]
 	if has {
-		return r.Read(fs[1], index, ctx)
+		return r.Read(fs[1], ctx)
 	}
 	return "", false
 }
 
 var (
 	rule Fields = map[string]IReader{
-		"request_id": ReadFunc(func(name string, index int, ctx http_service.IHttpContext) (string, bool) {
+		"request_id": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.RequestId(), true
 		}),
-		"content_length": ReadFunc(func(name string, index int, ctx http_service.IHttpContext) (string, bool) {
+		"content_length": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.Request().Header().GetHeader("content-length"), true
 		}),
-		"content_type": ReadFunc(func(name string, index int, ctx http_service.IHttpContext) (string, bool) {
+		"content_type": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.Request().Header().GetHeader("content-type"), true
 		}),
-		"http": ReadFunc(func(name string, index int, ctx http_service.IHttpContext) (string, bool) {
+		"http": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+			//http_context_type = context_type
 			return ctx.Request().Header().GetHeader(name), true
 		}),
-		"proxy": ReadFunc(func(name string, index int, ctx http_service.IHttpContext) (string, bool) {
-			proxies := ctx.Proxies()
-			proxyLen := len(proxies)
-
-			if proxyLen <= index {
-				return "", false
-			}
-			if index == -1 {
-				index = proxyLen - 1
-			}
-			v, ok := proxyFields[name]
-			if ok {
-				return v.Read(name, proxies[index])
-			}
-			return "", false
-		}),
+		"proxy": proxyFields,
 	}
 )
