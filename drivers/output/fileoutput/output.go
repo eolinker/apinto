@@ -3,16 +3,17 @@ package fileoutput
 import (
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
+	file_transport "github.com/eolinker/goku/output/file-transport"
 )
 
-type accessLog struct {
+type FileOutput struct {
 	id        string
 	cfg       *file_transport.Config
 	formatter eosc.IFormatter
 	transport formatter.ITransport
 }
 
-func (a *accessLog) Output(entry eosc.IEntry) error {
+func (a *FileOutput) Output(entry eosc.IEntry) error {
 	if a.formatter != nil {
 		data := a.formatter.Format(entry)
 		if a.transport != nil {
@@ -22,15 +23,15 @@ func (a *accessLog) Output(entry eosc.IEntry) error {
 	return nil
 }
 
-func (a *accessLog) Id() string {
+func (a *FileOutput) Id() string {
 	return a.id
 }
 
-func (a *accessLog) Start() error {
+func (a *FileOutput) Start() error {
 	return nil
 }
 
-func (a *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) (err error) {
+func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) (err error) {
 	cfg, ok := conf.(*Config)
 	if !ok {
 		return errorConfigType
@@ -56,13 +57,13 @@ func (a *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]interface
 	return
 }
 
-func (a *accessLog) Stop() error {
+func (a *FileOutput) Stop() error {
 	a.transport.Close()
 	a.transport = nil
 	a.formatter = nil
 	return nil
 }
 
-func (a *accessLog) CheckSkill(skill string) bool {
+func (a *FileOutput) CheckSkill(skill string) bool {
 	return false
 }
