@@ -3,6 +3,9 @@ package router_http
 import (
 	"strconv"
 
+	"github.com/eolinker/eosc/common/bean"
+	"github.com/eolinker/goku/plugin"
+
 	"github.com/eolinker/eosc"
 )
 
@@ -16,7 +19,8 @@ type IRouters interface {
 
 //Routers 路由树管理器的结构体
 type Routers struct {
-	data eosc.IUntyped
+	data          eosc.IUntyped
+	pluginManager plugin.IPluginManager
 }
 
 //Set 将路由配置加入到对应端口的路由树中
@@ -26,7 +30,8 @@ func (rs *Routers) Set(port int, id string, conf *Config) (IRouter, bool, error)
 
 	//若对应端口不存在路由树，则新建
 	if !has {
-		router := NewRouter()
+		globalRouterFilter := rs.pluginManager.CreateRouter(name, map[string]*plugin.Config{})
+		router := NewRouter(globalRouterFilter)
 		err := router.SetRouter(id, conf)
 		if err != nil {
 			return nil, false, err
@@ -45,9 +50,11 @@ func (rs *Routers) Set(port int, id string, conf *Config) (IRouter, bool, error)
 
 //NewRouters 新建路由树管理器
 func NewRouters() *Routers {
-	return &Routers{
+	rs := &Routers{
 		data: eosc.NewUntyped(),
 	}
+	bean.Autowired(&rs.pluginManager)
+	return rs
 }
 
 //Del 将路由配置从对应端口的路由树中删去

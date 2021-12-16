@@ -16,5 +16,6 @@ type IUpstreamHandler interface {
 	http_service.IChain
 }
 type IUpstream interface {
+	//plugin.IPluginConfig
 	Create(id string, configs map[string]*plugin.Config, retry int, time time.Duration) (IUpstreamHandler, error)
 }

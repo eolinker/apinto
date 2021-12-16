@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/eolinker/eosc/common/bean"
+	"github.com/eolinker/goku/plugin"
+
 	"github.com/eolinker/goku/service"
 
 	"github.com/eolinker/eosc"
@@ -11,14 +14,18 @@ import (
 
 //HTTPRouterDriver 实现github.com/eolinker/eosc.eosc.IProfessionDriver接口
 type HTTPRouterDriver struct {
-	configType reflect.Type
+	configType    reflect.Type
+	pluginManager plugin.IPluginManager
 }
 
 //NewHTTPRouter 创建一个http路由驱动
 func NewHTTPRouter() *HTTPRouterDriver {
-	return &HTTPRouterDriver{
+
+	h := &HTTPRouterDriver{
 		configType: reflect.TypeOf(new(DriverConfig)),
 	}
+	bean.Autowired(&h.pluginManager)
+	return h
 }
 
 //Create 创建一个http路由驱动实例
@@ -67,14 +74,11 @@ func (h *HTTPRouterDriver) NewRouter(id, name string, c *DriverConfig, target se
 		port:   c.Listen,
 		driver: h,
 	}
-	cft, serviceHandler, err := r.reset(c, target)
+	routerHandler, err := r.create(c, target)
 
 	if err != nil {
-		serviceHandler.Destroy()
 		return nil, err
 	}
-
-	r.service = serviceHandler
-	r.conf = cft
+	r.handler = routerHandler
 	return r, nil
 }
