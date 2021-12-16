@@ -11,10 +11,7 @@ import (
 	"github.com/eolinker/goku/drivers/discovery/eureka"
 	"github.com/eolinker/goku/drivers/discovery/nacos"
 	"github.com/eolinker/goku/drivers/discovery/static"
-	"github.com/eolinker/goku/drivers/log/filelog"
-	"github.com/eolinker/goku/drivers/log/httplog"
-	"github.com/eolinker/goku/drivers/log/stdlog"
-	"github.com/eolinker/goku/drivers/log/syslog"
+
 	"github.com/eolinker/goku/drivers/plugins/auth"
 	circuit_breaker "github.com/eolinker/goku/drivers/plugins/circuit-breaker"
 	"github.com/eolinker/goku/drivers/plugins/cors"
@@ -56,12 +53,6 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	apikey.Register(extenderRegister)
 	aksk.Register(extenderRegister)
 	jwt.Register(extenderRegister)
-
-	// log
-	filelog.Register(extenderRegister)
-	httplog.Register(extenderRegister)
-	syslog.Register(extenderRegister)
-	stdlog.Register(extenderRegister)
 
 	plugin_manager.Register(extenderRegister)
 	auth.Register(extenderRegister)
