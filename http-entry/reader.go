@@ -75,7 +75,7 @@ var (
 			return ctx.Request().RemoteAddr(), true
 		}),
 		"remote_port": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			return ctx.Request().RemotePort(), false
+			return ctx.Request().RemotePort(), true
 		}),
 
 		"request": Fields{
