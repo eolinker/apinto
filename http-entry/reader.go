@@ -2,6 +2,8 @@ package http_entry
 
 import (
 	"fmt"
+	"github.com/eolinker/goku/utils"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,12 +44,15 @@ var (
 			return ctx.RequestId(), true
 		}),
 		"query": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			//TODO query需要返回完整的请求参数吗
-			v := ctx.Request().URI().GetQuery(name)
-			if v == "" {
+			if name == "" {
+				return ctx.Request().URI().RawQuery(), true
+			}
+			//TODO 返回的布尔值问题
+			value := ctx.Request().URI().GetQuery(name)
+			if value == "" {
 				return "", false
 			}
-			return v, true
+			return value, true
 		}),
 		"uri": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			//不带请求参数的uri
@@ -60,66 +65,59 @@ var (
 			return ctx.Request().Header().GetHeader("content-type"), true
 		}),
 		"cookie": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			//TODO
 			if name == "" {
-				return "完整cookie", true
+				return ctx.Request().Header().GetHeader("cookie"), true
 			}
+			//TODO
 			name = strings.Replace(name, "_", "-", -1)
 			return "", true
 		}),
 		"msec": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			return fmt.Sprintf("%d", time.Now().Unix()), true
+			return strconv.FormatInt(time.Now().Unix(), 10), true
 		}),
 		"apinto_version": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			//TODO
-			return "", true
+			return utils.Version, true
 		}),
 		"remote_addr": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			//是ip地址还是整个地址
 			return ctx.Request().RemoteAddr(), true
 		}),
 		"remote_port": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			//TODO 需要从fasthttpContext 里面获取RemoteAddr
-			return "", true
+			return ctx.Request().RemotePort(), false
 		}),
-		"request": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+		"request": Fields{
+			"": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+				//TODO
+				ctx.Request().String()
+				return " ", true
+			}),
+			"body": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+				body, err := ctx.Request().Body().RawBody()
+				if err != nil {
+					return "", false
+				}
+				return string(body), true
+			}),
+			"length": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 
-			method := ctx.Request().Method()
-			uri := ctx.Request().URI().RequestURI()
-			//TODO 获取的不包含/1.1, 怎么处理？
-			proto := ctx.Request().URI().Scheme()
-			return fmt.Sprintf("%s %s %s", method, uri, proto), true
-		}),
-		"request_body": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			body, err := ctx.Request().Body().RawBody()
-			if err != nil {
-				return "", false
-			}
-			return string(body), true
-		}),
-		"request_length": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			//包括请求的地址，http请求头和请求主体
-			uriLen := len(ctx.Request().URI().RequestURI())
-			headerLen := len(ctx.Request().Header().RawHeader())
-			body, err := ctx.Request().Body().RawBody()
-			//TODO 返回false还是 bodyLen为0
-			if err != nil {
-				return "", false
-			}
-			bodyLen := len(body)
-			return fmt.Sprint(uriLen + headerLen + bodyLen), true
-		}),
-		"request_method": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			return ctx.Request().Method(), true
-		}),
-		"request_time": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			//TODO
-
-			return "", true
-		}),
-		"request_uri": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			return ctx.Request().URI().RequestURI(), true
-		}),
+				return strconv.Itoa(len(ctx.Request().String())), true
+			}),
+			"method": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+				return ctx.Request().Method(), true
+			}),
+			"time": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+				//TODO
+				requestTime := ctx.Value("request_time")
+				start, ok := requestTime.(time.Time)
+				if !ok {
+					return "", false
+				}
+				_ = time.Now().Sub(start).Seconds()
+				return "", true
+			}),
+			"uri": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+				return ctx.Request().URI().RequestURI(), true
+			}),
+		},
 		"scheme": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.Request().URI().Scheme(), true
 		}),
@@ -146,17 +144,21 @@ var (
 			//TODO 暂时忽略
 			return "", true
 		}),
-		"response": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			//TODO
-			return fmt.Sprintf("%d", time.Now().Unix()), true
-		}),
-		"response_body": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			return string(ctx.Response().GetBody()), true
-		}),
-		"response_header": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			//TODO
-			return "", true
-		}),
+		"response": Fields{
+			"": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+				return ctx.Response().String(), true
+			}),
+			"body": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+				ctx.Response().GetBody()
+				return fmt.Sprintf("%d", time.Now().Unix()), true
+			}),
+			"header": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+				if name == "" {
+					return ctx.Response().HeadersString(), true
+				}
+				return ctx.Response().GetHeader(strings.Replace(name, "_", "-", -1)), true
+			}),
+		},
 		"proxy": proxyFields,
 	}
 

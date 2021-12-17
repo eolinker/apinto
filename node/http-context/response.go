@@ -17,6 +17,10 @@ type Response struct {
 	responseError error
 }
 
+func (r *Response) HeadersString() string {
+	return r.header.String()
+}
+
 func (r *Response) ResponseError() error {
 	return r.responseError
 }
