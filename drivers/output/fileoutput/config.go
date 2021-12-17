@@ -1,4 +1,4 @@
-package file_access_log
+package fileoutput
 
 import (
 	"github.com/eolinker/eosc"

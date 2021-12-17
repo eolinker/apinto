@@ -1,8 +1,8 @@
-package file_access_log
+package fileoutput
 
 import "github.com/eolinker/eosc"
 
-const name = "file_access_log"
+const name = "file_output"
 
 //Register 注册http路由驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
