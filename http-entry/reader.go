@@ -47,12 +47,7 @@ var (
 			if name == "" {
 				return ctx.Request().URI().RawQuery(), true
 			}
-
-			value := ctx.Request().URI().GetQuery(name)
-			if value == "" {
-				return "", false
-			}
-			return value, true
+			return ctx.Request().URI().GetQuery(name), true
 		}),
 		"uri": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			//不带请求参数的uri
@@ -68,18 +63,7 @@ var (
 			if name == "" {
 				return ctx.Request().Header().GetHeader("cookie"), true
 			}
-
-			//TODO
-			cookie := ctx.Request().Header().GetHeader("cookie")
-			paramList := strings.Split(cookie, ";")
-			for _, param := range paramList {
-				kv := strings.SplitN(param, "=", 2)
-				if strings.TrimLeft(kv[0], " ") == name {
-					return kv[1], true
-				}
-			}
-
-			return "", false
+			return ctx.Request().Header().GetCookie(name), false
 		}),
 		"msec": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return strconv.FormatInt(time.Now().Unix(), 10), true
@@ -177,6 +161,7 @@ var (
 			if name == "" {
 				return proxy.Header().RawHeader(), true
 			}
+
 			return proxy.Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
 		}),
 		"uri": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
