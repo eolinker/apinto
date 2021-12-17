@@ -17,7 +17,12 @@ type RequestReader struct {
 	headers    *RequestHeader
 	uri        *URIRequest
 	remoteAddr string
+	remotePort string
 	realIP     string
+}
+
+func (r *RequestReader) String() string {
+	return r.req.String()
 }
 
 func (r *RequestReader) Finish() error {
@@ -52,6 +57,10 @@ func (r *RequestReader) RemoteAddr() string {
 	return r.remoteAddr
 }
 
+func (r *RequestReader) RemotePort() string {
+	return r.remotePort
+}
+
 func NewRequestReader(req *fasthttp.Request, remoteAddr string) *RequestReader {
 	r := &RequestReader{
 		body:       NewBodyRequestHandler(req),
@@ -60,6 +69,13 @@ func NewRequestReader(req *fasthttp.Request, remoteAddr string) *RequestReader {
 		uri:        NewURIRequest(req.URI()),
 		remoteAddr: remoteAddr,
 	}
+
+	idx := strings.LastIndex(remoteAddr, ":")
+	if idx != -1 {
+		r.remoteAddr = remoteAddr[:idx]
+		r.remotePort = remoteAddr[idx+1:]
+	}
+
 	forwardedFor := r.ForwardIP()
 	if len(forwardedFor) > 0 {
 		if i := strings.Index(forwardedFor, ","); i > 0 {
@@ -70,7 +86,7 @@ func NewRequestReader(req *fasthttp.Request, remoteAddr string) *RequestReader {
 		r.headers.SetHeader("x-forwarded-for", fmt.Sprint(forwardedFor, ",", r.remoteAddr))
 	} else {
 		r.headers.SetHeader("x-forwarded-for", fmt.Sprint(r.remoteAddr))
-		r.realIP = remoteAddr
+		r.realIP = r.remoteAddr
 	}
 	return r
 }
