@@ -47,7 +47,7 @@ var (
 			if name == "" {
 				return ctx.Request().URI().RawQuery(), true
 			}
-			//TODO 返回的布尔值问题
+
 			value := ctx.Request().URI().GetQuery(name)
 			if value == "" {
 				return "", false
@@ -68,9 +68,18 @@ var (
 			if name == "" {
 				return ctx.Request().Header().GetHeader("cookie"), true
 			}
+
 			//TODO
-			name = strings.Replace(name, "_", "-", -1)
-			return "", true
+			cookie := ctx.Request().Header().GetHeader("cookie")
+			paramList := strings.Split(cookie, ";")
+			for _, param := range paramList {
+				kv := strings.SplitN(param, "=", 2)
+				if strings.TrimLeft(kv[0], " ") == name {
+					return kv[1], true
+				}
+			}
+
+			return "", false
 		}),
 		"msec": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return strconv.FormatInt(time.Now().Unix(), 10), true
@@ -84,11 +93,12 @@ var (
 		"remote_port": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.Request().RemotePort(), false
 		}),
+
 		"request": Fields{
 			"": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-				//TODO
-				ctx.Request().String()
-				return " ", true
+				// 原始请求信息的第一行
+				rawRequest := strings.Split(ctx.Request().String(), "\r\n")
+				return rawRequest[0], true
 			}),
 			"body": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 				body, err := ctx.Request().Body().RawBody()
@@ -105,19 +115,18 @@ var (
 				return ctx.Request().Method(), true
 			}),
 			"time": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-				//TODO
 				requestTime := ctx.Value("request_time")
 				start, ok := requestTime.(time.Time)
 				if !ok {
 					return "", false
 				}
-				_ = time.Now().Sub(start).Seconds()
-				return "", true
+				return fmt.Sprintf("%.3f", time.Now().Sub(start).Seconds()), true
 			}),
 			"uri": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 				return ctx.Request().URI().RequestURI(), true
 			}),
 		},
+
 		"scheme": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.Request().URI().Scheme(), true
 		}),
@@ -144,6 +153,7 @@ var (
 			//TODO 暂时忽略
 			return "", true
 		}),
+
 		"response": Fields{
 			"": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 				return ctx.Response().String(), true
