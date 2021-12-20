@@ -152,6 +152,18 @@ var (
 				}
 				return ctx.Response().GetHeader(strings.Replace(name, "_", "-", -1)), true
 			}),
+			"status": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+				return ctx.Response().ProxyStatus(), true
+			}),
+			"time": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+				responseTime := ctx.Value("response_time")
+				rt, ok := responseTime.(int64)
+				if !ok {
+					return "", false
+				}
+
+				return strconv.FormatInt(rt, 10), true
+			}),
 		},
 		"proxy": proxyFields,
 	}
