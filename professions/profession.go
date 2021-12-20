@@ -130,36 +130,6 @@ func GokuProfession() []*eosc.ProfessionConfig {
 			Mod: eosc.ProfessionConfig_Worker,
 		},
 		{
-			Name:         "log",
-			Label:        "日志",
-			Desc:         "日志",
-			Dependencies: nil,
-			AppendLabels: nil,
-			Drivers: []*eosc.DriverConfig{
-				{
-					Id:    "eolinker.com:goku:log_filelog",
-					Name:  "filelog",
-					Label: "文件日志",
-					Desc:  "文件日志",
-				}, {
-					Id:    "eolinker.com:goku:log_httplog",
-					Name:  "httplog",
-					Label: "http日志",
-					Desc:  "http日志",
-				}, {
-					Id:    "eolinker.com:goku:log_syslog",
-					Name:  "syslog",
-					Label: "系统日志",
-					Desc:  "系统日志",
-				}, {
-					Id:    "eolinker.com:goku:log_stdlog",
-					Name:  "stdlog",
-					Label: "标准输出日志",
-					Desc:  "标准输出日志",
-				},
-			},
-			Mod: eosc.ProfessionConfig_Worker,
-		}, {
 			Name:         "setting",
 			Label:        "setting",
 			Desc:         "系统设置",

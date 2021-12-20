@@ -57,7 +57,7 @@ func (r *Router) Handler(requestCtx *fasthttp.RequestCtx) {
 	ctx := http_context.NewContext(requestCtx)
 
 	if r.match != nil {
-		log.Debugf("router handler\n%s", requestCtx.Request.String())
+		log.DebugF("router handler\n%s", requestCtx.Request.String())
 		handler, endpoint, has := match.Match(ctx.Request())
 		if has {
 			service.AddEndpoint(ctx, NewEndPoint(endpoint))
