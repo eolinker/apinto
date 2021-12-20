@@ -15,7 +15,7 @@ import (
 )
 
 func ProcessMaster() {
-	transport := utils.InitLogTransport("error", eosc.ProcessMaster)
+	logWriter := utils.InitLogTransport(eosc.ProcessMaster)
 
 	p, err := NewMasterHandler()
 	if err != nil {
@@ -27,7 +27,7 @@ func ProcessMaster() {
 		log.Errorf("the process-master is running:%v by:%d", err, os.Getpid())
 		return
 	}
-	master := process_master.NewMasterHandle(transport)
+	master := process_master.NewMasterHandle(logWriter)
 
 	if err := master.Start(p); err != nil {
 		master.Close()
