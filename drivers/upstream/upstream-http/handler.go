@@ -63,6 +63,17 @@ func (u *UpstreamHandler) reset() {
 func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
 
 	var lastErr error
+
+	//设置响应开始时间
+	proxyTime := time.Now()
+
+	defer func() {
+		//设置原始响应状态码
+		ctx.Response().SetProxyStatus(ctx.Response().StatusCode(), "")
+		//设置上游响应时间, 单位为毫秒
+		ctx.WithValue("response_time", time.Now().Sub(proxyTime).Milliseconds())
+	}()
+
 	for doTrice := u.retry + 1; doTrice > 0; doTrice-- {
 
 		node, err := u.upstream.handler.Next()
