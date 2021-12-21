@@ -36,24 +36,26 @@ func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]interfac
 	if !ok {
 		return errorConfigType
 	}
-	factory, has := formatter.GetFormatterFactory(cfg.Type)
+	factory, has := formatter.GetFormatterFactory(cfg.Config.Type)
 	if !has {
 		return errorFormatterType
 	}
 	c := &file_transport.Config{
-		Dir:    cfg.Dir,
-		File:   cfg.File,
-		Expire: cfg.Expire,
-		Period: file_transport.ParsePeriod(cfg.Period),
+		Dir:    cfg.Config.Dir,
+		File:   cfg.Config.File,
+		Expire: cfg.Config.Expire,
+		Period: file_transport.ParsePeriod(cfg.Config.Period),
 	}
 	if a.cfg == nil || a.cfg.IsUpdate(c) {
 		transport := file_transport.NewtTransporter(c)
-		a.transport.Close()
+		if a.transport != nil {
+			a.transport.Close()
+		}
 		a.transport = transport
 		a.cfg = c
 	}
 
-	a.formatter, err = factory.Create(cfg.Formatter)
+	a.formatter, err = factory.Create(cfg.Config.Formatter)
 	return
 }
 
