@@ -93,7 +93,7 @@ output:
           - $cookie
           - $cookie_eolinker
           - $service
-          - @proxys:   # proxy info list, type is obeject or array. only json type
+          - @proxys:   # proxy info list, type is object or array. only json type
         @proxys:
           - $header
 setting:
