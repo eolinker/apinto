@@ -17,7 +17,11 @@ func (a *FileOutput) Output(entry eosc.IEntry) error {
 	if a.formatter != nil {
 		data := a.formatter.Format(entry)
 		if a.transport != nil {
-			return a.transport.Write(data)
+			err := a.transport.Write(data)
+			if err != nil {
+				return err
+			}
+			return a.transport.Write([]byte("\n"))
 		}
 	}
 	return nil
