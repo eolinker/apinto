@@ -29,6 +29,7 @@ func (f Fields) Read(name string, ctx http_service.IHttpContext) (string, bool) 
 	}
 	fs := strings.SplitN(name, "_", 2)
 	if len(fs) != 2 {
+		// return "", false
 		return r.Read("", ctx)
 	}
 	r, has = f[fs[0]]
