@@ -1,6 +1,9 @@
 package fileoutput
 
-import "github.com/eolinker/eosc"
+import (
+	"github.com/eolinker/eosc"
+	"reflect"
+)
 
 const name = "file_output"
 
@@ -17,5 +20,7 @@ func NewFactory() *Factory {
 }
 
 func (f *Factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
-	panic("implement me")
+	return &Driver{
+		configType: reflect.TypeOf((*Config)(nil)),
+	}, nil
 }

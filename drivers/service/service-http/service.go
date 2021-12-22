@@ -45,8 +45,8 @@ func (s *Service) Create(id string, configs map[string]*plugin.Config) service.I
 
 func (s *Service) newHandler(id string, config map[string]*plugin.Config) *ServiceHandler {
 	return &ServiceHandler{
-		service: s,
-		id:      id,
-		config:  config,
+		service:            s,
+		id:                 id,
+		routerPluginConfig: config,
 	}
 }

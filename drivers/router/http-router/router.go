@@ -24,13 +24,13 @@ func (r *Router) create(cf *DriverConfig, target service.IServiceCreate) (*Route
 	newConf := getConfig(cf)
 	newConf.ID = r.id
 	newConf.Name = r.name
-	config := cf.Plugins
+	routerPluginConfig := cf.Plugins
 	if pluginConfigMerge, ok := target.(plugin.IPluginConfigMerge); ok {
-		config = pluginConfigMerge.Merge(config)
+		routerPluginConfig = pluginConfigMerge.Merge(routerPluginConfig)
 	}
-	routerPlugin := r.driver.pluginManager.CreateRouter(r.id, config)
+	routerPlugin := r.driver.pluginManager.CreateRouter(r.id, routerPluginConfig)
 
-	serviceHandler := target.Create(r.id, config)
+	serviceHandler := target.Create(r.id, cf.Plugins)
 	handler := NewRouterHandler(newConf, routerPlugin, serviceHandler)
 	return handler, nil
 }

@@ -136,3 +136,7 @@ func (r *ResponseHeader) DelHeader(key string) {
 	}
 	r.header.Del(key)
 }
+
+func (h *RequestHeader) GetCookie(key string) string {
+	return string(h.header.Cookie(key))
+}

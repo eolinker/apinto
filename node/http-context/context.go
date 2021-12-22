@@ -78,16 +78,16 @@ func (ctx *Context) Request() http_service.IRequestReader {
 func NewContext(ctx *fasthttp.RequestCtx) *Context {
 	id := uuid.NewV4()
 	requestID := id.String()
-
 	newCtx := &Context{
 		fastHttpRequestCtx: ctx,
 		requestID:          requestID,
-		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteIP().String()),
-		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteIP().String()),
+		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteAddr().String()),
+		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteAddr().String()),
 		proxyRequests:      make([]http_service.IRequest, 0, 5),
 		response:           NewResponse(ctx),
 	}
-
+	//记录请求时间
+	newCtx.WithValue("request_time", ctx.Time())
 	return newCtx
 }
 
