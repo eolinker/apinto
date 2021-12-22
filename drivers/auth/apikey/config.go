@@ -5,10 +5,10 @@ type Config struct {
 	Driver          string `json:"driver"`
 	Name            string `json:"name"`
 	HideCredentials bool   `json:"hide_credentials"`
-	User            []User `json:"user"`
+	User            []User `json:"users"`
 }
 
-type apiKeyUsres struct {
+type apiKeyUsers struct {
 	users []User
 }
 
