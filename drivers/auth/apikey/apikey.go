@@ -27,7 +27,7 @@ type apikey struct {
 	name           string
 	driver         string
 	hideCredential bool
-	users          *apiKeyUsres
+	users          *apiKeyUsers
 }
 
 //Auth 鉴权处理
@@ -151,7 +151,7 @@ func (a *apikey) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	if !ok {
 		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
 	}
-	a.users = &apiKeyUsres{
+	a.users = &apiKeyUsers{
 		users: cfg.User,
 	}
 	a.hideCredential = cfg.HideCredentials
