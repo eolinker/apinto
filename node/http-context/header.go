@@ -16,6 +16,10 @@ type RequestHeader struct {
 	tmp    http.Header
 }
 
+func (h *RequestHeader) RawHeader() string {
+	return h.header.String()
+}
+
 func NewRequestHeader(header *fasthttp.RequestHeader) *RequestHeader {
 	return &RequestHeader{header: header}
 }
@@ -25,7 +29,7 @@ func (h *RequestHeader) initHeader() {
 		h.tmp = make(http.Header)
 		hs := strings.Split(h.header.String(), "\r\n")
 		for _, t := range hs {
-			vs := strings.Split(t, ":")
+			vs := strings.SplitN(t, ":", 2)
 			if len(vs) < 2 {
 				if vs[0] == "" {
 					continue
@@ -131,4 +135,8 @@ func (r *ResponseHeader) DelHeader(key string) {
 		r.tmp.Del(key)
 	}
 	r.header.Del(key)
+}
+
+func (h *RequestHeader) GetCookie(key string) string {
+	return string(h.header.Cookie(key))
 }

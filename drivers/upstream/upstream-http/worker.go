@@ -34,11 +34,18 @@ type httpUpstream struct {
 	lastError error
 }
 
+func (h *httpUpstream) Merge(high map[string]*plugin.Config) map[string]*plugin.Config {
+	if h.upstream == nil {
+		return high
+	}
+	return h.upstream.Merge(high)
+}
+
 func (h *httpUpstream) Create(id string, configs map[string]*plugin.Config, retry int, time time.Duration) (upstream.IUpstreamHandler, error) {
 	if h.upstream == nil {
 		return nil, ErrorUpstreamNotInit
 	}
-	return h.upstream.create(id, configs, retry, time), nil
+	return h.upstream.Create(id, configs, retry, time)
 }
 
 //Id 返回worker id

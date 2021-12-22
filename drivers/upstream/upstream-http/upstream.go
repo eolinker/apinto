@@ -31,7 +31,7 @@ func (up *Upstream) create(id string, configs map[string]*plugin.Config, retry i
 	return nh
 }
 
-func (up *Upstream) pluginConfig(configs map[string]*plugin.Config) map[string]*plugin.Config {
+func (up *Upstream) Merge(configs map[string]*plugin.Config) map[string]*plugin.Config {
 	return plugin.MergeConfig(configs, up.pluginConf)
 }
 func NewUpstream(scheme string, app discovery.IApp, handler balance.IBalanceHandler, pluginConf map[string]*plugin.Config) *Upstream {

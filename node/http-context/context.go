@@ -17,21 +17,21 @@ var _ http_service.IHttpContext = (*Context)(nil)
 //Context fasthttpRequestCtx
 type Context struct {
 	fastHttpRequestCtx *fasthttp.RequestCtx
+	proxyRequest       *ProxyRequest
+	proxyRequests      []http_service.IRequest
+	requestID          string
+	response           *Response
 
-	proxyRequest  *ProxyRequest
-	requestID     string
-	response      *Response
-	responseError error
 	requestReader *RequestReader
 	ctx           context.Context
 }
 
-func (ctx *Context) Response() http_service.IResponse {
-	return ctx.response
+func (ctx *Context) Proxies() []http_service.IRequest {
+	return ctx.proxyRequests
 }
 
-func (ctx *Context) ResponseError() error {
-	return ctx.responseError
+func (ctx *Context) Response() http_service.IResponse {
+	return ctx.response
 }
 
 type Finish interface {
@@ -39,12 +39,14 @@ type Finish interface {
 }
 
 func (ctx *Context) SendTo(address string, timeout time.Duration) error {
-
+	clone := ctx.proxyRequest.clone()
+	clone.URI().SetHost(address)
+	ctx.proxyRequests = append(ctx.proxyRequests, clone)
 	request := ctx.proxyRequest.Request()
 
-	ctx.responseError = fasthttp_client.ProxyTimeout(address, request, &ctx.fastHttpRequestCtx.Response, timeout)
+	ctx.response.responseError = fasthttp_client.ProxyTimeout(address, request, &ctx.fastHttpRequestCtx.Response, timeout)
 
-	return ctx.responseError
+	return ctx.response.responseError
 
 }
 
@@ -76,16 +78,16 @@ func (ctx *Context) Request() http_service.IRequestReader {
 func NewContext(ctx *fasthttp.RequestCtx) *Context {
 	id := uuid.NewV4()
 	requestID := id.String()
-
 	newCtx := &Context{
 		fastHttpRequestCtx: ctx,
 		requestID:          requestID,
-		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteIP().String()),
-		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteIP().String()),
+		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteAddr().String()),
+		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteAddr().String()),
+		proxyRequests:      make([]http_service.IRequest, 0, 5),
 		response:           NewResponse(ctx),
-		responseError:      nil,
 	}
-
+	//记录请求时间
+	newCtx.WithValue("request_time", ctx.Time())
 	return newCtx
 }
 
@@ -96,14 +98,20 @@ func (ctx *Context) RequestId() string {
 
 //Finish finish
 func (ctx *Context) Finish() {
-	if ctx.responseError != nil {
+	if ctx.response.responseError != nil {
 		ctx.fastHttpRequestCtx.SetStatusCode(504)
-		ctx.fastHttpRequestCtx.SetBodyString(ctx.responseError.Error())
+		ctx.fastHttpRequestCtx.SetBodyString(ctx.response.responseError.Error())
 		return
 	}
 
 	ctx.requestReader.Finish()
 	ctx.proxyRequest.Finish()
+	for _, request := range ctx.proxyRequests {
+		r, ok := request.(*ProxyRequest)
+		if ok {
+			r.Finish()
+		}
+	}
 	return
 }
 

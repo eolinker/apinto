@@ -12,6 +12,10 @@ type ProxyRequest struct {
 	*RequestReader
 }
 
+func (r *ProxyRequest) clone() *ProxyRequest {
+	return NewProxyRequest(r.Request(), r.remoteAddr)
+}
+
 func (r *ProxyRequest) Finish() error {
 	fasthttp.ReleaseRequest(r.req)
 	return nil

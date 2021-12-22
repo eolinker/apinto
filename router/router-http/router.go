@@ -3,11 +3,13 @@ package router_http
 import (
 	"sync"
 
+	http_service "github.com/eolinker/eosc/http-service"
+	http_context "github.com/eolinker/goku/node/http-context"
+	"github.com/eolinker/goku/plugin"
+
 	"github.com/eolinker/goku/service"
 
 	"github.com/eolinker/eosc/log"
-
-	http_context "github.com/eolinker/goku/node/http-context"
 
 	"github.com/valyala/fasthttp"
 
@@ -26,18 +28,20 @@ type IRouter interface {
 
 //Router 实现了路由树接口
 type Router struct {
-	locker  sync.Locker
-	data    eosc.IUntyped
-	match   IMatcher
-	handler fasthttp.RequestHandler
-	//chain   []IRouterFilter
+	locker       sync.Locker
+	data         eosc.IUntyped
+	match        IMatcher
+	handler      fasthttp.RequestHandler
+	routerFilter http_service.IChain
 }
 
 //NewRouter 新建路由树
-func NewRouter() *Router {
+func NewRouter(routerFilter plugin.IPlugin) *Router {
+
 	return &Router{
-		locker: &sync.Mutex{},
-		data:   eosc.NewUntyped(),
+		locker:       &sync.Mutex{},
+		data:         eosc.NewUntyped(),
+		routerFilter: routerFilter.Append(new(NotFond)),
 	}
 }
 
@@ -50,24 +54,25 @@ func (r *Router) Count() int {
 //Handler 路由树的handler方法
 func (r *Router) Handler(requestCtx *fasthttp.RequestCtx) {
 	match := r.match
-	if r.match == nil {
-		requestCtx.NotFound()
-		return
-	}
-	log.Debugf("router handler\n%s", requestCtx.Request.String())
 	ctx := http_context.NewContext(requestCtx)
-	// TODO: 执行全局的Filter
-	h, e, has := match.Match(ctx.Request())
-	if !has {
-		requestCtx.NotFound()
+
+	if r.match != nil {
+		log.DebugF("router handler\n%s", requestCtx.Request.String())
+		handler, endpoint, has := match.Match(ctx.Request())
+		if has {
+			service.AddEndpoint(ctx, NewEndPoint(endpoint))
+			err := handler.DoChain(ctx)
+			if err != nil {
+				log.Warn(err)
+			}
+			ctx.Finish()
+			return
+		}
+	}
+	err := r.routerFilter.DoChain(ctx)
+	if err != nil {
 		return
 	}
-	service.AddEndpoint(ctx, NewEndPoint(e))
-	err := h.DoChain(ctx)
-	if err != nil {
-		log.Warn(err)
-	}
-	ctx.Finish()
 }
 
 //SetRouter 将路由配置加入到路由树中
@@ -119,4 +124,17 @@ func parseData(data eosc.IUntyped) (IMatcher, error) {
 		cs = append(cs, i.(*Config))
 	}
 	return parse(cs)
+}
+
+type NotFond struct {
+}
+
+func (n *NotFond) DoFilter(ctx http_service.IHttpContext, chain http_service.IChain) (err error) {
+	ctx.Response().SetStatus(404, "404")
+	ctx.Response().SetBody([]byte("404 Not Found"))
+	return nil
+}
+
+func (n *NotFond) Destroy() {
+	return
 }

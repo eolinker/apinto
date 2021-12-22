@@ -52,7 +52,7 @@ func NewUpstreamHandler(id string, upstream *Upstream, retry int, timeout time.D
 
 func (u *UpstreamHandler) reset() {
 
-	configs := u.upstream.pluginConfig(u.pluginsSource)
+	configs := u.upstream.Merge(u.pluginsSource)
 
 	iPlugin := pluginManager.CreateUpstream(u.id, configs)
 
