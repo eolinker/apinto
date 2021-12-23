@@ -143,8 +143,7 @@ var (
 				return ctx.Response().String(), true
 			}),
 			"body": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-				ctx.Response().GetBody()
-				return fmt.Sprintf("%d", time.Now().Unix()), true
+				return string(ctx.Response().GetBody()), true
 			}),
 			"header": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 				if name == "" {
