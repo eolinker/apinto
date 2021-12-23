@@ -16,7 +16,7 @@ type FileOutput struct {
 func (a *FileOutput) Output(entry eosc.IEntry) error {
 	if a.formatter != nil {
 		data := a.formatter.Format(entry)
-		if a.transport != nil {
+		if a.transport != nil && len(data) > 0{
 			err := a.transport.Write(data)
 			if err != nil {
 				return err
