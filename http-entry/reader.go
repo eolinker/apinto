@@ -29,7 +29,7 @@ func (f Fields) Read(name string, ctx http_service.IHttpContext) (string, bool) 
 	}
 	fs := strings.SplitN(name, "_", 2)
 	if len(fs) != 2 {
-		return r.Read("", ctx)
+		return "", false
 	}
 	r, has = f[fs[0]]
 	if has {
@@ -151,6 +151,18 @@ var (
 					return ctx.Response().HeadersString(), true
 				}
 				return ctx.Response().GetHeader(strings.Replace(name, "_", "-", -1)), true
+			}),
+			"status": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+				return ctx.Response().ProxyStatus(), true
+			}),
+			"time": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+				responseTime := ctx.Value("response_time")
+				rt, ok := responseTime.(int64)
+				if !ok {
+					return "", false
+				}
+
+				return strconv.FormatInt(rt, 10), true
 			}),
 		},
 		"proxy": proxyFields,

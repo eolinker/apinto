@@ -37,7 +37,7 @@ func (e *Entry) Children(child string) []eosc.IEntry {
 		length := len(e.ctx.Proxies())
 		entries := make([]eosc.IEntry, length)
 		for i := 0; i <= length; i++ {
-			entries[length] = NewChildEntry(e, i, "proxy_", proxyFields)
+			entries[i] = NewChildEntry(e, i, "proxy_", proxyFields)
 		}
 		return entries
 	}

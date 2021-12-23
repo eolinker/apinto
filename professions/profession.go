@@ -130,6 +130,22 @@ func GokuProfession() []*eosc.ProfessionConfig {
 			Mod: eosc.ProfessionConfig_Worker,
 		},
 		{
+			Name:         "output",
+			Label:        "输出",
+			Desc:         "输出",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:goku:file_output",
+					Name:  "file_output",
+					Label: "文件输出",
+					Desc:  "文件输出",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		},
+		{
 			Name:         "setting",
 			Label:        "setting",
 			Desc:         "系统设置",

@@ -3,7 +3,6 @@ package router_http
 import (
 	"strconv"
 
-	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/goku/plugin"
 
 	"github.com/eolinker/eosc"
@@ -49,11 +48,12 @@ func (rs *Routers) Set(port int, id string, conf *Config) (IRouter, bool, error)
 }
 
 //NewRouters 新建路由树管理器
-func NewRouters() *Routers {
+func NewRouters(pluginManager plugin.IPluginManager) *Routers {
 	rs := &Routers{
 		data: eosc.NewUntyped(),
+		pluginManager: pluginManager,
 	}
-	bean.Autowired(&rs.pluginManager)
+
 	return rs
 }
 

@@ -8,7 +8,7 @@ type Config struct {
 	User            []User `json:"user"`
 }
 
-type apiKeyUsres struct {
+type apiKeyUsers struct {
 	users []User
 }
 

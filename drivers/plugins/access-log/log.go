@@ -9,6 +9,7 @@ import (
 )
 
 type accessLog struct {
+	*Driver
 	id     string
 	output []output.IEntryOutput
 }
@@ -30,7 +31,7 @@ func (l *accessLog) DoFilter(ctx http_service.IHttpContext, next http_service.IC
 }
 
 func (l *accessLog) Destroy() {
-
+	l.output = nil
 }
 
 func (l *accessLog) Id() string {
@@ -38,15 +39,25 @@ func (l *accessLog) Id() string {
 }
 
 func (l *accessLog) Start() error {
-	panic("implement me")
+	return nil
 }
 
 func (l *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	panic("implement me")
+	c, err := l.check(conf)
+	if err != nil {
+		return err
+	}
+	list, err := l.getList(c.Output)
+	if err != nil {
+		return err
+	}
+
+	l.output = list
+	return nil
 }
 
 func (l *accessLog) Stop() error {
-	panic("implement me")
+	return nil
 }
 
 func (l *accessLog) CheckSkill(skill string) bool {
