@@ -131,7 +131,7 @@ var (
 			return ctx.Request().Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
 		}),
 		"host": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			return fmt.Sprintf("%d", time.Now().Unix()), true
+			return ctx.Request().URI().Host(), true
 		}),
 		"error": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			//TODO 暂时忽略
