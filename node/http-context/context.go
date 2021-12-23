@@ -2,6 +2,7 @@ package http_context
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	fasthttp_client "github.com/eolinker/goku/node/fasthttp-client"
@@ -40,7 +41,8 @@ type Finish interface {
 
 func (ctx *Context) SendTo(address string, timeout time.Duration) error {
 	clone := ctx.proxyRequest.clone()
-	clone.URI().SetHost(address)
+	_, host := readAddress(address)
+	clone.URI().SetHost(host)
 	ctx.proxyRequests = append(ctx.proxyRequests, clone)
 	request := ctx.proxyRequest.Request()
 
@@ -118,4 +120,11 @@ func (ctx *Context) Finish() {
 func NotFound(ctx *Context) {
 	ctx.fastHttpRequestCtx.SetStatusCode(404)
 	ctx.fastHttpRequestCtx.SetBody([]byte("404 Not Found"))
+}
+
+func readAddress(addr string) (scheme, host string) {
+	if i := strings.Index(addr, "://"); i > 0 {
+		return strings.ToLower(addr[:i]), addr[i+3:]
+	}
+	return "http", addr
 }
