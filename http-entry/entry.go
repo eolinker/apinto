@@ -36,7 +36,7 @@ func (e *Entry) Children(child string) []eosc.IEntry {
 	default:
 		length := len(e.ctx.Proxies())
 		entries := make([]eosc.IEntry, length)
-		for i := 0; i <= length; i++ {
+		for i := 0; i < length; i++ {
 			entries[i] = NewChildEntry(e, i, "proxy_", proxyFields)
 		}
 		return entries
@@ -64,5 +64,5 @@ func (c *ChildEntry) Children(child string) []eosc.IEntry {
 }
 
 func NewChildEntry(parent *Entry, index int, pre string, ReaderIndex IReaderIndex) *ChildEntry {
-	return &ChildEntry{parent: parent, index: index, pre: pre}
+	return &ChildEntry{parent: parent, index: index, pre: pre,childReader: ReaderIndex}
 }
