@@ -1,10 +1,11 @@
 package response_rewrite
 
 import (
+	"strconv"
+
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/goku/utils"
-	"strconv"
 )
 
 type ResponseRewrite struct {
@@ -65,9 +66,6 @@ func (r *ResponseRewrite) CheckSkill(skill string) bool {
 func (r *ResponseRewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
 	if next != nil {
 		err = next.DoChain(ctx)
-	}
-	if err != nil {
-		return
 	}
 
 	return r.rewrite(ctx)

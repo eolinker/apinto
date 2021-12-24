@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/eolinker/goku/plugin"
 	"sync"
 
 	"github.com/eolinker/eosc/config"
@@ -33,13 +34,15 @@ var manager iManager
 func init() {
 	var tf traffic.ITraffic
 	var cfg *config.ListensMsg
+	var pluginManager plugin.IPluginManager
+
 	bean.Autowired(&tf)
 	bean.Autowired(&cfg)
-
+	bean.Autowired(&pluginManager)
 	bean.AddInitializingBeanFunc(func() {
 		log.Debug("init router manager")
 
-		manager = NewManager(tf, cfg)
+		manager = NewManager(tf, cfg,pluginManager )
 	})
 }
 
@@ -62,10 +65,10 @@ func (m *Manager) Cancel() {
 }
 
 //NewManager 创建路由管理器
-func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg) *Manager {
+func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg,pluginManager plugin.IPluginManager) *Manager {
 	log.Debug("new router manager")
 	m := &Manager{
-		routers: NewRouters(),
+		routers: NewRouters(pluginManager),
 		tf:      traffic_http_fast.NewHttpTraffic(tf),
 		locker:  sync.Mutex{},
 	}
