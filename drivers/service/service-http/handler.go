@@ -9,12 +9,12 @@ import (
 )
 
 type ServiceHandler struct {
-	service         *Service
-	id              string
-	config          map[string]*plugin.Config
-	pluginExec      http_service.IChain
-	pluginOrg       plugin.IPlugin
-	upstreamHandler upstream.IUpstreamHandler
+	service            *Service
+	id                 string
+	routerPluginConfig map[string]*plugin.Config
+	pluginExec         http_service.IChain
+	pluginOrg          plugin.IPlugin
+	upstreamHandler    upstream.IUpstreamHandler
 }
 
 func (s *ServiceHandler) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
@@ -55,11 +55,14 @@ func (s *ServiceHandler) Destroy() {
 	}
 }
 
-func (s *ServiceHandler) rebuild(upstream upstream.IUpstream) {
-	s.pluginOrg = pluginManger.CreateService(s.id, s.service.mergePluginConfig(s.config))
+func (s *ServiceHandler) rebuild() {
+	config := s.service.Merge(s.routerPluginConfig)
+
+	s.pluginOrg = pluginManger.CreateService(s.id, config)
 	s.pluginExec = s.pluginOrg.Append(filter.ToFilter([]http_service.IFilter{s}))
 
-	ps, err := upstream.Create(s.id, s.service.mergePluginConfig(s.config), s.service.retry, s.service.timeout)
+	configToUpstream := plugin.MergeConfig(s.routerPluginConfig, s.service.configs)
+	ps, err := s.service.upstream.Create(s.id, configToUpstream, s.service.retry, s.service.timeout)
 	if err != nil {
 		log.Error("rebuild error: ", err)
 		return

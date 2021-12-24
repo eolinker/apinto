@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/eosc/utils"
 
 	"github.com/eolinker/goku/professions"
@@ -14,7 +15,7 @@ import (
 )
 
 func ProcessMaster() {
-	utils.InitLogTransport(eosc.ProcessMaster)
+	logWriter := utils.InitLogTransport(eosc.ProcessMaster)
 
 	p, err := NewMasterHandler()
 	if err != nil {
@@ -26,7 +27,7 @@ func ProcessMaster() {
 		log.Errorf("the process-master is running:%v by:%d", err, os.Getpid())
 		return
 	}
-	master := process_master.NewMasterHandle()
+	master := process_master.NewMasterHandle(logWriter)
 
 	if err := master.Start(p); err != nil {
 		master.Close()

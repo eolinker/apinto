@@ -16,6 +16,10 @@ type RequestHeader struct {
 	tmp    http.Header
 }
 
+func (h *RequestHeader) RawHeader() string {
+	return h.header.String()
+}
+
 func NewRequestHeader(header *fasthttp.RequestHeader) *RequestHeader {
 	return &RequestHeader{header: header}
 }
@@ -131,4 +135,8 @@ func (r *ResponseHeader) DelHeader(key string) {
 		r.tmp.Del(key)
 	}
 	r.header.Del(key)
+}
+
+func (h *RequestHeader) GetCookie(key string) string {
+	return string(h.header.Cookie(key))
 }

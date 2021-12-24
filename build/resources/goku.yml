@@ -15,3 +15,15 @@
 
 # 扩展仓库目录
 # extends_dir: /var/lib/goku/extends/
+
+# 错误日志路径：
+# error_log_path:  /var/log/goku/error.log
+
+# 错误日志等级
+# error_log_level: debug
+
+# 错误日志过期时间，默认单位为天，d|天，h|小时
+# error_log_expire: 7d
+
+# 错误日志切割周期，仅支持day、hour
+# error_log_period: day
