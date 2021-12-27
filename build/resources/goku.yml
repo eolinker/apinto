@@ -17,7 +17,7 @@
 # extends_dir: /var/lib/goku/extends/
 
 # 错误日志路径：
-# error_log_path:  /var/log/goku/error.log
+# error_log_name:  error.log
 
 # 错误日志等级
 # error_log_level: debug
