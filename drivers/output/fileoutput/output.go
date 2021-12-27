@@ -7,6 +7,7 @@ import (
 )
 
 type FileOutput struct {
+	*Driver
 	id        string
 	cfg       *file_transport.Config
 	formatter eosc.IFormatter
@@ -36,9 +37,9 @@ func (a *FileOutput) Start() error {
 }
 
 func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) (err error) {
-	cfg, ok := conf.(*Config)
-	if !ok {
-		return errorConfigType
+	cfg, err := a.Driver.Check(conf)
+	if err != nil{
+		return err
 	}
 	factory, has := formatter.GetFormatterFactory(cfg.Config.Type)
 	if !has {
