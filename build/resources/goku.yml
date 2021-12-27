@@ -1,4 +1,4 @@
-# raft日志放置目录
+# 数据文件放置目录
 # data_dir: /var/lib/goku
 
 # pid文件放置地址
