@@ -99,7 +99,7 @@ Goku API Gateway具有以下优势：
 1.下载安装包并解压（此处以v0.1.0版本的安装包示例）
 
 ```
-wget https://github.com/eolinker/goku/releases/download/v0.1.0/goku-v0.1.0.linux.x64.tar.gz && tar -zxvf goku-v0.1.0.linux.x64.tar.gz && cd goku
+wget https://github.com/eolinker/goku/releases/download/v0.4.0/goku-v0.4.0.linux.x64.tar.gz && tar -zxvf goku-v0.4.0.linux.x64.tar.gz && cd goku
 ```
 
 2.启动网关：
