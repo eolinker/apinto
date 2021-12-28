@@ -3,7 +3,7 @@ package static
 import (
 	"reflect"
 
-	"github.com/eolinker/goku/discovery"
+	"github.com/eolinker/apinto/discovery"
 
 	"github.com/eolinker/eosc"
 )

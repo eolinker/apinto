@@ -5,9 +5,9 @@ import (
 
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/goku/plugin"
-	"github.com/eolinker/goku/service"
-	"github.com/eolinker/goku/upstream"
+	"github.com/eolinker/apinto/plugin"
+	"github.com/eolinker/apinto/service"
+	"github.com/eolinker/apinto/upstream"
 )
 
 type Service struct {

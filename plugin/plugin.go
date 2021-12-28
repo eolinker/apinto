@@ -1,6 +1,6 @@
 package plugin
 
-import "github.com/eolinker/goku/filter"
+import "github.com/eolinker/apinto/filter"
 
 //Config 普通插件配置，在router、service、upstream的插件格式
 type Config struct {

@@ -3,9 +3,9 @@ package http_router
 import (
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/log"
-	"github.com/eolinker/goku/plugin"
-	router_http "github.com/eolinker/goku/router/router-http"
-	"github.com/eolinker/goku/service"
+	"github.com/eolinker/apinto/plugin"
+	router_http "github.com/eolinker/apinto/router/router-http"
+	"github.com/eolinker/apinto/service"
 )
 
 //Router http路由驱动实例结构体，实现了worker接口

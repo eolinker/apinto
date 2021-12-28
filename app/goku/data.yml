@@ -100,7 +100,7 @@ setting:
   - name: plugin
     driver: plugin
     plugins:
-      - id: "eolinker.com:goku:auth"
+      - id: "eolinker.com:apinto:auth"
         name: auth
         type: service
         status: enable
@@ -108,14 +108,14 @@ setting:
           - jwt@auth
           - apikey@auth
         init_config:    # 初始化配置，不可覆盖
-      - id: "eolinker.com:goku:access_log"
+      - id: "eolinker.com:apinto:access_log"
         name: accessLog
         type: router
         status: global
         config:
           output:
             - fileAccessLog@output
-      - id: "eolinker.com:goku:labels"
+      - id: "eolinker.com:apinto:labels"
         name: labels
         type: service
         status:

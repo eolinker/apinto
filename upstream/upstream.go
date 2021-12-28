@@ -4,12 +4,12 @@ import (
 	"time"
 
 	http_service "github.com/eolinker/eosc/http-service"
-	"github.com/eolinker/goku/plugin"
+	"github.com/eolinker/apinto/plugin"
 )
 
 //CheckSkill 检测目标技能是否符合
 func CheckSkill(skill string) bool {
-	return skill == "github.com/eolinker/goku/upstream.upstream.IUpstream"
+	return skill == "github.com/eolinker/apinto/upstream.upstream.IUpstream"
 }
 
 type IUpstreamHandler interface {

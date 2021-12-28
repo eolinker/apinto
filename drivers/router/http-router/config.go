@@ -2,9 +2,9 @@ package http_router
 
 import (
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku/plugin"
-	router_http "github.com/eolinker/goku/router/router-http"
-	"github.com/eolinker/goku/service"
+	"github.com/eolinker/apinto/plugin"
+	router_http "github.com/eolinker/apinto/router/router-http"
+	"github.com/eolinker/apinto/service"
 )
 
 //DriverConfig http路由驱动配置
@@ -16,7 +16,7 @@ type DriverConfig struct {
 	Rules    []DriverRule              `json:"rules" yaml:"rules"`
 	Protocol string                    `json:"protocol" yaml:"protocol"`
 	Cert     []Cert                    `json:"cert" yaml:"cert"`
-	Target   eosc.RequireId            `json:"target" yaml:"target" skill:"github.com/eolinker/goku/service.service.IService"`
+	Target   eosc.RequireId            `json:"target" yaml:"target" skill:"github.com/eolinker/apinto/service.service.IService"`
 	Plugins  map[string]*plugin.Config `json:"plugins" yaml:"plugins"`
 }
 

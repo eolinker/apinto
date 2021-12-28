@@ -10,7 +10,7 @@ import (
 
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/goku/discovery"
+	"github.com/eolinker/apinto/discovery"
 	"github.com/go-basic/uuid"
 )
 

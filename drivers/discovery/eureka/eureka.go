@@ -9,7 +9,7 @@ import (
 	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku/discovery"
+	"github.com/eolinker/apinto/discovery"
 )
 
 type eureka struct {

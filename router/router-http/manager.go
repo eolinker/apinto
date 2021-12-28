@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/eolinker/goku/plugin"
+	"github.com/eolinker/apinto/plugin"
 	"sync"
 
 	"github.com/eolinker/eosc/config"
