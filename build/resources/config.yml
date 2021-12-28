@@ -1,5 +1,5 @@
 listen:   # node listen port
-  - 80
+  - 8099
 
 admin:    # openAPI request info
   scheme: http # listen scheme
