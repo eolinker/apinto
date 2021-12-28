@@ -138,7 +138,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Drivers: []*eosc.DriverConfig{
 				{
 					Id:    "eolinker.com:apinto:file_output",
-					Name:  "file_output",
+					Name:  "file",
 					Label: "文件输出",
 					Desc:  "文件输出",
 				},
