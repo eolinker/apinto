@@ -105,7 +105,7 @@ wget https://github.com/eolinker/goku/releases/download/v0.4.0/goku-v0.4.0.linux
 2.启动网关：
 
 ```
-./goku -data_path {配置文件路径}
+./goku start
 ```
 
 ### 联系我们
