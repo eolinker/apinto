@@ -54,6 +54,10 @@ func (t *TestFilter) DoFilter(ctx http_service.IHttpContext, next http_service.I
 	return next.DoChain(ctx)
 }
 
+func (t *TestFilter) Destroy() {
+	return
+}
+
 func TestIFilter(t *testing.T) {
 	out := NewOut(t)
 	filterOrg := make([]http_service.IFilter, 2)
