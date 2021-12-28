@@ -26,8 +26,6 @@ func initTestContext(address string) error {
 	}
 	fast.Init(freq, addr, nil)
 	ctx = http_context.NewContext(fast)
-	ctx.Response().SetBody([]byte("afaflakfjklajflasjflkajfl拉萨JFK拉萨解放了卡JFK辣椒水凯夫拉几十块asjlgasglkhagoihgvoanlsdnglsdngsdngognhoi;nfgengsngs;ngseo;gnosegnfaflakfjklajflasjflkajfl拉萨JFK拉萨解放了卡JFK辣椒水凯夫拉几十块asjlgasglkhagoihgvoanlsdnglsdngsdngognhoi;nfgengsngs;ngseo;gnosegnfaflakfjklajflasjflkajfl拉萨JFK拉萨解放了卡JFK辣椒水凯夫拉几十块asjlgasglkhagoihgvoanlsdnglsdngsdngognhoi;nfgengsngs;ngseo;gnosegnfaflakfjklajflasjflkajfl拉萨JFK拉萨解放了卡JFK辣椒水凯夫拉几十块asjlgasglkhagoihgvoanlsdnglsdngsdngognhoi;nfgengsngs;ngseo;gnosegnfaflakfjklajflasjflkajfl拉萨JFK拉萨解放了卡JFK辣椒水凯夫拉几十块asjlgasglkhagoihgvoanlsdnglsdngsdngognhoi;nfgengsngs;ngseo;gnosegnfaflakfjklajflasjflkajfl拉萨JFK拉萨解放了卡JFK辣椒水凯夫拉几十块asjlgasglkhagoihgvoanlsdnglsdngsdngognhoi;nfgengsngs;ngseo;gnosegnfaflakfjklajflasjflkajfl拉萨JFK拉萨解放了卡JFK辣椒水凯夫拉几十块asjlgasglkhagoihgvoanlsdnglsdngsdngognhoi;nfgengsngs;ngseo;gnosegnfaflakfjklajflasjflkajfl拉萨JFK拉萨解放了卡JFK辣椒水凯夫拉几十块asjlgasglkhagoihgvoanlsdnglsdngsdngognhoi;nfgengsngs;ngseo;gnosegnfaflakfjklajflasjflkajfl拉萨JFK拉萨解放了卡JFK辣椒水凯夫拉几十块asjlgasglkhagoihgvoanlsdnglsdngsdngognhoi;nfgengsngs;ngseo;gnosegnfaflakfjklajflasjflkajfl拉萨JFK拉萨解放了卡JFK辣椒水凯夫拉几十块asjlgasglkhagoihgvoanlsdnglsdngsdngognhoi;nfgengsngs;ngseo;gnosegnfaflakfjklajflasjflkajfl拉萨JFK拉萨解放了卡JFK辣椒水凯夫拉几十块asjlgasglkhagoihgvoanlsdnglsdngsdngognhoi;nfgengsngs;ngseo;gnosegnfaflakfjklajflasjflkajfl拉萨JFK拉萨解放了卡JFK辣椒水凯夫拉几十块asjlgasglkhagoihgvoanlsdnglsdngsdngognhoi;nfgengsngs;ngseo;gnosegno"))
-	fmt.Println(ctx.Response().BodyLen())
 	return nil
 }
 
@@ -49,7 +47,7 @@ func TestFilter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	g, err := d.Create("gzip@plugin", "gzip", &Config{Types: nil, MinLength: 0, Vary: true}, nil)
+	g, err := d.Create("gzip@plugin", "gzip", &Config{Types: nil, MinLength: 10, Vary: true}, nil)
 	if err != nil {
 		t.Errorf("create handler error : %v", err)
 	}
@@ -62,26 +60,30 @@ func TestFilter(t *testing.T) {
 	cases := []struct {
 		name         string
 		header       string
+		body         string
 		wantCompress bool
 	}{
 		{
 			name:         "wantCompress",
 			wantCompress: true,
+			body:         "eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;",
 			header:       "gzip",
 		},
 		{
 			name:         "notCompress",
 			wantCompress: false,
+			body:         "eolink",
 			header:       "",
 		},
 	}
 	for _, cc := range cases {
 		t.Run(cc.name, func(t *testing.T) {
+			ctx.Response().SetBody([]byte(cc.body))
 			ctx.Request().Header().Headers().Set("Accept-Encoding", cc.header)
 			before := ctx.Response().BodyLen()
 			h.DoFilter(http_ctx, nil)
 			after := ctx.Response().BodyLen()
-			if cc.wantCompress && before == after {
+			if cc.wantCompress && before <= after {
 				t.Errorf("want compress; before %d, after %d", before, after)
 			}
 			if !cc.wantCompress && before != after {

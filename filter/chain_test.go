@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/eolinker/eosc/log"
 
@@ -85,11 +86,15 @@ type TestContext struct {
 	ctx context.Context
 }
 
-func (t *TestContext) Response() (http_service.IResponse, error) {
+func (t *TestContext) Response() http_service.IResponse {
 	panic("implement me")
 }
 
-func (t *TestContext) SendTo(address string) error {
+func (t *TestContext) Proxies() []http_service.IRequest {
+	panic("implement me")
+}
+
+func (t *TestContext) SendTo(address string, timeout time.Duration) error {
 	panic("implement me")
 }
 
