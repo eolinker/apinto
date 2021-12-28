@@ -90,7 +90,7 @@ In a word, Goku API gateway enables the business development team to focus more 
 1. Download and unzip the installation package (here is an example of the installation package of version v0.1.0)
 
 ```
-wget https://github.com/eolinker/goku/releases/download/v0.1.0/goku-v0.1.0.linux.x64.tar.gz && tar -zxvf goku-v0.1.0.linux.x64.tar.gz && cd goku
+wget https://github.com/eolinker/goku/releases/download/v0.4.0/goku-v0.4.0.linux.x64.tar.gz && tar -zxvf goku-v0.4.0.linux.x64.tar.gz && cd goku
 ```
 
 2. Start gateway：
