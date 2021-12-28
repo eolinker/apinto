@@ -1,7 +1,6 @@
 package ip_restriction
 
 import (
-	"fmt"
 	http_service "github.com/eolinker/eosc/http-service"
 	http_context "github.com/eolinker/goku/node/http-context"
 	"github.com/valyala/fasthttp"
@@ -12,25 +11,27 @@ import (
 // 127.0.0.1:8080
 var ctx http_service.IHttpContext
 
-func getContext() (http_service.IHttpContext, error) {
+func getContext(address string) (http_service.IHttpContext, error) {
 	if ctx == nil {
-		return nil, fmt.Errorf("please init test context")
+		return initTestContext(address)
 	}
-	return ctx, nil
+	if address == ctx.Request().RemoteAddr() {
+		return ctx, nil
+	}
+	return initTestContext(address)
 }
-func initTestContext(address string) error {
+func initTestContext(address string) (http_service.IHttpContext, error) {
 	fast := &fasthttp.RequestCtx{}
 	freq := fasthttp.AcquireRequest()
 	addr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	fast.Init(freq, addr, nil)
-	ctx = http_context.NewContext(fast)
-	return nil
+	return http_context.NewContext(fast), nil
 }
 func TestDoRestriction(t *testing.T) {
-	http_ctx, err := getContext()
+	http_ctx, err := getContext("127.0.0.1:8080")
 
 	if err != nil {
 		t.Fatal(err)
@@ -124,12 +125,4 @@ func TestDoRestriction(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestMain(m *testing.M) {
-	err := initTestContext("127.0.0.1:8080")
-	if err != nil {
-		panic(err)
-	}
-	m.Run()
 }
