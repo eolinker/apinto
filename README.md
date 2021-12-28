@@ -87,7 +87,7 @@ In a word, Goku API gateway enables the business development team to focus more 
 
 ### Get start
 
-1. Download and unzip the installation package (here is an example of the installation package of version v0.1.0)
+1. Download and unzip the installation package (here is an example of the installation package of version v0.4.0)
 
 ```
 wget https://github.com/eolinker/goku/releases/download/v0.4.0/goku-v0.4.0.linux.x64.tar.gz && tar -zxvf goku-v0.4.0.linux.x64.tar.gz && cd goku
@@ -96,14 +96,14 @@ wget https://github.com/eolinker/goku/releases/download/v0.4.0/goku-v0.4.0.linux
 2. Start gateway：
 
 ```
-./goku -data_path {data_path}
+./goku start
 ```
 
 ### Contact
 
 - **Help documentation**：[https://help.gokuapi.com](https://help.gokuapi.com)
 - **QQ group**: 725853895
-- **Slack**：[加入我们](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
+- **Slack**：[Join us](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
 - **Official website**：[https://www.gokuapi.com](https://www.gokuapi.com)
 
 ### About
