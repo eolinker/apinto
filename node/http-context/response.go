@@ -85,5 +85,6 @@ func (r *Response) SetProxyStatus(code int, status string) {
 
 func (r *Response) SetBody(bytes []byte) {
 	r.Response.SetBody(bytes)
+	r.SetHeader("Content-Length", strconv.Itoa(len(bytes)))
 	r.responseError = nil
 }
