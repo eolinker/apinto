@@ -1,7 +1,7 @@
 ## GOKU
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/goku)](https://goreportcard.com/report/github.com/eolinker/goku) [![Releases](https://img.shields.io/github/release/eolinker/goku/all.svg?style=flat-square)](https://github.com/eolinker/goku/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/goku.svg?style=flat-square)](https://github.com/eolinker/goku/blob/main/LICENSE)
-
+![](https://shields.io/github/downloads/eolinker/goku/total)
 ![](http://data.eolinker.com/course/ZjVKwg65f0af2f992b0ce0fcfd64d04da1696dcab3853ee.png)
 
 ------------
@@ -67,7 +67,8 @@ In a word, Goku API gateway enables the business development team to focus more 
 
 #### RoadMap  for 2021
 
-![image](https://user-images.githubusercontent.com/25589530/131605703-698222c6-42fb-4242-b47d-d962d949cdcf.png)
+![image](https://user-images.githubusercontent.com/25589530/144804666-605e23be-b7ae-433b-a918-e08e5668d25e.png)
+
 
 ### Benchmark
 
@@ -86,23 +87,23 @@ In a word, Goku API gateway enables the business development team to focus more 
 
 ### Get start
 
-1. Download and unzip the installation package (here is an example of the installation package of version v0.1.0)
+1. Download and unzip the installation package (here is an example of the installation package of version v0.4.0)
 
 ```
-wget https://github.com/eolinker/goku/releases/download/v0.1.0/goku-v0.1.0.linux.x64.tar.gz && tar -zxvf goku-v0.1.0.linux.x64.tar.gz && cd goku
+wget https://github.com/eolinker/goku/releases/download/v0.4.0/goku-v0.4.0.linux.x64.tar.gz && tar -zxvf goku-v0.4.0.linux.x64.tar.gz && cd goku
 ```
 
 2. Start gateway：
 
 ```
-./goku -data_path {data_path}
+./goku start
 ```
 
 ### Contact
 
 - **Help documentation**：[https://help.gokuapi.com](https://help.gokuapi.com)
 - **QQ group**: 725853895
-- **Slack**：[加入我们](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
+- **Slack**：[Join us](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
 - **Official website**：[https://www.gokuapi.com](https://www.gokuapi.com)
 
 ### About

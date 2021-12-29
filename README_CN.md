@@ -76,7 +76,8 @@ Goku API Gateway具有以下优势：
 
 #### 2021年迭代计划
 
-![](http://data.eolinker.com/course/tbDpymJ8343df96713b8bb44b053c2088536ad59d7483d3.png)
+![image](https://user-images.githubusercontent.com/25589530/144803357-a8156c26-8099-4ebd-b7af-007477a56a67.png)
+
 
 ### 基准测试
 
@@ -95,16 +96,16 @@ Goku API Gateway具有以下优势：
 
 ### 启动
 
-1.下载安装包并解压（此处以v0.1.0版本的安装包示例）
+1.下载安装包并解压（此处以v0.4.0版本的安装包示例）
 
 ```
-wget https://github.com/eolinker/goku/releases/download/v0.1.0/goku-v0.1.0.linux.x64.tar.gz && tar -zxvf goku-v0.1.0.linux.x64.tar.gz && cd goku
+wget https://github.com/eolinker/goku/releases/download/v0.4.0/goku-v0.4.0.linux.x64.tar.gz && tar -zxvf goku-v0.4.0.linux.x64.tar.gz && cd goku
 ```
 
 2.启动网关：
 
 ```
-./goku -data_path {配置文件路径}
+./goku start
 ```
 
 ### 联系我们
