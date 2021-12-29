@@ -32,7 +32,7 @@ func (s *Service) reset(upstream upstream.IUpstream, config map[string]*plugin.C
 func (s *Service) Merge(config map[string]*plugin.Config) map[string]*plugin.Config {
 	configs := plugin.MergeConfig(config, s.configs)
 	if mg, ok := s.upstream.(plugin.IPluginConfigMerge); ok {
-		config = mg.Merge(config)
+		configs = mg.Merge(configs)
 	}
 	return configs
 }
