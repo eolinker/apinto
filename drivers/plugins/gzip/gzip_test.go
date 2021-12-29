@@ -1,11 +1,12 @@
 package gzip
 
 import (
-	http_service "github.com/eolinker/eosc/http-service"
-	http_context "github.com/eolinker/goku/node/http-context"
-	"github.com/valyala/fasthttp"
 	"net"
 	"testing"
+
+	http_context "github.com/eolinker/apinto/node/http-context"
+	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/valyala/fasthttp"
 )
 
 var ctx http_service.IHttpContext

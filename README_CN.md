@@ -1,6 +1,6 @@
 ## GOKU
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/goku)](https://goreportcard.com/report/github.com/eolinker/goku) [![Releases](https://img.shields.io/github/release/eolinker/goku/all.svg?style=flat-square)](https://github.com/eolinker/goku/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/goku.svg?style=flat-square)](https://github.com/eolinker/goku/blob/main/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/apinto)](https://goreportcard.com/report/github.com/eolinker/apinto) [![Releases](https://img.shields.io/github/release/eolinker/goku/all.svg?style=flat-square)](https://github.com/eolinker/apinto/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/goku.svg?style=flat-square)](https://github.com/eolinker/apinto/blob/main/LICENSE)
 
 ![](http://data.eolinker.com/course/ZjVKwg65f0af2f992b0ce0fcfd64d04da1696dcab3853ee.png)
 
@@ -8,9 +8,9 @@
 
 Goku API Gateway （中文名：悟空 API 网关）是一个基于 Golang 开发的微服务网关，能够实现高性能 HTTP API 转发、多租户管理、API 访问权限控制等目的，拥有强大的自定义插件系统可以自行扩展，能够快速帮助企业进行 API 服务治理、提高 API 服务的稳定性和安全性。
 
-注意：**main**分支为开发主要分支，频繁更新可能导致使用不稳定，若需要使用稳定版本，请查看[release](https://github.com/eolinker/goku/releases)
+注意：**main**分支为开发主要分支，频繁更新可能导致使用不稳定，若需要使用稳定版本，请查看[release](https://github.com/eolinker/apinto/releases)
 
-### 概况 | [English Introduction](https://github.com/eolinker/goku/blob/main/README.md)
+### 概况 | [English Introduction](https://github.com/eolinker/apinto/blob/main/README.md)
 
 - [为什么要使用Goku](#为什么要使用Goku "为什么要使用Goku")
 - [产品特性](#产品特性 "产品特性")
@@ -99,7 +99,7 @@ Goku API Gateway具有以下优势：
 1.下载安装包并解压（此处以v0.4.0版本的安装包示例）
 
 ```
-wget https://github.com/eolinker/goku/releases/download/v0.4.0/goku-v0.4.0.linux.x64.tar.gz && tar -zxvf goku-v0.4.0.linux.x64.tar.gz && cd goku
+wget https://github.com/eolinker/apinto/releases/download/v0.4.0/goku-v0.4.0.linux.x64.tar.gz && tar -zxvf goku-v0.4.0.linux.x64.tar.gz && cd goku
 ```
 
 2.启动网关：

@@ -1,6 +1,6 @@
 ## GOKU
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/goku)](https://goreportcard.com/report/github.com/eolinker/goku) [![Releases](https://img.shields.io/github/release/eolinker/goku/all.svg?style=flat-square)](https://github.com/eolinker/goku/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/goku.svg?style=flat-square)](https://github.com/eolinker/goku/blob/main/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/apinto)](https://goreportcard.com/report/github.com/eolinker/apinto) [![Releases](https://img.shields.io/github/release/eolinker/goku/all.svg?style=flat-square)](https://github.com/eolinker/apinto/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/goku.svg?style=flat-square)](https://github.com/eolinker/apinto/blob/main/LICENSE)
 ![](https://shields.io/github/downloads/eolinker/goku/total)
 ![](http://data.eolinker.com/course/ZjVKwg65f0af2f992b0ce0fcfd64d04da1696dcab3853ee.png)
 
@@ -8,9 +8,9 @@
 
 Goku API gateway is a api gateway developed based on golang. It can achieve the purposes of high-performance HTTP API forwarding, multi tenant management, API access control, etc. it has a powerful custom plug-in system, which can be expanded by itself, and can quickly help enterprises manage API services and improve the stability and security of API services.
 
-**Note**：The **main** branch is the main development branch. Frequent updates may lead to unstable use. If you need to use a stable version, please look [release](https://github.com/eolinker/goku/releases)
+**Note**：The **main** branch is the main development branch. Frequent updates may lead to unstable use. If you need to use a stable version, please look [release](https://github.com/eolinker/apinto/releases)
 
-### Summary / [中文介绍](https://github.com/eolinker/goku/blob/main/README_CN.md)
+### Summary / [中文介绍](https://github.com/eolinker/apinto/blob/main/README_CN.md)
 
 - [WhyGoku](#WhyGoku "Why Goku")
 - [Feature](#Feature)
@@ -90,7 +90,7 @@ In a word, Goku API gateway enables the business development team to focus more 
 1. Download and unzip the installation package (here is an example of the installation package of version v0.4.0)
 
 ```
-wget https://github.com/eolinker/goku/releases/download/v0.4.0/goku-v0.4.0.linux.x64.tar.gz && tar -zxvf goku-v0.4.0.linux.x64.tar.gz && cd goku
+wget https://github.com/eolinker/apinto/releases/download/v0.4.0/goku-v0.4.0.linux.x64.tar.gz && tar -zxvf goku-v0.4.0.linux.x64.tar.gz && cd goku
 ```
 
 2. Start gateway：
