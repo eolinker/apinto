@@ -117,6 +117,7 @@ wget https://github.com/eolinker/apinto/releases/download/v0.4.1/apinto-v0.4.1.l
 - **Slack**：[加入我们](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
 
 - **官网**：[https://www.apinto.com](https://www.apinto.com/)
+- **论坛**：[https://community.apinto.com](https://community.apinto.com/)
 
 ### 关于我们
 
