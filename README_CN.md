@@ -1,6 +1,6 @@
 ## Apinto
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/apinto)](https://goreportcard.com/report/github.com/eolinker/apinto) [![Releases](https://img.shields.io/github/release/eolinker/apinto/all.svg?style=flat-square)](https://github.com/eolinker/apinto/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/goku.svg?style=flat-square)](https://github.com/eolinker/apinto/blob/main/LICENSE)![](https://shields.io/github/downloads/eolinker/apinto/total)
+[![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/apinto)](https://goreportcard.com/report/github.com/eolinker/apinto) [![Releases](https://img.shields.io/github/release/eolinker/apinto/all.svg?style=flat-square)](https://github.com/eolinker/apinto/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/apinto.svg?style=flat-square)](https://github.com/eolinker/apinto/blob/main/LICENSE)![](https://shields.io/github/downloads/eolinker/apinto/total)
 
 ![apinto-水平蓝](https://user-images.githubusercontent.com/25589530/149460352-751a2146-42ad-49f7-8b98-41aa889d631d.png)
 
@@ -12,7 +12,7 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 ### 概况 | [English Introduction](https://github.com/eolinker/apinto/blob/main/README.md)
 
-- [为什么要使用Apinto](#为什么要使用Apinto "为什么要使用Goku")
+- [为什么要使用Apinto](#为什么要使用Apinto "Apinto")
 - [产品特性](#产品特性 "产品特性")
 - [基准测试](#基准测试 "基准测试")
 - [部署](#部署 "部署")
@@ -23,7 +23,7 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 ### 为什么要使用Apinto
 
-**Apinto**是运行在企业系统服务边界上的API网关。当您构建网站、App、IOT甚至是开放API交易时，Apinto 能够帮你将内部系统中重复的组件抽取出来并放置在Goku网关上运行，如进行用户授权、访问控制、防火墙、数据转换等；并且Apinto 提供服务编排的功能，让企业可以快速从各类服务上获取需要的数据，对业务实现快速响应。
+**Apinto**是运行在企业系统服务边界上的API网关。当您构建网站、App、IOT甚至是开放API交易时，Apinto 能够帮你将内部系统中重复的组件抽取出来并放置在Apinto网关上运行，如进行用户授权、访问控制、防火墙、数据转换等；并且Apinto 提供服务编排的功能，让企业可以快速从各类服务上获取需要的数据，对业务实现快速响应。
 
 **Apinto**具有以下优势：
 
@@ -35,7 +35,7 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 总而言之，Apinto 能让业务开发团队更加专注地实现业务。
 
-[![Stargazers over time](https://starchart.cc/eolinker/goku.svg)](#)
+[![Stargazers over time](https://starchart.cc/eolinker/apinto.svg)](#)
 
 ### 产品特性
 
