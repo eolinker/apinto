@@ -101,17 +101,14 @@ wget https://github.com/eolinker/apinto/releases/download/v0.4.0/apinto-v0.4.0.l
 ```
 
 ### Contact
-
-> The following domain names are temporary domain names, and the official domain name apinto COM is on file
-
-- **Help documentation**：[https://help-apinto.eolink.com](https://help-apinto.eolink.com)
+- **Help documentation**：[https://help.apinto.com](https://help.apinto.com)
 - **QQ group**: 725853895
 - **Slack**：[Join us](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
-- **Official website**：[https://apinto.eolink.com](https://apinto.eolink.com)
+- **Official website**：[https://www.apinto.com](https://www.apinto.com)
 
 ### About
 
-Eolinker is a leading API management service provider, providing professional API R & D management, API automation testing, API monitoring, API gateway and other services to more than 3000 enterprises around the world. It is the first enterprise to formulate API R & D management industry specifications for ITSS (China Electronics Industry Standardization Technology Association).
+Eolink is a leading API management service provider, providing professional API R & D management, API automation testing, API monitoring, API gateway and other services to more than 3000 enterprises around the world. It is the first enterprise to formulate API R & D management industry specifications for ITSS (China Electronics Industry Standardization Technology Association).
 
-Official website：[https://www.eolink.com](https://www.eolink.com "EOLINKER官方网站")
+Official website：[https://www.eolink.com](https://www.eolink.com "EOLINK官方网站")
 Download PC desktop for free：[https://www.eolink.com/pc/](https://www.eolink.com/pc/ "免费下载PC客户端")
