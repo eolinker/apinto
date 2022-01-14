@@ -1,13 +1,14 @@
 package fileoutput
 
 import (
-	"github.com/eolinker/eosc"
 	"reflect"
+
+	"github.com/eolinker/eosc"
 )
 
 const name = "file_output"
 
-//Register 注册http路由驱动工厂
+//Register 注册file_output驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
 	register.RegisterExtenderDriver(name, NewFactory())
 }

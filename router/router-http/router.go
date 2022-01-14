@@ -4,10 +4,10 @@ import (
 	"sync"
 
 	http_service "github.com/eolinker/eosc/http-service"
-	http_context "github.com/eolinker/goku/node/http-context"
-	"github.com/eolinker/goku/plugin"
+	http_context "github.com/eolinker/apinto/node/http-context"
+	"github.com/eolinker/apinto/plugin"
 
-	"github.com/eolinker/goku/service"
+	"github.com/eolinker/apinto/service"
 
 	"github.com/eolinker/eosc/log"
 

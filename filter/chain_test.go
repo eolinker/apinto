@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/eolinker/eosc/log"
 
@@ -54,6 +55,10 @@ func (t *TestFilter) DoFilter(ctx http_service.IHttpContext, next http_service.I
 	return next.DoChain(ctx)
 }
 
+func (t *TestFilter) Destroy() {
+	return
+}
+
 func TestIFilter(t *testing.T) {
 	out := NewOut(t)
 	filterOrg := make([]http_service.IFilter, 2)
@@ -81,11 +86,15 @@ type TestContext struct {
 	ctx context.Context
 }
 
-func (t *TestContext) Response() (http_service.IResponse, error) {
+func (t *TestContext) Response() http_service.IResponse {
 	panic("implement me")
 }
 
-func (t *TestContext) SendTo(address string) error {
+func (t *TestContext) Proxies() []http_service.IRequest {
+	panic("implement me")
+}
+
+func (t *TestContext) SendTo(address string, timeout time.Duration) error {
 	panic("implement me")
 }
 

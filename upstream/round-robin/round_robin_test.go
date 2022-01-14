@@ -3,7 +3,7 @@ package round_robin
 import (
 	"testing"
 
-	"github.com/eolinker/goku/discovery"
+	"github.com/eolinker/apinto/discovery"
 )
 
 type discoveryDemo struct {

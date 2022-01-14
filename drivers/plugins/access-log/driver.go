@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/eolinker/goku/output"
+	"github.com/eolinker/apinto/output"
 
 	"github.com/eolinker/eosc"
 )

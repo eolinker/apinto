@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/eolinker/goku/discovery"
-	"github.com/eolinker/goku/upstream/balance"
+	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/apinto/upstream/balance"
 )
 
 const (

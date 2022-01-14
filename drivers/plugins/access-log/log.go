@@ -4,8 +4,8 @@ import (
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/eosc/log"
-	http_entry "github.com/eolinker/goku/http-entry"
-	"github.com/eolinker/goku/output"
+	http_entry "github.com/eolinker/apinto/http-entry"
+	"github.com/eolinker/apinto/output"
 )
 
 type accessLog struct {

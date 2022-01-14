@@ -6,7 +6,7 @@ cd ${BasePath}/
 
 
 VERSION=$(genVersion $1)
-folder="${BasePath}/out/goku-${VERSION}"
+folder="${BasePath}/out/apinto-${VERSION}"
 if [[ ! -d "$folder" ]]
 then
   mkdir "$folder"
@@ -16,6 +16,6 @@ then
     exit 1
   fi
 fi
-packageApp goku $VERSION
+packageApp apinto $VERSION
 
 cd ${ORGPATH}

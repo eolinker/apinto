@@ -10,7 +10,7 @@ import (
 
 	http_service "github.com/eolinker/eosc/http-service"
 
-	"github.com/eolinker/goku/auth"
+	"github.com/eolinker/apinto/auth"
 )
 
 const dateHeader = "x-gateway-date"

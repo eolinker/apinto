@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku/filter"
-	"github.com/eolinker/goku/plugin"
+	"github.com/eolinker/apinto/filter"
+	"github.com/eolinker/apinto/plugin"
 )
 
 type PluginObj struct {

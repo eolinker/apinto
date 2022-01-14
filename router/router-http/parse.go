@@ -1,9 +1,9 @@
 package router_http
 
 import (
-	"github.com/eolinker/goku/checker"
-	"github.com/eolinker/goku/router"
-	"github.com/eolinker/goku/service"
+	"github.com/eolinker/apinto/checker"
+	"github.com/eolinker/apinto/router"
+	"github.com/eolinker/apinto/service"
 )
 
 //parse 根据路由配置列表生成路由树，且将路由树封装进匹配器并返回

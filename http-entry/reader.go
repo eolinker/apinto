@@ -2,7 +2,8 @@ package http_entry
 
 import (
 	"fmt"
-	"github.com/eolinker/goku/utils"
+	"github.com/eolinker/apinto/utils"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -45,9 +46,9 @@ var (
 		}),
 		"query": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			if name == "" {
-				return ctx.Request().URI().RawQuery(), true
+				return utils.QueryUrlEncode(ctx.Request().URI().RawQuery()), true
 			}
-			return ctx.Request().URI().GetQuery(name), true
+			return url.QueryEscape(ctx.Request().URI().GetQuery(name)), true
 		}),
 		"uri": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			//不带请求参数的uri
@@ -79,11 +80,6 @@ var (
 		}),
 
 		"request": Fields{
-			"": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-				// 原始请求信息的第一行
-				rawRequest := strings.Split(ctx.Request().String(), "\r\n")
-				return rawRequest[0], true
-			}),
 			"body": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 				body, err := ctx.Request().Body().RawBody()
 				if err != nil {
@@ -125,7 +121,7 @@ var (
 			return time.Now().Format("2006-01-02 15:04:05"), true
 		}),
 		"header": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			return ctx.Request().Header().RawHeader(), true
+			return url.Values(ctx.Request().Header().Headers()).Encode(), true
 		}),
 		"http": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.Request().Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
@@ -147,7 +143,7 @@ var (
 			}),
 			"header": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 				if name == "" {
-					return ctx.Response().HeadersString(), true
+					return url.Values(ctx.Response().Headers()).Encode(), true
 				}
 				return ctx.Response().GetHeader(strings.Replace(name, "_", "-", -1)), true
 			}),
@@ -170,13 +166,19 @@ var (
 	proxyFields = ProxyReaders{
 		"header": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
 			if name == "" {
-				return proxy.Header().RawHeader(), true
+				return url.Values(proxy.Header().Headers()).Encode(), true
 			}
 
 			return proxy.Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
 		}),
 		"uri": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
-			return proxy.URI().RawURL(), true
+			return proxy.URI().RequestURI(), true
+		}),
+		"query": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+			if name == "" {
+				return utils.QueryUrlEncode(proxy.URI().RawQuery()), true
+			}
+			return url.QueryEscape(proxy.URI().GetQuery(name)), true
 		}),
 		"body": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
 			body, err := proxy.Body().RawBody()

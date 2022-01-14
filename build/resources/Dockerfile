@@ -1,4 +1,4 @@
-# 名称：goku-ce自定义插件环境
+# 名称：apinto自定义插件环境
 # 用途：在该环境中编译goku-ce自定义插件，防止出现版本不兼容的问题
 # 创建时间：2021-11-25
 FROM centos:7
@@ -10,7 +10,7 @@ RUN yum install -y wget
 RUN wget https://dl.google.com/go/go1.17.3.linux-amd64.tar.gz
 RUN tar -xvf go1.17.3.linux-amd64.tar.gz
 
-RUN mkdir -p /golang/src/github.com/eolinker/goku
+RUN mkdir -p /golang/src/github.com/eolinker/apinto
 
 # 配置环境变量
 ENV GOPATH /golang
