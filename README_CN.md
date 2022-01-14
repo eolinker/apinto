@@ -87,9 +87,9 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 ### 部署
 
-* 直接部署：[部署教程](https://help-apinto.eolink.com/?path=/quick/arrange)
-* [快速入门教程](https://help-apinto.eolink.com/?path=/quick/quick_course)
-* [源码编译教程](https://help-apinto.eolink.com/?path=/quick/arrange)
+* 直接部署：[部署教程](https://help.apinto.com/?path=/quick/arrange)
+* [快速入门教程](https://help.apinto.com/?path=/quick/quick_course)
+* [源码编译教程](https://help.apinto.com/?path=/quick/arrange)
 * Docker部署：后续支持
 * Kubernetes部署：后续支持
 
@@ -109,20 +109,19 @@ wget https://github.com/eolinker/apinto/releases/download/v0.4.0/apinto-v0.4.0.l
 
 - ### **联系我们**
 
-  > 下列域名为临时域名，正式域名apinto.com正在备案
 
-  * **帮助文档**：[https://help-apinto.eolink.com](https://help-apinto.eolink.com/)
+* **帮助文档**：[https://help.apinto.com](https://help.apinto.com/)
 
-  - **QQ群**: 725853895
+- **QQ群**: 725853895
 
-  - **Slack**：[加入我们](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
+- **Slack**：[加入我们](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
 
-  - **官网**：[https://apinto.eolink.com](https://apinto.eolink.com/)
+- **官网**：[https://www.apinto.com](https://www.apinto.com/)
 
 ### 关于我们
 
-EOLINKER 是领先的 API 管理服务供应商，为全球超过3000家企业提供专业的 API 研发管理、API自动化测试、API监控、API网关等服务。是首家为ITSS（中国电子工业标准化技术协会）制定API研发管理行业规范的企业。
+EOLINK 是领先的 API 管理服务供应商，为全球超过3000家企业提供专业的 API 研发管理、API自动化测试、API监控、API网关等服务。是首家为ITSS（中国电子工业标准化技术协会）制定API研发管理行业规范的企业。
 
-官方网站：[https://www.eolinker.com](https://www.eolinker.com "EOLINKER官方网站")
+官方网站：[https://www.eolink.com](https://www.eolink.com "EOLINKER官方网站")
 
-免费下载PC桌面端：[https://www.eolinker.com/pc/](https://www.eolinker.com/pc/ "免费下载PC客户端")
+免费下载PC桌面端：[https://www.eolink.com/pc/](https://www.eolink.com/pc/ "免费下载PC客户端")
