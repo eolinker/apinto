@@ -1,0 +1,11 @@
+listen:   # node listen port
+<<<<<<< HEAD:build/resources/config.yml
+=======
+# - 80
+>>>>>>> origin/feature/rename:build/resources/config.yml.tmp
+  - 8080
+
+admin:    # openAPI request info
+  scheme: http # listen scheme
+  listen: 9400 # listen port
+  ip: 0.0.0.0 # listen ip
