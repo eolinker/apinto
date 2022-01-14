@@ -3,7 +3,7 @@ package fileoutput
 import (
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
-	file_transport "github.com/eolinker/goku/output/file-transport"
+	file_transport "github.com/eolinker/apinto/output/file-transport"
 )
 
 type FileOutput struct {

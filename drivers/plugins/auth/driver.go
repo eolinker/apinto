@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku/auth"
+	"github.com/eolinker/apinto/auth"
 )
 
 type Driver struct {

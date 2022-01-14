@@ -1,4 +1,4 @@
-module github.com/eolinker/goku
+module github.com/eolinker/apinto
 
 go 1.16
 
@@ -12,4 +12,8 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/valyala/fasthttp v1.31.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
+)
+
+replace (
+	github.com/eolinker/eosc => ../eosc
 )

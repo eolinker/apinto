@@ -5,9 +5,9 @@ import (
 	"sync"
 
 	"github.com/eolinker/eosc/common/bean"
-	"github.com/eolinker/goku/plugin"
+	"github.com/eolinker/apinto/plugin"
 
-	round_robin "github.com/eolinker/goku/upstream/round-robin"
+	round_robin "github.com/eolinker/apinto/upstream/round-robin"
 
 	"github.com/eolinker/eosc"
 )

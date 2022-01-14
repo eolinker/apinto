@@ -8,8 +8,8 @@ echo $0
 #echo ${Hour}
 
 VERSION=$(genVersion $1)
-OUTPATH="${BasePath}/out/goku-${VERSION}"
-buildApp goku $VERSION
+OUTPATH="${BasePath}/out/apinto-${VERSION}"
+buildApp apinto $VERSION
 
 cp -a ${BasePath}/build/resources/*  ${OUTPATH}/
 

@@ -8,7 +8,7 @@ import (
 	"net/url"
 
 	"github.com/eolinker/eosc/log"
-	"github.com/eolinker/goku/discovery"
+	"github.com/eolinker/apinto/discovery"
 )
 
 type client struct {

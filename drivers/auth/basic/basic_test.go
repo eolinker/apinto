@@ -8,9 +8,9 @@ import (
 
 	"github.com/valyala/fasthttp"
 
-	"github.com/eolinker/goku/auth"
+	"github.com/eolinker/apinto/auth"
 
-	http_context "github.com/eolinker/goku/node/http-context"
+	http_context "github.com/eolinker/apinto/node/http-context"
 )
 
 var (

@@ -6,16 +6,16 @@ import (
 
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/goku/upstream/balance"
+	"github.com/eolinker/apinto/upstream/balance"
 
 	"time"
 
-	upstream_http "github.com/eolinker/goku/drivers/upstream/upstream-http"
+	upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku/upstream"
+	"github.com/eolinker/apinto/upstream"
 
-	"github.com/eolinker/goku/service"
+	"github.com/eolinker/apinto/service"
 )
 
 var (

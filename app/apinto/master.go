@@ -7,7 +7,7 @@ import (
 
 	"github.com/eolinker/eosc/utils"
 
-	"github.com/eolinker/goku/professions"
+	"github.com/eolinker/apinto/professions"
 
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/pidfile"
