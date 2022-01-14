@@ -105,6 +105,7 @@ wget https://github.com/eolinker/apinto/releases/download/v0.4.1/apinto-v0.4.1.l
 - **QQ group**: 725853895
 - **Slack**：[Join us](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
 - **Official website**：[https://www.apinto.com](https://www.apinto.com)
+- **Forum**：[https://community.apinto.com](https://community.apinto.com)
 
 ### About
 
