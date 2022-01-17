@@ -73,8 +73,7 @@ In a word, Apinto API gateway enables the business development team to focus mor
 
 ### Benchmark
 
-
-![](http://data.eolinker.com/course/6Md3iDR8e64ebc99af18b628851c0b75a8a2061b4b26ff1.png)
+![image](https://user-images.githubusercontent.com/25589530/149748340-dc544f79-a8f9-46f5-903d-a3af4fb8b16e.png)
 
 
 
