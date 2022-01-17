@@ -80,10 +80,7 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 ### 基准测试
 
-
-![](http://data.eolinker.com/course/6Md3iDR8e64ebc99af18b628851c0b75a8a2061b4b26ff1.png)
-
-
+![image](https://user-images.githubusercontent.com/25589530/149748340-dc544f79-a8f9-46f5-903d-a3af4fb8b16e.png)
 
 ### 部署
 
