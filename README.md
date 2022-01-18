@@ -105,7 +105,7 @@ wget https://github.com/eolinker/apinto/releases/download/v0.4.1/apinto-v0.4.1.l
 - **Slack**：[Join us](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
 - **Official website**：[https://www.apinto.com](https://www.apinto.com)
 - **Forum**：[https://community.apinto.com](https://community.apinto.com)
-- **Wechat**：![20220118-102735](https://user-images.githubusercontent.com/25589530/149860447-5879437b-3cda-4833-aee3-69a2e538e85d.png)
+- **Wechat**：<img src="https://user-images.githubusercontent.com/25589530/149860447-5879437b-3cda-4833-aee3-69a2e538e85d.png" style="width:150px" />
 
 
 ### About
