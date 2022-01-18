@@ -115,6 +115,7 @@ wget https://github.com/eolinker/apinto/releases/download/v0.4.1/apinto-v0.4.1.l
 
 - **官网**：[https://www.apinto.com](https://www.apinto.com/)
 - **论坛**：[https://community.apinto.com](https://community.apinto.com/)
+- **微信群**：<img src="https://user-images.githubusercontent.com/25589530/149860447-5879437b-3cda-4833-aee3-69a2e538e85d.png" style="width:150px" />
 
 ### 关于我们
 
