@@ -3,6 +3,7 @@ module github.com/eolinker/goku
 go 1.16
 
 require (
+	github.com/Shopify/sarama v1.31.0
 	github.com/eolinker/eosc v0.4.0
 	github.com/go-basic/uuid v1.0.0
 	github.com/hashicorp/consul/api v1.9.1
@@ -14,3 +15,5 @@ require (
 	github.com/valyala/fasthttp v1.31.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 )
+
+replace github.com/eolinker/eosc v0.4.1 => ../eosc

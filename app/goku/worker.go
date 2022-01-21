@@ -14,6 +14,7 @@ import (
 	"github.com/eolinker/goku/drivers/output/fileoutput"
 	"github.com/eolinker/goku/drivers/output/httpoutput"
 	"github.com/eolinker/goku/drivers/output/nsq"
+	"github.com/eolinker/goku/drivers/output/kafka"
 	access_log "github.com/eolinker/goku/drivers/plugins/access-log"
 	"github.com/eolinker/goku/drivers/plugins/auth"
 	circuit_breaker "github.com/eolinker/goku/drivers/plugins/circuit-breaker"
@@ -54,6 +55,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	fileoutput.Register(extenderRegister)
 	nsq.Register(extenderRegister)
 	httpoutput.Register(extenderRegister)
+	kafka.Register(extenderRegister)
 	// auth
 	basic.Register(extenderRegister)
 	apikey.Register(extenderRegister)
