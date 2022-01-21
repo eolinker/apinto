@@ -148,6 +148,12 @@ func GokuProfession() []*eosc.ProfessionConfig {
 					Label: "NSQ输出",
 					Desc:  "NSQ输出",
 				},
+				{
+					Id:    "eolinker.com:goku:http_output",
+					Name:  "http_output",
+					Label: "http输出",
+					Desc:  "http输出",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},

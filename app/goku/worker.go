@@ -12,6 +12,7 @@ import (
 	"github.com/eolinker/goku/drivers/discovery/nacos"
 	"github.com/eolinker/goku/drivers/discovery/static"
 	"github.com/eolinker/goku/drivers/output/fileoutput"
+	"github.com/eolinker/goku/drivers/output/httpoutput"
 	"github.com/eolinker/goku/drivers/output/nsq"
 	access_log "github.com/eolinker/goku/drivers/plugins/access-log"
 	"github.com/eolinker/goku/drivers/plugins/auth"
@@ -52,7 +53,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	//output
 	fileoutput.Register(extenderRegister)
 	nsq.Register(extenderRegister)
-
+	httpoutput.Register(extenderRegister)
 	// auth
 	basic.Register(extenderRegister)
 	apikey.Register(extenderRegister)

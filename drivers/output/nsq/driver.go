@@ -31,10 +31,17 @@ func (d *Driver) Check(v interface{}) (*NsqConf, error) {
 	if nsqConf.Address == "" {
 		return nil, errAddressNull
 	}
+	if nsqConf.Type == "" {
+		nsqConf.Type = "line"
+	}
 	switch nsqConf.Type {
 	case "line", "json":
 	default:
 		return nil, errFormatterType
+	}
+
+	if len(nsqConf.Formatter) == 0 {
+		return nil, errFormatterConf
 	}
 
 	return nsqConf, nil
