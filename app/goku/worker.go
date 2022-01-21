@@ -12,6 +12,7 @@ import (
 	"github.com/eolinker/goku/drivers/discovery/nacos"
 	"github.com/eolinker/goku/drivers/discovery/static"
 	"github.com/eolinker/goku/drivers/output/fileoutput"
+	"github.com/eolinker/goku/drivers/output/nsq"
 	access_log "github.com/eolinker/goku/drivers/plugins/access-log"
 	"github.com/eolinker/goku/drivers/plugins/auth"
 	circuit_breaker "github.com/eolinker/goku/drivers/plugins/circuit-breaker"
@@ -50,6 +51,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	eureka.Register(extenderRegister)
 	//output
 	fileoutput.Register(extenderRegister)
+	nsq.Register(extenderRegister)
 
 	// auth
 	basic.Register(extenderRegister)

@@ -142,6 +142,12 @@ func GokuProfession() []*eosc.ProfessionConfig {
 					Label: "文件输出",
 					Desc:  "文件输出",
 				},
+				{
+					Id:    "eolinker.com:goku:nsqd",
+					Name:  "nsqd",
+					Label: "NSQ输出",
+					Desc:  "NSQ输出",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
