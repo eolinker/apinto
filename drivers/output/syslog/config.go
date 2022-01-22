@@ -18,6 +18,7 @@ type Config struct {
 }
 
 type SysConfig struct {
+	// 所使用的网络协议, 如:tcp,udp,unix
 	Network string `json:"network" yaml:"network"`
 	Address string `json:"address" yaml:"address"`
 	Level   string `json:"level" yaml:"level"`

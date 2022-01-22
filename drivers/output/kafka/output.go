@@ -123,7 +123,9 @@ func (o *Output) work() {
 		case msg := <-o.input:
 			o.producer.Input() <- msg
 		case err := <-o.producer.Errors():
-			log.Warnf("kafka error:%s", err.Error())
+			if err != nil {
+				log.Warnf("kafka error:%s", err.Error())
+			}
 		}
 	}
 }
