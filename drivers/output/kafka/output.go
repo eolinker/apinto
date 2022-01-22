@@ -4,20 +4,41 @@ import (
 	"context"
 	"github.com/Shopify/sarama"
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/formatter"
+	"github.com/eolinker/eosc/log"
+	"sync"
 )
 
 type Output struct {
 	*Driver
 	id        string
-	input     *sarama.ProducerMessage
+	wg        *sync.WaitGroup
+	input     chan *sarama.ProducerMessage
 	producer  sarama.AsyncProducer
-	formatter eosc.IFormatter
+	conf      *ProducerConfig
 	cancel    context.CancelFunc
+	context   context.Context
+	enable    bool
+	locker    *sync.Mutex
+	formatter eosc.IFormatter
 }
 
 func (o *Output) Output(entry eosc.IEntry) error {
-	//TODO implement me
-	panic("implement me")
+	if o.formatter != nil {
+		data := o.formatter.Format(entry)
+		msg := &sarama.ProducerMessage{
+			Topic: o.conf.Topic,
+			Value: sarama.ByteEncoder(data),
+		}
+		if o.conf.PartitionType == "manual" {
+			msg.Partition = o.conf.Partition
+		}
+		if o.conf.PartitionType == "hash" {
+			msg.Key = sarama.StringEncoder(entry.Read(o.conf.PartitionKey))
+		}
+		o.write(msg)
+	}
+	return nil
 }
 
 func (o *Output) Id() string {
@@ -29,12 +50,33 @@ func (o *Output) Start() error {
 }
 
 func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	//TODO implement me
-	panic("implement me")
+	cfg, err := o.Driver.check(conf)
+	if err != nil {
+		return err
+	}
+	// 新建formatter
+	factory, has := formatter.GetFormatterFactory(cfg.Type)
+	if !has {
+		return errorFormatterType
+	}
+	o.formatter, err = factory.Create(cfg.Formatter)
+
+	if o.producer != nil {
+		// 确保关闭
+		o.close()
+	}
+	// 新建生产者
+	o.producer, err = sarama.NewAsyncProducer(cfg.Address, cfg.Conf)
+	if err != nil {
+		return err
+	}
+	o.conf = cfg
+	go o.work()
+	return nil
 }
 
 func (o *Output) Stop() error {
-	o.producer.Close()
+	o.close()
 	o.formatter = nil
 	return nil
 }
@@ -43,27 +85,61 @@ func (o *Output) CheckSkill(skill string) bool {
 	return false
 }
 
-// CreateProducer 创建kafka的生产者，采用同步生产者的方式
-func (o *Output) CreateProducer() {
-	// 发送地址 broker address
-	//sarama.NewAsyncProducer()
-	//// 发送的超时时间
-	//
-	//// 发送的topic
-	//
-	//// 分区的选择方式，分四种：
-	////sarama.NewManualPartitioner() 返回一个手动选择分区的分割器,也就是获取msg中指定的`partition`，partition
-	////sarama.NewRandomPartitioner() 通过随机函数随机获取一个分区号
-	////sarama.NewRoundRobinPartitioner() 环形选择,也就是在所有分区中循环选择一个
-	////sarama.NewHashPartitioner() 通过msg中的key生成hash值,选择分区，key
-	//conf := sarama.NewConfig()
-	////等待服务器所有副本都保存成功后的响应
-	//conf.Producer.RequiredAcks = sarama.WaitForLocal
-	////随机的分区类型
-	//conf.Producer.Partitioner = sarama.NewRandomPartitioner
-	////是否等待成功和失败后的响应,只有上面的RequireAcks设置不是NoReponse这里才有用.
-	////conf.Producer.Return.Successes = true
-	//conf.Producer.Return.Errors = true
-	//conf.Producer.Timeout =
+func (o *Output) write(msg *sarama.ProducerMessage) {
+	// 未开启情况下不给写
+	if !o.enable {
+		return
+	}
+	o.locker.Lock()
+	o.input <- msg
+	o.locker.Unlock()
+}
 
+func (o *Output) work() {
+	if o.enable {
+		return
+	}
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	o.context = ctx
+	o.cancel = cancelFunc
+	// 初始化消息通道
+	if o.input == nil {
+		o.input = make(chan *sarama.ProducerMessage)
+	}
+	if o.wg == nil {
+		o.wg = &sync.WaitGroup{}
+	}
+	o.enable = true
+	o.wg.Add(1)
+	for {
+		select {
+		case <-o.context.Done():
+			// 读完
+			for e := range o.producer.Errors() {
+				log.Warnf("kafka error:%s", e.Error())
+			}
+			o.wg.Done()
+			return
+		case msg := <-o.input:
+			o.producer.Input() <- msg
+		case err := <-o.producer.Errors():
+			log.Warnf("kafka error:%s", err.Error())
+		}
+	}
+}
+
+func (o *Output) close() {
+	isClose := false
+	o.producer.AsyncClose()
+	if o.cancel != nil {
+		isClose = true
+		o.cancel()
+		o.cancel = nil
+	}
+	if isClose {
+		// 等待消息都读完
+		o.wg.Done()
+	}
+	o.producer = nil
+	o.enable = false
 }
