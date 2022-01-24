@@ -154,6 +154,18 @@ func GokuProfession() []*eosc.ProfessionConfig {
 					Label: "http输出",
 					Desc:  "http输出",
 				},
+				{
+					Id:    "eolinker.com:goku:syslog_output",
+					Name:  "syslog_output",
+					Label: "syslog输出",
+					Desc:  "syslog输出",
+				},
+				{
+					Id:    "eolinker.com:goku:kafka_output",
+					Name:  "kafka_output",
+					Label: "kafka输出",
+					Desc:  "kafka输出",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
