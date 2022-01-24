@@ -24,6 +24,9 @@ type Output struct {
 }
 
 func (o *Output) Output(entry eosc.IEntry) error {
+	if o.producer == nil {
+		return nil
+	}
 	if o.formatter != nil {
 		data := o.formatter.Format(entry)
 		msg := &sarama.ProducerMessage{

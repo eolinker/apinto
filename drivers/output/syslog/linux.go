@@ -31,10 +31,10 @@ type SysWriter struct {
 }
 
 func (s *SysWriter) Output(entry eosc.IEntry) error {
-	if h.formatter != nil {
-		data := h.formatter.Format(entry)
-		if h.transport != nil && len(data) > 0 {
-			err := h.writer.Write(data)
+	if s.formatter != nil {
+		data := s.formatter.Format(entry)
+		if s.writer != nil && len(data) > 0 {
+			_, err := s.writer.Write(data)
 			if err != nil {
 				return err
 			}
