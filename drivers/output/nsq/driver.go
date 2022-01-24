@@ -1,10 +1,12 @@
 package nsq
 
 import (
+	"context"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
 	"github.com/nsqio/go-nsq"
 	"reflect"
+	"sync"
 )
 
 type Driver struct {
@@ -51,6 +53,7 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	worker := &NsqOutput{
 		Driver: d,
 		id:     id,
+		lock:   sync.Mutex{},
 	}
 
 	conf, err := d.Check(v)
@@ -58,6 +61,10 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		return nil, err
 	}
 	worker.config = conf
+
+	//创建producerTransation通道  TODO 需要多缓存吗
+	worker.ptChannel = make(chan *nsq.ProducerTransaction)
+
 	//创建生产者
 	nsqConf := nsq.NewConfig()
 	if conf.AuthSecret != "" {
@@ -74,6 +81,11 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		return nil, errFormatterType
 	}
 	worker.formatter, err = factory.Create(conf.Formatter)
+
+	//开始监听返回的异步信息
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	worker.cancelFunc = cancelFunc
+	go worker.listenAsycInfomation(worker.ptChannel, ctx)
 
 	return worker, err
 }
