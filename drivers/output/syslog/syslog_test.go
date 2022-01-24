@@ -10,12 +10,18 @@ import (
 func TestPing(t *testing.T) {
 	conf := &SysConfig{
 		Network: "tcp",
-		Address: "172.22.219.178:514",
+		Address: "127.0.0.1:514",
 		Level:   "info",
 	}
-	_, err := newSysWriter(conf, "test")
+	w, err := newSysWriter(conf, "test")
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
+	n, err := w.Write([]byte("test"))
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	t.Logf("send %d;write %d", len([]byte("test")), n)
 }
