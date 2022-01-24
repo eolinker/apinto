@@ -30,6 +30,19 @@ type SysWriter struct {
 	formatter eosc.IFormatter
 }
 
+func (s *SysWriter) Output(entry eosc.IEntry) error {
+	if h.formatter != nil {
+		data := h.formatter.Format(entry)
+		if h.transport != nil && len(data) > 0 {
+			err := h.writer.Write(data)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (s *SysWriter) Id() string {
 	return s.id
 }
