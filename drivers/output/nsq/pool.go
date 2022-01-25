@@ -2,6 +2,7 @@ package nsq
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/log"
 	"github.com/nsqio/go-nsq"
 	"sync"
 	"sync/atomic"
@@ -61,7 +62,7 @@ func CreateProducerPool(addrs []string, conf map[string]interface{}) (*producerP
 	return pool, nil
 }
 
-func (p *producerPool) PublishAsync(topic string, body []byte, doneChan chan *nsq.ProducerTransaction) error {
+func (p *producerPool) PublishAsync(topic string, body []byte) error {
 	if p.isClose || int(p.downNodeNum) >= p.size {
 		return errNoValidProducer
 	}
@@ -75,14 +76,11 @@ func (p *producerPool) PublishAsync(topic string, body []byte, doneChan chan *ns
 	n := int(atomic.AddUint32(&p.next, 1))
 
 	go func(n int) {
-		ch := make(chan *nsq.ProducerTransaction, 1)
-		defer close(ch)
 
 		for attempt := 0; attempt < p.size; attempt++ {
 			//若所有节点都不可用
 			if int(p.downNodeNum) >= p.size {
-				args := []interface{}{fmt.Sprintf("%s topic:%s data:%s", errNoValidProducer, topic, body)}
-				doneChan <- &nsq.ProducerTransaction{Error: errNoValidProducer, Args: args}
+				log.Errorf("err:%s data:%s", errNoValidProducer, fmt.Sprintf("topic:%s data:%s", topic, body))
 				break
 			}
 
@@ -94,8 +92,7 @@ func (p *producerPool) PublishAsync(topic string, body []byte, doneChan chan *ns
 			//若该节点不可用
 			if producerNode.status == disconnected {
 				if isLastAttempt {
-					args := []interface{}{fmt.Sprintf("nsqd_addr:%s topic:%s data:%s", producerNode.producer.String(), topic, body)}
-					doneChan <- &nsq.ProducerTransaction{Error: errProducerInvalid, Args: args}
+					log.Errorf("nsq log error:%s data:%s", errProducerInvalid, fmt.Sprintf("nsqd_addr:%s topic:%s data:%s", producerNode.producer.String(), topic, body))
 					break
 				}
 				continue
@@ -107,27 +104,26 @@ func (p *producerPool) PublishAsync(topic string, body []byte, doneChan chan *ns
 				if err := producerNode.producer.Ping(); err != nil {
 					producerNode.status = disconnected
 					atomic.AddInt32(&p.downNodeNum, 1)
+					if isLastAttempt {
+						log.Errorf("nsq log error:%s data:%s", errProducerInvalid, fmt.Sprintf("nsqd_addr:%s topic:%s data:%s", producerNode.producer.String(), topic, body))
+						break
+					}
+
+					continue
 				}
 				p.lock.Unlock()
 			}
 
-			//发送异步消息
-			arg := fmt.Sprintf("nsqd_addr:%s topic:%s data:%s", producerNode.producer.String(), topic, body)
-			if err := producerNode.producer.PublishAsync(topic, body, ch, arg); err != nil {
+			//发送消息
+			if err := producerNode.producer.Publish(topic, body); err != nil {
 				if isLastAttempt {
-					args := []interface{}{arg}
-					doneChan <- &nsq.ProducerTransaction{Error: err, Args: args}
+					log.Errorf("nsq log error:%s data:%s", err, fmt.Sprintf("nsqd_addr:%s topic:%s data:%s", producerNode.producer.String(), topic, body))
 					break
 				}
 
 				continue
 			}
 
-			transaction := <-ch
-			if transaction.Error != nil && !isLastAttempt {
-				continue
-			}
-			doneChan <- transaction
 			break
 		}
 	}(n)

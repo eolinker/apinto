@@ -1,10 +1,8 @@
 package nsq
 
 import (
-	"context"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
-	"github.com/nsqio/go-nsq"
 	"reflect"
 	"sync"
 )
@@ -61,8 +59,6 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		return nil, err
 	}
 	worker.topic = conf.Topic
-	//创建producerTransation通道
-	worker.ptChannel = make(chan *nsq.ProducerTransaction, 100)
 
 	//创建生产者pool
 	worker.pool, err = CreateProducerPool(conf.Address, conf.ClientConf)
@@ -76,11 +72,6 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		return nil, errFormatterType
 	}
 	worker.formatter, err = factory.Create(conf.Formatter)
-
-	//开始监听返回的异步信息
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	worker.cancelFunc = cancelFunc
-	go worker.listenAsycInfomation(worker.ptChannel, ctx)
 
 	return worker, err
 }
