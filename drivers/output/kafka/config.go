@@ -50,6 +50,7 @@ func (c *Config) doCheck() (*ProducerConfig, error) {
 		return nil, errAddress
 	}
 	p := &ProducerConfig{}
+	p.Topic
 	s := sarama.NewConfig()
 	if conf.Version != "" {
 		v, err := sarama.ParseKafkaVersion(conf.Version)
@@ -64,7 +65,8 @@ func (c *Config) doCheck() (*ProducerConfig, error) {
 		s.Producer.Partitioner = sarama.NewRoundRobinPartitioner
 	case "hash":
 		// 通过hash获取
-		if conf.PartitionKey == "" {
+		key := strings.TrimLeft(conf.PartitionKey, "$")
+		if key == "" {
 			// key为空则还是用随机
 			s.Producer.Partitioner = sarama.NewRandomPartitioner
 			p.PartitionType = "random"
@@ -73,7 +75,7 @@ func (c *Config) doCheck() (*ProducerConfig, error) {
 				return nil, errorPartitionKey
 			}
 			s.Producer.Partitioner = sarama.NewHashPartitioner
-			p.PartitionKey = strings.TrimLeft(conf.PartitionKey, "$")
+			p.PartitionKey = key
 		}
 	case "manual":
 		// 手动指定分区
