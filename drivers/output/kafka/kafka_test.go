@@ -137,7 +137,7 @@ func TestSendMessageAsync(t *testing.T) {
 
 func TestMain(m *testing.M) {
 	go beginConsumer("test", addr, 0)
-	//<-time.After(1 * time.Second)
-	//m.Run()
+	<-time.After(1 * time.Second)
+	m.Run()
 	<-time.After(60 * time.Second)
 }
