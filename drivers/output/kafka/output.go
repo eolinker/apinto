@@ -17,7 +17,6 @@ type Output struct {
 	producer  sarama.AsyncProducer
 	conf      *ProducerConfig
 	cancel    context.CancelFunc
-	context   context.Context
 	enable    bool
 	locker    *sync.Mutex
 	formatter eosc.IFormatter
@@ -104,7 +103,6 @@ func (o *Output) work() {
 		return
 	}
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	o.context = ctx
 	o.cancel = cancelFunc
 	// 初始化消息通道
 	if o.wg == nil {
@@ -114,7 +112,7 @@ func (o *Output) work() {
 	o.wg.Add(1)
 	for {
 		select {
-		case <-o.context.Done():
+		case <-ctx.Done():
 			// 读完
 			for e := range o.producer.Errors() {
 				log.Warnf("kafka error:%s", e.Error())
@@ -142,7 +140,7 @@ func (o *Output) close() {
 	}
 	if isClose {
 		// 等待消息都读完
-		o.wg.Done()
+		o.wg.Wait()
 	}
 	o.producer = nil
 	o.enable = false
