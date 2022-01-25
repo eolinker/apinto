@@ -50,7 +50,7 @@ func (c *Config) doCheck() (*ProducerConfig, error) {
 		return nil, errAddress
 	}
 	p := &ProducerConfig{}
-	p.Topic
+	p.Topic = conf.Topic
 	s := sarama.NewConfig()
 	if conf.Version != "" {
 		v, err := sarama.ParseKafkaVersion(conf.Version)
