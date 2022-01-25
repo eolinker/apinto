@@ -13,7 +13,7 @@ type Output struct {
 	*Driver
 	id        string
 	wg        *sync.WaitGroup
-	input     chan *sarama.ProducerMessage
+	input     chan<- *sarama.ProducerMessage
 	producer  sarama.AsyncProducer
 	conf      *ProducerConfig
 	cancel    context.CancelFunc
@@ -74,6 +74,7 @@ func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 		return err
 	}
 	o.conf = cfg
+	o.input = o.producer.Input()
 	go o.work()
 	return nil
 }
@@ -81,8 +82,6 @@ func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 func (o *Output) Stop() error {
 	o.close()
 	o.formatter = nil
-	close(o.input)
-	o.input = nil
 	return nil
 }
 
@@ -108,9 +107,6 @@ func (o *Output) work() {
 	o.context = ctx
 	o.cancel = cancelFunc
 	// 初始化消息通道
-	if o.input == nil {
-		o.input = make(chan *sarama.ProducerMessage)
-	}
 	if o.wg == nil {
 		o.wg = &sync.WaitGroup{}
 	}
@@ -125,8 +121,6 @@ func (o *Output) work() {
 			}
 			o.wg.Done()
 			return
-		case msg := <-o.input:
-			o.producer.Input() <- msg
 		case err := <-o.producer.Errors():
 			if err != nil {
 				log.Warnf("kafka error:%s", err.Error())
