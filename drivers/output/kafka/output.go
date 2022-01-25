@@ -81,6 +81,8 @@ func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 func (o *Output) Stop() error {
 	o.close()
 	o.formatter = nil
+	close(o.input)
+	o.input = nil
 	return nil
 }
 
@@ -134,6 +136,9 @@ func (o *Output) work() {
 }
 
 func (o *Output) close() {
+	if !o.enable {
+		return
+	}
 	isClose := false
 	o.producer.AsyncClose()
 	if o.cancel != nil {

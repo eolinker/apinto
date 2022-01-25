@@ -10,7 +10,7 @@ import (
 
 var (
 	errTopic           = errors.New("topic can not be null. ")
-	errAddress         = errors.New("address can not be null. ")
+	errAddress         = errors.New("address is invalid. ")
 	errorFormatterType = errors.New("error formatter type")
 	errorPartitionKey  = errors.New("partition key is invalid")
 )
@@ -58,6 +58,7 @@ func (c *Config) doCheck() (*ProducerConfig, error) {
 		}
 		s.Version = v
 	}
+	p.PartitionType = conf.PartitionType
 	switch conf.PartitionType {
 	case "robin":
 		s.Producer.Partitioner = sarama.NewRoundRobinPartitioner
@@ -66,7 +67,7 @@ func (c *Config) doCheck() (*ProducerConfig, error) {
 		if conf.PartitionKey == "" {
 			// key为空则还是用随机
 			s.Producer.Partitioner = sarama.NewRandomPartitioner
-			conf.PartitionType = "random"
+			p.PartitionType = "random"
 		} else {
 			if !strings.HasPrefix(conf.PartitionKey, "$") {
 				return nil, errorPartitionKey
@@ -81,7 +82,7 @@ func (c *Config) doCheck() (*ProducerConfig, error) {
 		p.Partition = conf.Partition
 	default:
 		s.Producer.Partitioner = sarama.NewRandomPartitioner
-		conf.PartitionType = "random"
+		p.PartitionType = "random"
 	}
 	// 只监听错误
 	s.Producer.Return.Errors = true
@@ -89,6 +90,9 @@ func (c *Config) doCheck() (*ProducerConfig, error) {
 	s.Producer.RequiredAcks = sarama.WaitForLocal
 
 	p.Address = strings.Split(conf.Address, ",")
+	if len(p.Address) == 0 {
+		return nil, errAddress
+	}
 	// 超时时间
 	if conf.Timeout != 0 {
 		s.Producer.Timeout = time.Duration(conf.Timeout) * time.Second
