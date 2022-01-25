@@ -63,7 +63,7 @@ func CreateProducerPool(addrs []string, conf map[string]interface{}) (*producerP
 }
 
 func (p *producerPool) PublishAsync(topic string, body []byte) error {
-	if p.isClose || int(p.downNodeNum) >= p.size {
+	if p.isClose {
 		return errNoValidProducer
 	}
 
@@ -104,12 +104,6 @@ func (p *producerPool) PublishAsync(topic string, body []byte) error {
 				if err := producerNode.producer.Ping(); err != nil {
 					producerNode.status = disconnected
 					atomic.AddInt32(&p.downNodeNum, 1)
-					if isLastAttempt {
-						log.Errorf("nsq log error:%s data:%s", errProducerInvalid, fmt.Sprintf("nsqd_addr:%s topic:%s data:%s", producerNode.producer.String(), topic, body))
-						break
-					}
-
-					continue
 				}
 				p.lock.Unlock()
 			}
