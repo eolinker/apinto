@@ -3,8 +3,8 @@ package nsq
 import (
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
-	"github.com/nsqio/go-nsq"
 	"reflect"
+	"sync"
 )
 
 type Driver struct {
@@ -28,7 +28,7 @@ func (d *Driver) Check(v interface{}) (*NsqConf, error) {
 	if nsqConf.Topic == "" {
 		return nil, errTopicNull
 	}
-	if nsqConf.Address == "" {
+	if len(nsqConf.Address) == 0 {
 		return nil, errAddressNull
 	}
 	if nsqConf.Type == "" {
@@ -51,19 +51,17 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	worker := &NsqOutput{
 		Driver: d,
 		id:     id,
+		lock:   sync.Mutex{},
 	}
 
 	conf, err := d.Check(v)
 	if err != nil {
 		return nil, err
 	}
-	worker.config = conf
-	//创建生产者
-	nsqConf := nsq.NewConfig()
-	if conf.AuthSecret != "" {
-		nsqConf.AuthSecret = conf.AuthSecret
-	}
-	worker.producer, err = nsq.NewProducer(conf.Address, nsqConf)
+	worker.topic = conf.Topic
+
+	//创建生产者pool
+	worker.pool, err = CreateProducerPool(conf.Address, conf.ClientConf)
 	if err != nil {
 		return nil, err
 	}

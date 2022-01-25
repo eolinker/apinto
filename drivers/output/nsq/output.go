@@ -3,15 +3,17 @@ package nsq
 import (
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
-	"github.com/nsqio/go-nsq"
+	"sync"
 )
 
 type NsqOutput struct {
 	*Driver
 	id        string
-	config    *NsqConf
-	producer  *nsq.Producer
+	pool      *producerPool
+	topic     string
 	formatter eosc.IFormatter
+
+	lock sync.Mutex
 }
 
 func (n *NsqOutput) Id() string {
@@ -28,20 +30,20 @@ func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface
 		return err
 	}
 
-	if n.config == nil || n.config.isProducerUpdate(config) {
-		if n.producer != nil {
-			n.producer.Stop()
-		}
-		//创建生产者
-		nsqConf := nsq.NewConfig()
-		if config.AuthSecret != "" {
-			nsqConf.AuthSecret = config.AuthSecret
-		}
-		n.producer, err = nsq.NewProducer(config.Address, nsqConf)
-		if err != nil {
-			return err
-		}
+	n.lock.Lock()
+	defer n.lock.Unlock()
+
+	if n.pool != nil {
+		n.pool.Close()
 	}
+
+	n.topic = config.Topic
+	//创建生产者pool
+	n.pool, err = CreateProducerPool(config.Address, config.ClientConf)
+	if err != nil {
+		return err
+	}
+
 	//创建formatter
 	factory, has := formatter.GetFormatterFactory(config.Type)
 	if !has {
@@ -52,15 +54,17 @@ func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface
 		return err
 	}
 
-	n.config = config
 	return nil
 }
 
 func (n *NsqOutput) Stop() error {
-	n.producer.Stop()
-	n.producer = nil
+	n.lock.Lock()
+	defer n.lock.Unlock()
+
+	n.pool.Close()
 	n.formatter = nil
-	n.config = nil
+	n.pool = nil
+
 	return nil
 }
 
@@ -71,8 +75,8 @@ func (n *NsqOutput) CheckSkill(skill string) bool {
 func (n *NsqOutput) Output(entry eosc.IEntry) error {
 	if n.formatter != nil {
 		data := n.formatter.Format(entry)
-		if n.producer != nil && len(data) > 0 {
-			err := n.producer.Publish(n.config.Topic, data)
+		if n.pool != nil && len(data) > 0 {
+			err := n.pool.PublishAsync(n.topic, data)
 			if err != nil {
 				return err
 			}
