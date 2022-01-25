@@ -30,7 +30,7 @@ func (d *Driver) Check(v interface{}) (*NsqConf, error) {
 	if nsqConf.Topic == "" {
 		return nil, errTopicNull
 	}
-	if nsqConf.Address == "" {
+	if len(nsqConf.Address) == 0 {
 		return nil, errAddressNull
 	}
 	if nsqConf.Type == "" {
@@ -60,17 +60,12 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	if err != nil {
 		return nil, err
 	}
-	worker.config = conf
+	worker.topic = conf.Topic
+	//创建producerTransation通道
+	worker.ptChannel = make(chan *nsq.ProducerTransaction, 100)
 
-	//创建producerTransation通道  TODO 需要多缓存吗
-	worker.ptChannel = make(chan *nsq.ProducerTransaction)
-
-	//创建生产者
-	nsqConf := nsq.NewConfig()
-	if conf.AuthSecret != "" {
-		nsqConf.AuthSecret = conf.AuthSecret
-	}
-	worker.producer, err = nsq.NewProducer(conf.Address, nsqConf)
+	//创建生产者pool
+	worker.pool, err = CreateProducerPool(conf.Address, conf.ClientConf)
 	if err != nil {
 		return nil, err
 	}

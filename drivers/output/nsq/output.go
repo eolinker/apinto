@@ -2,7 +2,6 @@ package nsq
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
@@ -15,8 +14,8 @@ import (
 type NsqOutput struct {
 	*Driver
 	id        string
-	config    *NsqConf
-	producer  *nsq.Producer
+	pool      *producerPool
+	topic     string
 	formatter eosc.IFormatter
 
 	ptChannel  chan *nsq.ProducerTransaction
@@ -41,27 +40,22 @@ func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface
 	n.lock.Lock()
 	defer n.lock.Unlock()
 
-	if n.config == nil || n.config.isProducerUpdate(config) {
-		if n.producer != nil {
-			n.producer.Stop()
-		}
-
-		if n.cancelFunc == nil {
-			ctx, cancelFunc := context.WithCancel(context.Background())
-			n.cancelFunc = cancelFunc
-			go n.listenAsycInfomation(n.ptChannel, ctx)
-		}
-
-		//创建生产者
-		nsqConf := nsq.NewConfig()
-		if config.AuthSecret != "" {
-			nsqConf.AuthSecret = config.AuthSecret
-		}
-		n.producer, err = nsq.NewProducer(config.Address, nsqConf)
-		if err != nil {
-			return err
-		}
+	if n.pool != nil {
+		n.pool.Close()
 	}
+
+	if n.cancelFunc == nil {
+		ctx, cancelFunc := context.WithCancel(context.Background())
+		n.cancelFunc = cancelFunc
+		go n.listenAsycInfomation(n.ptChannel, ctx)
+	}
+	n.topic = config.Topic
+	//创建生产者pool
+	n.pool, err = CreateProducerPool(config.Address, config.ClientConf)
+	if err != nil {
+		return err
+	}
+
 	//创建formatter
 	factory, has := formatter.GetFormatterFactory(config.Type)
 	if !has {
@@ -72,7 +66,6 @@ func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface
 		return err
 	}
 
-	n.config = config
 	return nil
 }
 
@@ -80,15 +73,13 @@ func (n *NsqOutput) Stop() error {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 
-	n.producer.Stop()
-	n.producer = nil
+	n.pool.Close()
 	n.formatter = nil
-	n.config = nil
-
 	if n.cancelFunc != nil {
 		n.cancelFunc()
 		n.cancelFunc = nil
 	}
+	n.pool = nil
 	return nil
 }
 
@@ -99,9 +90,8 @@ func (n *NsqOutput) CheckSkill(skill string) bool {
 func (n *NsqOutput) Output(entry eosc.IEntry) error {
 	if n.formatter != nil {
 		data := n.formatter.Format(entry)
-		if n.producer != nil && len(data) > 0 {
-			args := []interface{}{n.producer.String(), n.config.Topic, data}
-			err := n.producer.PublishAsync(n.config.Topic, data, n.ptChannel, args)
+		if n.pool != nil && len(data) > 0 {
+			err := n.pool.PublishAsync(n.topic, data, n.ptChannel)
 			if err != nil {
 				return err
 			}
@@ -125,8 +115,7 @@ func (n *NsqOutput) listenAsycInfomation(ptChannel chan *nsq.ProducerTransaction
 		select {
 		case pt := <-ptChannel:
 			if pt.Error != nil {
-				data, _ := json.Marshal(pt.Args)
-				log.Errorf("nsq log error:%s data:%s", pt.Error, data)
+				log.Errorf("nsq log error:%s data:%s", pt.Error, pt.Args[0])
 			}
 		case <-ctx.Done():
 			return
