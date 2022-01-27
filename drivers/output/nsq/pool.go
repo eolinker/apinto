@@ -1,10 +1,10 @@
 package nsq
 
 import (
+	"context"
 	"fmt"
 	"github.com/eolinker/eosc/log"
 	"github.com/nsqio/go-nsq"
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -18,12 +18,10 @@ type producerPool struct {
 	nodes       []*node
 	size        int
 	next        uint32
-	downNodeNum int32
 
 	config     *nsq.Config
-	updateTime time.Time
 	isClose    bool
-	lock       sync.Mutex
+	cancelFunc context.CancelFunc
 }
 
 type node struct {
@@ -58,7 +56,7 @@ func CreateProducerPool(addrs []string, conf map[string]interface{}) (*producerP
 		pool.nodes[i] = &node{producer: producer, status: connecting}
 	}
 
-	pool.updateTime = time.Now()
+	go pool.Check()
 	return pool, nil
 }
 
@@ -67,22 +65,12 @@ func (p *producerPool) PublishAsync(topic string, body []byte) error {
 		return errNoValidProducer
 	}
 
-	if time.Now().Sub(p.updateTime) > time.Second*30 && len(p.nodes) > 0 {
-		// 当上次节点更新时间与当前时间间隔超过30s，则检查连接关闭的节点
-		go p.Check()
-	}
-
 	//使用round-robin进行负载均衡
 	n := int(atomic.AddUint32(&p.next, 1))
 
 	go func(n int) {
 
 		for attempt := 0; attempt < p.size; attempt++ {
-			//若所有节点都不可用
-			if int(p.downNodeNum) >= p.size {
-				log.Errorf("err:%s data:%s", errNoValidProducer, fmt.Sprintf("topic:%s data:%s", topic, body))
-				break
-			}
 
 			isLastAttempt := attempt+1 == p.size
 			//轮询
@@ -98,18 +86,10 @@ func (p *producerPool) PublishAsync(topic string, body []byte) error {
 				continue
 			}
 
-			//确定该节点的连接情况，若连接不通则将状态置为disconnected，并且等待重新连接
-			if err := producerNode.producer.Ping(); err != nil {
-				p.lock.Lock()
-				if err := producerNode.producer.Ping(); err != nil {
-					producerNode.status = disconnected
-					atomic.AddInt32(&p.downNodeNum, 1)
-				}
-				p.lock.Unlock()
-			}
-
 			//发送消息
 			if err := producerNode.producer.Publish(topic, body); err != nil {
+				//发送失败，将该节点状态置为disconnected，等待check重新连接
+				producerNode.status = disconnected
 				if isLastAttempt {
 					log.Errorf("nsq log error:%s data:%s", err, fmt.Sprintf("nsqd_addr:%s topic:%s data:%s", producerNode.producer.String(), topic, body))
 					break
@@ -125,26 +105,49 @@ func (p *producerPool) PublishAsync(topic string, body []byte) error {
 	return nil
 }
 
-//Check 检查
+//Check 检查节点状态
 func (p *producerPool) Check() {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-	for _, n := range p.nodes {
-		if n.status == disconnected {
-			//解决断线重连的问题
-			oldProducer := n.producer
-			n.producer, _ = nsq.NewProducer(oldProducer.String(), p.config)
-			n.status = connecting
-			atomic.AddInt32(&p.downNodeNum, -1)
-			oldProducer.Stop()
+
+	ticker := time.NewTicker(time.Second * 30)
+
+	ctx, cancelFunc :=context.WithCancel(context.Background())
+	p.cancelFunc = cancelFunc
+	for{
+
+		select {
+		case <- ticker.C:
+			for _, n := range p.nodes {
+				if n.status == disconnected {
+					//解决断线重连的问题
+					n.producer.Stop()
+					if err := n.producer.Ping();err != nil{
+						continue
+					}
+					n.status = connecting
+
+					//oldProducer := n.producer
+					//n.producer, _ = nsq.NewProducer(oldProducer.String(), p.config)
+					//n.status = connecting
+					//oldProducer.Stop()
+				}
+			}
+		case <- ctx.Done():
+			ticker.Stop()
+			return
 		}
+
 	}
+
 }
 
 func (p *producerPool) Close() {
 
 	for _, n := range p.nodes {
 		n.producer.Stop()
+	}
+	if p.cancelFunc != nil{
+		p.cancelFunc()
+		p.cancelFunc = nil
 	}
 	p.isClose = true
 }
