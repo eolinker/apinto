@@ -14,7 +14,6 @@ func (d *Driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
-
 func (d *Driver) Check(v interface{}) (*Config, error) {
 	conf, ok := v.(*Config)
 	if !ok {
@@ -22,34 +21,37 @@ func (d *Driver) Check(v interface{}) (*Config, error) {
 	}
 
 	fileConf := conf.Config
-	if fileConf == nil{
+	if fileConf == nil {
 		return nil, errorNilConfig
 	}
 
 	if fileConf.Dir == "" {
-		return nil,errorConfDir
+		return nil, errorConfDir
 	}
-	if fileConf.File == ""{
-		return nil,errorConfFile
+	if fileConf.File == "" {
+		return nil, errorConfFile
 	}
-	if fileConf.Period != "day" && fileConf.Period != "hour"{
-		return nil,errorConfPeriod
+	if fileConf.Period != "day" && fileConf.Period != "hour" {
+		return nil, errorConfPeriod
 	}
 
 	if fileConf.Expire == 0 {
 		fileConf.Expire = 3
 	}
-	if fileConf.Type == ""{
+	if fileConf.Type == "" {
 		fileConf.Type = "line"
 	}
 
+	if len(fileConf.Formatter) == 0 {
+		return nil, errFormatterConf
+	}
 	return conf, nil
 }
 
 func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	worker := &FileOutput{
-		Driver:d,
-		id: id,
+		Driver: d,
+		id:     id,
 	}
 	err := worker.Reset(v, workers)
 	return worker, err

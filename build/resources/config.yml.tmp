@@ -1,8 +1,4 @@
 listen:   # node listen port
-<<<<<<< HEAD:build/resources/config.yml
-=======
-# - 80
->>>>>>> origin/feature/rename:build/resources/config.yml.tmp
   - 8080
 
 admin:    # openAPI request info
