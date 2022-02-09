@@ -1,4 +1,4 @@
-module github.com/eolinker/goku
+module github.com/eolinker/apinto
 
 go 1.16
 
