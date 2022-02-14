@@ -212,7 +212,7 @@ func (w *FileWriterByPeriod) dropHistory() {
 	}
 }
 func (w *FileWriterByPeriod) initFile() {
-	err := os.MkdirAll(w.dir, os.ModeDir)
+	err := os.MkdirAll(w.dir, 0755)
 	if err != nil {
 		log.Println(err)
 	}
