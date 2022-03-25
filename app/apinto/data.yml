@@ -18,7 +18,7 @@ service:
             - filelog@output
             - httplog@output
       labels:
-        service: demo服务
+        service: demo
         api: asdh
         rule:
           - position: "header: abc.gf"
