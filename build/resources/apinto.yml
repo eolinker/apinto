@@ -10,7 +10,7 @@
 # socket放置目录
 # socket_dir: /tmp/apinto
 
-# goku运行配置地址
+# apinto运行配置地址
 # config: /etc/apinto/config.yml
 
 # 扩展仓库目录

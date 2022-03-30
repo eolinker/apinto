@@ -60,7 +60,7 @@ func TestFilter(t *testing.T) {
 		{
 			name:         "wantCompress",
 			wantCompress: true,
-			body:         "eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;",
+			body:         "eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;",
 			header:       "gzip",
 		},
 		{
