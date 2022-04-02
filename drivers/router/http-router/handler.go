@@ -1,6 +1,7 @@
 package http_router
 
 import (
+	"fmt"
 	http_service "github.com/eolinker/eosc/http-service"
 	service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/goku/plugin"
@@ -34,8 +35,27 @@ func (r *RouterHandler) Destroy() {
 func NewRouterHandler(routerConfig *router_http.Config, routerPlugin plugin.IPlugin, handler service2.IService) *RouterHandler {
 
 	r := &RouterHandler{routerConfig: routerConfig, serviceFilter: handler}
-
 	r.routerFilters = routerPlugin.Append(r)
 	routerConfig.Target = r.routerFilters
 	return r
+}
+
+func NewDisableHandler(routerConfig *router_http.Config) *RouterHandler {
+	r := &RouterHandler{routerConfig: routerConfig, serviceFilter: &DisableHandler{}}
+	routerConfig.Target = r.serviceFilter
+	return r
+}
+
+type DisableHandler struct {
+}
+
+func (d *DisableHandler) DoChain(ctx service.IHttpContext) error {
+	resp := ctx.Response()
+	resp.SetBody([]byte("the router is disabled"))
+	resp.SetStatus(416, "416")
+	return fmt.Errorf("the router is disabled")
+}
+
+func (d *DisableHandler) Destroy() {
+	return
 }
