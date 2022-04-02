@@ -18,6 +18,7 @@ type DriverConfig struct {
 	Cert     []Cert                    `json:"cert" yaml:"cert"`
 	Target   eosc.RequireId            `json:"target" yaml:"target" skill:"github.com/eolinker/goku/service.service.IService"`
 	Plugins  map[string]*plugin.Config `json:"plugins" yaml:"plugins"`
+	Disable  bool                      `json:"disable" yaml:"disable"`
 }
 
 //DriverRule http路由驱动配置Rule结构体
