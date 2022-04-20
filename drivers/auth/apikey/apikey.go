@@ -11,7 +11,7 @@ import (
 	http_service "github.com/eolinker/eosc/http-service"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku/auth"
+	"github.com/eolinker/apinto/auth"
 )
 
 //supportTypes 当前驱动支持的authorization type值

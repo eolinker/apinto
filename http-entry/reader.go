@@ -2,7 +2,7 @@ package http_entry
 
 import (
 	"fmt"
-	"github.com/eolinker/goku/utils"
+	"github.com/eolinker/apinto/utils"
 	"net/url"
 	"strconv"
 	"strings"

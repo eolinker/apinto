@@ -4,9 +4,9 @@ import (
 	"fmt"
 	http_service "github.com/eolinker/eosc/http-service"
 	service "github.com/eolinker/eosc/http-service"
-	"github.com/eolinker/goku/plugin"
-	router_http "github.com/eolinker/goku/router/router-http"
-	service2 "github.com/eolinker/goku/service"
+	"github.com/eolinker/apinto/plugin"
+	router_http "github.com/eolinker/apinto/router/router-http"
+	service2 "github.com/eolinker/apinto/service"
 )
 
 type RouterHandler struct {

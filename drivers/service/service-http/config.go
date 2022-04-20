@@ -3,7 +3,7 @@ package service_http
 import (
 	"strings"
 
-	"github.com/eolinker/goku/plugin"
+	"github.com/eolinker/apinto/plugin"
 
 	"github.com/eolinker/eosc"
 )
@@ -24,7 +24,7 @@ type Config struct {
 	Scheme      string `json:"scheme"`
 	ProxyMethod string `json:"proxy_method"`
 
-	Upstream          eosc.RequireId   `json:"upstream" skill:"github.com/eolinker/goku/upstream.upstream.IUpstream" require:"false"`
+	Upstream          eosc.RequireId   `json:"upstream" skill:"github.com/eolinker/apinto/upstream.upstream.IUpstream" require:"false"`
 	UpstreamAnonymous *AnonymousConfig `json:"anonymous"`
 
 	PluginConfig map[string]*plugin.Config `json:"plugins"`

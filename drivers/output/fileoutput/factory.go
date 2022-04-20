@@ -1,8 +1,9 @@
 package fileoutput
 
 import (
-	"github.com/eolinker/eosc"
 	"reflect"
+
+	"github.com/eolinker/eosc"
 )
 
 const name = "file_output"

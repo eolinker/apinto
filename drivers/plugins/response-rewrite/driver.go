@@ -2,7 +2,7 @@ package response_rewrite
 
 import (
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku/utils"
+	"github.com/eolinker/apinto/utils"
 	"reflect"
 )
 

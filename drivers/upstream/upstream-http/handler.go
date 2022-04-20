@@ -7,7 +7,7 @@ import (
 	"github.com/eolinker/eosc/log"
 
 	http_service "github.com/eolinker/eosc/http-service"
-	"github.com/eolinker/goku/plugin"
+	"github.com/eolinker/apinto/plugin"
 )
 
 var _ http_service.IChain = (*UpstreamHandler)(nil)

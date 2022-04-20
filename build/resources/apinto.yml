@@ -1,20 +1,20 @@
 # 数据文件放置目录
-# data_dir: /var/lib/goku
+# data_dir: /var/lib/apinto
 
 # pid文件放置地址
-# pid_dir: /var/run/goku/
+# pid_dir: /var/run/apinto/
 
 # 日志放置目录
-# log_dir: /var/log/goku
+# log_dir: /var/log/apinto
 
 # socket放置目录
-# socket_dir: /tmp/goku
+# socket_dir: /tmp/apinto
 
-# goku运行配置地址
-# config: /etc/goku/config.yml
+# apinto运行配置地址
+# config: /etc/apinto/config.yml
 
 # 扩展仓库目录
-# extends_dir: /var/lib/goku/extends/
+# extends_dir: /var/lib/apinto/extends/
 
 # 错误日志文件名
 # error_log_name:  error.log

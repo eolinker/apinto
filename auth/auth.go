@@ -13,7 +13,7 @@ const (
 	//Authorization 鉴权
 	Authorization = "Authorization"
 
-	AuthSkill = "github.com/eolinker/goku/auth.auth.IAuth"
+	AuthSkill = "github.com/eolinker/apinto/auth.auth.IAuth"
 )
 
 var (
