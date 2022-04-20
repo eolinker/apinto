@@ -34,6 +34,7 @@ func init() {
 	process.Register(eosc.ProcessWorker, process_worker.Process)
 	process.Register(eosc.ProcessMaster, ProcessMaster)
 	process.Register(eosc.ProcessHelper, ProcessHelper)
+	process.Register(eosc.ProcessAdmin, ProcessAdmin)
 }
 
 func main() {

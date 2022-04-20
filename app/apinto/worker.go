@@ -1,8 +1,6 @@
 package main
 
 import (
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/extends"
 	"github.com/eolinker/apinto/drivers/auth/aksk"
 	"github.com/eolinker/apinto/drivers/auth/apikey"
 	"github.com/eolinker/apinto/drivers/auth/basic"
@@ -12,6 +10,10 @@ import (
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
 	"github.com/eolinker/apinto/drivers/discovery/static"
 	"github.com/eolinker/apinto/drivers/output/fileoutput"
+	"github.com/eolinker/apinto/drivers/output/httpoutput"
+	"github.com/eolinker/apinto/drivers/output/kafka"
+	"github.com/eolinker/apinto/drivers/output/nsq"
+	"github.com/eolinker/apinto/drivers/output/syslog"
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
 	"github.com/eolinker/apinto/drivers/plugins/auth"
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
@@ -28,6 +30,8 @@ import (
 	service_http "github.com/eolinker/apinto/drivers/service/service-http"
 	upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
 	plugin_manager "github.com/eolinker/apinto/plugin-manager"
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/extends"
 )
 
 func registerInnerExtenders() {
@@ -48,8 +52,13 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	nacos.Register(extenderRegister)
 	consul.Register(extenderRegister)
 	eureka.Register(extenderRegister)
+
 	//output
 	fileoutput.Register(extenderRegister)
+	nsq.Register(extenderRegister)
+	httpoutput.Register(extenderRegister)
+	kafka.Register(extenderRegister)
+	syslog.Register(extenderRegister)
 
 	// auth
 	basic.Register(extenderRegister)
