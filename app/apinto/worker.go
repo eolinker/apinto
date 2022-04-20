@@ -68,6 +68,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 
 	//plugin
 	plugin_manager.Register(extenderRegister)
+
 	auth.Register(extenderRegister)
 	rewrite.Register(extenderRegister)
 
