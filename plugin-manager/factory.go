@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/apinto/plugin"
+	"github.com/eolinker/eosc/common/bean"
 
 	"github.com/eolinker/eosc"
 )

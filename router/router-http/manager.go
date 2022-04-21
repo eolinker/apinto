@@ -4,8 +4,9 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/eolinker/apinto/plugin"
 	"sync"
+
+	"github.com/eolinker/apinto/plugin"
 
 	"github.com/eolinker/eosc/config"
 
@@ -42,7 +43,7 @@ func init() {
 	bean.AddInitializingBeanFunc(func() {
 		log.Debug("init router manager")
 
-		manager = NewManager(tf, cfg,pluginManager )
+		manager = NewManager(tf, cfg, pluginManager)
 	})
 }
 
@@ -65,12 +66,15 @@ func (m *Manager) Cancel() {
 }
 
 //NewManager 创建路由管理器
-func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg,pluginManager plugin.IPluginManager) *Manager {
+func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, pluginManager plugin.IPluginManager) *Manager {
 	log.Debug("new router manager")
 	m := &Manager{
 		routers: NewRouters(pluginManager),
-		tf:      traffic_http_fast.NewHttpTraffic(tf),
 		locker:  sync.Mutex{},
+		tf:      traffic_http_fast.NewHttpTraffic(tf),
+	}
+	if tf.IsStop() {
+		return m
 	}
 
 	for _, cfg := range listenCfg.Listens {
@@ -134,11 +138,6 @@ func (m *Manager) Del(port int, id string) error {
 		count := r.Count()
 
 		log.Debug("after delete router,count of port:", port, " count:", count)
-		//if count == 0 {
-		//	m.tf.ShutDown(port)
-		//} else if env.IsDebug() {
-		//
-		//}
 	}
 
 	return nil
