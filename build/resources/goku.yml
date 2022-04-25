@@ -14,7 +14,7 @@
 # config: /etc/goku/config.yml
 
 # 扩展仓库目录
-# extends_dir: /var/lib/goku/extends/
+# extends_dir: /var/lib/goku/extenders/
 
 # 错误日志文件名
 # error_log_name:  error.log
