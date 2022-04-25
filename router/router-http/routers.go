@@ -29,7 +29,7 @@ func (rs *Routers) Set(port int, id string, conf *Config) (IRouter, bool, error)
 
 	//若对应端口不存在路由树，则新建
 	if !has {
-		globalRouterFilter := rs.pluginManager.CreateRouter(name, map[string]*plugin.Config{})
+		globalRouterFilter := rs.pluginManager.CreateRequest(name, map[string]*plugin.Config{})
 		router := NewRouter(globalRouterFilter)
 		err := router.SetRouter(id, conf)
 		if err != nil {
@@ -50,7 +50,7 @@ func (rs *Routers) Set(port int, id string, conf *Config) (IRouter, bool, error)
 //NewRouters 新建路由树管理器
 func NewRouters(pluginManager plugin.IPluginManager) *Routers {
 	rs := &Routers{
-		data: eosc.NewUntyped(),
+		data:          eosc.NewUntyped(),
 		pluginManager: pluginManager,
 	}
 
