@@ -130,6 +130,46 @@ func GokuProfession() []*eosc.ProfessionConfig {
 			Mod: eosc.ProfessionConfig_Worker,
 		},
 		{
+			Name:         "output",
+			Label:        "输出",
+			Desc:         "输出",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:goku:file_output",
+					Name:  "file_output",
+					Label: "文件输出",
+					Desc:  "文件输出",
+				},
+				{
+					Id:    "eolinker.com:goku:nsqd",
+					Name:  "nsqd",
+					Label: "NSQ输出",
+					Desc:  "NSQ输出",
+				},
+				{
+					Id:    "eolinker.com:goku:http_output",
+					Name:  "http_output",
+					Label: "http输出",
+					Desc:  "http输出",
+				},
+				{
+					Id:    "eolinker.com:goku:syslog_output",
+					Name:  "syslog_output",
+					Label: "syslog输出",
+					Desc:  "syslog输出",
+				},
+				{
+					Id:    "eolinker.com:goku:kafka_output",
+					Name:  "kafka_output",
+					Label: "kafka输出",
+					Desc:  "kafka输出",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		},
+		{
 			Name:         "setting",
 			Label:        "setting",
 			Desc:         "系统设置",

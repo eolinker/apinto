@@ -25,6 +25,7 @@ func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]interface{}) er
 	}
 	return nil
 }
+
 func (d *Driver) check(v interface{}) (*Config, error) {
 	conf, ok := v.(*Config)
 	if !ok {
@@ -32,6 +33,7 @@ func (d *Driver) check(v interface{}) (*Config, error) {
 	}
 	return conf, nil
 }
+
 func (d *Driver) ConfigType() reflect.Type {
 	return d.configType
 }
@@ -44,11 +46,17 @@ func (d *Driver) getList(auths []eosc.RequireId) ([]output.IEntryOutput, error) 
 			return nil, fmt.Errorf("%s:%w", id, eosc.ErrorWorkerNotExits)
 		}
 
-		ls = append(ls, worker.(output.IEntryOutput))
+		outPut, ok := worker.(output.IEntryOutput)
+		if !ok {
+			return nil, fmt.Errorf("%s:worker not implement IEntryOutput", string(id))
+		}
+
+		ls = append(ls, outPut)
 
 	}
 	return ls, nil
 }
+
 func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	conf, err := d.check(v)
 	if err != nil {
@@ -59,6 +67,7 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		return nil, err
 	}
 	o := &accessLog{
+		Driver: d,
 		id:     id,
 		output: list,
 	}

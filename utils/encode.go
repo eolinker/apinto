@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/base64"
+	"net/url"
 	"strings"
 )
 
@@ -24,4 +25,16 @@ func B64Encode(input string) string {
 	result := base64.StdEncoding.EncodeToString([]byte(input))
 	result = strings.Replace(strings.Replace(strings.Replace(result, "=", "", -1), "/", "_", -1), "+", "-", -1)
 	return result
+}
+
+//QueryUrlEncode 对query进行url encode
+func QueryUrlEncode(rawQuery string) string {
+	queryList := strings.Split(rawQuery, "&")
+	for i, query := range queryList {
+		idx := strings.Index(query, "=")
+		if idx != -1 {
+			queryList[i] = query[:idx] + "=" + url.QueryEscape(query[idx+1:])
+		}
+	}
+	return strings.Join(queryList, "&")
 }

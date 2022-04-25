@@ -5,6 +5,10 @@ import (
 )
 
 type Config struct {
+	Config *FileConf `json:"config" yaml:"config"`
+}
+
+type FileConf struct {
 	File      string               `json:"file" yaml:"file"`
 	Dir       string               `json:"dir" yaml:"dir"`
 	Period    string               `json:"period" yaml:"period"`

@@ -1,16 +1,14 @@
 package http_router
 
 import (
-	http_service "github.com/eolinker/eosc/http-service"
+	"fmt"
 	service "github.com/eolinker/eosc/http-service"
-	"github.com/eolinker/goku/plugin"
 	router_http "github.com/eolinker/goku/router/router-http"
 	service2 "github.com/eolinker/goku/service"
 )
 
 type RouterHandler struct {
 	routerConfig  *router_http.Config
-	routerFilters http_service.IChain
 	serviceFilter service2.IService
 }
 
@@ -24,18 +22,32 @@ func (r *RouterHandler) Destroy() {
 		r.serviceFilter = nil
 		s.Destroy()
 	}
-	rh := r.routerFilters
-	if rh != nil {
-		r.routerFilters = nil
-		rh.Destroy()
-	}
+
 }
 
-func NewRouterHandler(routerConfig *router_http.Config, routerPlugin plugin.IPlugin, handler service2.IService) *RouterHandler {
+func NewRouterHandler(routerConfig *router_http.Config, handler service2.IService) *RouterHandler {
 
 	r := &RouterHandler{routerConfig: routerConfig, serviceFilter: handler}
-
-	r.routerFilters = routerPlugin.Append(r)
-	routerConfig.Target = r.routerFilters
+	routerConfig.Target = handler
 	return r
+}
+
+func NewDisableHandler(routerConfig *router_http.Config) *RouterHandler {
+	r := &RouterHandler{routerConfig: routerConfig, serviceFilter: &DisableHandler{}}
+	routerConfig.Target = r.serviceFilter
+	return r
+}
+
+type DisableHandler struct {
+}
+
+func (d *DisableHandler) DoChain(ctx service.IHttpContext) error {
+	resp := ctx.Response()
+	resp.SetBody([]byte("the router is disabled"))
+	resp.SetStatus(416, "416")
+	return fmt.Errorf("the router is disabled")
+}
+
+func (d *DisableHandler) Destroy() {
+	return
 }

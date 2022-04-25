@@ -14,7 +14,8 @@ var _ http_service.IResponse = (*Response)(nil)
 type Response struct {
 	*ResponseHeader
 	*fasthttp.Response
-	responseError error
+	proxyStatusCode int
+	responseError   error
 }
 
 func (r *Response) HeadersString() string {
@@ -69,7 +70,21 @@ func (r *Response) SetStatus(code int, status string) {
 	r.responseError = nil
 }
 
+//原始的响应状态码
+func (r *Response) ProxyStatusCode() int {
+	return r.proxyStatusCode
+}
+
+func (r *Response) ProxyStatus() string {
+	return strconv.Itoa(r.proxyStatusCode)
+}
+
+func (r *Response) SetProxyStatus(code int, status string) {
+	r.proxyStatusCode = code
+}
+
 func (r *Response) SetBody(bytes []byte) {
 	r.Response.SetBody(bytes)
+	r.SetHeader("Content-Length", strconv.Itoa(len(bytes)))
 	r.responseError = nil
 }

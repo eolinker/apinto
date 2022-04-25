@@ -1,4 +1,4 @@
-# raft日志放置目录
+# 数据文件放置目录
 # data_dir: /var/lib/goku
 
 # pid文件放置地址
@@ -14,13 +14,13 @@
 # config: /etc/goku/config.yml
 
 # 扩展仓库目录
-# extends_dir: /var/lib/goku/extends/
+# extends_dir: /var/lib/goku/extenders/
 
-# 错误日志路径：
-# error_log_path:  /var/log/goku/error.log
+# 错误日志文件名
+# error_log_name:  error.log
 
 # 错误日志等级
-# error_log_level: debug
+# error_log_level: error
 
 # 错误日志过期时间，默认单位为天，d|天，h|小时
 # error_log_expire: 7d
