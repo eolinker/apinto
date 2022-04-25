@@ -2,16 +2,13 @@ package http_router
 
 import (
 	"fmt"
-	http_service "github.com/eolinker/eosc/http-service"
 	service "github.com/eolinker/eosc/http-service"
-	"github.com/eolinker/apinto/plugin"
-	router_http "github.com/eolinker/apinto/router/router-http"
-	service2 "github.com/eolinker/apinto/service"
+	router_http "github.com/eolinker/goku/router/router-http"
+	service2 "github.com/eolinker/goku/service"
 )
 
 type RouterHandler struct {
 	routerConfig  *router_http.Config
-	routerFilters http_service.IChain
 	serviceFilter service2.IService
 }
 
@@ -25,18 +22,13 @@ func (r *RouterHandler) Destroy() {
 		r.serviceFilter = nil
 		s.Destroy()
 	}
-	rh := r.routerFilters
-	if rh != nil {
-		r.routerFilters = nil
-		rh.Destroy()
-	}
+
 }
 
-func NewRouterHandler(routerConfig *router_http.Config, routerPlugin plugin.IPlugin, handler service2.IService) *RouterHandler {
+func NewRouterHandler(routerConfig *router_http.Config, handler service2.IService) *RouterHandler {
 
 	r := &RouterHandler{routerConfig: routerConfig, serviceFilter: handler}
-	r.routerFilters = routerPlugin.Append(r)
-	routerConfig.Target = r.routerFilters
+	routerConfig.Target = handler
 	return r
 }
 

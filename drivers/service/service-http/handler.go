@@ -58,7 +58,7 @@ func (s *ServiceHandler) Destroy() {
 func (s *ServiceHandler) rebuild() {
 	config := s.service.Merge(s.routerPluginConfig)
 
-	s.pluginOrg = pluginManger.CreateService(s.id, config)
+	s.pluginOrg = pluginManger.CreateRequest(s.id, config)
 	s.pluginExec = s.pluginOrg.Append(filter.ToFilter([]http_service.IFilter{s}))
 
 	configToUpstream := plugin.MergeConfig(s.routerPluginConfig, s.service.configs)

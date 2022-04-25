@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	SpaceProfession = "profession-admin"
+	SpaceProfession = "professions"
 )
 
 type Professions struct {
@@ -18,7 +18,7 @@ func NewProfessions() (*Professions, error) {
 	p := &Professions{
 		Professions: professions.NewProfessions(),
 	}
-	p.Professions.Reset(ApintoProfession())
+	p.Professions.Reset(GokuProfession())
 	return p, nil
 }
 
