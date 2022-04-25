@@ -11,8 +11,8 @@ import (
 
 	"github.com/eolinker/apinto/upstream"
 
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/upstream/balance"
 )
@@ -20,7 +20,7 @@ import (
 var (
 	errorScheme          = errors.New("error scheme.only support http-service or https")
 	ErrorStructType      = errors.New("error struct type")
-	errorCreateWorker    = errors.New("fail to create upstream worker")
+	errorCreateWorker    = errors.New("fail to create upstream worker-admin")
 	ErrorUpstreamNotInit = errors.New("upstream not init")
 )
 var _ upstream.IUpstream = (*httpUpstream)(nil)

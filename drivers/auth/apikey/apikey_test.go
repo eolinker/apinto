@@ -60,7 +60,7 @@ func TestHeaderAuthorization(t *testing.T) {
 	//	t.Error(err)
 	//	return
 	//}
-	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+	//err = worker-admin.Auth(http_context.NewContext(req, &writer{}))
 
 	// fast http-service
 	req, err := buildFastRequest(headers, nil, "")
@@ -94,7 +94,7 @@ func TestQueryAuthorization(t *testing.T) {
 	//	t.Error(err)
 	//	return
 	//}
-	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+	//err = worker-admin.Auth(http_context.NewContext(req, &writer{}))
 
 	// fast http-service
 	req, err := buildFastRequest(headers, query, "")
@@ -141,7 +141,7 @@ func TestBodyAuthorization(t *testing.T) {
 	//for key, value := range headers {
 	//	req.RequestHeader.SetDriver(key, value)
 	//}
-	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+	//err = worker-admin.Auth(http_context.NewContext(req, &writer{}))
 
 	// fast http-service
 	req := fasthttp.AcquireRequest()
@@ -192,7 +192,7 @@ func TestMultipartFormAuthorization(t *testing.T) {
 	//	req.RequestHeader.SetDriver(key, value)
 	//}
 	//req.RequestHeader.SetDriver("Content-Type", w.FormDataContentType())
-	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+	//err = worker-admin.Auth(http_context.NewContext(req, &writer{}))
 
 	// fast http-service
 	// fast http-service
@@ -236,7 +236,7 @@ func TestFormAuthorization(t *testing.T) {
 	//	t.Error(err)
 	//	return
 	//}
-	//err = worker.Auth(http_context.NewContext(req, &writer{}))
+	//err = worker-admin.Auth(http_context.NewContext(req, &writer{}))
 
 	// fast http-service
 	req, err := buildFastRequest(headers, nil, formBody.Encode())

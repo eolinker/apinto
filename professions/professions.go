@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	SpaceProfession = "profession"
+	SpaceProfession = "profession-admin"
 )
 
 type Professions struct {

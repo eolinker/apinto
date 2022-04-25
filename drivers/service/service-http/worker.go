@@ -12,8 +12,8 @@ import (
 
 	upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
 
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/upstream"
+	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/service"
 )
@@ -32,7 +32,7 @@ type serviceWorker struct {
 	driver string
 }
 
-//Id 返回服务实例 worker id
+//Id 返回服务实例 worker-admin id
 func (s *serviceWorker) Id() string {
 	return s.id
 }

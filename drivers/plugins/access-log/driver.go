@@ -48,7 +48,7 @@ func (d *Driver) getList(auths []eosc.RequireId) ([]output.IEntryOutput, error) 
 
 		outPut, ok := worker.(output.IEntryOutput)
 		if !ok {
-			return nil, fmt.Errorf("%s:worker not implement IEntryOutput", string(id))
+			return nil, fmt.Errorf("%s:worker-admin not implement IEntryOutput", string(id))
 		}
 
 		ls = append(ls, outPut)

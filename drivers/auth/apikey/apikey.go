@@ -10,8 +10,8 @@ import (
 
 	http_service "github.com/eolinker/eosc/http-service"
 
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/auth"
+	"github.com/eolinker/eosc"
 )
 
 //supportTypes 当前驱动支持的authorization type值
@@ -135,7 +135,7 @@ func (a *apikey) getAuthValue(ctx http_service.IHttpContext) (string, error) {
 	return "", errors.New("[apikey_auth] cannot find the Apikey in query/body/header")
 }
 
-//Id 返回 worker ID
+//Id 返回 worker-admin ID
 func (a *apikey) Id() string {
 	return a.id
 }

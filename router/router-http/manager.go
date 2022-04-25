@@ -82,14 +82,14 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, pluginManager
 
 		l, err := tf.ListenTcp("", port)
 		if err != nil {
-			log.Warn("worker listen tcp error:", err)
+			log.Warn("worker-admin listen tcp error:", err)
 			continue
 		}
 		fmt.Println("new http service ", port, cfg, l)
 		if cfg.Scheme == "https" {
 			cert, err := config.NewCert(cfg.Certificate, listenCfg.Dir)
 			if err != nil {
-				log.Warn("worker create certificate error:", err)
+				log.Warn("worker-admin create certificate error:", err)
 				continue
 			}
 			m.tf.Set(port, traffic_http_fast.NewHttpService(tls.NewListener(l, &tls.Config{GetCertificate: cert.GetCertificate})))

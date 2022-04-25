@@ -8,8 +8,8 @@ import (
 
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/eosc"
 )
 
 type eureka struct {
@@ -61,7 +61,7 @@ func (e *eureka) Remove(id string) error {
 	return nil
 }
 
-//Id 返回 worker id
+//Id 返回 worker-admin id
 func (e *eureka) Id() string {
 	return e.id
 }

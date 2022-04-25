@@ -39,7 +39,7 @@ type Instance struct {
 	}
 }
 
-//Id 返回 worker id
+//Id 返回 worker-admin id
 func (n *nacos) Id() string {
 	return n.id
 }

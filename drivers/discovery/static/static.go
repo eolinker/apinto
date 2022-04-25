@@ -12,8 +12,8 @@ import (
 
 	health_check_http "github.com/eolinker/apinto/health-check-http"
 
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/eosc"
 )
 
 var (
@@ -30,7 +30,7 @@ type static struct {
 	cancelFunc context.CancelFunc
 }
 
-//Id 返回 worker id
+//Id 返回 worker-admin id
 func (s *static) Id() string {
 	return s.id
 }
