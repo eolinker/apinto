@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-#启动网关
+#Launch the gateway
 ./apinto start
 
 echo "APINTO start Success!" >> a.out
