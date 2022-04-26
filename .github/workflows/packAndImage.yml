@@ -36,12 +36,11 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
-      - name: Create release on GitHub   #创建各种系统架构下的源码包并上传至release
+      - name: Create archives on Release   #创建各种系统架构下的二进制包并上传至release assets
         uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
-          args: release --rm-dist
-          workdir: ./app/apinto
+          args: release -f .goreleaser.yaml --rm-dist
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - name: UploadAsset    #将打包脚本生成的tar包上传至release
@@ -52,12 +51,12 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./out/apinto-${{ steps.vars.outputs.tag }}.linux.x64.tar.gz
           asset_name: apinto-${{ steps.vars.outputs.tag }}.linux.x64.tar.gz
-          asset_content_type: application/application/x-gzip-compressed
+          asset_content_type: application/x-gzip-compressed
   dockerImage:
     name: buildDockerImage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3    
+      - uses: actions/checkout@v3
       - name: SetupGo
         uses: actions/setup-go@v2
         with:
@@ -76,10 +75,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-      - name: buildImage 
+      - name: buildImage
         run: |
           docker build -t apinto-gateway:${{ steps.vars.outputs.tag }} -f ./build/resources/Dockerfile ./build/resources
-      - name: pushImage  
+      - name: pushImage
         run: |
-          docker tag apinto-gateway:${{ steps.vars.outputs.tag }} chenjiekun/apinto-gateway:latest
-          docker push chenjiekun/apinto-gateway:latest
+          docker tag apinto-gateway:${{ steps.vars.outputs.tag }} eolinker/apinto-gateway:latest
+          docker push eolinker/apinto-gateway:latest
