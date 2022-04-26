@@ -36,7 +36,4 @@ archives:
         dst: /
         strip_parent: true
 release:
-  github:
-    owner: chen2eric
-    name: apinto
   name_template: '{{.Tag}}'
