@@ -32,7 +32,7 @@ type serviceWorker struct {
 	driver string
 }
 
-//Id 返回服务实例 worker-admin id
+//Id 返回服务实例 worker id
 func (s *serviceWorker) Id() string {
 	return s.id
 }

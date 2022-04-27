@@ -20,7 +20,7 @@ import (
 var (
 	errorScheme          = errors.New("error scheme.only support http-service or https")
 	ErrorStructType      = errors.New("error struct type")
-	errorCreateWorker    = errors.New("fail to create upstream worker-admin")
+	errorCreateWorker    = errors.New("fail to create upstream worker")
 	ErrorUpstreamNotInit = errors.New("upstream not init")
 )
 var _ upstream.IUpstream = (*httpUpstream)(nil)

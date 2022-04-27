@@ -132,7 +132,7 @@ func (c *consul) Create(serviceName string, attrs map[string]string, nodes map[s
 	return discovery.NewApp(nil, c, attrs, nodes), nil
 }
 
-//Id 返回 worker-admin id
+//Id 返回 worker id
 func (c *consul) Id() string {
 	return c.id
 }

@@ -18,7 +18,7 @@ func NewProfessions() (*Professions, error) {
 	p := &Professions{
 		Professions: professions.NewProfessions(),
 	}
-	p.Professions.Reset(GokuProfession())
+	p.Professions.Reset(ApintoProfession())
 	return p, nil
 }
 

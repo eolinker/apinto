@@ -30,7 +30,7 @@ type static struct {
 	cancelFunc context.CancelFunc
 }
 
-//Id 返回 worker-admin id
+//Id 返回 worker id
 func (s *static) Id() string {
 	return s.id
 }

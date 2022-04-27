@@ -135,7 +135,7 @@ func (a *apikey) getAuthValue(ctx http_service.IHttpContext) (string, error) {
 	return "", errors.New("[apikey_auth] cannot find the Apikey in query/body/header")
 }
 
-//Id 返回 worker-admin ID
+//Id 返回 worker ID
 func (a *apikey) Id() string {
 	return a.id
 }

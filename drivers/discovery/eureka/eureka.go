@@ -61,7 +61,7 @@ func (e *eureka) Remove(id string) error {
 	return nil
 }
 
-//Id 返回 worker-admin id
+//Id 返回 worker id
 func (e *eureka) Id() string {
 	return e.id
 }

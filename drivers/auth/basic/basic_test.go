@@ -67,7 +67,7 @@ func TestSuccessAuthorization(t *testing.T) {
 	}
 	// http-service
 	//req, err := buildRequest(headers)
-	//err = worker-admin.Auth(http_context.NewContext(req, &writer{}))
+	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 	//if err != nil {
 	//	t.Error(err)
 	//	return
@@ -105,7 +105,7 @@ func TestExpireAuthorization(t *testing.T) {
 	//	t.Error(err)
 	//	return
 	//}
-	//err = worker-admin.Auth(http_context.NewContext(req, &writer{}))
+	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
 	// fast http-service
 	req, err := buildFastRequest(headers)
@@ -138,7 +138,7 @@ func TestNoAuthorization(t *testing.T) {
 	//	t.Error(err)
 	//	return
 	//}
-	//err = worker-admin.Auth(http_context.NewContext(req, &writer{}))
+	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
 	// fast http-service
 	req, err := buildFastRequest(headers)
@@ -167,7 +167,7 @@ func TestNoAuthorizationType(t *testing.T) {
 	//	t.Error(err)
 	//	return
 	//}
-	//err = worker-admin.Auth(http_context.NewContext(req, &writer{}))
+	//err = worker.Auth(http_context.NewContext(req, &writer{}))
 
 	// fast http-service
 	headers := map[string]string{}
