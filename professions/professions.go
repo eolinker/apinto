@@ -2,7 +2,7 @@ package professions
 
 import (
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/process-master/professions"
+	"github.com/eolinker/eosc/worker-manager/professions"
 )
 
 const (
