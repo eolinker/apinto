@@ -2,9 +2,9 @@ package http_router
 
 import (
 	"fmt"
+	router_http "github.com/eolinker/apinto/router/router-http"
+	service2 "github.com/eolinker/apinto/service"
 	service "github.com/eolinker/eosc/http-service"
-	router_http "github.com/eolinker/goku/router/router-http"
-	service2 "github.com/eolinker/goku/service"
 )
 
 type RouterHandler struct {

@@ -71,6 +71,10 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, pluginManager
 		routers: NewRouters(pluginManager),
 		tf:      traffic_http_fast.NewHttpTraffic(),
 		locker:  sync.Mutex{},
+		tf:      traffic_http_fast.NewHttpTraffic(tf),
+	}
+	if tf.IsStop() {
+		return m
 	}
 
 	for _, cfg := range listenCfg.Listens {
@@ -134,11 +138,6 @@ func (m *Manager) Del(port int, id string) error {
 		count := r.Count()
 
 		log.Debug("after delete router,count of port:", port, " count:", count)
-		//if count == 0 {
-		//	m.tf.ShutDown(port)
-		//} else if env.IsDebug() {
-		//
-		//}
 	}
 
 	return nil

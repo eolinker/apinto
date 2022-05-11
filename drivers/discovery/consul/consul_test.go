@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/eolinker/goku/discovery"
+	"github.com/eolinker/apinto/discovery"
 )
 
 func TestConsulGetNodes(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/eolinker/goku/discovery"
+	"github.com/eolinker/apinto/discovery"
 
 	"github.com/eolinker/eosc"
 )

@@ -2,7 +2,7 @@ package httpoutput
 
 import (
 	"github.com/eolinker/eosc/formatter"
-	http_transport "github.com/eolinker/goku/output/http-transport"
+	http_transport "github.com/eolinker/apinto/output/http-transport"
 	"reflect"
 
 	"github.com/eolinker/eosc"

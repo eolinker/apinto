@@ -11,10 +11,10 @@ package router_http
 import (
 	"sync"
 
-	"github.com/eolinker/goku/checker"
+	"github.com/eolinker/apinto/checker"
 
-	"github.com/eolinker/goku/router"
-	"github.com/eolinker/goku/service"
+	"github.com/eolinker/apinto/router"
+	"github.com/eolinker/apinto/service"
 )
 
 var _ service.IRouterEndpoint = (*EndPoint)(nil)

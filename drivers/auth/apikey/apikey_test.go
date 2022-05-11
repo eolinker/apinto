@@ -16,8 +16,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/eolinker/goku/auth"
-	http_context "github.com/eolinker/goku/node/http-context"
+	"github.com/eolinker/apinto/auth"
+	http_context "github.com/eolinker/apinto/node/http-context"
 )
 
 var (
@@ -32,7 +32,7 @@ var (
 			Expire: 0,
 		},
 		{
-			Apikey: "goku",
+			Apikey: "apinto",
 			Label:  make(map[string]string),
 			Expire: 1627013522,
 		},

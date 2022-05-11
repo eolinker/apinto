@@ -13,7 +13,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/eolinker/goku/checker"
+	"github.com/eolinker/apinto/checker"
 )
 
 //RulePath 路由路径上的指标结构体，包含指标和相应的检查器
