@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/eolinker/goku/plugin"
+	"github.com/eolinker/apinto/plugin"
 	"sync"
 
 	"github.com/eolinker/eosc/config"
@@ -71,7 +71,6 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, pluginManager
 		routers: NewRouters(pluginManager),
 		tf:      traffic_http_fast.NewHttpTraffic(),
 		locker:  sync.Mutex{},
-		tf:      traffic_http_fast.NewHttpTraffic(tf),
 	}
 	if tf.IsStop() {
 		return m
