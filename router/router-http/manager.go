@@ -42,7 +42,7 @@ func init() {
 	bean.AddInitializingBeanFunc(func() {
 		log.Debug("init router manager")
 
-		manager = NewManager(tf, cfg,pluginManager )
+		manager = NewManager(tf, cfg, pluginManager)
 	})
 }
 
@@ -65,11 +65,11 @@ func (m *Manager) Cancel() {
 }
 
 //NewManager 创建路由管理器
-func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg,pluginManager plugin.IPluginManager) *Manager {
+func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, pluginManager plugin.IPluginManager) *Manager {
 	log.Debug("new router manager")
 	m := &Manager{
 		routers: NewRouters(pluginManager),
-		tf:      traffic_http_fast.NewHttpTraffic(tf),
+		tf:      traffic_http_fast.NewHttpTraffic(),
 		locker:  sync.Mutex{},
 	}
 
