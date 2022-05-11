@@ -5,7 +5,7 @@ import (
 
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/http-service"
-	"github.com/eolinker/goku/utils"
+	"github.com/eolinker/apinto/utils"
 )
 
 type ResponseRewrite struct {

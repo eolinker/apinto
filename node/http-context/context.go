@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	fasthttp_client "github.com/eolinker/goku/node/fasthttp-client"
+	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
 
 	"github.com/valyala/fasthttp"
 

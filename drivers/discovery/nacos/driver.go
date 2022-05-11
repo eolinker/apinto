@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku/discovery"
+	"github.com/eolinker/apinto/discovery"
 )
 
 const (

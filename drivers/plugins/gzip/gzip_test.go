@@ -1,11 +1,12 @@
 package gzip
 
 import (
-	http_service "github.com/eolinker/eosc/http-service"
-	http_context "github.com/eolinker/goku/node/http-context"
-	"github.com/valyala/fasthttp"
 	"net"
 	"testing"
+
+	http_context "github.com/eolinker/apinto/node/http-context"
+	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/valyala/fasthttp"
 )
 
 var ctx http_service.IHttpContext
@@ -59,7 +60,7 @@ func TestFilter(t *testing.T) {
 		{
 			name:         "wantCompress",
 			wantCompress: true,
-			body:         "eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;",
+			body:         "eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;",
 			header:       "gzip",
 		},
 		{

@@ -3,8 +3,8 @@ package service_http
 import (
 	"testing"
 
-	upstream_http "github.com/eolinker/goku/drivers/upstream/upstream-http"
-	"github.com/eolinker/goku/upstream/balance"
+	upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
+	"github.com/eolinker/apinto/upstream/balance"
 )
 
 func TestSend(t *testing.T) {

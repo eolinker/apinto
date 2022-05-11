@@ -1,17 +1,17 @@
 package service
 
 import (
+	"github.com/eolinker/apinto/checker"
+	"github.com/eolinker/apinto/plugin"
 	http_service "github.com/eolinker/eosc/http-service"
-	"github.com/eolinker/goku/checker"
-	"github.com/eolinker/goku/plugin"
 )
 
 //CheckSkill 检查目标技能是否符合
 func CheckSkill(skill string) bool {
-	return skill == "github.com/eolinker/goku/service.service.IService"
+	return skill == "github.com/eolinker/apinto/service.service.IService"
 }
 
-//IService github.com/eolinker/goku/service.service.IService
+//IService github.com/eolinker/apinto/service.service.IService
 type IService interface {
 	http_service.IChain
 }

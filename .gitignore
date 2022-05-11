@@ -14,5 +14,7 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 /.idea/
+.vscode
 /vendor/
 /go.sum
+*.DS_Store

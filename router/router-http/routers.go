@@ -3,7 +3,7 @@ package router_http
 import (
 	"strconv"
 
-	"github.com/eolinker/goku/plugin"
+	"github.com/eolinker/apinto/plugin"
 
 	"github.com/eolinker/eosc"
 )

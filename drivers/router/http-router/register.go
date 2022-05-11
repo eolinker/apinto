@@ -1,6 +1,7 @@
 package http_router
 
 import (
+	_ "github.com/eolinker/apinto/router/router-http"
 	"github.com/eolinker/eosc"
 )
 

@@ -1,6 +1,6 @@
 package health_check_http
 
-import "github.com/eolinker/goku/discovery"
+import "github.com/eolinker/apinto/discovery"
 
 //agent 从属于HTTPCheck,实现了IHealthChecker接口
 type agent struct {
