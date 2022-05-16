@@ -7,8 +7,6 @@ import (
 
 	"github.com/eolinker/eosc/utils"
 
-	"github.com/eolinker/apinto/professions"
-
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/pidfile"
 	process_master "github.com/eolinker/eosc/process-master"
@@ -40,11 +38,7 @@ func ProcessMaster() {
 }
 
 func NewMasterHandler() (*process_master.MasterHandler, error) {
-	p, err := professions.NewProfessions()
-	if err != nil {
-		return nil, err
-	}
+
 	return &process_master.MasterHandler{
-		Professions: p,
 	}, nil
 }
