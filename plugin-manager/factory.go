@@ -1,13 +1,12 @@
 package plugin_manager
 
 import (
+	"github.com/eolinker/apinto/plugin"
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/common/bean"
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 	"sync"
-
-	"github.com/eolinker/apinto/plugin"
-	"github.com/eolinker/eosc/common/bean"
-
-	"github.com/eolinker/eosc"
 )
 
 var (
@@ -22,6 +21,13 @@ func Register(register eosc.IExtenderDriverRegister) {
 type PluginFactory struct {
 }
 
+func (f *PluginFactory) Render() *schema.Schema {
+	render, err := schema.Generate(reflect.TypeOf((*PluginWorkerConfig)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
+}
 func NewPluginFactory() *PluginFactory {
 	return &PluginFactory{}
 }

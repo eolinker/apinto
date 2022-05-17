@@ -3,8 +3,6 @@ package main
 import (
 	"os"
 
-	"github.com/eolinker/eosc"
-
 	"github.com/eolinker/eosc/utils"
 
 	"github.com/eolinker/eosc/log"
@@ -13,7 +11,7 @@ import (
 )
 
 func ProcessMaster() {
-	logWriter := utils.InitLogTransport(eosc.ProcessMaster)
+	logWriter := utils.InitMasterLog()
 
 	p, err := NewMasterHandler()
 	if err != nil {
@@ -39,6 +37,5 @@ func ProcessMaster() {
 
 func NewMasterHandler() (*process_master.MasterHandler, error) {
 
-	return &process_master.MasterHandler{
-	}, nil
+	return &process_master.MasterHandler{}, nil
 }
