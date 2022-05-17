@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/eolinker/goku/plugin"
+	"github.com/eolinker/apinto/plugin"
 
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/goku/upstream"
+	"github.com/eolinker/apinto/upstream"
 
+	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/goku/discovery"
 
-	"github.com/eolinker/goku/upstream/balance"
+	"github.com/eolinker/apinto/upstream/balance"
 )
 
 var (

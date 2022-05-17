@@ -20,9 +20,6 @@ import (
 
 	"github.com/eolinker/eosc"
 
-	admin_open_api "github.com/eolinker/eosc/modules/admin-open-api"
-	"github.com/eolinker/eosc/process-master/admin"
-
 	"github.com/eolinker/eosc/eoscli"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/process"
@@ -30,10 +27,10 @@ import (
 
 func init() {
 	registerInnerExtenders()
-	admin.Register("/api/", admin_open_api.CreateHandler())
-	process.Register(eosc.ProcessWorker, process_worker.Process)
+ 	process.Register(eosc.ProcessWorker, process_worker.Process)
 	process.Register(eosc.ProcessMaster, ProcessMaster)
 	process.Register(eosc.ProcessHelper, ProcessHelper)
+	process.Register(eosc.ProcessAdmin, ProcessAdmin)
 }
 
 func main() {

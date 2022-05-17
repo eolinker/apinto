@@ -3,10 +3,10 @@ package auth
 import (
 	"errors"
 
+	"github.com/eolinker/apinto/auth"
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/eosc/log"
-	"github.com/eolinker/goku/auth"
 )
 
 var _ http_service.IFilter = (*Auth)(nil)
