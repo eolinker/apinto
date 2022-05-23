@@ -26,20 +26,15 @@ import (
 )
 
 func init() {
-	registerInnerExtenders()
- 	process.Register(eosc.ProcessWorker, process_worker.Process)
+
+	process.Register(eosc.ProcessWorker, process_worker.Process)
 	process.Register(eosc.ProcessMaster, ProcessMaster)
 	process.Register(eosc.ProcessHelper, ProcessHelper)
 	process.Register(eosc.ProcessAdmin, ProcessAdmin)
 }
 
 func main() {
-	//defer func() {
-	//	if err := recover(); err != nil {
-	//		log.Error("main recover error: ", err)
-	//	}
-	//	log.Close()
-	//}()
+
 	if process.Run() {
 		log.Close()
 		return
