@@ -1,9 +1,13 @@
 package main
 
 import (
+	"github.com/eolinker/apinto/professions"
 	process_master "github.com/eolinker/eosc/process-master"
 )
 
 func ProcessMaster() {
-	process_master.Process()
+	handler := &process_master.MasterHandler{
+		InitProfession: professions.ApintoProfession,
+	}
+	process_master.ProcessDo(handler)
 }
