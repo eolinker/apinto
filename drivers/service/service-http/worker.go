@@ -86,7 +86,6 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 
 	s.Service.retry = data.Retry
 	s.Service.scheme = data.Scheme
-	s.Service.proxyMethod = data.ProxyMethod
 	log.Debug("reset service:", data.PluginConfig)
 	s.Service.reset(upstreamCreate, data.PluginConfig)
 
