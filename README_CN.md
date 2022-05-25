@@ -74,9 +74,8 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 - **监控**：捕获网关请求数据，并可将其导出到promethus、Graphite中进行分析
 - .....
 
-#### 2021年迭代计划
-
-![image](https://user-images.githubusercontent.com/25589530/144803357-a8156c26-8099-4ebd-b7af-007477a56a67.png)
+#### 2022年迭代计划
+![4JkUb8T1aN](https://user-images.githubusercontent.com/14105999/170242304-2052db74-dfbf-49d3-8c56-99c5ad103411.png)
 
 
 ### 基准测试
