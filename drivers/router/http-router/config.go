@@ -11,7 +11,7 @@ import (
 type DriverConfig struct {
 	Driver   string                    `json:"driver" yaml:"driver"`
 	Listen   int                       `json:"listen" yaml:"listen"`
-	Method   []string                  `json:"method" yaml:"method"`
+	Method   []string                  `json:"method" yaml:"method" enum:"GET,POST,PUT,DELETE,PATH,HEAD,OPTIONS"`
 	Host     []string                  `json:"host" yaml:"host"`
 	Rules    []DriverRule              `json:"rules" yaml:"rules"`
 	Protocol string                    `json:"protocol" yaml:"protocol"`
