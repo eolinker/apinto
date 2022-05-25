@@ -75,7 +75,7 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 - .....
 
 #### 2022年迭代计划
-![4JkUb8T1aN](https://user-images.githubusercontent.com/14105999/170242304-2052db74-dfbf-49d3-8c56-99c5ad103411.png)
+![origin_img_v2_6d3f250b-bb41-497e-bab9-f8c1d21905bg](https://user-images.githubusercontent.com/14105999/170242438-78ddb8bf-9d6e-4c5f-b115-9c2248f33946.jpg)
 
 
 ### 基准测试
