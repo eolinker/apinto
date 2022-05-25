@@ -35,12 +35,8 @@ type PluginManager struct {
 	workers         eosc.IWorkers
 }
 
-func (p *PluginManager) CreateRouter(id string, conf map[string]*plugin.Config) plugin.IPlugin {
-	return p.createChain(id, conf, pluginRouter)
-}
-
-func (p *PluginManager) CreateService(id string, conf map[string]*plugin.Config) plugin.IPlugin {
-	return p.createChain(id, conf, pluginService)
+func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config) plugin.IPlugin {
+	return p.createChain(id, conf, pluginRequest)
 }
 
 func (p *PluginManager) CreateUpstream(id string, conf map[string]*plugin.Config) plugin.IPlugin {

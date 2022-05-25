@@ -5,8 +5,7 @@ const (
 	StatusEnable  = "enable"
 	StatusGlobal  = "global"
 
-	pluginRouter   = "router"
-	pluginService  = "service"
+	pluginRequest  = "request"
 	pluginUpstream = "upstream"
 )
 

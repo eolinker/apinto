@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/Shopify/sarama v1.32.0
-	github.com/eolinker/eosc v0.4.2
+	github.com/eolinker/eosc v0.5.0
 	github.com/go-basic/uuid v1.0.0
 	github.com/hashicorp/consul/api v1.9.1
 	github.com/nsqio/go-nsq v1.1.0
@@ -14,4 +14,9 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/valyala/fasthttp v1.31.0
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+)
+
+
+replace (
+	github.com/eolinker/eosc => ../eosc
 )

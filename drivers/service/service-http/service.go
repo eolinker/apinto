@@ -17,8 +17,7 @@ type Service struct {
 	retry    int
 	timeout  time.Duration
 
-	scheme      string
-	proxyMethod string
+	scheme string
 }
 
 func (s *Service) reset(upstream upstream.IUpstream, config map[string]*plugin.Config) {

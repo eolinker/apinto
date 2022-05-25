@@ -1,22 +1,22 @@
 package http_router
 
 import (
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/plugin"
 	router_http "github.com/eolinker/apinto/router/router-http"
 	"github.com/eolinker/apinto/service"
+	"github.com/eolinker/eosc"
 )
 
 //DriverConfig http路由驱动配置
 type DriverConfig struct {
 	Driver   string                    `json:"driver" yaml:"driver"`
 	Listen   int                       `json:"listen" yaml:"listen"`
-	Method   []string                  `json:"method" yaml:"method"`
+	Method   []string                  `json:"method" yaml:"method" enum:"GET,POST,PUT,DELETE,PATH,HEAD,OPTIONS"`
 	Host     []string                  `json:"host" yaml:"host"`
 	Rules    []DriverRule              `json:"rules" yaml:"rules"`
 	Protocol string                    `json:"protocol" yaml:"protocol"`
-	Cert     []Cert                    `json:"cert" yaml:"cert"`
 	Target   eosc.RequireId            `json:"target" yaml:"target" skill:"github.com/eolinker/apinto/service.service.IService"`
+	Disable  bool                      `json:"disable" yaml:"disable"`
 	Plugins  map[string]*plugin.Config `json:"plugins" yaml:"plugins"`
 }
 

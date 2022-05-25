@@ -1,11 +1,10 @@
 package http_router
 
 import (
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/log"
-	"github.com/eolinker/apinto/plugin"
 	router_http "github.com/eolinker/apinto/router/router-http"
 	"github.com/eolinker/apinto/service"
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/log"
 )
 
 //Router http路由驱动实例结构体，实现了worker接口
@@ -24,14 +23,11 @@ func (r *Router) create(cf *DriverConfig, target service.IServiceCreate) (*Route
 	newConf := getConfig(cf)
 	newConf.ID = r.id
 	newConf.Name = r.name
-	routerPluginConfig := cf.Plugins
-	if pluginConfigMerge, ok := target.(plugin.IPluginConfigMerge); ok {
-		routerPluginConfig = pluginConfigMerge.Merge(routerPluginConfig)
+	if cf.Disable {
+		return NewDisableHandler(newConf), nil
 	}
-	routerPlugin := r.driver.pluginManager.CreateRouter(r.id, routerPluginConfig)
-
 	serviceHandler := target.Create(r.id, cf.Plugins)
-	handler := NewRouterHandler(newConf, routerPlugin, serviceHandler)
+	handler := NewRouterHandler(newConf, serviceHandler)
 	return handler, nil
 }
 func (r *Router) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {

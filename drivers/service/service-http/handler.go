@@ -1,11 +1,11 @@
 package service_http
 
 import (
-	http_service "github.com/eolinker/eosc/http-service"
-	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/apinto/filter"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/upstream"
+	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/log"
 )
 
 type ServiceHandler struct {
@@ -32,9 +32,7 @@ func (s *ServiceHandler) DoChain(ctx http_service.IHttpContext) error {
 	if service == nil {
 		return nil
 	}
-	if service.proxyMethod != "" {
-		ctx.Proxy().SetMethod(service.proxyMethod)
-	}
+
 	exec := s.pluginExec
 	if exec != nil {
 		return exec.DoChain(ctx)
@@ -58,7 +56,7 @@ func (s *ServiceHandler) Destroy() {
 func (s *ServiceHandler) rebuild() {
 	config := s.service.Merge(s.routerPluginConfig)
 
-	s.pluginOrg = pluginManger.CreateService(s.id, config)
+	s.pluginOrg = pluginManger.CreateRequest(s.id, config)
 	s.pluginExec = s.pluginOrg.Append(filter.ToFilter([]http_service.IFilter{s}))
 
 	configToUpstream := plugin.MergeConfig(s.routerPluginConfig, s.service.configs)

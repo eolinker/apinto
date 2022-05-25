@@ -12,8 +12,8 @@ import (
 
 	health_check_http "github.com/eolinker/apinto/health-check-http"
 
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/eosc"
 )
 
 var (
