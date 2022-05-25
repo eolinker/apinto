@@ -16,8 +16,8 @@ type DriverConfig struct {
 	Rules    []DriverRule              `json:"rules" yaml:"rules"`
 	Protocol string                    `json:"protocol" yaml:"protocol"`
 	Target   eosc.RequireId            `json:"target" yaml:"target" skill:"github.com/eolinker/apinto/service.service.IService"`
-	Plugins  map[string]*plugin.Config `json:"plugins" yaml:"plugins"`
 	Disable  bool                      `json:"disable" yaml:"disable"`
+	Plugins  map[string]*plugin.Config `json:"plugins" yaml:"plugins"`
 }
 
 //DriverRule http路由驱动配置Rule结构体
