@@ -32,7 +32,7 @@ func NewPluginFactory() *PluginFactory {
 	return &PluginFactory{}
 }
 
-func (p *PluginFactory) Check(v interface{}, workers map[eosc.RequireId]interface{}) error {
+func (f *PluginFactory) Check(v interface{}, workers map[eosc.RequireId]interface{}) error {
 	return nil
 }
 
@@ -45,7 +45,7 @@ func (p *PluginManager) Create(id, name string, v interface{}, workers map[eosc.
 	return p, nil
 }
 
-func (p *PluginFactory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
+func (f *PluginFactory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 
 	once.Do(func() {
 		singleton = NewPluginManager(profession, name)
