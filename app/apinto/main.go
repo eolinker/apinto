@@ -16,8 +16,6 @@ import (
 
 	"github.com/eolinker/eosc/env"
 
-	process_worker "github.com/eolinker/eosc/process-worker"
-
 	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/eosc/eoscli"
@@ -27,7 +25,7 @@ import (
 
 func init() {
 
-	process.Register(eosc.ProcessWorker, process_worker.Process)
+	process.Register(eosc.ProcessWorker, ProcessWorker)
 	process.Register(eosc.ProcessMaster, ProcessMaster)
 	process.Register(eosc.ProcessHelper, ProcessHelper)
 	process.Register(eosc.ProcessAdmin, ProcessAdmin)
