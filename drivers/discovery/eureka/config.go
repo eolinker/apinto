@@ -16,8 +16,8 @@ type Config struct {
 
 //AccessConfig 接入地址配置
 type AccessConfig struct {
-	Address []string
-	Params  map[string]string
+	Address []string          `json:"address" `
+	Params  map[string]string `json:"params"`
 }
 
 func (c *Config) getScheme() string {

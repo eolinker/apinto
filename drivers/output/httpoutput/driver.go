@@ -1,8 +1,8 @@
 package httpoutput
 
 import (
-	"github.com/eolinker/eosc/formatter"
 	http_transport "github.com/eolinker/apinto/output/http-transport"
+	"github.com/eolinker/eosc/formatter"
 	"reflect"
 
 	"github.com/eolinker/eosc"
@@ -16,13 +16,13 @@ func (d *Driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
-func (d *Driver) Check(v interface{}) (*HttpConf, error) {
+func (d *Driver) Check(v interface{}) (*Config, error) {
 	conf, ok := v.(*Config)
 	if !ok {
 		return nil, errConfigType
 	}
 
-	httpConf := conf.Config
+	httpConf := conf
 	if httpConf.Method == "" {
 		return nil, errMethod
 	}
