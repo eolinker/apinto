@@ -17,7 +17,7 @@ type factory struct {
 }
 
 func (f *factory) Render() *schema.Schema {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), map[string][]string{"health_on": []string{}})
 	if err != nil {
 		return nil
 	}

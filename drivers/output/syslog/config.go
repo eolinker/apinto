@@ -14,34 +14,30 @@ var (
 )
 
 type Config struct {
-	Config *SysConfig `json:"config" yaml:"config"`
-}
-
-type SysConfig struct {
 	// 所使用的网络协议, 如:tcp,udp,unix
 	Network string `json:"network" yaml:"network"`
 	Address string `json:"address" yaml:"address"`
 	Level   string `json:"level" yaml:"level"`
 
-	Type      string               `json:"type" yaml:"type"`
-	Formatter eosc.FormatterConfig `json:"formatter" yaml:"formatter"`
+	Type      string               `json:"type" yaml:"type" label:"格式类型" enum:"line,json"`
+	Formatter eosc.FormatterConfig `json:"formatter" label:"输出格式" yaml:"formatter"`
 }
 
 func (c *Config) doCheck() error {
-	if c.Config.Network == "" {
+	if c.Network == "" {
 		return errNetwork
 	}
-	if c.Config.Address == "" {
+	if c.Address == "" {
 		return errAddress
 	}
-	if c.Config.Level == "" {
+	if c.Level == "" {
 		return errLevelType
 	}
-	if len(c.Config.Formatter) == 0 {
+	if len(c.Formatter) == 0 {
 		return errFormatterConf
 	}
-	if c.Config.Type == "" {
-		c.Config.Type = "line"
+	if c.Type == "" {
+		c.Type = "line"
 	}
 	return nil
 }

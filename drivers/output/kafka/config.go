@@ -16,9 +16,6 @@ var (
 )
 
 type Config struct {
-	Config *Kafka `json:"config" yaml:"config"`
-}
-type Kafka struct {
 	Topic         string               `json:"topic" yaml:"topic"`
 	Address       string               `json:"address" yaml:"address"`
 	Timeout       int                  `json:"timeout" yaml:"timeout"`
@@ -26,7 +23,7 @@ type Kafka struct {
 	PartitionType string               `json:"partition_type" yaml:"partition_type"`
 	Partition     int32                `json:"partition" yaml:"partition"`
 	PartitionKey  string               `json:"partition_key" yaml:"partition_key"`
-	Type          string               `json:"type" yaml:"type"`
+	Type          string               `json:"type" yaml:"type" enum:"json,line"`
 	Formatter     eosc.FormatterConfig `json:"formatter" yaml:"formatter"`
 }
 
@@ -42,7 +39,7 @@ type ProducerConfig struct {
 }
 
 func (c *Config) doCheck() (*ProducerConfig, error) {
-	conf := c.Config
+	conf := c
 	if conf.Topic == "" {
 		return nil, errTopic
 	}
