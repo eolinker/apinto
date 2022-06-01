@@ -39,7 +39,7 @@ func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface
 
 	n.topic = config.Topic
 	//创建生产者pool
-	n.pool, err = CreateProducerPool(config.Address, config.ClientConf)
+	n.pool, err = CreateProducerPool(config.Address, config.AuthSecret, config.ClientConf)
 	if err != nil {
 		return err
 	}
