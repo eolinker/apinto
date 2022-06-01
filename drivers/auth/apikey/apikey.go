@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"reflect"
 	"strings"
 	"time"
@@ -149,7 +150,7 @@ func (a *apikey) Start() error {
 func (a *apikey) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
+		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
 	a.users = &apiKeyUsers{
 		users: cfg.User,

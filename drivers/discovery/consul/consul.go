@@ -3,6 +3,7 @@ package consul
 import (
 	"context"
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"sync"
 	"time"
 
@@ -64,10 +65,10 @@ func (c *consul) Start() error {
 }
 
 //Reset 重置consul实例配置
-func (c *consul) Reset(config interface{}, workers map[eosc.RequireId]interface{}) error {
-	workerConfig, ok := config.(*Config)
+func (c *consul) Reset(cfg interface{}, workers map[eosc.RequireId]interface{}) error {
+	workerConfig, ok := cfg.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(config))
+		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(cfg))
 	}
 
 	clients, err := newClients(workerConfig.Config.Address, workerConfig.Config.Params, workerConfig.getScheme())

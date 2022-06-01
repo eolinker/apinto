@@ -2,6 +2,7 @@ package consul
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"reflect"
 	"sync"
 
@@ -33,7 +34,7 @@ func (d *driver) ConfigType() reflect.Type {
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	workerConfig, ok := v.(*Config)
 	if !ok {
-		return nil, fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(v))
+		return nil, fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(v))
 	}
 
 	clients, err := newClients(workerConfig.Config.Address, workerConfig.Config.Params, workerConfig.getScheme())

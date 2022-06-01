@@ -18,7 +18,7 @@ func Register(register eosc.IExtenderDriverRegister) {
 type RouterDriverFactory struct {
 }
 
-func (r *RouterDriverFactory) Render() *schema.Schema {
+func (r *RouterDriverFactory) Render() interface{} {
 	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
 	if err != nil {
 		return nil
