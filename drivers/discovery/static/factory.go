@@ -16,7 +16,7 @@ func Register(register eosc.IExtenderDriverRegister) {
 type factory struct {
 }
 
-func (f *factory) Render() *schema.Schema {
+func (f *factory) Render() interface{} {
 	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), map[string][]string{"health_on": []string{}})
 	if err != nil {
 		return nil
