@@ -3,6 +3,7 @@ package nacos
 import (
 	"context"
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"sync"
 	"time"
 
@@ -91,7 +92,7 @@ func (n *nacos) Start() error {
 func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
+		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
 	n.client = newClient(cfg.Config.Address, cfg.getParams(), cfg.getScheme())
 	return nil
