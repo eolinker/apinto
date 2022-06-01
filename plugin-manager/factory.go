@@ -21,7 +21,7 @@ func Register(register eosc.IExtenderDriverRegister) {
 type PluginFactory struct {
 }
 
-func (f *PluginFactory) Render() *schema.Schema {
+func (f *PluginFactory) Render() interface{} {
 	render, err := schema.Generate(reflect.TypeOf((*PluginWorkerConfig)(nil)), nil)
 	if err != nil {
 		return nil
