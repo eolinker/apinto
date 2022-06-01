@@ -2,10 +2,11 @@ package http_router
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"reflect"
 
-	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/apinto/plugin"
+	"github.com/eolinker/eosc/common/bean"
 
 	"github.com/eolinker/apinto/service"
 
@@ -46,7 +47,7 @@ func (h *HTTPRouterDriver) Create(id, name string, v interface{}, workers map[eo
 func (h *HTTPRouterDriver) check(v interface{}, workers map[eosc.RequireId]interface{}) (*DriverConfig, service.IServiceCreate, error) {
 	conf, ok := v.(*DriverConfig)
 	if !ok {
-		return nil, nil, fmt.Errorf("get %s but %s %w", eosc.TypeNameOf(v), eosc.TypeNameOf(new(DriverConfig)), eosc.ErrorRequire)
+		return nil, nil, fmt.Errorf("get %s but %s %w", config.TypeNameOf(v), config.TypeNameOf(new(DriverConfig)), eosc.ErrorRequire)
 	}
 	ser, has := workers[conf.Target]
 	if !has {
@@ -54,7 +55,7 @@ func (h *HTTPRouterDriver) check(v interface{}, workers map[eosc.RequireId]inter
 	}
 	target, ok := ser.(service.IServiceCreate)
 	if !ok {
-		return nil, nil, fmt.Errorf("target name: %s type of %s,target %w", conf.Target, eosc.TypeNameOf(ser), eosc.ErrorNotGetSillForRequire)
+		return nil, nil, fmt.Errorf("target name: %s type of %s,target %w", conf.Target, config.TypeNameOf(ser), eosc.ErrorNotGetSillForRequire)
 	}
 	return conf, target, nil
 
