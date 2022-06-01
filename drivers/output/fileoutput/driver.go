@@ -20,7 +20,7 @@ func (d *Driver) Check(v interface{}) (*Config, error) {
 		return nil, errorConfigType
 	}
 
-	fileConf := conf.Config
+	fileConf := conf
 	if fileConf == nil {
 		return nil, errorNilConfig
 	}

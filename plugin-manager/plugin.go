@@ -47,7 +47,7 @@ func (p *PluginManager) newPlugin(conf *PluginConfig) (*Plugin, error) {
 }
 
 func (p *PluginManager) getExtenderDriver(config *PluginConfig) (eosc.IExtenderDriver, error) {
-
+	log.DebugF("getExtenderDriver:%p.get(%v)", p, config)
 	driverFactory, has := p.extenderDrivers.GetDriver(config.ID)
 	if !has {
 		return nil, fmt.Errorf("id:%w", ErrorDriverNotExit)

@@ -1,9 +1,9 @@
 package fileoutput
 
 import (
+	file_transport "github.com/eolinker/apinto/output/file-transport"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
-	file_transport "github.com/eolinker/apinto/output/file-transport"
 )
 
 type FileOutput struct {
@@ -17,7 +17,7 @@ type FileOutput struct {
 func (a *FileOutput) Output(entry eosc.IEntry) error {
 	if a.formatter != nil {
 		data := a.formatter.Format(entry)
-		if a.transport != nil && len(data) > 0{
+		if a.transport != nil && len(data) > 0 {
 			err := a.transport.Write(data)
 			if err != nil {
 				return err
@@ -38,18 +38,18 @@ func (a *FileOutput) Start() error {
 
 func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) (err error) {
 	cfg, err := a.Driver.Check(conf)
-	if err != nil{
+	if err != nil {
 		return err
 	}
-	factory, has := formatter.GetFormatterFactory(cfg.Config.Type)
+	factory, has := formatter.GetFormatterFactory(cfg.Type)
 	if !has {
 		return errorFormatterType
 	}
 	c := &file_transport.Config{
-		Dir:    cfg.Config.Dir,
-		File:   cfg.Config.File,
-		Expire: cfg.Config.Expire,
-		Period: file_transport.ParsePeriod(cfg.Config.Period),
+		Dir:    cfg.Dir,
+		File:   cfg.File,
+		Expire: cfg.Expire,
+		Period: file_transport.ParsePeriod(cfg.Period),
 	}
 	if a.cfg == nil || a.cfg.IsUpdate(c) {
 		transport := file_transport.NewtTransporter(c)
@@ -60,7 +60,7 @@ func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]interfac
 		a.cfg = c
 	}
 
-	a.formatter, err = factory.Create(cfg.Config.Formatter)
+	a.formatter, err = factory.Create(cfg.Formatter)
 	return
 }
 

@@ -1,15 +1,15 @@
 package httpoutput
 
 import (
+	http_transport "github.com/eolinker/apinto/output/http-transport"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
-	http_transport "github.com/eolinker/apinto/output/http-transport"
 )
 
 type HttpOutput struct {
 	*Driver
 	id        string
-	config    *HttpConf
+	config    *Config
 	formatter eosc.IFormatter
 	transport formatter.ITransport
 }

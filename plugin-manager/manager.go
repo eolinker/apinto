@@ -12,9 +12,9 @@ import (
 
 	"github.com/eolinker/eosc"
 
+	"github.com/eolinker/apinto/filter"
 	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/eosc/log"
-	"github.com/eolinker/apinto/filter"
 )
 
 var (
@@ -145,7 +145,8 @@ func (p *PluginManager) check(conf interface{}) (Plugins, error) {
 	}
 
 	plugins := make(Plugins, 0, len(cfg.Plugins))
-	for _, cf := range cfg.Plugins {
+	for i, cf := range cfg.Plugins {
+		log.DebugF("new plugin:%d=>%v", i, cf)
 		newPlugin, err := p.newPlugin(cf)
 		if err != nil {
 			return nil, err
@@ -177,8 +178,10 @@ func NewPluginManager(profession, name string) *PluginManager {
 		plugins:    nil,
 		pluginObjs: eosc.NewUntyped(),
 	}
-
+	log.Debug("autowired extenderDrivers")
 	bean.Autowired(&pm.extenderDrivers)
+	log.DebugF("autowired extenderDrivers = %p", pm.extenderDrivers)
+
 	return pm
 }
 
