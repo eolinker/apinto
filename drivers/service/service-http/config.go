@@ -15,15 +15,14 @@ type AnonymousConfig struct {
 
 //Config service_http驱动配置
 type Config struct {
-	id      string
-	Name    string `json:"name"`
-	Driver  string `json:"driver"`
-	Desc    string `json:"desc"`
-	Timeout int64  `json:"timeout"`
-	Retry   int    `json:"retry"`
-	Scheme  string `json:"scheme" enum:"HTTP,HTTPS"`
-
-	Upstream          eosc.RequireId   `json:"upstream" skill:"github.com/eolinker/apinto/upstream.upstream.IUpstream" require:"false"`
+	id                string
+	Name              string           `json:"name"`
+	Driver            string           `json:"driver"`
+	Desc              string           `json:"desc"`
+	Timeout           int64            `json:"timeout"`
+	Retry             int              `json:"retry"`
+	Scheme            string           `json:"scheme" enum:"HTTP,HTTPS"`
+	Upstream          eosc.RequireId   `json:"upstream"  skill:"github.com/eolinker/apinto/upstream.upstream.IUpstream" require:"false"`
 	UpstreamAnonymous *AnonymousConfig `json:"anonymous"`
 
 	PluginConfig map[string]*plugin.Config `json:"plugins"`
