@@ -13,5 +13,5 @@ type User struct {
 	Username string            `json:"username"`
 	Password string            `json:"password"`
 	Labels   map[string]string `json:"labels"`
-	Expire   int64             `json:"expire"`
+	Expire   int64             `json:"expire" format:"date-time"`
 }
