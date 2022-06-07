@@ -22,7 +22,7 @@ func (c *Config) getScheme() string {
 
 //HealthConfig 健康检查配置
 type HealthConfig struct {
-	Scheme      string `json:"scheme"`
+	Scheme      string `json:"scheme" enum:"HTTP,HTTPS"`
 	Method      string `json:"method" enum:"GET,POST,PUT"`
 	URL         string `json:"url"`
 	SuccessCode int    `json:"success_code"`
