@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/eolinker/eosc/utils/config"
+	"strings"
 	"time"
 
 	"github.com/eolinker/apinto/plugin"
@@ -68,6 +69,7 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 	if factory, has := workers[cfg.Discovery]; has {
 		discoveryFactory, ok := factory.(discovery.IDiscovery)
 		if ok {
+			cfg.Scheme = strings.ToLower(cfg.Scheme)
 			if cfg.Scheme != "http" && cfg.Scheme != "https" {
 				return errorScheme
 			}
