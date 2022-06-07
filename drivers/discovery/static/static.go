@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"regexp"
 	"strconv"
 	"strings"
@@ -85,7 +86,7 @@ func (s *static) reset(cfg *Config) error {
 func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), errorStructType)
+		return fmt.Errorf("need %s,now %s:%w", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf), errorStructType)
 	}
 	return s.reset(cfg)
 }

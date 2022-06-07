@@ -3,12 +3,12 @@ package aksk
 import (
 	"errors"
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"time"
 
-	http_service "github.com/eolinker/eosc/http-service"
-
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/auth"
+	"github.com/eolinker/eosc"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 //supportTypes 当前驱动支持的authorization type值
@@ -33,15 +33,15 @@ func (a *aksk) Start() error {
 }
 
 func (a *aksk) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	config, ok := conf.(*Config)
+	c, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
+		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
 
-	a.hideCredential = config.HideCredentials
+	a.hideCredential = c.HideCredentials
 
 	a.users = &akskUsers{
-		users: config.Users,
+		users: c.Users,
 	}
 
 	return nil

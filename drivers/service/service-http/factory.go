@@ -30,7 +30,7 @@ func Register(register eosc.IExtenderDriverRegister) {
 type factory struct {
 }
 
-func (f *factory) Render() *schema.Schema {
+func (f *factory) Render() interface{} {
 	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
 	if err != nil {
 		return nil

@@ -15,13 +15,13 @@ func (d *Driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
-func (d *Driver) Check(v interface{}) (*NsqConf, error) {
+func (d *Driver) Check(v interface{}) (*Config, error) {
 	conf, ok := v.(*Config)
 	if !ok {
 		return nil, errConfigType
 	}
 
-	nsqConf := conf.Config
+	nsqConf := conf
 	if nsqConf == nil {
 		return nil, errNsqConfNull
 	}
@@ -61,7 +61,7 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	worker.topic = conf.Topic
 
 	//创建生产者pool
-	worker.pool, err = CreateProducerPool(conf.Address, conf.ClientConf)
+	worker.pool, err = CreateProducerPool(conf.Address, conf.AuthSecret, conf.ClientConf)
 	if err != nil {
 		return nil, err
 	}

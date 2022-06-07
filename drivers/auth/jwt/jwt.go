@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 
 	http_service "github.com/eolinker/eosc/http-service"
 
@@ -33,19 +34,19 @@ func (j *jwt) Start() error {
 }
 
 func (j *jwt) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	config, ok := conf.(*Config)
+	c, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
+		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
 
 	j.credentials = &jwtUsers{
-		credentials: config.Credentials,
+		credentials: c.Credentials,
 	}
 
-	j.signatureIsBase64 = config.SignatureIsBase64
-	j.claimsToVerify = config.ClaimsToVerify
-	j.runOnPreflight = config.RunOnPreflight
-	j.hideCredentials = config.HideCredentials
+	j.signatureIsBase64 = c.SignatureIsBase64
+	j.claimsToVerify = c.ClaimsToVerify
+	j.runOnPreflight = c.RunOnPreflight
+	j.hideCredentials = c.HideCredentials
 
 	return nil
 }

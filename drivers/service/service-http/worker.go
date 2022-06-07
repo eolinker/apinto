@@ -3,6 +3,7 @@ package service_http
 import (
 	"errors"
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 
 	"github.com/eolinker/eosc/log"
 
@@ -45,7 +46,7 @@ func (s *serviceWorker) Start() error {
 func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	data, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
+		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
 	data.rebuild()
 
@@ -86,7 +87,6 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 
 	s.Service.retry = data.Retry
 	s.Service.scheme = data.Scheme
-	s.Service.proxyMethod = data.ProxyMethod
 	log.Debug("reset service:", data.PluginConfig)
 	s.Service.reset(upstreamCreate, data.PluginConfig)
 

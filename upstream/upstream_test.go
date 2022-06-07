@@ -8,5 +8,5 @@ import (
 )
 
 func TestUpstream(t *testing.T) {
-	fmt.Println(eosc.TypeNameOf((*IUpstream)(nil)))
+	fmt.Println(config.TypeNameOf((*IUpstream)(nil)))
 }

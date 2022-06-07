@@ -32,16 +32,16 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	if err != nil {
 		return nil, err
 	}
-	worker, err := CreateTransporter(cfg.Config)
+	worker, err := CreateTransporter(cfg)
 	if err != nil {
 		return nil, err
 	}
 	// 新建formatter
-	factory, has := formatter.GetFormatterFactory(cfg.Config.Type)
+	factory, has := formatter.GetFormatterFactory(cfg.Type)
 	if !has {
 		return nil, errFormatterType
 	}
-	format, err := factory.Create(cfg.Config.Formatter)
+	format, err := factory.Create(cfg.Formatter)
 	if err != nil {
 		return nil, err
 	}

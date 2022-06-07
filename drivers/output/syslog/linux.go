@@ -11,7 +11,7 @@ import (
 )
 
 //CreateTransporter 创建syslog-Transporter
-func CreateTransporter(conf *SysConfig) (*SysWriter, error) {
+func CreateTransporter(conf *Config) (*SysWriter, error) {
 	sysWriter, err := newSysWriter(conf, "")
 	if err != nil {
 		return nil, err
@@ -66,11 +66,11 @@ func (s *SysWriter) Reset(conf interface{}, workers map[eosc.RequireId]interface
 		return err
 	}
 	// 新建formatter
-	factory, has := formatter.GetFormatterFactory(cfg.Config.Type)
+	factory, has := formatter.GetFormatterFactory(cfg.Type)
 	if !has {
 		return errFormatterType
 	}
-	s.formatter, err = factory.Create(cfg.Config.Formatter)
+	s.formatter, err = factory.Create(cfg.Formatter)
 	// 关闭旧的
 	if s.writer != nil {
 		err = s.writer.Close()
@@ -78,7 +78,7 @@ func (s *SysWriter) Reset(conf interface{}, workers map[eosc.RequireId]interface
 			return err
 		}
 	}
-	w, err := newSysWriter(cfg.Config, "")
+	w, err := newSysWriter(cfg, "")
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (s *SysWriter) CheckSkill(skill string) bool {
 	return false
 }
 
-func newSysWriter(conf *SysConfig, tag string) (*sys.Writer, error) {
+func newSysWriter(conf *Config, tag string) (*sys.Writer, error) {
 	if tag == "" {
 		tag = defaultTag
 	}

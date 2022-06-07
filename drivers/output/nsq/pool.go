@@ -15,9 +15,9 @@ const (
 )
 
 type producerPool struct {
-	nodes       []*node
-	size        int
-	next        uint32
+	nodes []*node
+	size  int
+	next  uint32
 
 	config     *nsq.Config
 	isClose    bool
@@ -30,7 +30,7 @@ type node struct {
 }
 
 //Create
-func CreateProducerPool(addrs []string, conf map[string]interface{}) (*producerPool, error) {
+func CreateProducerPool(addrs []string, authSecret string, conf map[string]interface{}) (*producerPool, error) {
 
 	pool := &producerPool{
 		nodes: make([]*node, len(addrs)),
@@ -38,6 +38,7 @@ func CreateProducerPool(addrs []string, conf map[string]interface{}) (*producerP
 	}
 
 	nsqConf := nsq.NewConfig()
+	nsqConf.AuthSecret = authSecret
 	//配置nsq_Config
 	for k, v := range conf {
 		err := nsqConf.Set(k, v)
@@ -88,7 +89,7 @@ func (p *producerPool) PublishAsync(topic string, body []byte) error {
 			}
 			break
 		}
-		log.Errorf("no available nsqd node. data: %s",fmt.Sprintf("topic:%s data:%s", topic, body))
+		log.Errorf("no available nsqd node. data: %s", fmt.Sprintf("topic:%s data:%s", topic, body))
 	}(n)
 
 	return nil
@@ -99,12 +100,12 @@ func (p *producerPool) Check() {
 
 	ticker := time.NewTicker(time.Second * 30)
 	defer ticker.Stop()
-	ctx, cancelFunc :=context.WithCancel(context.Background())
+	ctx, cancelFunc := context.WithCancel(context.Background())
 	p.cancelFunc = cancelFunc
-	for{
+	for {
 
 		select {
-		case <- ticker.C:
+		case <-ticker.C:
 			for _, n := range p.nodes {
 
 				if err := n.producer.Ping(); err != nil {
@@ -117,7 +118,7 @@ func (p *producerPool) Check() {
 					//continue
 
 					oldProducer := n.producer
-					newProducer,_ := nsq.NewProducer(oldProducer.String(), p.config)
+					newProducer, _ := nsq.NewProducer(oldProducer.String(), p.config)
 					if err = newProducer.Ping(); err != nil {
 						if n.status == connecting {
 							n.status = disconnected
@@ -133,7 +134,7 @@ func (p *producerPool) Check() {
 				n.status = connecting
 
 			}
-		case <- ctx.Done():
+		case <-ctx.Done():
 			return
 		}
 
@@ -146,7 +147,7 @@ func (p *producerPool) Close() {
 	for _, n := range p.nodes {
 		n.producer.Stop()
 	}
-	if p.cancelFunc != nil{
+	if p.cancelFunc != nil {
 		p.cancelFunc()
 		p.cancelFunc = nil
 	}

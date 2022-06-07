@@ -3,6 +3,7 @@ package upstream_http
 import (
 	"errors"
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"time"
 
 	"github.com/eolinker/apinto/plugin"
@@ -61,7 +62,7 @@ func (h *httpUpstream) Start() error {
 func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok || cfg == nil {
-		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), ErrorStructType)
+		return fmt.Errorf("need %s,now %s:%w", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf), ErrorStructType)
 	}
 
 	if factory, has := workers[cfg.Discovery]; has {
