@@ -11,6 +11,6 @@ type Config struct {
 	Scheme    string                    `json:"scheme" enum:"HTTP,HTTPS" label:"请求协议"`
 	Type      string                    `json:"type" enum:"round-robin" label:"负载算法"`
 	Config    string                    `json:"config" label:"配置"`
-	Discovery eosc.RequireId            `json:"discovery" label:"服务发现" skill:"github.com/eolinker/apinto/discovery.discovery.IDiscovery"`
+	Discovery eosc.RequireId            `json:"discovery" required:"true" label:"服务发现" skill:"github.com/eolinker/apinto/discovery.discovery.IDiscovery"`
 	Plugins   map[string]*plugin.Config `json:"plugins" label:"插件"`
 }

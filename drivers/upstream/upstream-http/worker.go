@@ -69,8 +69,8 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 	if factory, has := workers[cfg.Discovery]; has {
 		discoveryFactory, ok := factory.(discovery.IDiscovery)
 		if ok {
-			cfg.Scheme = strings.ToLower(cfg.Scheme)
-			if cfg.Scheme != "http" && cfg.Scheme != "https" {
+			Scheme := strings.ToLower(cfg.Scheme)
+			if Scheme != "http" && Scheme != "https" {
 				return errorScheme
 			}
 			balanceFactory, err := balance.GetFactory(cfg.Type)
@@ -90,10 +90,10 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 			h.desc = cfg.Desc
 
 			if h.upstream == nil {
-				h.upstream = NewUpstream(cfg.Scheme, app, balanceHandler, cfg.Plugins)
+				h.upstream = NewUpstream(Scheme, app, balanceHandler, cfg.Plugins)
 			} else {
 				old := h.upstream.app
-				h.upstream.Reset(cfg.Scheme, app, balanceHandler, cfg.Plugins)
+				h.upstream.Reset(Scheme, app, balanceHandler, cfg.Plugins)
 				closeError := old.Close()
 				if closeError != nil {
 

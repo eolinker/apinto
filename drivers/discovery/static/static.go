@@ -45,11 +45,8 @@ func (s *static) Start() error {
 func (s *static) reset(cfg *Config) error {
 
 	s.scheme = cfg.getScheme()
-	if cfg.Health == nil {
-		s.healthOn = false
-	} else {
-		s.healthOn = cfg.HealthOn
-	}
+	s.healthOn = cfg.HealthOn
+
 	if s.healthOn {
 		if s.checker == nil {
 			s.checker = health_check_http.NewHTTPCheck(
