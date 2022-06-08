@@ -8,7 +8,7 @@ import (
 type Config struct {
 	Scheme   string        `json:"scheme" enum:"HTTP,HTTPS"`
 	HealthOn bool          `json:"health_on"`
-	Health   *HealthConfig `json:"health" switch:"health_on=ture"`
+	Health   *HealthConfig `json:"health" switch:"health_on===true"`
 }
 
 func (c *Config) getScheme() string {
