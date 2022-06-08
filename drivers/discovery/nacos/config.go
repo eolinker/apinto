@@ -7,16 +7,14 @@ import (
 
 //Config nacos驱动配置
 type Config struct {
-	Name   string       `json:"name"`
-	Driver string       `json:"driver"`
-	Scheme string       `json:"scheme"`
-	Config AccessConfig `json:"config"`
+	Scheme string       `json:"scheme" label:"请求协议" enum:"HTTP,HTTPS"`
+	Config AccessConfig `json:"config" label:"配置信息"`
 }
 
 //AccessConfig 接入地址配置
 type AccessConfig struct {
-	Address []string
-	Params  map[string]string
+	Address []string          `json:"address" label:"consul地址"`
+	Params  map[string]string `json:"params" label:"参数"`
 }
 
 func (c *Config) getScheme() string {
