@@ -16,5 +16,5 @@ type apiKeyUsers struct {
 type User struct {
 	Apikey string            `json:"apikey"`
 	Label  map[string]string `json:"label"`
-	Expire int64             `json:"expire"`
+	Expire int64             `json:"expire" format:"date-time"`
 }

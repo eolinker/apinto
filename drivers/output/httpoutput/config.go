@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	Method    string               `json:"method" yaml:"method"`
-	Url       string               `json:"url" yaml:"url"`
+	Method    string               `json:"method" yaml:"method" enum:"GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS"`
+	Url       string               `json:"url" yaml:"url" format:"uri"`
 	Headers   map[string]string    `json:"headers" yaml:"headers"`
 	Type      string               `json:"type" yaml:"type" enum:"json,line"`
 	Formatter eosc.FormatterConfig `json:"formatter" yaml:"formatter"`

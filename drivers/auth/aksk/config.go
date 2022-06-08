@@ -15,5 +15,5 @@ type AKSKConfig struct {
 	AK     string            `json:"ak"`
 	SK     string            `json:"sk"`
 	Labels map[string]string `json:"labels"`
-	Expire int64             `json:"expire"`
+	Expire int64             `json:"expire" format:"date-time"`
 }
