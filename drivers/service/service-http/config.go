@@ -9,23 +9,20 @@ import (
 )
 
 type AnonymousConfig struct {
-	Type   string `json:"type"`
-	Config string `json:"config"`
+	Type   string `json:"type" enum:"round-robin" label:"负载算法"`
+	Config string `json:"config" label:"配置"`
 }
 
 //Config service_http驱动配置
 type Config struct {
-	id                string
-	Name              string           `json:"name"`
-	Driver            string           `json:"driver"`
-	Desc              string           `json:"desc"`
-	Timeout           int64            `json:"timeout"`
-	Retry             int              `json:"retry"`
-	Scheme            string           `json:"scheme" enum:"HTTP,HTTPS"`
-	Upstream          eosc.RequireId   `json:"upstream"  skill:"github.com/eolinker/apinto/upstream.upstream.IUpstream" require:"false"`
-	UpstreamAnonymous *AnonymousConfig `json:"anonymous"`
+	Desc              string           `json:"desc" label:"描述"`
+	Timeout           int64            `json:"timeout" label:"请求超时时间（单位ms）"`
+	Retry             int              `json:"retry" label:"失败重试次数"`
+	Scheme            string           `json:"scheme" label:"请求协议" enum:"HTTP,HTTPS"`
+	Upstream          eosc.RequireId   `json:"upstream"  label:"上游" skill:"github.com/eolinker/apinto/upstream.upstream.IUpstream" require:"false"`
+	UpstreamAnonymous *AnonymousConfig `json:"anonymous" label:"匿名上游"`
 
-	PluginConfig map[string]*plugin.Config `json:"plugins"`
+	PluginConfig map[string]*plugin.Config `json:"plugins" label:"插件"`
 }
 
 var validMethods = []string{
