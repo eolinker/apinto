@@ -13,7 +13,7 @@ type DriverConfig struct {
 	Method  []string                  `json:"method" yaml:"method" enum:"GET,POST,PUT,DELETE,PATH,HEAD,OPTIONS" label:"请求方式"`
 	Host    []string                  `json:"host" yaml:"host" label:"域名"`
 	Rules   []DriverRule              `json:"rules" yaml:"rules" label:"路由规则"`
-	Target  eosc.RequireId            `json:"target" yaml:"target" skill:"github.com/eolinker/apinto/service.service.IService" label:"目标服务"`
+	Target  eosc.RequireId            `json:"target" yaml:"target" skill:"github.com/eolinker/apinto/service.service.IService" required:"true" label:"目标服务"`
 	Disable bool                      `json:"disable" yaml:"disable" label:"是否启用"`
 	Plugins map[string]*plugin.Config `json:"plugins" yaml:"plugins" label:"插件配置"`
 }

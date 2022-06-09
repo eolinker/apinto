@@ -10,7 +10,7 @@ import (
 func TestGetApp(t *testing.T) {
 	serviceName := "DEMO"
 	cfg := Config{
-		Name:   "eureka",
+
 		Scheme: "http",
 		Config: AccessConfig{
 			Address: []string{
@@ -23,8 +23,8 @@ func TestGetApp(t *testing.T) {
 		},
 	}
 	e := &eureka{
-		id:       "1",
-		name:     cfg.Name,
+		id: "1",
+
 		client:   newClient(cfg.getAddress(), cfg.getParams()),
 		nodes:    discovery.NewNodesData(),
 		services: discovery.NewServices(),
