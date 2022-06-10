@@ -61,7 +61,7 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	worker.topic = conf.Topic
 
 	//创建生产者pool
-	worker.pool, err = CreateProducerPool(conf.Address, conf.ClientConf)
+	worker.pool, err = CreateProducerPool(conf.Address, conf.AuthSecret, conf.ClientConf)
 	if err != nil {
 		return nil, err
 	}

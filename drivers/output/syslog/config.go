@@ -19,8 +19,8 @@ type Config struct {
 	Address string `json:"address" yaml:"address"`
 	Level   string `json:"level" yaml:"level"`
 
-	Type      string               `json:"type" yaml:"type" label:"格式类型" enum:"line,json"`
-	Formatter eosc.FormatterConfig `json:"formatter" label:"输出格式" yaml:"formatter"`
+	Type      string               `json:"type" yaml:"type" description:"格式类型" enum:"line,json"`
+	Formatter eosc.FormatterConfig `json:"formatter" description:"输出格式" yaml:"formatter"`
 }
 
 func (c *Config) doCheck() error {

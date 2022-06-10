@@ -4,9 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/eolinker/eosc/utils/config"
+	"strings"
 	"time"
-
-	"github.com/eolinker/apinto/plugin"
 
 	"github.com/eolinker/eosc/log"
 
@@ -35,18 +34,18 @@ type httpUpstream struct {
 	lastError error
 }
 
-func (h *httpUpstream) Merge(high map[string]*plugin.Config) map[string]*plugin.Config {
-	if h.upstream == nil {
-		return high
-	}
-	return h.upstream.Merge(high)
-}
+//func (h *httpUpstream) Merge(high map[string]*plugin.Config) map[string]*plugin.Config {
+//	if h.upstream == nil {
+//		return high
+//	}
+//	return h.upstream.Merge(high)
+//}
 
-func (h *httpUpstream) Create(id string, configs map[string]*plugin.Config, retry int, time time.Duration) (upstream.IUpstreamHandler, error) {
+func (h *httpUpstream) Create(id string, retry int, time time.Duration) (upstream.IUpstreamHandler, error) {
 	if h.upstream == nil {
 		return nil, ErrorUpstreamNotInit
 	}
-	return h.upstream.Create(id, configs, retry, time)
+	return h.upstream.Create(id, retry, time)
 }
 
 //Id 返回worker id
@@ -68,7 +67,8 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 	if factory, has := workers[cfg.Discovery]; has {
 		discoveryFactory, ok := factory.(discovery.IDiscovery)
 		if ok {
-			if cfg.Scheme != "http" && cfg.Scheme != "https" {
+			Scheme := strings.ToLower(cfg.Scheme)
+			if Scheme != "http" && Scheme != "https" {
 				return errorScheme
 			}
 			balanceFactory, err := balance.GetFactory(cfg.Type)
@@ -88,10 +88,10 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 			h.desc = cfg.Desc
 
 			if h.upstream == nil {
-				h.upstream = NewUpstream(cfg.Scheme, app, balanceHandler, cfg.Plugins)
+				h.upstream = NewUpstream(Scheme, app, balanceHandler)
 			} else {
 				old := h.upstream.app
-				h.upstream.Reset(cfg.Scheme, app, balanceHandler, cfg.Plugins)
+				h.upstream.Reset(Scheme, app, balanceHandler)
 				closeError := old.Close()
 				if closeError != nil {
 
