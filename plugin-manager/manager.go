@@ -35,7 +35,7 @@ type PluginManager struct {
 }
 
 func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config) plugin.IPlugin {
-	return p.createChain(id, conf, pluginRequest)
+	return p.createChain(id, conf)
 }
 
 func (p *PluginManager) Id() string {
@@ -61,7 +61,7 @@ func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]inter
 		if !ok {
 			continue
 		}
-		v.IChainHandler.Reset(p.createFilters(v.conf, v.filterType)...)
+		v.IChainHandler.Reset(p.createFilters(v.conf)...)
 	}
 
 	return nil
@@ -75,11 +75,11 @@ func (p *PluginManager) CheckSkill(skill string) bool {
 	return false
 }
 
-func (p *PluginManager) createFilters(conf map[string]*plugin.Config, filterType string) []http_service.IFilter {
+func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []http_service.IFilter {
 	filters := make([]http_service.IFilter, 0, len(conf))
 	plugins := p.plugins
 	for _, plg := range plugins {
-		if plg.Status == StatusDisable || plg.Status == "" || plg.Type != filterType {
+		if plg.Status == StatusDisable || plg.Status == "" {
 			// 当插件类型不匹配，跳过
 			continue
 		}
@@ -119,15 +119,15 @@ func (p *PluginManager) createFilters(conf map[string]*plugin.Config, filterType
 	return filters
 }
 
-func (p *PluginManager) createChain(id string, conf map[string]*plugin.Config, filterType string) plugin.IPlugin {
-	chain := filter.NewChain(p.createFilters(conf, filterType))
+func (p *PluginManager) createChain(id string, conf map[string]*plugin.Config) plugin.IPlugin {
+	chain := filter.NewChain(p.createFilters(conf))
 
-	obj, has := p.pluginObjs.Del(fmt.Sprintf("%s:%s", id, filterType))
+	obj, has := p.pluginObjs.Del(id)
 	if has {
 		o := obj.(*PluginObj)
 		o.Destroy()
 	}
-	obj = NewPluginObj(chain, id, filterType, conf, p.pluginObjs)
+	obj = NewPluginObj(chain, id, conf, p.pluginObjs)
 
 	return obj.(*PluginObj)
 }
@@ -191,6 +191,7 @@ func toConfig(v interface{}, t reflect.Type) (interface{}, error) {
 	}
 	return obj, nil
 }
+
 func newConfig(t reflect.Type) interface{} {
 	for t.Kind() == reflect.Ptr {
 		t = t.Elem()
