@@ -5,8 +5,7 @@ const (
 	StatusEnable  = "enable"
 	StatusGlobal  = "global"
 
-	pluginRequest  = "request"
-	pluginUpstream = "upstream"
+	pluginRequest = "request"
 )
 
 type PluginWorkerConfig struct {

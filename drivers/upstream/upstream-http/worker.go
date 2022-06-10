@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/eolinker/apinto/plugin"
-
 	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/upstream"
@@ -36,18 +34,18 @@ type httpUpstream struct {
 	lastError error
 }
 
-func (h *httpUpstream) Merge(high map[string]*plugin.Config) map[string]*plugin.Config {
-	if h.upstream == nil {
-		return high
-	}
-	return h.upstream.Merge(high)
-}
+//func (h *httpUpstream) Merge(high map[string]*plugin.Config) map[string]*plugin.Config {
+//	if h.upstream == nil {
+//		return high
+//	}
+//	return h.upstream.Merge(high)
+//}
 
-func (h *httpUpstream) Create(id string, configs map[string]*plugin.Config, retry int, time time.Duration) (upstream.IUpstreamHandler, error) {
+func (h *httpUpstream) Create(id string, retry int, time time.Duration) (upstream.IUpstreamHandler, error) {
 	if h.upstream == nil {
 		return nil, ErrorUpstreamNotInit
 	}
-	return h.upstream.Create(id, configs, retry, time)
+	return h.upstream.Create(id, retry, time)
 }
 
 //Id 返回worker id
@@ -90,10 +88,10 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 			h.desc = cfg.Desc
 
 			if h.upstream == nil {
-				h.upstream = NewUpstream(Scheme, app, balanceHandler, cfg.Plugins)
+				h.upstream = NewUpstream(Scheme, app, balanceHandler)
 			} else {
 				old := h.upstream.app
-				h.upstream.Reset(Scheme, app, balanceHandler, cfg.Plugins)
+				h.upstream.Reset(Scheme, app, balanceHandler)
 				closeError := old.Close()
 				if closeError != nil {
 

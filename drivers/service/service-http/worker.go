@@ -78,7 +78,7 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 		if err != nil {
 			return err
 		}
-		upstreamCreate = upstream_http.NewUpstream(s.scheme, anonymous, balanceHandler, nil)
+		upstreamCreate = upstream_http.NewUpstream(s.scheme, anonymous, balanceHandler)
 	}
 
 	//

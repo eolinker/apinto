@@ -25,8 +25,7 @@ var (
 )
 
 type PluginManager struct {
-	id string
-
+	id              string
 	profession      string
 	name            string
 	extenderDrivers eosc.IExtenderDrivers
@@ -39,12 +38,7 @@ func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config)
 	return p.createChain(id, conf, pluginRequest)
 }
 
-func (p *PluginManager) CreateUpstream(id string, conf map[string]*plugin.Config) plugin.IPlugin {
-	return p.createChain(id, conf, pluginUpstream)
-}
-
 func (p *PluginManager) Id() string {
-
 	return p.id
 }
 
