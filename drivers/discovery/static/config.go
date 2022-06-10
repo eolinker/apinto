@@ -22,10 +22,10 @@ func (c *Config) getScheme() string {
 
 //HealthConfig 健康检查配置
 type HealthConfig struct {
-	Scheme      string `json:"scheme" enum:"HTTP,HTTPS"`
-	Method      string `json:"method" enum:"GET,POST,PUT"`
-	URL         string `json:"url"`
-	SuccessCode int    `json:"success_code"`
-	Period      int    `json:"period"`
-	Timeout     int    `json:"timeout"`
+	Scheme      string `json:"scheme" enum:"HTTP,HTTPS" label:"请求协议"`
+	Method      string `json:"method" enum:"GET,POST,PUT" label:"请求方式"`
+	URL         string `json:"url" label:"请求URL"`
+	SuccessCode int    `json:"success_code" label:"成功状态码" minimum:"99"`
+	Period      int    `json:"period" label:"检查频率（单位：s）" minimum:"1" default:"30"`
+	Timeout     int    `json:"timeout" label:"超时时间（单位：ms）"`
 }
