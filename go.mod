@@ -15,8 +15,3 @@ require (
 	github.com/valyala/fasthttp v1.31.0
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 )
-
-
-replace (
-	github.com/eolinker/eosc => ../eosc
-)
