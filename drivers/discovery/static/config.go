@@ -6,8 +6,8 @@ import (
 
 //Config 静态服务发现配置
 type Config struct {
-	Scheme   string        `json:"scheme" enum:"HTTP,HTTPS"`
-	HealthOn bool          `json:"health_on"`
+	Scheme   string        `json:"scheme" enum:"HTTP,HTTPS" label:"请求协议"`
+	HealthOn bool          `json:"health_on" label:"健康检查"`
 	Health   *HealthConfig `json:"health" switch:"health_on===true"`
 }
 
