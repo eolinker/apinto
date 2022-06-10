@@ -14,7 +14,7 @@ type Config struct {
 
 //AccessConfig 接入地址配置
 type AccessConfig struct {
-	Address []string          `json:"address" label:"consul地址"`
+	Address []string          `json:"address" label:"eureka地址"`
 	Params  map[string]string `json:"params" label:"参数"`
 }
 
