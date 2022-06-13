@@ -7,11 +7,11 @@ import (
 )
 
 type Config struct {
-	Method    string               `json:"method" yaml:"method" enum:"GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS"`
-	Url       string               `json:"url" yaml:"url" format:"uri"`
-	Headers   map[string]string    `json:"headers" yaml:"headers"`
-	Type      string               `json:"type" yaml:"type" enum:"json,line"`
-	Formatter eosc.FormatterConfig `json:"formatter" yaml:"formatter"`
+	Method    string               `json:"method" yaml:"method" enum:"GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS" label:"请求方式"`
+	Url       string               `json:"url" yaml:"url" format:"uri" label:"请求Url"`
+	Headers   map[string]string    `json:"headers" yaml:"headers" label:"请求头部"`
+	Type      string               `json:"type" yaml:"type" enum:"json,line" label:"输出格式"`
+	Formatter eosc.FormatterConfig `json:"formatter" yaml:"formatter" label:"格式化配置"`
 }
 
 func (h *Config) isConfUpdate(conf *Config) bool {
