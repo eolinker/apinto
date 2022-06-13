@@ -19,7 +19,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Label:        "路由",
 			Desc:         "路由",
 			Dependencies: []string{"service"},
-			AppendLabels: []string{"host", "target", "listen"},
+			AppendLabels: []string{"host", "target", "listen", "disable"},
 			Drivers: []*eosc.DriverConfig{
 				{
 					Id:     "eolinker.com:apinto:http_router",
