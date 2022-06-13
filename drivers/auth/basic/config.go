@@ -2,8 +2,6 @@ package basic
 
 //Config basic配置内容
 type Config struct {
-	Name            string `json:"name"`
-	Driver          string `json:"driver"`
 	HideCredentials bool   `json:"hide_credentials"`
 	User            []User `json:"user"`
 }

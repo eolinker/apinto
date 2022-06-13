@@ -2,8 +2,6 @@ package jwt
 
 //Config JWT实例配置
 type Config struct {
-	Name              string          `json:"name"`
-	Driver            string          `json:"driver"`
 	Credentials       []JwtCredential `json:"credentials"`
 	SignatureIsBase64 bool            `json:"signature_is_base64"`
 	ClaimsToVerify    []string        `json:"claims_to_verify"`

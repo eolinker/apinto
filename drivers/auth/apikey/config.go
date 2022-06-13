@@ -2,8 +2,6 @@ package apikey
 
 //Config apiKey配置内容
 type Config struct {
-	Driver          string `json:"driver"`
-	Name            string `json:"name"`
 	HideCredentials bool   `json:"hide_credentials"`
 	User            []User `json:"user"`
 }
