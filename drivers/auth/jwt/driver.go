@@ -28,8 +28,7 @@ func (d *driver) ConfigType() reflect.Type {
 //Create 创建jwt鉴权驱动实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	a := &jwt{
-		id:   id,
-		name: name,
+		id: id,
 	}
 	err := a.Reset(v, workers)
 	if err != nil {

@@ -1,12 +1,12 @@
 package auth
 
 import (
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/common/bean"
-	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/apinto/auth"
 	"github.com/eolinker/apinto/drivers/auth/apikey"
 	http_context "github.com/eolinker/apinto/node/http-context"
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/common/bean"
+	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/valyala/fasthttp"
 	"net"
 	"testing"
@@ -50,7 +50,6 @@ func createWorkers() eosc.IWorkers {
 	// 写入待应用的鉴权worker
 	ad, _ := apikey.NewFactory().Create("apikey@auth", "apikey", "apikey", "service", map[string]interface{}{})
 	aconf := &apikey.Config{
-		Driver:          "apikey",
 		HideCredentials: true,
 		User: []apikey.User{
 			{Apikey: "eolink", Expire: 0},

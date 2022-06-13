@@ -49,7 +49,6 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	ep := &ParamsTransformer{
 		Driver:    d,
 		id:        id,
-		name:      name,
 		params:    conf.Params,
 		remove:    conf.Remove,
 		errorType: conf.ErrorType,

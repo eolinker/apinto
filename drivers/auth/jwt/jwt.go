@@ -17,7 +17,6 @@ var supportTypes = []string{
 
 type jwt struct {
 	id                string
-	name              string
 	credentials       *jwtUsers
 	signatureIsBase64 bool
 	claimsToVerify    []string
