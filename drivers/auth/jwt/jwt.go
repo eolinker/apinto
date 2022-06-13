@@ -45,7 +45,6 @@ func (j *jwt) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) er
 
 	j.signatureIsBase64 = c.SignatureIsBase64
 	j.claimsToVerify = c.ClaimsToVerify
-	j.runOnPreflight = c.RunOnPreflight
 	j.hideCredentials = c.HideCredentials
 
 	return nil
