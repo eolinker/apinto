@@ -23,7 +23,6 @@ var (
 
 type static struct {
 	id         string
-	name       string
 	scheme     string
 	healthOn   bool
 	checker    *health_check_http.HTTPCheck

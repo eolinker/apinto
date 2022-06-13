@@ -28,9 +28,7 @@ func (d *driver) ConfigType() reflect.Type {
 //Create 创建http_proxy驱动的实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	w := &basic{
-		id:     id,
-		name:   name,
-		driver: driverName,
+		id: id,
 	}
 	err := w.Reset(v, workers)
 	if err != nil {

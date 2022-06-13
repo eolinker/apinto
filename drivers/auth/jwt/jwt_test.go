@@ -34,8 +34,6 @@ type JWTTest struct {
 }
 
 var JWTConf = &Config{
-	Name:              "a",
-	Driver:            "auth_jwt",
 	SignatureIsBase64: false,
 	ClaimsToVerify:    []string{"exp", "nbf"},
 	RunOnPreflight:    false,

@@ -1,8 +1,6 @@
 package aksk
 
 type Config struct {
-	Name            string       `json:"name"`
-	Driver          string       `json:"driver"`
 	HideCredentials bool         `json:"hide_credentials"`
 	Users           []AKSKConfig `json:"user"`
 }

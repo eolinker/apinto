@@ -11,7 +11,6 @@ import (
 type CircuitBreaker struct {
 	*Driver
 	id      string
-	name    string
 	counter *circuitCount
 	conf    *Config
 }
