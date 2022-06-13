@@ -11,15 +11,14 @@ import (
 
 type CorsFilter struct {
 	*Driver
-	id   string
-	name string
-	responseType string
+	id               string
+	responseType     string
 	allowCredentials bool
-	option optionHandler
-	originChecker *Checker
-	methodChecker *Checker
-	headerChecker *Checker
-	exposeChecker *Checker
+	option           optionHandler
+	originChecker    *Checker
+	methodChecker    *Checker
+	headerChecker    *Checker
+	exposeChecker    *Checker
 }
 
 func (c *CorsFilter) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
@@ -54,7 +53,7 @@ func (c *CorsFilter) doOption(ctx http_service.IHttpContext) error {
 	return c.option(ctx)
 }
 
-func (c *CorsFilter) doNext(ctx http_service.IHttpContext)  {
+func (c *CorsFilter) doNext(ctx http_service.IHttpContext) {
 	// 验证响应头部是否在expose-headers中
 	for key := range ctx.Response().Headers() {
 		if !c.exposeChecker.Check(key, true) {
@@ -98,7 +97,7 @@ func (c *CorsFilter) doFilter(ctx http_service.IHttpContext) error {
 	if !c.allowCredentials {
 		cookie := ctx.Request().Header().GetHeader("Cookie")
 		if cookie != "" {
-			 ctx.Proxy().Header().DelHeader("Cookie")
+			ctx.Proxy().Header().DelHeader("Cookie")
 		}
 	}
 	return nil
@@ -141,7 +140,7 @@ func (c *CorsFilter) CheckSkill(skill string) bool {
 }
 
 // WriteHeader CORS响应告诉本服务的规则
-func (c *CorsFilter) WriteHeader(ctx http_service.IHttpContext)  {
+func (c *CorsFilter) WriteHeader(ctx http_service.IHttpContext) {
 	resp := ctx.Response()
 	c.writeHeader(resp, c.originChecker)
 	c.writeHeader(resp, c.headerChecker)
@@ -149,7 +148,7 @@ func (c *CorsFilter) WriteHeader(ctx http_service.IHttpContext)  {
 	c.writeHeader(resp, c.exposeChecker)
 	resp.SetHeader("Access-Control-Allow-Credentials", strconv.FormatBool(c.allowCredentials))
 }
-func (c *CorsFilter) writeHeader(resp http_service.IResponse, h IHeader, )  {
+func (c *CorsFilter) writeHeader(resp http_service.IResponse, h IHeader) {
 	resp.SetHeader(h.GetKey(), h.GetOrigin())
 }
 

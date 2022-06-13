@@ -48,7 +48,6 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	ep := &ExtraParams{
 		Driver:    d,
 		id:        id,
-		name:      name,
 		params:    conf.Params,
 		errorType: conf.ErrorType,
 	}

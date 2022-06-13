@@ -38,12 +38,11 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		return nil, err
 	}
 	l := &RateLimiting{
-		Driver: d,
-		id:     id,
-		name:   name,
-		rateInfo: CreateRateInfo(conf),
+		Driver:           d,
+		id:               id,
+		rateInfo:         CreateRateInfo(conf),
 		hideClientHeader: conf.HideClientHeader,
-		responseType: conf.ResponseType,
+		responseType:     conf.ResponseType,
 	}
 	return l, nil
 }

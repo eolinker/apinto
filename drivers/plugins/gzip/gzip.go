@@ -11,7 +11,6 @@ import (
 type Gzip struct {
 	*Driver
 	id   string
-	name string
 	conf *Config
 }
 
@@ -20,7 +19,7 @@ func (g *Gzip) DoFilter(ctx http_service.IHttpContext, next http_service.IChain)
 	if next != nil {
 		err = next.DoChain(ctx)
 	}
-	if err == nil && strings.Contains(head,"gzip") {
+	if err == nil && strings.Contains(head, "gzip") {
 		err = g.doCompress(ctx)
 	}
 	return
@@ -37,7 +36,7 @@ func (g *Gzip) doCompress(ctx http_service.IHttpContext) error {
 	contentType := resp.GetHeader("Content-Type")
 	if len(g.conf.Types) == 0 {
 		flag = true
-	}else {
+	} else {
 		for _, t := range g.conf.Types {
 			if strings.Contains(contentType, t) {
 				flag = true
@@ -53,7 +52,7 @@ func (g *Gzip) doCompress(ctx http_service.IHttpContext) error {
 		resp.SetBody(res)
 		resp.SetHeader("Content-Encoding", "gzip")
 		if g.conf.Vary {
-			resp.SetHeader("Vary","Accept-Encoding")
+			resp.SetHeader("Vary", "Accept-Encoding")
 		}
 	}
 	return nil
@@ -104,4 +103,3 @@ func (g *Gzip) Stop() error {
 func (g *Gzip) CheckSkill(skill string) bool {
 	return http_service.FilterSkillName == skill
 }
-

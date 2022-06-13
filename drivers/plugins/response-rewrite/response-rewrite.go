@@ -3,15 +3,14 @@ package response_rewrite
 import (
 	"strconv"
 
+	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/http-service"
-	"github.com/eolinker/apinto/utils"
 )
 
 type ResponseRewrite struct {
 	*Driver
 	id         string
-	name       string
 	statusCode int
 	body       string
 	headers    map[string]string

@@ -13,7 +13,6 @@ var _ http_service.IFilter = (*ProxyRewrite)(nil)
 type ProxyRewrite struct {
 	*Driver
 	id         string
-	name       string
 	scheme     string
 	uri        string
 	regexURI   []string
