@@ -20,7 +20,6 @@ type jwt struct {
 	credentials       *jwtUsers
 	signatureIsBase64 bool
 	claimsToVerify    []string
-	runOnPreflight    bool
 	hideCredentials   bool
 }
 
@@ -67,9 +66,6 @@ func (j *jwt) Auth(context http_service.IHttpContext) error {
 		return err
 	}
 
-	if !j.runOnPreflight && context.Request().Method() == "OPTIONS" {
-		return nil
-	}
 	err = j.doJWTAuthentication(context)
 	if err != nil {
 		return err

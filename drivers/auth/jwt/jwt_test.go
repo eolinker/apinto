@@ -36,7 +36,6 @@ type JWTTest struct {
 var JWTConf = &Config{
 	SignatureIsBase64: false,
 	ClaimsToVerify:    []string{"exp", "nbf"},
-	RunOnPreflight:    false,
 	HideCredentials:   true,
 	Credentials: []JwtCredential{
 		{Iss: "TestHS256", Secret: "eolinker", RSAPublicKey: "", Algorithm: "HS256"},
