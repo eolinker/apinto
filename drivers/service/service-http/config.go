@@ -15,7 +15,6 @@ type AnonymousConfig struct {
 
 //Config service_http驱动配置
 type Config struct {
-	Desc              string                    `json:"desc" label:"描述"`
 	Timeout           int64                     `json:"timeout" label:"请求超时时间（单位ms）"`
 	Retry             int                       `json:"retry" label:"失败重试次数"`
 	Scheme            string                    `json:"scheme" label:"请求协议" enum:"HTTP,HTTPS"`

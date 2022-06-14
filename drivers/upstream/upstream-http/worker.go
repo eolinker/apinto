@@ -85,8 +85,6 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 				return err
 			}
 
-			h.desc = cfg.Desc
-
 			if h.upstream == nil {
 				h.upstream = NewUpstream(Scheme, app, balanceHandler)
 			} else {

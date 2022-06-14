@@ -82,7 +82,6 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	}
 
 	//
-	s.desc = data.Desc
 	s.Service.timeout = time.Duration(data.Timeout) * time.Millisecond
 
 	s.Service.retry = data.Retry
