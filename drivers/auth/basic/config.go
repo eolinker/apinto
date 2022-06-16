@@ -2,10 +2,8 @@ package basic
 
 //Config basic配置内容
 type Config struct {
-	Name            string `json:"name"`
-	Driver          string `json:"driver"`
-	HideCredentials bool   `json:"hide_credentials"`
-	User            []User `json:"user"`
+	HideCredentials bool   `json:"hide_credentials" label:"是否隐藏证书"`
+	User            []User `json:"user" label:"用户列表"`
 }
 
 //User 用户信息

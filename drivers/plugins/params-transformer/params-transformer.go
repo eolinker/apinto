@@ -14,7 +14,6 @@ var _ http_service.IFilter = (*ParamsTransformer)(nil)
 type ParamsTransformer struct {
 	*Driver
 	id        string
-	name      string
 	params    []*TransParam
 	remove    bool
 	errorType string

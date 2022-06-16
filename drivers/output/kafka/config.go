@@ -16,15 +16,15 @@ var (
 )
 
 type Config struct {
-	Topic         string               `json:"topic" yaml:"topic"`
-	Address       string               `json:"address" yaml:"address"`
-	Timeout       int                  `json:"timeout" yaml:"timeout"`
-	Version       string               `json:"version" yaml:"version"`
+	Topic         string               `json:"topic" yaml:"topic" label:"Topic"`
+	Address       string               `json:"address" yaml:"address" label:"请求地址"`
+	Timeout       int                  `json:"timeout" yaml:"timeout" label:"超时时间"`
+	Version       string               `json:"version" yaml:"version" label:"版本"`
 	PartitionType string               `json:"partition_type" yaml:"partition_type"`
 	Partition     int32                `json:"partition" yaml:"partition"`
 	PartitionKey  string               `json:"partition_key" yaml:"partition_key"`
-	Type          string               `json:"type" yaml:"type" enum:"json,line"`
-	Formatter     eosc.FormatterConfig `json:"formatter" yaml:"formatter"`
+	Type          string               `json:"type" yaml:"type" enum:"json,line" label:"输出格式"`
+	Formatter     eosc.FormatterConfig `json:"formatter" yaml:"formatter" label:"格式化配置"`
 }
 
 type ProducerConfig struct {

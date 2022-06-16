@@ -13,7 +13,6 @@ type Driver struct {
 	configType reflect.Type
 }
 
-
 func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]interface{}) error {
 	_, err := d.check(v)
 	return err
@@ -43,8 +42,7 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	c := &Gzip{
 		Driver: d,
 		id:     id,
-		name:   name,
-		conf: conf,
+		conf:   conf,
 	}
 	return c, nil
 }

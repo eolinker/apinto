@@ -14,7 +14,6 @@ var _ http_service.IFilter = (*Auth)(nil)
 type Auth struct {
 	*Driver
 	id    string
-	name  string
 	auths []auth.IAuth
 }
 

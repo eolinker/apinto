@@ -6,9 +6,9 @@ import (
 
 	"github.com/eolinker/apinto/checker"
 
+	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/http-service"
-	"github.com/eolinker/apinto/service"
 )
 
 var _ http_service.IFilter = (*Rewrite)(nil)
@@ -16,7 +16,6 @@ var _ http_service.IFilter = (*Rewrite)(nil)
 type Rewrite struct {
 	*Driver
 	id   string
-	name string
 	path string
 }
 

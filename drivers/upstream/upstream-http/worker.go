@@ -30,7 +30,6 @@ type httpUpstream struct {
 	upstream  *Upstream
 	id        string
 	name      string
-	desc      string
 	lastError error
 }
 
@@ -84,8 +83,6 @@ func (h *httpUpstream) Reset(conf interface{}, workers map[eosc.RequireId]interf
 			if err != nil {
 				return err
 			}
-
-			h.desc = cfg.Desc
 
 			if h.upstream == nil {
 				h.upstream = NewUpstream(Scheme, app, balanceHandler)

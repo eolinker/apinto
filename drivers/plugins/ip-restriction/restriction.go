@@ -8,16 +8,15 @@ import (
 
 type IPHandler struct {
 	*Driver
-	id    string
-	name  string
+	id           string
 	responseType string
-	filter IPFilter
+	filter       IPFilter
 }
 
 func (I *IPHandler) doRestriction(ctx http_service.IHttpContext) error {
 	realIP := ctx.Request().ReadIP()
 	if I.filter != nil {
-		ok, err :=  I.filter(realIP)
+		ok, err := I.filter(realIP)
 		if !ok {
 			return err
 		}

@@ -14,7 +14,6 @@ var _ http_service.IFilter = (*ExtraParams)(nil)
 type ExtraParams struct {
 	*Driver
 	id        string
-	name      string
 	params    []*ExtraParam
 	errorType string
 }
