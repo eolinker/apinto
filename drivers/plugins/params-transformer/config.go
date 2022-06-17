@@ -6,18 +6,17 @@ import (
 )
 
 type Config struct {
-	Params    []*TransParam `json:"params"`
-	Remove    bool          `json:"remove"`
-	ErrorType string        `json:"error_type"`
+	Params    []*TransParam `json:"params" label:"参数列表"`
+	Remove    bool          `json:"remove" label:"映射后删除原参数"`
+	ErrorType string        `json:"error_type" enum:"text,json" label:"报错输出格式" `
 }
 
 type TransParam struct {
-	Name          string `json:"name"`
-	Position      string `json:"position"`
-	ProxyName     string `json:"proxy_name"`
-	ProxyPosition string `json:"proxy_position"`
-	Required      bool   `json:"required"`
-	Conflict      string `json:"conflict"`
+	Name          string `json:"name" label:"待映射参数名称"`
+	Position      string `json:"position" label:"待映射参数所在位置" enum:"header,query,body"`
+	ProxyName     string `json:"proxy_name" label:"目标参数名称"`
+	ProxyPosition string `json:"proxy_position" label:"目标参数所在位置" enum:"header,query,body"`
+	Required      bool   `json:"required" label:"待映射参数是否必含"`
 }
 
 func (c *Config) doCheck() error {

@@ -38,7 +38,6 @@ func (I *IPHandler) Reset(conf interface{}, workers map[eosc.RequireId]interface
 		return err
 	}
 	I.filter = confObj.genFilter()
-	I.responseType = confObj.ResponseType
 	return nil
 }
 
