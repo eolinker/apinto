@@ -3,6 +3,7 @@ package service_http
 import (
 	"errors"
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 
 	"github.com/eolinker/eosc/log"
 
@@ -12,8 +13,8 @@ import (
 
 	upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
 
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/upstream"
+	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/service"
 )
@@ -28,7 +29,6 @@ type serviceWorker struct {
 	Service
 	id     string
 	name   string
-	desc   string
 	driver string
 }
 
@@ -45,7 +45,7 @@ func (s *serviceWorker) Start() error {
 func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	data, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
+		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
 	data.rebuild()
 
@@ -77,16 +77,14 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 		if err != nil {
 			return err
 		}
-		upstreamCreate = upstream_http.NewUpstream(s.scheme, anonymous, balanceHandler, nil)
+		upstreamCreate = upstream_http.NewUpstream(s.scheme, anonymous, balanceHandler)
 	}
 
 	//
-	s.desc = data.Desc
 	s.Service.timeout = time.Duration(data.Timeout) * time.Millisecond
 
 	s.Service.retry = data.Retry
 	s.Service.scheme = data.Scheme
-	s.Service.proxyMethod = data.ProxyMethod
 	log.Debug("reset service:", data.PluginConfig)
 	s.Service.reset(upstreamCreate, data.PluginConfig)
 

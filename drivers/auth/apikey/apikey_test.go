@@ -38,9 +38,7 @@ var (
 		},
 	}
 	cfg = &Config{
-		Name:   "apikey_test",
-		Driver: "apikey",
-		User:   users,
+		User: users,
 	}
 )
 

@@ -1,8 +1,11 @@
 ## Apinto
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/apinto)](https://goreportcard.com/report/github.com/eolinker/apinto) [![Releases](https://img.shields.io/github/release/eolinker/apinto/all.svg?style=flat-square)](https://github.com/eolinker/apinto/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/Apinto.svg?style=flat-square)](https://github.com/eolinker/apinto/blob/main/LICENSE)![](https://shields.io/github/downloads/eolinker/apinto/total)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+![apinto-水平蓝](https://user-images.githubusercontent.com/25589530/149460352-751a2146-42ad-49f7-8b98-41aa889d631d.png)
 
-![apinto-水平蓝](E:\编程\安装包\【logo】apinto-svg+png\apinto-水平蓝.png)Apinto is a microservice gateway developed based on golang. It can achieve the purposes of high-performance HTTP API forwarding, multi tenant management, API access control, etc. it has a powerful user-defined plug-in system, which can be expanded by itself, and can quickly help enterprises manage API services and improve the stability and security of API services. In the future, we will provide the plug-in market. Through the strong plug-in expansion ability of **Apinto**, users can expand **Apinto** plug-ins as needed like Lego blocks to enrich **Apinto** capabilities.
+
+Apinto is a microservice gateway developed based on golang. It can achieve the purposes of high-performance HTTP API forwarding, multi tenant management, API access control, etc. it has a powerful user-defined plug-in system, which can be expanded by itself, and can quickly help enterprises manage API services and improve the stability and security of API services. In the future, we will provide the plug-in market. Through the strong plug-in expansion ability of **Apinto**, users can expand **Apinto** plug-ins as needed like Lego blocks to enrich **Apinto** capabilities.
 
 **Note**：The **main** branch is the main development branch. Frequent updates may lead to unstable use. If you need to use a stable version, please look [release](https://github.com/eolinker/apinto/releases)
 
@@ -64,15 +67,14 @@ In a word, Apinto API gateway enables the business development team to focus mor
 - **Monitor**：Capture the gateway request data and export it to Promethus and graphite for analysis
 - .....
 
-#### RoadMap  for 2021
+#### RoadMap  for 2022
 
-![image](https://user-images.githubusercontent.com/25589530/144804666-605e23be-b7ae-433b-a918-e08e5668d25e.png)
+![roadmap_en](https://user-images.githubusercontent.com/14105999/170408557-478830d5-3725-4fbe-a6f6-0ff0dd91d90e.jpeg)
 
 
 ### Benchmark
 
-
-![](http://data.eolinker.com/course/6Md3iDR8e64ebc99af18b628851c0b75a8a2061b4b26ff1.png)
+![image](https://user-images.githubusercontent.com/25589530/149748340-dc544f79-a8f9-46f5-903d-a3af4fb8b16e.png)
 
 
 
@@ -86,10 +88,10 @@ In a word, Apinto API gateway enables the business development team to focus mor
 
 ### Get start
 
-1. Download and unzip the installation package (here is an example of the installation package of version v0.4.0)
+1. Download and unzip the installation package (here is an example of the installation package of version v0.5.1)
 
 ```
-wget https://github.com/eolinker/apinto/releases/download/v0.4.0/apinto-v0.4.0.linux.x64.tar.gz && tar -zxvf apinto-v0.4.0.linux.x64.tar.gz && cd apinto
+wget https://github.com/eolinker/apinto/releases/download/v0.5.1/apinto-v0.5.1.linux.x64.tar.gz && tar -zxvf apinto-v0.5.1.linux.x64.tar.gz && cd apinto
 ```
 
 2. Start gateway：
@@ -99,17 +101,17 @@ wget https://github.com/eolinker/apinto/releases/download/v0.4.0/apinto-v0.4.0.l
 ```
 
 ### Contact
-
-> The following domain names are temporary domain names, and the official domain name apinto COM is on file
-
-- **Help documentation**：[https://help-apinto.eolink.com](https://help-apinto.eolink.com)
+- **Help documentation**：[https://help.apinto.com](https://help.apinto.com)
 - **QQ group**: 725853895
 - **Slack**：[Join us](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
-- **Official website**：[https://apinto.eolink.com](https://apinto.eolink.com)
+- **Official website**：[https://www.apinto.com](https://www.apinto.com)
+- **Forum**：[https://community.apinto.com](https://community.apinto.com)
+- **Wechat**：<img src="https://user-images.githubusercontent.com/25589530/149860447-5879437b-3cda-4833-aee3-69a2e538e85d.png" style="width:150px" />
+
 
 ### About
 
-Eolinker is a leading API management service provider, providing professional API R & D management, API automation testing, API monitoring, API gateway and other services to more than 3000 enterprises around the world. It is the first enterprise to formulate API R & D management industry specifications for ITSS (China Electronics Industry Standardization Technology Association).
+Eolink is a leading API management service provider, providing professional API R & D management, API automation testing, API monitoring, API gateway and other services to more than 3000 enterprises around the world. It is the first enterprise to formulate API R & D management industry specifications for ITSS (China Electronics Industry Standardization Technology Association).
 
-Official website：[https://www.eolink.com](https://www.eolink.com "EOLINKER官方网站")
+Official website：[https://www.eolink.com](https://www.eolink.com "EOLINK官方网站")
 Download PC desktop for free：[https://www.eolink.com/pc/](https://www.eolink.com/pc/ "免费下载PC客户端")

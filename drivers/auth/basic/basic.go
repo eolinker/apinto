@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"strings"
 	"time"
 
@@ -24,8 +25,6 @@ var supportTypes = []string{
 
 type basic struct {
 	id             string
-	name           string
-	driver         string
 	hideCredential bool
 	users          *basicUsers
 }
@@ -57,7 +56,7 @@ func (b *basic) Start() error {
 func (b *basic) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
+		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
 	b.users = &basicUsers{
 		cfg.User,

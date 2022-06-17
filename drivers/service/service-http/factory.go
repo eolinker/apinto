@@ -1,10 +1,11 @@
 package service_http
 
 import (
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 
-	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/apinto/plugin"
+	"github.com/eolinker/eosc/common/bean"
 
 	"github.com/eolinker/apinto/drivers/discovery/static"
 
@@ -27,6 +28,14 @@ func Register(register eosc.IExtenderDriverRegister) {
 }
 
 type factory struct {
+}
+
+func (f *factory) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
 }
 
 //NewFactory 创建service_http驱动工厂

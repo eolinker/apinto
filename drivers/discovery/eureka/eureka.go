@@ -3,13 +3,14 @@ package eureka
 import (
 	"context"
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"sync"
 	"time"
 
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/eosc"
 )
 
 type eureka struct {
@@ -107,7 +108,7 @@ func (e *eureka) Start() error {
 func (e *eureka) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
+		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
 	e.client = newClient(cfg.getAddress(), cfg.getParams())
 	return nil

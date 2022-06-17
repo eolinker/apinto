@@ -2,11 +2,12 @@ package nacos
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"reflect"
 	"sync"
 
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/eosc"
 )
 
 const (
@@ -34,7 +35,7 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	if !ok {
 		val := reflect.ValueOf(v)
 		fmt.Println("reflect", val.Kind(), val.Interface())
-		return nil, fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(v))
+		return nil, fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(v))
 	}
 	return &nacos{
 		id:       id,

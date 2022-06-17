@@ -1,8 +1,8 @@
 package response_rewrite
 
 import (
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/utils"
+	"github.com/eolinker/eosc"
 	"reflect"
 )
 
@@ -55,13 +55,12 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	}
 
 	r := &ResponseRewrite{
-		d,
-		id,
-		name,
-		conf.StatusCode,
-		conf.Body,
-		conf.Headers,
-		conf.Match,
+		Driver:     d,
+		id:         id,
+		statusCode: conf.StatusCode,
+		body:       conf.Body,
+		headers:    conf.Headers,
+		match:      conf.Match,
 	}
 
 	return r, nil

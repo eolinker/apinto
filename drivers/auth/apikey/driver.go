@@ -26,9 +26,7 @@ func (d *driver) ConfigType() reflect.Type {
 
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	w := &apikey{
-		id:     id,
-		name:   name,
-		driver: driverName,
+		id: id,
 	}
 	err := w.Reset(v, workers)
 	if err != nil {

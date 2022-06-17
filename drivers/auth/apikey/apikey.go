@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"reflect"
 	"strings"
 	"time"
 
 	http_service "github.com/eolinker/eosc/http-service"
 
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/auth"
+	"github.com/eolinker/eosc"
 )
 
 //supportTypes 当前驱动支持的authorization type值
@@ -24,8 +25,6 @@ var supportTypes = []string{
 
 type apikey struct {
 	id             string
-	name           string
-	driver         string
 	hideCredential bool
 	users          *apiKeyUsers
 }
@@ -149,7 +148,7 @@ func (a *apikey) Start() error {
 func (a *apikey) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf))
+		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
 	a.users = &apiKeyUsers{
 		users: cfg.User,

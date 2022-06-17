@@ -101,7 +101,6 @@ setting:
     plugins:
       - id: "eolinker.com:apinto:auth"
         name: auth
-        type: service
         status: enable
         config:
           - jwt@auth
@@ -109,14 +108,12 @@ setting:
         init_config:    # 初始化配置，不可覆盖
       - id: "eolinker.com:apinto:access_log"
         name: accessLog
-        type: router
         status: global
         config:
           output:
             - fileAccessLog@output
       - id: "eolinker.com:apinto:labels"
         name: labels
-        type: service
         status:
         config:
           labels:

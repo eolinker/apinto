@@ -32,7 +32,7 @@ func initTestContext(address string) (http_service.IHttpContext, error) {
 }
 
 func TestFilter(t *testing.T) {
-	http_ctx, err := getContext("127.0.0.1:8080")
+	httpCtx, err := getContext("127.0.0.1:8080")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestFilter(t *testing.T) {
 		{
 			name:         "wantCompress",
 			wantCompress: true,
-			body:         "eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;eolink;goku;apinto;test;gzip;",
+			body:         "eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;eolink;apinto;apinto;test;gzip;",
 			header:       "gzip",
 		},
 		{
@@ -75,7 +75,7 @@ func TestFilter(t *testing.T) {
 			ctx.Response().SetBody([]byte(cc.body))
 			ctx.Request().Header().Headers().Set("Accept-Encoding", cc.header)
 			before := ctx.Response().BodyLen()
-			h.DoFilter(http_ctx, nil)
+			h.DoFilter(httpCtx, nil)
 			after := ctx.Response().BodyLen()
 			if cc.wantCompress && before <= after {
 				t.Errorf("want compress; before %d, after %d", before, after)

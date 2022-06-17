@@ -14,7 +14,6 @@ var _ http_service.IFilter = (*ParamsTransformer)(nil)
 type ParamsTransformer struct {
 	*Driver
 	id        string
-	name      string
 	params    []*TransParam
 	remove    bool
 	errorType string
@@ -157,7 +156,7 @@ func (p *ParamsTransformer) access(ctx http_service.IHttpContext) (int, error) {
 							bh.formParams[param.ProxyName] = []string{value}
 						}
 					} else {
-						//ctx.Proxy().AddFile(param.ProxyName, bv.(*goku_plugin.FileHeader))
+						//ctx.Proxy().AddFile(param.ProxyName, bv.(*apinto_plugin.FileHeader))
 						bh.files[param.ProxyName] = bv.(*http_service.FileHeader)
 					}
 				} else {

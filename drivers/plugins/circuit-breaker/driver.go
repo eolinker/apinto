@@ -46,11 +46,10 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	}
 
 	cb := &CircuitBreaker{
-		d,
-		id,
-		name,
-		newCircuitCount(),
-		conf,
+		Driver:  d,
+		id:      id,
+		counter: newCircuitCount(),
+		conf:    conf,
 	}
 
 	return cb, nil

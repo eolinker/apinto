@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 
 	"github.com/eolinker/eosc"
@@ -19,6 +20,13 @@ type factory struct {
 //NewFactory 创建jwt鉴权驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
 	return &factory{}
+}
+func (f *factory) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
 }
 
 //Create 创建jwt鉴权驱动

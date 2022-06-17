@@ -1,10 +1,9 @@
 ## Apinto
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/apinto)](https://goreportcard.com/report/github.com/eolinker/apinto) [![Releases](https://img.shields.io/github/release/eolinker/apinto/all.svg?style=flat-square)](https://github.com/eolinker/apinto/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/goku.svg?style=flat-square)](https://github.com/eolinker/apinto/blob/main/LICENSE)![](https://shields.io/github/downloads/eolinker/apinto/total)
+[![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/apinto)](https://goreportcard.com/report/github.com/eolinker/apinto) [![Releases](https://img.shields.io/github/release/eolinker/apinto/all.svg?style=flat-square)](https://github.com/eolinker/apinto/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/apinto.svg?style=flat-square)](https://github.com/eolinker/apinto/blob/main/LICENSE)![](https://shields.io/github/downloads/eolinker/apinto/total)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT_CN.md)
 
-
-
-![apinto-水平蓝](E:\编程\安装包\【logo】apinto-svg+png\apinto-水平蓝.png)
+![apinto-水平蓝](https://user-images.githubusercontent.com/25589530/149460352-751a2146-42ad-49f7-8b98-41aa889d631d.png)
 
 ------------
 
@@ -14,7 +13,7 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 ### 概况 | [English Introduction](https://github.com/eolinker/apinto/blob/main/README.md)
 
-- [为什么要使用Apinto](#为什么要使用Apinto "为什么要使用Goku")
+- [为什么要使用Apinto](#为什么要使用Apinto "Apinto")
 - [产品特性](#产品特性 "产品特性")
 - [基准测试](#基准测试 "基准测试")
 - [部署](#部署 "部署")
@@ -25,7 +24,7 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 ### 为什么要使用Apinto
 
-**Apinto**是运行在企业系统服务边界上的API网关。当您构建网站、App、IOT甚至是开放API交易时，Apinto 能够帮你将内部系统中重复的组件抽取出来并放置在Goku网关上运行，如进行用户授权、访问控制、防火墙、数据转换等；并且Apinto 提供服务编排的功能，让企业可以快速从各类服务上获取需要的数据，对业务实现快速响应。
+**Apinto**是运行在企业系统服务边界上的API网关。当您构建网站、App、IOT甚至是开放API交易时，Apinto 能够帮你将内部系统中重复的组件抽取出来并放置在Apinto网关上运行，如进行用户授权、访问控制、防火墙、数据转换等；并且Apinto 提供服务编排的功能，让企业可以快速从各类服务上获取需要的数据，对业务实现快速响应。
 
 **Apinto**具有以下优势：
 
@@ -37,7 +36,7 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 总而言之，Apinto 能让业务开发团队更加专注地实现业务。
 
-[![Stargazers over time](https://starchart.cc/eolinker/goku.svg)](#)
+[![Stargazers over time](https://starchart.cc/eolinker/apinto.svg)](#)
 
 ### 产品特性
 
@@ -68,39 +67,35 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 - **多协议支持**：支持多种协议，包括但不限于：gRPC、Websocket、tcp/udp、Dubbo
 
-- **插件市场**：由于goku主要是通过插件加载的方式加载所需模块，用户可将所需功能编译成插件，也可从插件市场中下载更新贡献者开发的插件，一键安装使用
+- **插件市场**：由于apinto主要是通过插件加载的方式加载所需模块，用户可将所需功能编译成插件，也可从插件市场中下载更新贡献者开发的插件，一键安装使用
 
 - **服务编排**：一个编排API对应多个backend，backend的入参支持客户端传入，也支持backend间的参数传递；backend的返回数据支持字段的过滤、删除、移动、重命名、拆包和封包；编排API能够设定编排调用失败时的异常返回
 
 - **监控**：捕获网关请求数据，并可将其导出到promethus、Graphite中进行分析
 - .....
 
-#### 2021年迭代计划
-
-![image](https://user-images.githubusercontent.com/25589530/144803357-a8156c26-8099-4ebd-b7af-007477a56a67.png)
-
+#### 2022年迭代计划
+![roadmap_cn](https://user-images.githubusercontent.com/14105999/170409057-407055ef-2d30-4272-ae8c-3c46b95af8d1.jpeg)
 
 ### 基准测试
 
 
-![](http://data.eolinker.com/course/6Md3iDR8e64ebc99af18b628851c0b75a8a2061b4b26ff1.png)
-
-
+![image](https://user-images.githubusercontent.com/25589530/149748340-dc544f79-a8f9-46f5-903d-a3af4fb8b16e.png)
 
 ### 部署
 
-* 直接部署：[部署教程](https://help-apinto.eolink.com/?path=/quick/arrange)
-* [快速入门教程](https://help-apinto.eolink.com/?path=/quick/quick_course)
-* [源码编译教程](https://help-apinto.eolink.com/?path=/quick/arrange)
+* 直接部署：[部署教程](https://help.apinto.com/?path=/quick/arrange)
+* [快速入门教程](https://help.apinto.com/?path=/quick/quick_course)
+* [源码编译教程](https://help.apinto.com/?path=/quick/arrange)
 * Docker部署：后续支持
 * Kubernetes部署：后续支持
 
 ### 启动
 
-1.下载安装包并解压（此处以v0.4.0版本的安装包示例）
+1.下载安装包并解压（此处以v0.5.1版本的安装包示例）
 
 ```
-wget https://github.com/eolinker/apinto/releases/download/v0.4.0/apinto-v0.4.0.linux.x64.tar.gz && tar -zxvf apinto-v0.4.0.linux.x64.tar.gz && cd apinto
+wget https://github.com/eolinker/apinto/releases/download/v0.5.1/apinto-v0.5.1.linux.x64.tar.gz && tar -zxvf apinto-v0.5.1.linux.x64.tar.gz && cd apinto
 ```
 
 2.启动网关：
@@ -111,20 +106,21 @@ wget https://github.com/eolinker/apinto/releases/download/v0.4.0/apinto-v0.4.0.l
 
 - ### **联系我们**
 
-  > 下列域名为临时域名，正式域名apinto.com正在备案
 
-  * **帮助文档**：[https://help-apinto.eolink.com](https://help-apinto.eolink.com/)
+* **帮助文档**：[https://help.apinto.com](https://help.apinto.com/)
 
-  - **QQ群**: 725853895
+- **QQ群**: 725853895
 
-  - **Slack**：[加入我们](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
+- **Slack**：[加入我们](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
 
-  - **官网**：[https://apinto.eolink.com](https://apinto.eolink.com/)
+- **官网**：[https://www.apinto.com](https://www.apinto.com/)
+- **论坛**：[https://community.apinto.com](https://community.apinto.com/)
+- **微信群**：<img src="https://user-images.githubusercontent.com/25589530/149860447-5879437b-3cda-4833-aee3-69a2e538e85d.png" style="width:150px" />
 
 ### 关于我们
 
-EOLINKER 是领先的 API 管理服务供应商，为全球超过3000家企业提供专业的 API 研发管理、API自动化测试、API监控、API网关等服务。是首家为ITSS（中国电子工业标准化技术协会）制定API研发管理行业规范的企业。
+EOLINK 是领先的 API 管理服务供应商，为全球超过3000家企业提供专业的 API 研发管理、API自动化测试、API监控、API网关等服务。是首家为ITSS（中国电子工业标准化技术协会）制定API研发管理行业规范的企业。
 
-官方网站：[https://www.eolinker.com](https://www.eolinker.com "EOLINKER官方网站")
+官方网站：[https://www.eolink.com](https://www.eolink.com "EOLINKER官方网站")
 
-免费下载PC桌面端：[https://www.eolinker.com/pc/](https://www.eolinker.com/pc/ "免费下载PC客户端")
+免费下载PC桌面端：[https://www.eolink.com/pc/](https://www.eolink.com/pc/ "免费下载PC客户端")

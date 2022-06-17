@@ -5,14 +5,10 @@ import (
 )
 
 type Config struct {
-	Config *FileConf `json:"config" yaml:"config"`
-}
-
-type FileConf struct {
-	File      string               `json:"file" yaml:"file"`
-	Dir       string               `json:"dir" yaml:"dir"`
-	Period    string               `json:"period" yaml:"period"`
-	Expire    int                  `json:"expire" yaml:"expire"`
-	Type      string               `json:"type" yaml:"type"`
-	Formatter eosc.FormatterConfig `json:"formatter" yaml:"formatter"`
+	File      string               `json:"file" yaml:"file" label:"文件名称"`
+	Dir       string               `json:"dir" yaml:"dir" label:"文件存放目录"`
+	Period    string               `json:"period" yaml:"period" enum:"hour,day" label:"日志分割周期"`
+	Expire    int                  `json:"expire" yaml:"expire" label:"日志保存时间" description:"单位：天"`
+	Type      string               `json:"type" yaml:"type" enum:"json,line" label:"输出格式"`
+	Formatter eosc.FormatterConfig `json:"formatter" yaml:"formatter" label:"格式化配置"`
 }

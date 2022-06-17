@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,8 +13,8 @@ import (
 
 	health_check_http "github.com/eolinker/apinto/health-check-http"
 
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/eosc"
 )
 
 var (
@@ -22,7 +23,6 @@ var (
 
 type static struct {
 	id         string
-	name       string
 	scheme     string
 	healthOn   bool
 	checker    *health_check_http.HTTPCheck
@@ -44,11 +44,8 @@ func (s *static) Start() error {
 func (s *static) reset(cfg *Config) error {
 
 	s.scheme = cfg.getScheme()
-	if cfg.Health == nil {
-		s.healthOn = false
-	} else {
-		s.healthOn = cfg.HealthOn
-	}
+	s.healthOn = cfg.HealthOn
+
 	if s.healthOn {
 		if s.checker == nil {
 			s.checker = health_check_http.NewHTTPCheck(
@@ -85,7 +82,7 @@ func (s *static) reset(cfg *Config) error {
 func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
-		return fmt.Errorf("need %s,now %s:%w", eosc.TypeNameOf((*Config)(nil)), eosc.TypeNameOf(conf), errorStructType)
+		return fmt.Errorf("need %s,now %s:%w", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf), errorStructType)
 	}
 	return s.reset(cfg)
 }

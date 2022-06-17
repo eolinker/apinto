@@ -1,9 +1,9 @@
 package static
 
 import (
-	"reflect"
-
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/utils/schema"
+	"reflect"
 )
 
 var name = "discovery_static"
@@ -14,6 +14,14 @@ func Register(register eosc.IExtenderDriverRegister) {
 }
 
 type factory struct {
+}
+
+func (f *factory) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), map[string][]string{"health_on": []string{}})
+	if err != nil {
+		return nil
+	}
+	return render
 }
 
 //NewFactory 创建静态服务发现的驱动工厂

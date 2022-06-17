@@ -19,7 +19,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Label:        "路由",
 			Desc:         "路由",
 			Dependencies: []string{"service"},
-			AppendLabels: []string{"host", "target", "listen"},
+			AppendLabels: []string{"host", "target", "listen", "disable"},
 			Drivers: []*eosc.DriverConfig{
 				{
 					Id:     "eolinker.com:apinto:http_router",
@@ -141,6 +141,30 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Name:  "file",
 					Label: "文件输出",
 					Desc:  "文件输出",
+				},
+				{
+					Id:    "eolinker.com:apinto:nsqd",
+					Name:  "nsqd",
+					Label: "NSQ输出",
+					Desc:  "NSQ输出",
+				},
+				{
+					Id:    "eolinker.com:apinto:http_output",
+					Name:  "http_output",
+					Label: "http输出",
+					Desc:  "http输出",
+				},
+				{
+					Id:    "eolinker.com:apinto:syslog_output",
+					Name:  "syslog_output",
+					Label: "syslog输出",
+					Desc:  "syslog输出",
+				},
+				{
+					Id:    "eolinker.com:apinto:kafka_output",
+					Name:  "kafka_output",
+					Label: "kafka输出",
+					Desc:  "kafka输出",
 				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,

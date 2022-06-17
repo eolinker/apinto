@@ -8,16 +8,15 @@ import (
 
 type IPHandler struct {
 	*Driver
-	id    string
-	name  string
+	id           string
 	responseType string
-	filter IPFilter
+	filter       IPFilter
 }
 
 func (I *IPHandler) doRestriction(ctx http_service.IHttpContext) error {
 	realIP := ctx.Request().ReadIP()
 	if I.filter != nil {
-		ok, err :=  I.filter(realIP)
+		ok, err := I.filter(realIP)
 		if !ok {
 			return err
 		}
@@ -39,7 +38,6 @@ func (I *IPHandler) Reset(conf interface{}, workers map[eosc.RequireId]interface
 		return err
 	}
 	I.filter = confObj.genFilter()
-	I.responseType = confObj.ResponseType
 	return nil
 }
 

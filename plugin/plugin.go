@@ -17,9 +17,8 @@ type IPlugin interface {
 	Destroy()
 }
 type IPluginManager interface {
-	CreateRouter(id string, conf map[string]*Config) IPlugin
-	CreateService(id string, conf map[string]*Config) IPlugin
-	CreateUpstream(id string, conf map[string]*Config) IPlugin
+	CreateRequest(id string, conf map[string]*Config) IPlugin
+	//CreateUpstream(id string, conf map[string]*Config) IPlugin
 }
 
 func MergeConfig(high, low map[string]*Config) map[string]*Config {

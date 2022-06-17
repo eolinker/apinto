@@ -40,18 +40,14 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		return nil, err
 	}
 	c := &CorsFilter{
-		Driver: d,
-		id:     id,
-		name:   name,
-		option: conf.genOptionHandler(),
-		originChecker: NewChecker(conf.AllowOrigins, "Access-Control-Allow-Origin"),
-		methodChecker: NewChecker(conf.AllowMethods, "Access-Control-Allow-Methods"),
-		headerChecker: NewChecker(conf.AllowHeaders, "Access-Control-Allow-Headers"),
-		exposeChecker: NewChecker(conf.ExposeHeaders, "Access-Control-Expose-Headers"),
-		responseType: conf.ResponseType,
+		Driver:           d,
+		id:               id,
+		option:           conf.genOptionHandler(),
+		originChecker:    NewChecker(conf.AllowOrigins, "Access-Control-Allow-Origin"),
+		methodChecker:    NewChecker(conf.AllowMethods, "Access-Control-Allow-Methods"),
+		headerChecker:    NewChecker(conf.AllowHeaders, "Access-Control-Allow-Headers"),
+		exposeChecker:    NewChecker(conf.ExposeHeaders, "Access-Control-Expose-Headers"),
 		allowCredentials: conf.AllowCredentials,
 	}
 	return c, nil
 }
-
-
