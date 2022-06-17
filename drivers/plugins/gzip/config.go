@@ -7,9 +7,9 @@ var (
 )
 
 type Config struct {
-	Types       []string `json:"types"`
-	MinLength   int      `json:"min_length"`
-	Vary        bool     `json:"vary"`
+	Types     []string `json:"types" label:"content-type列表" description:"需要压缩的响应content-type类型列表"`
+	MinLength int      `json:"min_length" label:"长度" description:"待压缩内容的最小长度" `
+	Vary      bool     `json:"vary" label:"是否加上Vary头部"`
 }
 
 func (c *Config) doCheck() error {

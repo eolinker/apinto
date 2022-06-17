@@ -8,8 +8,8 @@ type Config struct {
 
 //User 用户信息
 type User struct {
-	Username string            `json:"username"`
-	Password string            `json:"password"`
-	Labels   map[string]string `json:"labels"`
-	Expire   int64             `json:"expire" format:"date-time"`
+	Username string            `json:"username" label:"用户名（username）" nullable:"false"`
+	Password string            `json:"password" label:"密码（password）" nullable:"false"`
+	Labels   map[string]string `json:"labels" label:"用户标签"`
+	Expire   int64             `json:"expire" format:"date-time" label:"过期时间"`
 }

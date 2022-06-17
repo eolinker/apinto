@@ -14,9 +14,9 @@ type jwtUsers struct {
 
 //JwtCredential JWT验证信息
 type JwtCredential struct {
-	Iss          string            `json:"iss"`
-	Secret       string            `json:"secret"`
-	RSAPublicKey string            `json:"rsa_public_key"`
-	Algorithm    string            `json:"algorithm"`
-	Labels       map[string]string `json:"labels"`
+	Iss          string            `json:"iss" label:"证书签发者" description:"playload计算内容之一"`
+	Secret       string            `json:"secret" label:"密钥" description:"加密算法是HS时必填，用于校验token"`
+	RSAPublicKey string            `json:"rsa_public_key" label:"RSA公钥" description:"加密算法是RS或ES时必填，用于校验token"`
+	Algorithm    string            `json:"algorithm" enum:"HS256,HS384,HS512,RS256,RS384,RS512,ES256,ES384,ES512" label:"签名算法"`
+	Labels       map[string]string `json:"labels" label:"用户标签"`
 }

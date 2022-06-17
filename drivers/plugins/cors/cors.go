@@ -126,7 +126,6 @@ func (c *CorsFilter) Reset(conf interface{}, workers map[eosc.RequireId]interfac
 	c.methodChecker = NewChecker(cfg.AllowMethods, "Access-Control-Allow-Methods")
 	c.headerChecker = NewChecker(cfg.AllowHeaders, "Access-Control-Allow-Headers")
 	c.exposeChecker = NewChecker(cfg.ExposeHeaders, "Access-Control-Expose-Headers")
-	c.responseType = cfg.ResponseType
 	c.allowCredentials = cfg.AllowCredentials
 	return nil
 }

@@ -10,8 +10,8 @@ type akskUsers struct {
 }
 
 type AKSKConfig struct {
-	AK     string            `json:"ak"`
-	SK     string            `json:"sk"`
-	Labels map[string]string `json:"labels"`
-	Expire int64             `json:"expire" format:"date-time"`
+	AK     string            `json:"ak" label:"Access Key" nullable:"false"`
+	SK     string            `json:"sk" label:"Secret Access Key" nullable:"false"`
+	Labels map[string]string `json:"labels" label:"用户标签"`
+	Expire int64             `json:"expire" format:"date-time" label:"过期时间"`
 }
