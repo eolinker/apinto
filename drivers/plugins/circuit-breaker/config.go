@@ -3,15 +3,15 @@ package circuit_breaker
 import "fmt"
 
 type Config struct {
-	MatchCodes      string            `json:"match_codes"`
-	MonitorPeriod   int               `json:"monitor_period"`
-	MinimumRequests int               `json:"minimum_requests"`
-	FailurePercent  float64           `json:"failure_percent"`
-	BreakPeriod     int64             `json:"break_period"`
-	SuccessCounts   int               `json:"success_counts"`
-	BreakerCode     int               `json:"breaker_code"`
-	Headers         map[string]string `json:"headers"`
-	Body            string            `json:"body"`
+	MatchCodes      string            `json:"match_codes" label:"匹配状态码" description:"多个状态码之间使用英文逗号隔开"`
+	MonitorPeriod   int               `json:"monitor_period" label:"监控期" minimum:"1" description:"单位：秒，最小值：1"`
+	MinimumRequests int               `json:"minimum_requests" label:"最低熔断阀值，达到熔断状态的最少请求次数" minimum:"1" description:"最小值：1"`
+	FailurePercent  float64           `json:"failure_percent" label:"监控期内的请求错误率" minimum:"0" maximum:"1" description:"最小值：0，最大值：1"`
+	BreakPeriod     int64             `json:"break_period" label:"熔断期" minimum:"1" description:"最小值：1"`
+	SuccessCounts   int               `json:"success_counts" label:"连续请求成功次数，半开放状态下请求成功次数达到后会转变成健康状态" minimum:"1" description:"最小值：1"`
+	BreakerCode     int               `json:"breaker_code" label:"熔断状态下返回的响应状态码" minimum:"100" description:"最小值：100"`
+	Headers         map[string]string `json:"headers" label:"熔断状态下新增的返回头部值"`
+	Body            string            `json:"body" label:"熔断状态下的返回响应体"`
 }
 
 var (
