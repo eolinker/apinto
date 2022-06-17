@@ -19,12 +19,6 @@ type UpstreamHandler struct {
 }
 
 func (u *UpstreamHandler) Destroy() {
-	//org := u.orgFilter
-	//
-	//if org != nil {
-	//	u.orgFilter = nil
-	//	org.Destroy()
-	//}
 
 	upstream := u.upstream
 	if upstream != nil {
@@ -43,15 +37,6 @@ func NewUpstreamHandler(id string, upstream *Upstream, retry int, timeout time.D
 	}
 	return uh
 }
-
-//func (u *UpstreamHandler) reset() {
-//
-//	configs := u.upstream.Merge(u.pluginsSource)
-//
-//	iPlugin := pluginManager.CreateUpstream(u.id, configs)
-//
-//	u.orgFilter = iPlugin
-//}
 
 //DoChain 请求发送
 func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
@@ -80,9 +65,7 @@ func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
 		}
 		log.Debug("node: ", node.Addr())
 		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
-		filterSender := NewSendAddr(addr, u.timeout)
-		lastErr = filterSender.DoFilter(ctx, nil)
-
+		lastErr = ctx.SendTo(addr, u.timeout)
 		if lastErr == nil {
 			return nil
 		}
@@ -90,23 +73,4 @@ func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
 	}
 
 	return lastErr
-}
-
-type SendAddr struct {
-	timeout time.Duration
-	addr    string
-}
-
-func (s *SendAddr) Destroy() {
-
-}
-
-func NewSendAddr(addr string, timeout time.Duration) *SendAddr {
-	return &SendAddr{timeout: timeout, addr: addr}
-}
-
-func (s *SendAddr) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
-	err = ctx.SendTo(s.addr, s.timeout)
-	log.Error("Send addr error: ", err, " addr is ", s.addr, " timeout is ", s.timeout)
-	return
 }
