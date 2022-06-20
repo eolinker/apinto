@@ -4,7 +4,7 @@ FROM centos:latest
 MAINTAINER eolink
 
 #声明端口
-EXPOSE 9400 8080
+EXPOSE 9400 8099
 
 #定义数据卷
 VOLUME /var/lib/apinto
