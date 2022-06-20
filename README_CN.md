@@ -104,6 +104,9 @@ wget https://github.com/eolinker/apinto/releases/download/v0.5.1/apinto-v0.5.1.l
 ./apinto start
 ```
 
+3.如需可视化界面请点击[Apinto Dashboard](https://github.com/eolinker/apinto-dashboard)
+
+
 - ### **联系我们**
 
 
