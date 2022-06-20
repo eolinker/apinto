@@ -1,9 +1,9 @@
 package router_http
 
 import (
-	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/apinto/router"
 	"github.com/eolinker/apinto/service"
+	http_service "github.com/eolinker/eosc/http-service"
 )
 
 //IMatcher IMatcher接口实现了Match方法：根据http请求返回服务接口
@@ -59,6 +59,7 @@ func (h *HTTPSources) Get(cmd string) (string, bool) {
 		if len(vs) == 0 {
 			return "", true
 		}
+		return vs, true
 	}
 
 	if qn, yes := queryName(cmd); yes {
