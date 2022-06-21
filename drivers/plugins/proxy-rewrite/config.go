@@ -3,11 +3,11 @@ package proxy_rewrite
 import "fmt"
 
 type Config struct {
-	Scheme   string            `json:"scheme"`
-	URI      string            `json:"uri"`
-	RegexURI []string          `json:"regex_uri"`
-	Host     string            `json:"host"`
-	Headers  map[string]string `json:"headers"`
+	Scheme   string            `json:"scheme" label:"协议"`
+	URI      string            `json:"uri" label:"URI"`
+	RegexURI []string          `json:"regex_uri" label:"正则替换URI（regex_uri）"`
+	Host     string            `json:"host" label:"Host"`
+	Headers  map[string]string `json:"headers" label:"请求头部"`
 }
 
 func (c *Config) doCheck() error {

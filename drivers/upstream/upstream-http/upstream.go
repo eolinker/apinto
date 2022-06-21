@@ -28,9 +28,6 @@ func (up *Upstream) create(id string, retry int, timeout time.Duration) *Upstrea
 	return nh
 }
 
-//func (up *Upstream) Merge(configs map[string]*plugin.Config) map[string]*plugin.Config {
-//	return plugin.MergeConfig(configs, up.pluginConf)
-//}
 func NewUpstream(scheme string, app discovery.IApp, handler balance.IBalanceHandler) *Upstream {
 	return &Upstream{scheme: scheme, app: app, handler: handler, handlers: eosc.NewUntyped()}
 }

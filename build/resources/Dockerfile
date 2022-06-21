@@ -1,6 +1,6 @@
 # 名称：apinto镜像，携带了部署k8s集群所需要的脚本
 # 创建时间：2022-3-30
-FROM alpine:latest
+FROM centos:latest
 MAINTAINER eolink
 
 #声明端口
@@ -10,12 +10,8 @@ EXPOSE 9400 8080
 VOLUME /var/lib/apinto
 
 #设置环境变量
-ENV APP=APINTO APINTO_CONFIG=/etc/apinto/config.yml APINTO_DATA_DIR=/var/lib/apinto/data APINTO_EXTENDS_DIR=/var/lib/apinto/extends APINTO_LOG_DIR=/var/lib/apinto/log
+ENV APP=APINTO APINTO_CONFIG=/etc/apinto/config.yml
 
-#安装jq和bash
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories && apk update && apk add jq && apk add curl && apk add bash
-
-RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 #解压网关程序压缩包
 COPY ./apinto.linux.x64.tar.gz /
 RUN tar -zxvf apinto.linux.x64.tar.gz && rm -rf apinto.linux.x64.tar.gz
