@@ -3,15 +3,15 @@ package response_rewrite
 import "fmt"
 
 type Config struct {
-	StatusCode int               `json:"status_code"`
-	Body       string            `json:"body"`
-	BodyBase64 bool              `json:"body_base64"`
-	Headers    map[string]string `json:"headers"`
-	Match      *MatchConf        `json:"match"`
+	StatusCode int               `json:"status_code" label:"响应状态码" minimum:"100" description:"最小值：100"`
+	Body       string            `json:"body" label:"响应内容"`
+	BodyBase64 bool              `json:"body_base64" label:"是否base64加密"`
+	Headers    map[string]string `json:"headers" label:"响应头部"`
+	Match      *MatchConf        `json:"match" label:"匹配状态码列表"`
 }
 
 type MatchConf struct {
-	Code []int `json:"code"`
+	Code []int `json:"code" label:"状态码" minimum:"100" description:"最小值：100"`
 }
 
 var (

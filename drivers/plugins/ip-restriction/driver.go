@@ -42,10 +42,9 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		return nil, err
 	}
 	h := &IPHandler{
-		Driver:       d,
-		id:           id,
-		filter:       conf.genFilter(),
-		responseType: conf.ResponseType,
+		Driver: d,
+		id:     id,
+		filter: conf.genFilter(),
 	}
 	return h, nil
 }

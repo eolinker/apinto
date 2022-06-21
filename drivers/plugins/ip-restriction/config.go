@@ -8,15 +8,14 @@ import (
 )
 
 var (
-	ErrorConfigTypeError        = errors.New("unknown ip list type")
-	ErrorIpIllegal       		= errors.New("[ip_restriction] Illegal IP!")
+	ErrorConfigTypeError = errors.New("unknown ip list type")
+	ErrorIpIllegal       = errors.New("[ip_restriction] Illegal IP!")
 )
 
 type Config struct {
-	IPListType   string    `json:"ip_list_type"`
-	IPWhiteList  []string `json:"ip_white_list"`
-	IPBlackList  []string `json:"ip_black_list"`
-	ResponseType string   `json:"response_type"`
+	IPListType  string   `json:"ip_list_type" enum:"white,black" label:"列表类型"`
+	IPWhiteList []string `json:"ip_white_list" label:"ip白名单列表"`
+	IPBlackList []string `json:"ip_black_list" label:"ip黑名单列表"`
 }
 
 func (c *Config) doCheck() error {
@@ -25,7 +24,6 @@ func (c *Config) doCheck() error {
 	}
 	return ErrorConfigTypeError
 }
-
 
 type IPFilter func(ip string) (bool, error)
 
@@ -113,7 +111,6 @@ func convertIP(ip string) (string, error) {
 		return "", errors.New(errInfo)
 	}
 }
-
 
 func ip2binary(ip string) string {
 	str := strings.Split(ip, ".")

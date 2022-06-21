@@ -47,7 +47,6 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		methodChecker:    NewChecker(conf.AllowMethods, "Access-Control-Allow-Methods"),
 		headerChecker:    NewChecker(conf.AllowHeaders, "Access-Control-Allow-Headers"),
 		exposeChecker:    NewChecker(conf.ExposeHeaders, "Access-Control-Expose-Headers"),
-		responseType:     conf.ResponseType,
 		allowCredentials: conf.AllowCredentials,
 	}
 	return c, nil

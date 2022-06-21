@@ -6,15 +6,15 @@ import (
 )
 
 type Config struct {
-	Params    []*ExtraParam `json:"params"`
-	ErrorType string        `json:"error_type"`
+	Params    []*ExtraParam `json:"params" label:"参数列表"`
+	ErrorType string        `json:"error_type" enum:"text,json" label:"报错输出格式" `
 }
 
 type ExtraParam struct {
-	Name     string      `json:"name"`
-	Position string      `json:"position"`
-	Value    interface{} `json:"value"`
-	Conflict string      `json:"conflict"`
+	Name     string      `json:"name" label:"参数名"`
+	Position string      `json:"position" enum:"header,query,body" label:"参数位置"`
+	Value    interface{} `json:"value" label:"参数值"`
+	Conflict string      `json:"conflict" label:"参数冲突时的处理方式" enum:"origin,convert,error"`
 }
 
 func (c *Config) doCheck() error {

@@ -12,7 +12,7 @@ type apiKeyUsers struct {
 
 //User 用户信息
 type User struct {
-	Apikey string            `json:"apikey"`
-	Labels map[string]string `json:"labels"`
-	Expire int64             `json:"expire" format:"date-time"`
+	Apikey string            `json:"apikey" label:"密钥（Apikey）" nullable:"false"`
+	Labels map[string]string `json:"labels" label:"用户标签"`
+	Expire int64             `json:"expire" format:"date-time" label:"过期时间"`
 }
