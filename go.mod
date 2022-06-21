@@ -1,10 +1,10 @@
 module github.com/eolinker/apinto
 
-go 1.16
+go 1.17
 
 require (
 	github.com/Shopify/sarama v1.32.0
-	github.com/eolinker/eosc v0.5.0
+	github.com/eolinker/eosc v0.5.1
 	github.com/go-basic/uuid v1.0.0
 	github.com/hashicorp/consul/api v1.9.1
 	github.com/nsqio/go-nsq v1.1.0
