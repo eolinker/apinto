@@ -59,12 +59,10 @@ func (s *ServiceHandler) rebuild() {
 	s.pluginOrg = pluginManger.CreateRequest(s.id, config)
 	s.pluginExec = s.pluginOrg.Append(filter.ToFilter([]http_service.IFilter{s}))
 
-	configToUpstream := plugin.MergeConfig(s.routerPluginConfig, s.service.configs)
-	ps, err := s.service.upstream.Create(s.id, configToUpstream, s.service.retry, s.service.timeout)
+	ps, err := s.service.upstream.Create(s.id, s.service.retry, s.service.timeout)
 	if err != nil {
 		log.Error("rebuild error: ", err)
 		return
 	}
 	s.upstreamHandler = ps
-
 }

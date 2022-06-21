@@ -19,7 +19,6 @@ var supportTypes = []string{
 
 type aksk struct {
 	id             string
-	name           string
 	hideCredential bool
 	users          *akskUsers
 }

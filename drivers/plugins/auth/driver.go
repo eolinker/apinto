@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/auth"
+	"github.com/eolinker/eosc"
 )
 
 type Driver struct {
@@ -62,7 +62,6 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	au := &Auth{
 		Driver: d,
 		id:     id,
-		name:   name,
 		auths:  list,
 	}
 

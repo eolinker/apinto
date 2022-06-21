@@ -18,7 +18,7 @@ type IPlugin interface {
 }
 type IPluginManager interface {
 	CreateRequest(id string, conf map[string]*Config) IPlugin
-	CreateUpstream(id string, conf map[string]*Config) IPlugin
+	//CreateUpstream(id string, conf map[string]*Config) IPlugin
 }
 
 func MergeConfig(high, low map[string]*Config) map[string]*Config {

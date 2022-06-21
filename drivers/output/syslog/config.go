@@ -15,12 +15,12 @@ var (
 
 type Config struct {
 	// 所使用的网络协议, 如:tcp,udp,unix
-	Network string `json:"network" yaml:"network"`
-	Address string `json:"address" yaml:"address"`
-	Level   string `json:"level" yaml:"level"`
+	Network string `json:"network" yaml:"network" enum:"tcp,udp,unix" label:"网络协议"`
+	Address string `json:"address" yaml:"address" label:"请求地址"`
+	Level   string `json:"level" yaml:"level" enum:"error,warn,info,debug,trace" label:"日志等级"`
 
-	Type      string               `json:"type" yaml:"type" description:"格式类型" enum:"line,json"`
-	Formatter eosc.FormatterConfig `json:"formatter" description:"输出格式" yaml:"formatter"`
+	Type      string               `json:"type" yaml:"type" enum:"line,json" label:"输出格式"`
+	Formatter eosc.FormatterConfig `json:"formatter" yaml:"formatter" label:"格式化配置"`
 }
 
 func (c *Config) doCheck() error {

@@ -43,6 +43,9 @@ type HTTPCheck struct {
 
 //doCheckLoop 定时检查，维护了一个待检测节点集合
 func (h *HTTPCheck) doCheckLoop() {
+	if h.config.Period < 1 {
+		return
+	}
 	ticker := time.NewTicker(h.config.Period)
 	nodes := map[string]map[string]*checkNode{}
 	defer ticker.Stop()

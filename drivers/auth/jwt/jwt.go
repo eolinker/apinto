@@ -17,11 +17,9 @@ var supportTypes = []string{
 
 type jwt struct {
 	id                string
-	name              string
 	credentials       *jwtUsers
 	signatureIsBase64 bool
 	claimsToVerify    []string
-	runOnPreflight    bool
 	hideCredentials   bool
 }
 
@@ -45,7 +43,6 @@ func (j *jwt) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) er
 
 	j.signatureIsBase64 = c.SignatureIsBase64
 	j.claimsToVerify = c.ClaimsToVerify
-	j.runOnPreflight = c.RunOnPreflight
 	j.hideCredentials = c.HideCredentials
 
 	return nil
@@ -69,9 +66,6 @@ func (j *jwt) Auth(context http_service.IHttpContext) error {
 		return err
 	}
 
-	if !j.runOnPreflight && context.Request().Method() == "OPTIONS" {
-		return nil
-	}
 	err = j.doJWTAuthentication(context)
 	if err != nil {
 		return err

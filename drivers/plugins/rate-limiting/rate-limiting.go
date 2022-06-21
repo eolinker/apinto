@@ -18,13 +18,10 @@ const (
 type RateLimiting struct {
 	*Driver
 	id               string
-	name             string
 	rateInfo         *rateInfo
 	hideClientHeader bool
 	responseType     string
 }
-
-
 
 func (r *RateLimiting) doLimit() (bool, string, int) {
 	info := r.rateInfo
@@ -145,6 +142,6 @@ func (r *RateLimiting) addRateHeader(ctx http_service.IHttpContext, rateType str
 	}
 	resp := ctx.Response()
 	resp.SetHeader(fmt.Sprintf("X-RateLimit-Limit-%s", rateType), strconv.FormatInt(rate.limitCount, 10))
-	resp.SetHeader(fmt.Sprintf("X-RateLimit-Remaining-%s", rateType), strconv.FormatInt(rate.limitCount-  rate.requestCount, 10))
+	resp.SetHeader(fmt.Sprintf("X-RateLimit-Remaining-%s", rateType), strconv.FormatInt(rate.limitCount-rate.requestCount, 10))
 	return
 }

@@ -25,8 +25,6 @@ var supportTypes = []string{
 
 type apikey struct {
 	id             string
-	name           string
-	driver         string
 	hideCredential bool
 	users          *apiKeyUsers
 }

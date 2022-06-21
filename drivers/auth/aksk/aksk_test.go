@@ -24,7 +24,6 @@ var testContexts = make([]http_service.IHttpContext, 0, 10)
 func TestAKSK(t *testing.T) {
 	testAKSK := &aksk{
 		id:             "123",
-		name:           "name",
 		hideCredential: true,
 		users:          &akskUsers{users: akskConfig},
 	}

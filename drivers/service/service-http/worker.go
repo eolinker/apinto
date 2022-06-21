@@ -29,7 +29,6 @@ type serviceWorker struct {
 	Service
 	id     string
 	name   string
-	desc   string
 	driver string
 }
 
@@ -78,11 +77,10 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 		if err != nil {
 			return err
 		}
-		upstreamCreate = upstream_http.NewUpstream(s.scheme, anonymous, balanceHandler, nil)
+		upstreamCreate = upstream_http.NewUpstream(s.scheme, anonymous, balanceHandler)
 	}
 
 	//
-	s.desc = data.Desc
 	s.Service.timeout = time.Duration(data.Timeout) * time.Millisecond
 
 	s.Service.retry = data.Retry
