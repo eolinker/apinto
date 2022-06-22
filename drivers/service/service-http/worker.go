@@ -16,7 +16,7 @@ import (
 var (
 	ErrorNeedUpstream = errors.New("need upstream")
 
-	ErrorInvalidDiscovery = errors.New("not Discovery")
+	ErrorInvalidDiscovery = errors.New("invalid Discovery")
 )
 
 type serviceWorker struct {
@@ -43,6 +43,7 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	}
 	data.rebuild()
 
+	log.Debug("serviceWorker:", data.String())
 	if data.Discovery == "" && len(data.Nodes) == 0 {
 		return ErrorNeedUpstream
 	}
@@ -55,17 +56,18 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	}
 	var apps discovery.IApp
 	if data.Discovery != "" {
-		if discoveryWorker, has := workers[data.Discovery]; has {
-			if ds, ok := discoveryWorker.(discovery.IDiscovery); ok {
-				apps, err = ds.GetApp(data.Service)
-				if err != nil {
-					return err
-				}
-			}
+		discoveryWorker, has := workers[data.Discovery]
+		if !has {
+			return fmt.Errorf("%s:%w", data.Discovery, ErrorInvalidDiscovery)
 		}
-
-		return fmt.Errorf("%s:%w", data.Discovery, ErrorInvalidDiscovery)
-
+		ds, ok := discoveryWorker.(discovery.IDiscovery)
+		if !ok {
+			return fmt.Errorf("%s:%w", data.Discovery, ErrorInvalidDiscovery)
+		}
+		apps, err = ds.GetApp(data.Service)
+		if err != nil {
+			return err
+		}
 	} else {
 		var thisDiscovery discovery.IDiscovery
 		if strings.ToLower(data.Scheme) == "https" {

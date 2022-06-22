@@ -1,6 +1,7 @@
 package service_http
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/eolinker/apinto/plugin"
@@ -15,9 +16,14 @@ type Config struct {
 	Scheme       string                    `json:"scheme" label:"请求协议" enum:"HTTP,HTTPS"`
 	Discovery    eosc.RequireId            `json:"discovery" required:"false" empty_label:"使用匿名上游" label:"服务发现" skill:"github.com/eolinker/apinto/discovery.discovery.IDiscovery"`
 	Service      string                    `json:"service" required:"false" label:"服务名 or 配置" switch:"discovery !==''"`
-	Nodes        []string                  `json:"config" label:"静态配置" switch:"discovery===''"`
+	Nodes        []string                  `json:"nodes" label:"静态配置" switch:"discovery===''"`
 	Balance      string                    `json:"balance" enum:"round-robin" label:"负载均衡算法"`
 	PluginConfig map[string]*plugin.Config `json:"plugins" label:"插件"`
+}
+
+func (c *Config) String() string {
+	data, _ := json.Marshal(c)
+	return string(data)
 }
 
 var validScheme = []string{
