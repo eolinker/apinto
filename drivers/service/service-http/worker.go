@@ -3,26 +3,20 @@ package service_http
 import (
 	"errors"
 	"fmt"
-	"github.com/eolinker/eosc/utils/config"
-
-	"github.com/eolinker/eosc/log"
-
-	"github.com/eolinker/apinto/upstream/balance"
-
-	"time"
-
-	upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
-
-	"github.com/eolinker/apinto/upstream"
-	"github.com/eolinker/eosc"
-
+	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/service"
+	"github.com/eolinker/apinto/upstream/balance"
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/log"
+	"github.com/eolinker/eosc/utils/config"
+	"strings"
+	"time"
 )
 
 var (
-	ErrorStructType      = errors.New("error struct type")
-	ErrorNeedUpstream    = errors.New("need upstream")
-	ErrorInvalidUpstream = errors.New("not upstream")
+	ErrorNeedUpstream = errors.New("need upstream")
+
+	ErrorInvalidDiscovery = errors.New("invalid Discovery")
 )
 
 type serviceWorker struct {
@@ -49,44 +43,55 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 	}
 	data.rebuild()
 
-	if data.Upstream == "" && data.UpstreamAnonymous == nil {
+	log.Debug("serviceWorker:", data.String())
+	if data.Discovery == "" && len(data.Nodes) == 0 {
 		return ErrorNeedUpstream
 	}
-	var upstreamCreate upstream.IUpstream
-	if upstreamWork, has := workers[data.Upstream]; has {
-		if up, ok := upstreamWork.(upstream.IUpstream); ok {
-			upstreamCreate = up
-		} else {
-			return fmt.Errorf("%s:%w", data.Upstream, ErrorInvalidUpstream)
+	if data.Discovery != "" && data.Service == "" {
+		return ErrorInvalidDiscovery
+	}
+	balanceFactory, err := balance.GetFactory(data.Balance)
+	if err != nil {
+		return err
+	}
+	var apps discovery.IApp
+	if data.Discovery != "" {
+		discoveryWorker, has := workers[data.Discovery]
+		if !has {
+			return fmt.Errorf("%s:%w", data.Discovery, ErrorInvalidDiscovery)
+		}
+		ds, ok := discoveryWorker.(discovery.IDiscovery)
+		if !ok {
+			return fmt.Errorf("%s:%w", data.Discovery, ErrorInvalidDiscovery)
+		}
+		apps, err = ds.GetApp(data.Service)
+		if err != nil {
+			return err
 		}
 	} else {
-		if data.UpstreamAnonymous == nil {
-			return ErrorNeedUpstream
-		}
-		log.Debug("reset anonymous upstream,config is ", data.UpstreamAnonymous.Config)
-		balanceFactory, err := balance.GetFactory(data.UpstreamAnonymous.Type)
-		if err != nil {
-			return err
+		var thisDiscovery discovery.IDiscovery
+		if strings.ToLower(data.Scheme) == "https" {
+			thisDiscovery = defaultHttpsDiscovery
+		} else {
+			thisDiscovery = defaultHttpDiscovery
 		}
 
-		anonymous, err := defaultDiscovery.GetApp(data.UpstreamAnonymous.Config)
+		apps, err = thisDiscovery.GetApp(strings.Join(data.Nodes, ";"))
 		if err != nil {
 			return err
 		}
-		balanceHandler, err := balanceFactory.Create(anonymous)
-		if err != nil {
-			return err
-		}
-		upstreamCreate = upstream_http.NewUpstream(s.scheme, anonymous, balanceHandler)
+	}
+	balanceHandler, err := balanceFactory.Create(apps)
+	if err != nil {
+		return err
 	}
 
-	//
 	s.Service.timeout = time.Duration(data.Timeout) * time.Millisecond
 
 	s.Service.retry = data.Retry
-	s.Service.scheme = data.Scheme
+
 	log.Debug("reset service:", data.PluginConfig)
-	s.Service.reset(upstreamCreate, data.PluginConfig)
+	s.Service.reset(data.Scheme, apps, balanceHandler, data.PluginConfig)
 
 	return nil
 
