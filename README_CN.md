@@ -84,9 +84,9 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 ### 部署
 
-* 直接部署：[部署教程](https://help.apinto.com/?path=/quick/arrange)
-* [快速入门教程](https://help.apinto.com/?path=/quick/quick_course)
-* [源码编译教程](https://help.apinto.com/?path=/quick/arrange)
+* 直接部署：[部署教程](https://help.apinto.com/docs/apinto/quick/arrange)
+* [快速入门教程](https://help.apinto.com/docs/apinto/quick/quick_course)
+* [源码编译教程](https://help.apinto.com/docs/apinto/quick/arrange)
 * Docker部署：后续支持
 * Kubernetes部署：后续支持
 
@@ -110,7 +110,7 @@ wget https://github.com/eolinker/apinto/releases/download/v0.6.2/apinto-v0.6.2.l
 - ### **联系我们**
 
 
-* **帮助文档**：[https://help.apinto.com](https://help.apinto.com/)
+* **帮助文档**：[https://help.apinto.com](https://help.apinto.com/docs)
 
 - **QQ群**: 725853895
 
