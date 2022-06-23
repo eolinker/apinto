@@ -103,7 +103,7 @@ wget https://github.com/eolinker/apinto/releases/download/v0.6.2/apinto-v0.6.2.l
 3.To configure the gateway through the visual interface, click [apinto dashboard](https://github.com/eolinker/apinto-dashboard)
 
 ### Contact
-- **Help documentation**：[https://help.apinto.com](https://help.apinto.com)
+- **Help documentation**：[https://help.apinto.com](https://help.apinto.com/docs)
 - **QQ group**: 725853895
 - **Slack**：[Join us](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
 - **Official website**：[https://www.apinto.com](https://www.apinto.com)
