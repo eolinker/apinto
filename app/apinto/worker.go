@@ -27,7 +27,7 @@ import (
 	response_rewrite "github.com/eolinker/apinto/drivers/plugins/response-rewrite"
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
 	service_http "github.com/eolinker/apinto/drivers/service/service-http"
-	upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
+	//upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
 	plugin_manager "github.com/eolinker/apinto/plugin-manager"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/extends"
@@ -48,8 +48,8 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	// service
 	service_http.Register(extenderRegister)
 
-	// upstream
-	upstream_http.Register(extenderRegister)
+	////// upstream
+	//upstream_http.Register(extenderRegister)
 
 	// discovery
 	static.Register(extenderRegister)

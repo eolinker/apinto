@@ -36,30 +36,14 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Name:         "service",
 			Label:        "服务",
 			Desc:         "服务",
-			Dependencies: []string{"upstream"},
-			AppendLabels: []string{"upstream"},
+			Dependencies: []string{"discovery"},
+			AppendLabels: []string{"discovery"},
 			Drivers: []*eosc.DriverConfig{
 				{
 					Id:    "eolinker.com:apinto:service_http",
 					Name:  "http",
 					Label: "service",
 					Desc:  "服务",
-				},
-			},
-			Mod: eosc.ProfessionConfig_Worker,
-		},
-		{
-			Name:         "upstream",
-			Label:        "上游/负载",
-			Desc:         "上游/负载",
-			Dependencies: []string{"discovery"},
-			AppendLabels: []string{"discovery"},
-			Drivers: []*eosc.DriverConfig{
-				{
-					Id:    "eolinker.com:apinto:upstream_http_proxy",
-					Name:  "http_proxy",
-					Label: "http转发负载",
-					Desc:  "http转发负载",
 				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
