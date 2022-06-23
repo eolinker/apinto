@@ -80,9 +80,9 @@ In a word, Apinto API gateway enables the business development team to focus mor
 
 ### Deployment
 
-* Direct Deployment：[Deployment Tutorial](https://help.apinto.com/docs/apinto/quick/arrange)
-* [Quick Start Tutorial](https://help.apinto.com/docs/apinto/quick/quick_course)
-* [Source Code Compilation Tutorial](https://help.apinto.com/docs/apinto/quick/arrange)
+* Direct Deployment：[Deployment Tutorial](https://help.apinto.com/docs/apinto/quick/arrange.html)
+* [Quick Start Tutorial](https://help.apinto.com/docs/apinto/quick/quick_course.html)
+* [Source Code Compilation Tutorial](https://help.apinto.com/docs/apinto/quick/arrange.html)
 * Docker：Follow up support
 * Kubernetes：Follow up support
 
