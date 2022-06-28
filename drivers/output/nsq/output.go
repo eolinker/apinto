@@ -1,6 +1,7 @@
 package nsq
 
 import (
+	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
 	"sync"
@@ -69,7 +70,7 @@ func (n *NsqOutput) Stop() error {
 }
 
 func (n *NsqOutput) CheckSkill(skill string) bool {
-	return false
+	return output.CheckSkill(skill)
 }
 
 func (n *NsqOutput) Output(entry eosc.IEntry) error {
