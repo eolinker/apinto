@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"github.com/Shopify/sarama"
+	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
 	"github.com/eolinker/eosc/log"
@@ -85,7 +86,7 @@ func (o *Output) Stop() error {
 }
 
 func (o *Output) CheckSkill(skill string) bool {
-	return false
+	return output.CheckSkill(skill)
 }
 
 func (o *Output) write(msg *sarama.ProducerMessage) {

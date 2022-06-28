@@ -1,6 +1,7 @@
 package httpoutput
 
 import (
+	"github.com/eolinker/apinto/output"
 	http_transport "github.com/eolinker/apinto/output/http-transport"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
@@ -80,5 +81,5 @@ func (h *HttpOutput) Stop() error {
 }
 
 func (h *HttpOutput) CheckSkill(skill string) bool {
-	return false
+	return output.CheckSkill(skill)
 }
