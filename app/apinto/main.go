@@ -29,6 +29,8 @@ func init() {
 	process.Register(eosc.ProcessMaster, ProcessMaster)
 	process.Register(eosc.ProcessHelper, ProcessHelper)
 	process.Register(eosc.ProcessAdmin, ProcessAdmin)
+
+	InitCLILog()
 }
 
 func main() {
