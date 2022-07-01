@@ -11,10 +11,10 @@ type Config struct {
 }
 
 type ExtraParam struct {
-	Name     string      `json:"name" label:"参数名"`
-	Position string      `json:"position" enum:"header,query,body" label:"参数位置"`
-	Value    interface{} `json:"value" label:"参数值"`
-	Conflict string      `json:"conflict" label:"参数冲突时的处理方式" enum:"origin,convert,error"`
+	Name     string `json:"name" label:"参数名"`
+	Position string `json:"position" enum:"header,query,body" label:"参数位置"`
+	Value    string `json:"value" label:"参数值"`
+	Conflict string `json:"conflict" label:"参数冲突时的处理方式" enum:"origin,convert,error"`
 }
 
 func (c *Config) doCheck() error {
