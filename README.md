@@ -88,10 +88,10 @@ In a word, Apinto API gateway enables the business development team to focus mor
 
 ### Get start
 
-1. Download and unzip the installation package (here is an example of the installation package of version v0.5.1)
+1. Download and unzip the installation package (here is an example of the installation package of version v0.6.3)
 
 ```
-wget https://github.com/eolinker/apinto/releases/download/v0.6.2/apinto-v0.6.2.linux.x64.tar.gz && tar -zxvf apinto-v0.6.2.linux.x64.tar.gz && cd apinto
+wget https://github.com/eolinker/apinto/releases/download/v0.6.3/apinto-v0.6.3.linux.x64.tar.gz && tar -zxvf apinto-v0.6.3.linux.x64.tar.gz && cd apinto
 ```
 
 2. Start gateway：
