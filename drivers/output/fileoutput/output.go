@@ -1,6 +1,7 @@
 package fileoutput
 
 import (
+	"github.com/eolinker/apinto/output"
 	file_transport "github.com/eolinker/apinto/output/file-transport"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
@@ -72,5 +73,5 @@ func (a *FileOutput) Stop() error {
 }
 
 func (a *FileOutput) CheckSkill(skill string) bool {
-	return false
+	return output.CheckSkill(skill)
 }
