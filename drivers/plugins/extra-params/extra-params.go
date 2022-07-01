@@ -47,10 +47,16 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 	headers := ctx.Proxy().Header().Headers()
 	// 先判断参数类型
 	for _, param := range e.params {
+		var paramValue interface{}
+		err = json.Unmarshal([]byte(param.Value), &paramValue)
+		if err != nil {
+			paramValue = param.Value
+		}
 		switch param.Position {
 		case "query":
 			{
-				value, err := getQueryValue(ctx, param)
+				v, _ := json.Marshal(paramValue)
+				value, err := getQueryValue(ctx, param, string(v))
 				if err != nil {
 					err = encodeErr(e.errorType, err.Error(), clientErrStatusCode)
 					return clientErrStatusCode, err
@@ -59,7 +65,8 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 			}
 		case "header":
 			{
-				value, err := getHeaderValue(headers, param)
+				v, _ := json.Marshal(paramValue)
+				value, err := getHeaderValue(headers, param, string(v))
 				if err != nil {
 					err = encodeErr(e.errorType, err.Error(), clientErrStatusCode)
 					return clientErrStatusCode, err
@@ -68,7 +75,7 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 			}
 		case "body":
 			{
-				value, err := getBodyValue(bodyParams, formParams, param, contentType)
+				value, err := getBodyValue(bodyParams, formParams, param, contentType, paramValue)
 				if err != nil {
 					err = encodeErr(e.errorType, err.Error(), clientErrStatusCode)
 					return clientErrStatusCode, err

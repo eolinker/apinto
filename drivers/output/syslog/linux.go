@@ -4,6 +4,7 @@
 package syslog
 
 import (
+	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
 	sys "log/syslog"
@@ -87,7 +88,7 @@ func (s *SysWriter) Reset(conf interface{}, workers map[eosc.RequireId]interface
 }
 
 func (s *SysWriter) CheckSkill(skill string) bool {
-	return false
+	return output.CheckSkill(skill)
 }
 
 func newSysWriter(conf *Config, tag string) (*sys.Writer, error) {
