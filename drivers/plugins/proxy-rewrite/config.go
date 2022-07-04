@@ -4,8 +4,8 @@ import "fmt"
 
 type Config struct {
 	Scheme   string            `json:"scheme" label:"协议"`
-	URI      string            `json:"uri" label:"URI"`
-	RegexURI []string          `json:"regex_uri" label:"正则替换URI（regex_uri）"`
+	URI      string            `json:"uri" label:"路径"`
+	RegexURI []string          `json:"regex_uri" label:"正则替换路径（regex_uri）"`
 	Host     string            `json:"host" label:"Host"`
 	Headers  map[string]string `json:"headers" label:"请求头部"`
 }
