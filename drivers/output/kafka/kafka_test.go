@@ -21,27 +21,27 @@ func beginConsumer(topic string, addr []string, partition int32) {
 	config.Consumer.Return.Errors = true
 	consumer, err := sarama.NewConsumer(addr, config)
 	if err != nil {
-		fmt.Println("create consumer error", err)
+		log.Debug("create consumer error", err)
 		return
 	}
 	defer consumer.Close()
 	partitionConsumer, err := consumer.ConsumePartition(topic, partition, sarama.OffsetOldest)
 	if err != nil {
-		fmt.Println("error get partition consumer", err)
+		log.Debug("error get partition consumer", err)
 		return
 	}
 	defer partitionConsumer.Close()
-	fmt.Println("consumer work!")
+	log.Debug("consumer work!")
 	for {
 		select {
 
 		case msg := <-partitionConsumer.Messages():
 			if msg != nil {
-				fmt.Println("msg offset: ", msg.Offset, " partition: ", msg.Partition, " times: ", msg.Timestamp.Format("2006-Jan-02 15:04"), " value: ", string(msg.Value))
+				log.Debug("msg offset: ", msg.Offset, " partition: ", msg.Partition, " times: ", msg.Timestamp.Format("2006-Jan-02 15:04"), " value: ", string(msg.Value))
 			}
 		case err = <-partitionConsumer.Errors():
 			if err != nil {
-				fmt.Println(err.Error())
+				log.Debug(err.Error())
 			}
 		}
 	}

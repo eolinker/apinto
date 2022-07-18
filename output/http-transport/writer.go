@@ -3,7 +3,7 @@ package http_transport
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"github.com/eolinker/eosc/log"
 	"io/ioutil"
 	"net/http"
 	"runtime/debug"
@@ -61,7 +61,7 @@ func (h *_HttpWriter) do(method, url string, header http.Header, ctx context.Con
 	defer func() {
 		if v := recover(); v != nil {
 			if err, ok := v.(error); ok {
-				fmt.Println("[httplog] do send error:", err)
+				log.Debug("[httplog] do send error:", err)
 				debug.PrintStack()
 			}
 			go h.do(method, url, header, ctx)
@@ -100,7 +100,7 @@ func (h *_HttpWriter) send(method, url string, header http.Header, p []byte) {
 	request, err := http.NewRequest(method, url, bytes.NewReader(p))
 
 	if err != nil {
-		fmt.Printf("[httplog]:create requeset error: %s %s header<%v> body<%s> error<%s>\n", method, url, header, string(p), err)
+		log.DebugF("[httplog]:create requeset error: %s %s header<%v> body<%s> error<%s>\n", method, url, header, string(p), err)
 		return
 	}
 	for k, v := range header {
@@ -109,16 +109,16 @@ func (h *_HttpWriter) send(method, url string, header http.Header, p []byte) {
 	request.Header.Set("Content-Type", "application/json")
 	response, err := h.client.Do(request)
 	if err != nil {
-		fmt.Printf("[httplog]:send error: %s %s header<%v> body<%s> error<%s>\n", method, url, header, string(p), err)
+		log.DebugF("[httplog]:send error: %s %s header<%v> body<%s> error<%s>\n", method, url, header, string(p), err)
 		return
 	}
 	if response.StatusCode != 200 {
 		body, err := ioutil.ReadAll(response.Body)
 		response.Body.Close()
 		if err != nil {
-			fmt.Printf("send to httplog error:%s %s status<%d,%s> :%s\n", method, url, response.StatusCode, response.Status, err.Error())
+			log.DebugF("send to httplog error:%s %s status<%d,%s> :%s\n", method, url, response.StatusCode, response.Status, err.Error())
 		} else {
-			fmt.Printf("[httplog] response error:%s %s status<%d,%s> body:%s\n", method, url, response.StatusCode, response.Status, string(body))
+			log.DebugF("[httplog] response error:%s %s status<%d,%s> body:%s\n", method, url, response.StatusCode, response.Status, string(body))
 
 		}
 	}

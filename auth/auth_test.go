@@ -7,5 +7,5 @@ import (
 )
 
 func TestAuth(t *testing.T) {
-	fmt.Println(config.TypeNameOf((*IAuth)(nil)))
+	log.Debug(config.TypeNameOf((*IAuth)(nil)))
 }
