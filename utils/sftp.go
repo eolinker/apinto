@@ -94,11 +94,11 @@ func (s *SftpClient) Finish() error {
 	//	select {
 	//	case <-t.C:
 	//		{
-	//			fmt.Println(s.GetProcess())
+	//			log.Debug(s.GetProcess())
 	//		}
 	//	case err := <-s.finish:
 	//		{
-	//			fmt.Println("100.00")
+	//			log.Debug("100.00")
 	//			return err
 	//		}
 	//	}

@@ -3,7 +3,6 @@ package router_http
 import (
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"github.com/eolinker/apinto/plugin"
 	"sync"
 
@@ -84,7 +83,7 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, pluginManager
 			log.Warn("worker listen tcp error:", err)
 			continue
 		}
-		fmt.Println("new http service ", port, cfg, l)
+		log.Debug("new http service ", port, cfg, l)
 		if cfg.Scheme == "https" {
 			cert, err := config.NewCert(cfg.Certificate, listenCfg.Dir)
 			if err != nil {

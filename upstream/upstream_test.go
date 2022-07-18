@@ -8,5 +8,5 @@ import (
 )
 
 func TestUpstream(t *testing.T) {
-	fmt.Println(config.TypeNameOf((*IUpstream)(nil)))
+	log.Debug(config.TypeNameOf((*IUpstream)(nil)))
 }
