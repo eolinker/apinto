@@ -11,6 +11,7 @@ import (
 )
 
 var _ http_service.HttpFilter = (*ParamsTransformer)(nil)
+var _ context.IFilter = (*ParamsTransformer)(nil)
 
 type ParamsTransformer struct {
 	*Driver
@@ -18,6 +19,10 @@ type ParamsTransformer struct {
 	params    []*TransParam
 	remove    bool
 	errorType string
+}
+
+func (p *ParamsTransformer) DoFilter(ctx context.Context, next context.IChain) (err error) {
+	return http_service.DoHttpFilter(p, ctx, next)
 }
 
 func (p *ParamsTransformer) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) error {

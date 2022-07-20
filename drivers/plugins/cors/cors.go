@@ -10,6 +10,9 @@ import (
 	"strings"
 )
 
+var _ http_service.HttpFilter = (*CorsFilter)(nil)
+var _ context.IFilter = (*CorsFilter)(nil)
+
 type CorsFilter struct {
 	*Driver
 	id               string
@@ -22,7 +25,11 @@ type CorsFilter struct {
 	exposeChecker    *Checker
 }
 
-func (c *CorsFilter) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) error {
+func (c *CorsFilter) DoFilter(ctx context.Context, next context.IChain) (err error) {
+	return http_service.DoHttpFilter(c, ctx, next)
+}
+
+func (c *CorsFilter) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) (err error) {
 	if ctx.Request().Method() == "OPTION" {
 		return c.doOption(ctx)
 	}

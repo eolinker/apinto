@@ -9,6 +9,9 @@ import (
 	http_service "github.com/eolinker/eosc/context/http-context"
 )
 
+var _ http_service.HttpFilter = (*ResponseRewrite)(nil)
+var _ context.IFilter = (*ResponseRewrite)(nil)
+
 type ResponseRewrite struct {
 	*Driver
 	id         string
@@ -16,6 +19,10 @@ type ResponseRewrite struct {
 	body       string
 	headers    map[string]string
 	match      *MatchConf
+}
+
+func (r *ResponseRewrite) DoFilter(ctx context.Context, next context.IChain) (err error) {
+	return http_service.DoHttpFilter(r, ctx, next)
 }
 
 func (r *ResponseRewrite) Id() string {

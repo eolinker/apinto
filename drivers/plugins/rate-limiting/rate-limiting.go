@@ -16,12 +16,19 @@ const (
 	rateDayType    = "Day"
 )
 
+var _ http_service.HttpFilter = (*RateLimiting)(nil)
+var _ context.IFilter = (*RateLimiting)(nil)
+
 type RateLimiting struct {
 	*Driver
 	id               string
 	rateInfo         *rateInfo
 	hideClientHeader bool
 	responseType     string
+}
+
+func (r *RateLimiting) DoFilter(ctx context.Context, next context.IChain) (err error) {
+	return http_service.DoHttpFilter(r, ctx, next)
 }
 
 func (r *RateLimiting) doLimit() (bool, string, int) {

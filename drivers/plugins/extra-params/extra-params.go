@@ -11,12 +11,17 @@ import (
 )
 
 var _ http_service.HttpFilter = (*ExtraParams)(nil)
+var _ context.IFilter = (*ExtraParams)(nil)
 
 type ExtraParams struct {
 	*Driver
 	id        string
 	params    []*ExtraParam
 	errorType string
+}
+
+func (e *ExtraParams) DoFilter(ctx context.Context, next context.IChain) (err error) {
+	return http_service.DoHttpFilter(e, ctx, next)
 }
 
 func (e *ExtraParams) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) error {

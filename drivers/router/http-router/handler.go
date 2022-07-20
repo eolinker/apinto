@@ -8,12 +8,14 @@ import (
 	service "github.com/eolinker/eosc/context/http-context"
 )
 
+var _ service.HttpFilter = (*RouterHandler)(nil)
+
 type RouterHandler struct {
 	routerConfig  *router_http.Config
 	serviceFilter service2.IService
 }
 
-func (r *RouterHandler) DoFilter(ctx service.IHttpContext, next context.IChain) (err error) {
+func (r *RouterHandler) DoHttpFilter(ctx service.IHttpContext, next context.IChain) (err error) {
 	return r.serviceFilter.DoChain(ctx)
 }
 

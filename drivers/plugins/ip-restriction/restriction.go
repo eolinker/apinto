@@ -8,12 +8,17 @@ import (
 )
 
 var _ http_service.HttpFilter = (*IPHandler)(nil)
+var _ context.IFilter = (*IPHandler)(nil)
 
 type IPHandler struct {
 	*Driver
 	id           string
 	responseType string
 	filter       IPFilter
+}
+
+func (I *IPHandler) DoFilter(ctx context.Context, next context.IChain) (err error) {
+	return http_service.DoHttpFilter(I, ctx, next)
 }
 
 func (I *IPHandler) doRestriction(ctx http_service.IHttpContext) error {

@@ -10,6 +10,7 @@ import (
 )
 
 var _ http_service.HttpFilter = (*ProxyRewrite)(nil)
+var _ context.IFilter = (*ProxyRewrite)(nil)
 
 type ProxyRewrite struct {
 	*Driver
@@ -22,6 +23,9 @@ type ProxyRewrite struct {
 	headers    map[string]string
 }
 
+func (p *ProxyRewrite) DoFilter(ctx context.Context, next context.IChain) (err error) {
+	return http_service.DoHttpFilter(p, ctx, next)
+}
 func (p *ProxyRewrite) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) (err error) {
 	err = p.rewrite(ctx)
 	if err != nil {
