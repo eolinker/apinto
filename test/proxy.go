@@ -1,7 +1,7 @@
 package test
 
 import (
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 )
 
 var _ http_service.IRequest = (*ProxyRequest)(nil)

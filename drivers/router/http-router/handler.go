@@ -4,7 +4,8 @@ import (
 	"fmt"
 	router_http "github.com/eolinker/apinto/router/router-http"
 	service2 "github.com/eolinker/apinto/service"
-	service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/context"
+	service "github.com/eolinker/eosc/context/http-context"
 )
 
 type RouterHandler struct {
@@ -12,7 +13,7 @@ type RouterHandler struct {
 	serviceFilter service2.IService
 }
 
-func (r *RouterHandler) DoFilter(ctx service.IHttpContext, next service.IChain) (err error) {
+func (r *RouterHandler) DoFilter(ctx service.IHttpContext, next context.IChain) (err error) {
 	return r.serviceFilter.DoChain(ctx)
 }
 
@@ -41,8 +42,12 @@ func NewDisableHandler(routerConfig *router_http.Config) *RouterHandler {
 type DisableHandler struct {
 }
 
-func (d *DisableHandler) DoChain(ctx service.IHttpContext) error {
-	resp := ctx.Response()
+func (d *DisableHandler) DoChain(ctx context.Context) error {
+	httpContext, err := service.Assert(ctx)
+	if err != nil {
+		return err
+	}
+	resp := httpContext.Response()
 	resp.SetBody([]byte("the router is disabled"))
 	resp.SetStatus(416, "416")
 	return fmt.Errorf("the router is disabled")

@@ -3,13 +3,14 @@ package params_transformer
 import (
 	"encoding/json"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/context"
+	http_service "github.com/eolinker/eosc/context/http-context"
 	"github.com/ohler55/ojg/jp"
 	"strconv"
 	"strings"
 )
 
-var _ http_service.IFilter = (*ParamsTransformer)(nil)
+var _ http_service.HttpFilter = (*ParamsTransformer)(nil)
 
 type ParamsTransformer struct {
 	*Driver
@@ -19,7 +20,7 @@ type ParamsTransformer struct {
 	errorType string
 }
 
-func (p *ParamsTransformer) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
+func (p *ParamsTransformer) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) error {
 	statusCode, err := p.access(ctx)
 	if err != nil {
 		ctx.Response().SetBody([]byte(err.Error()))

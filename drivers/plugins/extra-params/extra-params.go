@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/context"
+	http_service "github.com/eolinker/eosc/context/http-context"
 	"strconv"
 	"strings"
 )
 
-var _ http_service.IFilter = (*ExtraParams)(nil)
+var _ http_service.HttpFilter = (*ExtraParams)(nil)
 
 type ExtraParams struct {
 	*Driver
@@ -18,7 +19,7 @@ type ExtraParams struct {
 	errorType string
 }
 
-func (e *ExtraParams) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
+func (e *ExtraParams) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) error {
 	statusCode, err := e.access(ctx)
 	if err != nil {
 		ctx.Response().SetBody([]byte(err.Error()))

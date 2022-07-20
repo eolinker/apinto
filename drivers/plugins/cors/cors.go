@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/context"
+	http_service "github.com/eolinker/eosc/context/http-context"
 	"strconv"
 	"strings"
 )
@@ -21,7 +22,7 @@ type CorsFilter struct {
 	exposeChecker    *Checker
 }
 
-func (c *CorsFilter) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (c *CorsFilter) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) error {
 	if ctx.Request().Method() == "OPTION" {
 		return c.doOption(ctx)
 	}

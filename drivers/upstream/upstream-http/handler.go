@@ -2,14 +2,14 @@ package upstream_http
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/context"
+	http_service "github.com/eolinker/eosc/context/http-context"
 	"time"
 
 	"github.com/eolinker/eosc/log"
-
-	http_service "github.com/eolinker/eosc/http-service"
 )
 
-var _ http_service.IChain = (*UpstreamHandler)(nil)
+var _ context.IChain = (*UpstreamHandler)(nil)
 
 type UpstreamHandler struct {
 	id       string
@@ -39,7 +39,12 @@ func NewUpstreamHandler(id string, upstream *Upstream, retry int, timeout time.D
 }
 
 //DoChain 请求发送
-func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
+func (u *UpstreamHandler) DoChain(ctx context.Context) error {
+
+	httpContext, err := http_service.Assert(ctx)
+	if err != nil {
+		return err
+	}
 
 	var lastErr error
 
@@ -48,7 +53,7 @@ func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
 
 	defer func() {
 		//设置原始响应状态码
-		ctx.Response().SetProxyStatus(ctx.Response().StatusCode(), "")
+		httpContext.Response().SetProxyStatus(httpContext.Response().StatusCode(), "")
 		//设置上游响应时间, 单位为毫秒
 		ctx.WithValue("response_time", time.Now().Sub(proxyTime).Milliseconds())
 	}()
@@ -65,7 +70,7 @@ func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
 		}
 		log.Debug("node: ", node.Addr())
 		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
-		lastErr = ctx.SendTo(addr, u.timeout)
+		lastErr = httpContext.SendTo(addr, u.timeout)
 		if lastErr == nil {
 			return nil
 		}

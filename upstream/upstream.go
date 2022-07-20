@@ -1,9 +1,8 @@
 package upstream
 
 import (
+	"github.com/eolinker/eosc/context"
 	"time"
-
-	http_service "github.com/eolinker/eosc/http-service"
 )
 
 //CheckSkill 检测目标技能是否符合
@@ -12,7 +11,7 @@ func CheckSkill(skill string) bool {
 }
 
 type IUpstreamHandler interface {
-	http_service.IChain
+	context.IChain
 }
 
 type IUpstream interface {

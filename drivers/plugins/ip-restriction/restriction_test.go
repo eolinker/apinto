@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	http_context "github.com/eolinker/apinto/node/http-context"
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 	"github.com/valyala/fasthttp"
 )
 
@@ -115,12 +115,12 @@ func TestDoRestriction(t *testing.T) {
 			if err != nil {
 				t.Errorf("create handler error : %v", err)
 			}
-			h, ok := ip.(http_service.IFilter)
+			h, ok := ip.(http_service.HttpFilter)
 			if !ok {
 				t.Errorf("parse filter error")
 				return
 			}
-			h.DoFilter(http_ctx, nil)
+			h.DoHttpFilter(http_ctx, nil)
 			if http_ctx.Response().Status() != cc.want {
 				t.Errorf("do restriction error; want %s, got %s", cc.want, http_ctx.Response().Status())
 			}

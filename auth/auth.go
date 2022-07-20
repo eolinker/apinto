@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 )
 
 const (

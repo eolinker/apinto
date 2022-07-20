@@ -2,14 +2,16 @@ package auth
 
 import (
 	"errors"
+	"github.com/eolinker/eosc/context"
 
 	"github.com/eolinker/apinto/auth"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 	"github.com/eolinker/eosc/log"
 )
 
-var _ http_service.IFilter = (*Auth)(nil)
+var _ context.IFilter = (*Auth)(nil)
+var _ http_service.HttpFilter = (*Auth)(nil)
 
 type Auth struct {
 	*Driver
@@ -17,11 +19,15 @@ type Auth struct {
 	auths []auth.IAuth
 }
 
+func (a *Auth) DoFilter(ctx context.Context, next context.IChain) (err error) {
+	return http_service.DoHttpFilter(a, ctx, next)
+}
+
 func (a *Auth) Destroy() {
 
 }
 
-func (a *Auth) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
+func (a *Auth) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) error {
 	err := a.doAuth(ctx)
 	if err != nil {
 		resp := ctx.Response()

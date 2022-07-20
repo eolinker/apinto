@@ -6,10 +6,10 @@ import (
 
 	"github.com/eolinker/eosc/log"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 )
 
-var _ http_service.IChain = (*UpstreamHandler)(nil)
+var _ context.IChain = (*UpstreamHandler)(nil)
 
 type UpstreamHandler struct {
 	id       string

@@ -1,7 +1,7 @@
 package circuit_breaker
 
 import (
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 	"strconv"
 	"strings"
 )

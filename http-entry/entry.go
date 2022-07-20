@@ -5,7 +5,7 @@ import (
 
 	"github.com/eolinker/eosc"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 )
 
 var (
@@ -64,5 +64,5 @@ func (c *ChildEntry) Children(child string) []eosc.IEntry {
 }
 
 func NewChildEntry(parent *Entry, index int, pre string, ReaderIndex IReaderIndex) *ChildEntry {
-	return &ChildEntry{parent: parent, index: index, pre: pre,childReader: ReaderIndex}
+	return &ChildEntry{parent: parent, index: index, pre: pre, childReader: ReaderIndex}
 }

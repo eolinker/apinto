@@ -24,16 +24,16 @@ var (
 	users = []User{
 		{
 			Apikey: "asdqer",
-			Label:  make(map[string]string),
+			Labels: make(map[string]string),
 		},
 		{
 			Apikey: "eolinker",
-			Label:  make(map[string]string),
+			Labels: make(map[string]string),
 			Expire: 0,
 		},
 		{
 			Apikey: "apinto",
-			Label:  make(map[string]string),
+			Labels: make(map[string]string),
 			Expire: 1627013522,
 		},
 	}

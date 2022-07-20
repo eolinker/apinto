@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/context"
+	http_service "github.com/eolinker/eosc/context/http-context"
 	"strconv"
 )
 
@@ -61,7 +62,7 @@ func (r *RateLimiting) Destroy() {
 	r.rateInfo = nil
 }
 
-func (r *RateLimiting) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (r *RateLimiting) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) (err error) {
 	// 前置处理
 	flag, result, status := r.doLimit()
 	if !flag {

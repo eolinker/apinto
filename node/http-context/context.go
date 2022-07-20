@@ -7,10 +7,10 @@ import (
 
 	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
 
-	"github.com/valyala/fasthttp"
-
-	http_service "github.com/eolinker/eosc/http-service"
+	eoscContext "github.com/eolinker/eosc/context"
+	http_service "github.com/eolinker/eosc/context/http-context"
 	uuid "github.com/satori/go.uuid"
+	"github.com/valyala/fasthttp"
 )
 
 var _ http_service.IHttpContext = (*Context)(nil)
@@ -25,6 +25,36 @@ type Context struct {
 
 	requestReader *RequestReader
 	ctx           context.Context
+}
+
+func (ctx *Context) Complete() eoscContext.CompleteHandler {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (ctx *Context) SetCompleteHandler(handler eoscContext.CompleteHandler) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (ctx *Context) Finish() eoscContext.FinishHandler {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (ctx *Context) SetFinish(handler eoscContext.FinishHandler) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (ctx *Context) Scheme() string {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (ctx *Context) Assert(i interface{}) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (ctx *Context) Proxies() []http_service.IRequest {
@@ -99,7 +129,7 @@ func (ctx *Context) RequestId() string {
 }
 
 //Finish finish
-func (ctx *Context) Finish() {
+func (ctx *Context) finish() {
 	if ctx.response.responseError != nil {
 		ctx.fastHttpRequestCtx.SetStatusCode(504)
 		ctx.fastHttpRequestCtx.SetBodyString(ctx.response.responseError.Error())

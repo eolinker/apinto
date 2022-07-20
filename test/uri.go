@@ -3,7 +3,7 @@ package test
 import (
 	"net/url"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 )
 
 var _ http_service.IURIWriter = (*URIRequest)(nil)

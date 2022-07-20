@@ -4,7 +4,8 @@ import (
 	"github.com/eolinker/apinto/filter"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/upstream"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/context"
+	http_service "github.com/eolinker/eosc/context/http-context"
 	"github.com/eolinker/eosc/log"
 )
 
@@ -12,12 +13,17 @@ type ServiceHandler struct {
 	service            *Service
 	id                 string
 	routerPluginConfig map[string]*plugin.Config
-	pluginExec         http_service.IChain
+	pluginExec         context.IChain
 	pluginOrg          plugin.IPlugin
 	upstreamHandler    upstream.IUpstreamHandler
 }
 
-func (s *ServiceHandler) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (s *ServiceHandler) DoFilter(ctx context.Context, next context.IChain) (err error) {
+
+	return http_service.DoHttpFilter(s, ctx, next)
+}
+
+func (s *ServiceHandler) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) (err error) {
 	if s.upstreamHandler != nil {
 		err = s.upstreamHandler.DoChain(ctx)
 	}
@@ -57,7 +63,7 @@ func (s *ServiceHandler) rebuild() {
 	config := s.service.Merge(s.routerPluginConfig)
 
 	s.pluginOrg = pluginManger.CreateRequest(s.id, config)
-	s.pluginExec = s.pluginOrg.Append(filter.ToFilter([]http_service.IFilter{s}))
+	s.pluginExec = s.pluginOrg.Append(filter.ToFilter([]context.IFilter{s}))
 
 	ps, err := s.service.upstream.Create(s.id, s.service.retry, s.service.timeout)
 	if err != nil {

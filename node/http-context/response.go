@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 
 	"github.com/valyala/fasthttp"
 )

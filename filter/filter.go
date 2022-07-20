@@ -1,8 +1,10 @@
 package filter
 
-import http_service "github.com/eolinker/eosc/http-service"
+import (
+	"github.com/eolinker/eosc/context"
+)
 
-var _ http_service.IFilter = (*_ChainFilter)(nil)
+var _ context.IFilter = (*_ChainFilter)(nil)
 
 type _ChainFilter struct {
 	startNode *_ChainNode
@@ -17,28 +19,28 @@ func (c *_ChainFilter) Destroy() {
 
 }
 
-func ToFilter(filters []http_service.IFilter) *_ChainFilter {
+func ToFilter(filters []context.IFilter) *_ChainFilter {
 	c := &_ChainFilter{}
 	c.Reset(filters...)
 	return c
 }
 
-func (c *_ChainFilter) Reset(filters ...http_service.IFilter) {
+func (c *_ChainFilter) Reset(filters ...context.IFilter) {
 	c.startNode = createNode(filters, c)
 }
 
-func (c *_ChainFilter) DoChain(ctx http_service.IHttpContext) error {
+func (c *_ChainFilter) DoChain(ctx context.Context) error {
 	value := ctx.Value(c)
 	if value == nil {
 		return nil
 	}
-	if next, ok := value.(http_service.IChain); ok {
+	if next, ok := value.(context.IChain); ok {
 		return next.DoChain(ctx)
 	}
 	return nil
 }
 
-func (c *_ChainFilter) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (c *_ChainFilter) DoFilter(ctx context.Context, next context.IChain) (err error) {
 
 	startNode := c.startNode
 	if startNode != nil {

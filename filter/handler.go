@@ -1,7 +1,7 @@
 package filter
 
 import (
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/context"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
 )
@@ -22,7 +22,7 @@ func (c *_ChainHandler) Destroy() {
 
 }
 
-func createHandler(filters []http_service.IFilter) *_ChainHandler {
+func createHandler(filters []context.IFilter) *_ChainHandler {
 	orgFilter := ToFilter(filters)
 	return &_ChainHandler{
 		orgFilter:    orgFilter,
@@ -31,11 +31,11 @@ func createHandler(filters []http_service.IFilter) *_ChainHandler {
 
 }
 
-func (c *_ChainHandler) ToFilter() http_service.IFilter {
+func (c *_ChainHandler) ToFilter() context.IFilter {
 	return c.orgFilter
 }
 
-func (c *_ChainHandler) DoChain(ctx http_service.IHttpContext) error {
+func (c *_ChainHandler) DoChain(ctx context.Context) error {
 	log.Debug("do chain handler: ", c, config.TypeNameOf(c.orgFilter))
 	orgFilter := c.orgFilter
 	if orgFilter != nil {
@@ -44,9 +44,9 @@ func (c *_ChainHandler) DoChain(ctx http_service.IHttpContext) error {
 	return nil
 }
 
-func (c *_ChainHandler) Append(filters ...http_service.IFilter) IChain {
+func (c *_ChainHandler) Append(filters ...context.IFilter) IChain {
 	pre := c.ToFilter()
-	fs := make([]http_service.IFilter, 0, len(filters)+1)
+	fs := make([]context.IFilter, 0, len(filters)+1)
 	if pre != nil {
 		fs = append(fs, pre)
 	}
@@ -56,10 +56,10 @@ func (c *_ChainHandler) Append(filters ...http_service.IFilter) IChain {
 	return n
 }
 
-func (c *_ChainHandler) Insert(filters ...http_service.IFilter) IChain {
+func (c *_ChainHandler) Insert(filters ...context.IFilter) IChain {
 	pre := c.ToFilter()
 
-	fs := make([]http_service.IFilter, 0, len(filters)+1)
+	fs := make([]context.IFilter, 0, len(filters)+1)
 	fs = append(fs, filters...)
 	if pre != nil {
 		fs = append(fs, pre)
@@ -69,7 +69,7 @@ func (c *_ChainHandler) Insert(filters ...http_service.IFilter) IChain {
 	return n
 }
 
-func (c *_ChainHandler) Reset(filters ...http_service.IFilter) {
+func (c *_ChainHandler) Reset(filters ...context.IFilter) {
 
 	if c.resetHandler != nil {
 

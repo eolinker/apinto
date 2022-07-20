@@ -1,11 +1,12 @@
 package response_rewrite
 
 import (
+	"github.com/eolinker/eosc/context"
 	"strconv"
 
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 )
 
 type ResponseRewrite struct {
@@ -62,7 +63,7 @@ func (r *ResponseRewrite) CheckSkill(skill string) bool {
 	return http_service.FilterSkillName == skill
 }
 
-func (r *ResponseRewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (r *ResponseRewrite) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) (err error) {
 	if next != nil {
 		err = next.DoChain(ctx)
 	}

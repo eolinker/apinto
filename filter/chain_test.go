@@ -10,7 +10,7 @@ import (
 
 	"github.com/eolinker/eosc/log"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 )
 
 type Out struct {
@@ -21,7 +21,7 @@ type Out struct {
 func NewOut(t *testing.T) *Out {
 	return &Out{t: t}
 }
-func (o *Out) Test(chain http_service.IChain, name string) {
+func (o *Out) Test(chain context.IChain, name string) {
 	o.reset()
 	if err := chain.DoChain(new(TestContext)); err != nil {
 		log.Error(err)
@@ -49,7 +49,7 @@ func NewTestFilter(o *Out, name string) *TestFilter {
 	return &TestFilter{o: o, name: name}
 }
 
-func (t *TestFilter) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (t *TestFilter) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) error {
 	t.o.out(t.name)
 
 	return next.DoChain(ctx)
@@ -61,7 +61,7 @@ func (t *TestFilter) Destroy() {
 
 func TestIFilter(t *testing.T) {
 	out := NewOut(t)
-	filterOrg := make([]http_service.IFilter, 2)
+	filterOrg := make([]http_service.HttpFilter, 2)
 	for i := range filterOrg {
 		filterOrg[i] = NewTestFilter(out, strconv.Itoa(i+1))
 	}
@@ -127,11 +127,11 @@ func (t *TestContext) WithValue(key, val interface{}) {
 
 func TestReset(t *testing.T) {
 	out := NewOut(t)
-	filters1 := make([]http_service.IFilter, 5)
+	filters1 := make([]http_service.HttpFilter, 5)
 	for i := range filters1 {
 		filters1[i] = NewTestFilter(out, fmt.Sprint("org-", i+1))
 	}
-	filters2 := make([]http_service.IFilter, 5)
+	filters2 := make([]http_service.HttpFilter, 5)
 	for i := range filters2 {
 
 		filters2[i] = NewTestFilter(out, fmt.Sprint("append-", i+1))

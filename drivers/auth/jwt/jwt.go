@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"github.com/eolinker/eosc/utils/config"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 
 	"github.com/eolinker/apinto/auth"
 	"github.com/eolinker/eosc"
 )
+
+var _ auth.IAuth = (*jwt)(nil)
 
 //supportTypes 当前驱动支持的authorization type值
 var supportTypes = []string{

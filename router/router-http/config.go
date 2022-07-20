@@ -1,7 +1,6 @@
 package router_http
 
 import (
-	http_service "github.com/eolinker/eosc/http-service"
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/router"
 )
@@ -38,7 +37,7 @@ type Config struct {
 	//Cert    []Cert
 	Hosts   []string
 	Methods []string
-	Target  http_service.IChain
+	Target  context.IChain
 	Rules   []Rule
 }
 

@@ -2,13 +2,14 @@ package proxy_rewrite
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/context"
 	"regexp"
 
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 )
 
-var _ http_service.IFilter = (*ProxyRewrite)(nil)
+var _ http_service.HttpFilter = (*ProxyRewrite)(nil)
 
 type ProxyRewrite struct {
 	*Driver
@@ -21,7 +22,7 @@ type ProxyRewrite struct {
 	headers    map[string]string
 }
 
-func (p *ProxyRewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (p *ProxyRewrite) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) (err error) {
 	err = p.rewrite(ctx)
 	if err != nil {
 		return err

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 )
 
 var _ http_service.IResponse = (*Response)(nil)

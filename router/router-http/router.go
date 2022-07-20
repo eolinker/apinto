@@ -3,9 +3,9 @@ package router_http
 import (
 	"sync"
 
-	http_service "github.com/eolinker/eosc/http-service"
 	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/eolinker/apinto/plugin"
+	http_service "github.com/eolinker/eosc/context/http-context"
 
 	"github.com/eolinker/apinto/service"
 
@@ -32,7 +32,7 @@ type Router struct {
 	data         eosc.IUntyped
 	match        IMatcher
 	handler      fasthttp.RequestHandler
-	routerFilter http_service.IChain
+	routerFilter context.IChain
 }
 
 //NewRouter 新建路由树
@@ -129,7 +129,7 @@ func parseData(data eosc.IUntyped) (IMatcher, error) {
 type NotFond struct {
 }
 
-func (n *NotFond) DoFilter(ctx http_service.IHttpContext, chain http_service.IChain) (err error) {
+func (n *NotFond) DoFilter(ctx http_service.IHttpContext, chain context.IChain) (err error) {
 	ctx.Response().SetStatus(404, "404")
 	ctx.Response().SetBody([]byte("404 Not Found"))
 	return nil

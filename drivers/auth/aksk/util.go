@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/context/http-context"
 
 	"github.com/eolinker/apinto/auth"
 )

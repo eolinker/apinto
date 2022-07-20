@@ -3,7 +3,8 @@ package service
 import (
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/plugin"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/context"
+	http_service "github.com/eolinker/eosc/context/http-context"
 )
 
 //CheckSkill 检查目标技能是否符合
@@ -13,7 +14,7 @@ func CheckSkill(skill string) bool {
 
 //IService github.com/eolinker/apinto/service.service.IService
 type IService interface {
-	http_service.IChain
+	context.IChain
 }
 type IServiceCreate interface {
 	Create(id string, configs map[string]*plugin.Config) IService

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/eolinker/eosc/context"
 	"reflect"
 
 	"github.com/eolinker/apinto/plugin"
@@ -13,7 +14,7 @@ import (
 	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/filter"
-	http_service "github.com/eolinker/eosc/http-service"
+
 	"github.com/eolinker/eosc/log"
 )
 
@@ -75,8 +76,8 @@ func (p *PluginManager) CheckSkill(skill string) bool {
 	return false
 }
 
-func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []http_service.IFilter {
-	filters := make([]http_service.IFilter, 0, len(conf))
+func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []context.IFilter {
+	filters := make([]context.IFilter, 0, len(conf))
 	plugins := p.plugins
 	for _, plg := range plugins {
 		if plg.Status == StatusDisable || plg.Status == "" {
@@ -109,7 +110,7 @@ func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []http_ser
 			log.Error("plg manager: fail to createFilters filter,error is ", err)
 			continue
 		}
-		fi, ok := worker.(http_service.IFilter)
+		fi, ok := worker.(context.IFilter)
 		if !ok {
 			log.Error("extender ", plg.ID, " not plg for http-service.Filter")
 			continue
