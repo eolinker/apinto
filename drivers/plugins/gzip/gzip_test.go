@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	http_context "github.com/eolinker/apinto/node/http-context"
-	http_service "github.com/eolinker/eosc/context/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/valyala/fasthttp"
 )
 

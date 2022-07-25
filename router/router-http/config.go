@@ -3,6 +3,7 @@ package router_http
 import (
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/router"
+	"github.com/eolinker/eosc/eocontext"
 )
 
 //HeaderItem HeaderItem
@@ -37,7 +38,7 @@ type Config struct {
 	//Cert    []Cert
 	Hosts   []string
 	Methods []string
-	Target  context.IChain
+	Target  eocontext.IChain
 	Rules   []Rule
 }
 

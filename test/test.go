@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strconv"
 
-	http_service "github.com/eolinker/eosc/context/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	uuid "github.com/satori/go.uuid"
 )
 

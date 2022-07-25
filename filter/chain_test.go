@@ -10,7 +10,7 @@ import (
 
 	"github.com/eolinker/eosc/log"
 
-	http_service "github.com/eolinker/eosc/context/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 type Out struct {

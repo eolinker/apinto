@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/context"
-	http_service "github.com/eolinker/eosc/context/http-context"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"strconv"
 )
 
@@ -17,7 +17,7 @@ const (
 )
 
 var _ http_service.HttpFilter = (*RateLimiting)(nil)
-var _ context.IFilter = (*RateLimiting)(nil)
+var _ eocontext.IFilter = (*RateLimiting)(nil)
 
 type RateLimiting struct {
 	*Driver
@@ -27,7 +27,7 @@ type RateLimiting struct {
 	responseType     string
 }
 
-func (r *RateLimiting) DoFilter(ctx context.Context, next context.IChain) (err error) {
+func (r *RateLimiting) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
 	return http_service.DoHttpFilter(r, ctx, next)
 }
 
@@ -69,7 +69,7 @@ func (r *RateLimiting) Destroy() {
 	r.rateInfo = nil
 }
 
-func (r *RateLimiting) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) (err error) {
+func (r *RateLimiting) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	// 前置处理
 	flag, result, status := r.doLimit()
 	if !flag {

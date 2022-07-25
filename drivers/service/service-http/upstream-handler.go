@@ -2,14 +2,15 @@ package service_http
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/eocontext"
 	"time"
 
 	"github.com/eolinker/eosc/log"
 
-	http_service "github.com/eolinker/eosc/context/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
-var _ context.IChain = (*UpstreamHandler)(nil)
+var _ eocontext.IChain = (*UpstreamHandler)(nil)
 
 type UpstreamHandler struct {
 	id       string
@@ -39,10 +40,12 @@ func NewUpstreamHandler(id string, upstream *Upstream, retry int, timeout time.D
 }
 
 //DoChain 请求发送
-func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
+func (u *UpstreamHandler) DoChain(org eocontext.EoContext) error {
 
-	var lastErr error
-
+	ctx, err := http_service.Assert(org)
+	if err != nil {
+		return err
+	}
 	//设置响应开始时间
 	proxyTime := time.Now()
 
@@ -53,6 +56,7 @@ func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
 		ctx.WithValue("response_time", time.Now().Sub(proxyTime).Milliseconds())
 	}()
 
+	var lastErr error
 	for doTrice := u.retry + 1; doTrice > 0; doTrice-- {
 
 		node, err := u.upstream.handler.Next()

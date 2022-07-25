@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/context"
-	http_service "github.com/eolinker/eosc/context/http-context"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"strconv"
 	"strings"
 )
 
 var _ http_service.HttpFilter = (*CorsFilter)(nil)
-var _ context.IFilter = (*CorsFilter)(nil)
+var _ eocontext.IFilter = (*CorsFilter)(nil)
 
 type CorsFilter struct {
 	*Driver
@@ -25,11 +25,11 @@ type CorsFilter struct {
 	exposeChecker    *Checker
 }
 
-func (c *CorsFilter) DoFilter(ctx context.Context, next context.IChain) (err error) {
+func (c *CorsFilter) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
 	return http_service.DoHttpFilter(c, ctx, next)
 }
 
-func (c *CorsFilter) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) (err error) {
+func (c *CorsFilter) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	if ctx.Request().Method() == "OPTION" {
 		return c.doOption(ctx)
 	}

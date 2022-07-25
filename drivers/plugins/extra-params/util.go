@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	http_service "github.com/eolinker/eosc/context/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"strings"
 )
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/valyala/fasthttp"
 
-	http_service "github.com/eolinker/eosc/context/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
 	"io/ioutil"
 	"net/http"

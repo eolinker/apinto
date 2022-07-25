@@ -7,8 +7,8 @@ import (
 
 	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
 
-	eoscContext "github.com/eolinker/eosc/context"
-	http_service "github.com/eolinker/eosc/context/http-context"
+	eoscContext "github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	uuid "github.com/satori/go.uuid"
 	"github.com/valyala/fasthttp"
 )

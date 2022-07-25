@@ -3,12 +3,12 @@ package ip_restriction
 import (
 	"encoding/json"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/context"
-	http_service "github.com/eolinker/eosc/context/http-context"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 var _ http_service.HttpFilter = (*IPHandler)(nil)
-var _ context.IFilter = (*IPHandler)(nil)
+var _ eocontext.IFilter = (*IPHandler)(nil)
 
 type IPHandler struct {
 	*Driver
@@ -17,7 +17,7 @@ type IPHandler struct {
 	filter       IPFilter
 }
 
-func (I *IPHandler) DoFilter(ctx context.Context, next context.IChain) (err error) {
+func (I *IPHandler) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
 	return http_service.DoHttpFilter(I, ctx, next)
 }
 
@@ -73,7 +73,7 @@ func (I *IPHandler) Destroy() {
 	I.responseType = ""
 }
 
-func (I *IPHandler) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) error {
+func (I *IPHandler) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
 	err := I.doRestriction(ctx)
 	if err != nil {
 		resp := ctx.Response()

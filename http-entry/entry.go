@@ -5,7 +5,7 @@ import (
 
 	"github.com/eolinker/eosc"
 
-	http_service "github.com/eolinker/eosc/context/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 var (

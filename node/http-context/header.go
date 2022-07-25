@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	http_service "github.com/eolinker/eosc/context/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
 	"github.com/valyala/fasthttp"
 )

@@ -1,7 +1,7 @@
 package filter
 
 import (
-	"github.com/eolinker/eosc/context"
+	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
 )
@@ -22,7 +22,7 @@ func (c *_ChainHandler) Destroy() {
 
 }
 
-func createHandler(filters []context.IFilter) *_ChainHandler {
+func createHandler(filters []eocontext.IFilter) *_ChainHandler {
 	orgFilter := ToFilter(filters)
 	return &_ChainHandler{
 		orgFilter:    orgFilter,
@@ -31,11 +31,11 @@ func createHandler(filters []context.IFilter) *_ChainHandler {
 
 }
 
-func (c *_ChainHandler) ToFilter() context.IFilter {
+func (c *_ChainHandler) ToFilter() eocontext.IFilter {
 	return c.orgFilter
 }
 
-func (c *_ChainHandler) DoChain(ctx context.Context) error {
+func (c *_ChainHandler) DoChain(ctx eocontext.EoContext) error {
 	log.Debug("do chain handler: ", c, config.TypeNameOf(c.orgFilter))
 	orgFilter := c.orgFilter
 	if orgFilter != nil {
@@ -44,9 +44,9 @@ func (c *_ChainHandler) DoChain(ctx context.Context) error {
 	return nil
 }
 
-func (c *_ChainHandler) Append(filters ...context.IFilter) IChain {
+func (c *_ChainHandler) Append(filters ...eocontext.IFilter) IChain {
 	pre := c.ToFilter()
-	fs := make([]context.IFilter, 0, len(filters)+1)
+	fs := make([]eocontext.IFilter, 0, len(filters)+1)
 	if pre != nil {
 		fs = append(fs, pre)
 	}
@@ -56,10 +56,10 @@ func (c *_ChainHandler) Append(filters ...context.IFilter) IChain {
 	return n
 }
 
-func (c *_ChainHandler) Insert(filters ...context.IFilter) IChain {
+func (c *_ChainHandler) Insert(filters ...eocontext.IFilter) IChain {
 	pre := c.ToFilter()
 
-	fs := make([]context.IFilter, 0, len(filters)+1)
+	fs := make([]eocontext.IFilter, 0, len(filters)+1)
 	fs = append(fs, filters...)
 	if pre != nil {
 		fs = append(fs, pre)
@@ -69,7 +69,7 @@ func (c *_ChainHandler) Insert(filters ...context.IFilter) IChain {
 	return n
 }
 
-func (c *_ChainHandler) Reset(filters ...context.IFilter) {
+func (c *_ChainHandler) Reset(filters ...eocontext.IFilter) {
 
 	if c.resetHandler != nil {
 

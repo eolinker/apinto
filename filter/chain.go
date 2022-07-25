@@ -1,18 +1,18 @@
 package filter
 
 import (
-	"github.com/eolinker/eosc/context"
+	"github.com/eolinker/eosc/eocontext"
 )
 
 type IChainReset interface {
-	Reset(filters ...context.IFilter)
+	Reset(filters ...eocontext.IFilter)
 }
 
 type IChain interface {
-	context.IChain
-	ToFilter() context.IFilter
-	Append(filters ...context.IFilter) IChain
-	Insert(filters ...context.IFilter) IChain
+	eocontext.IChain
+	ToFilter() eocontext.IFilter
+	Append(filters ...eocontext.IFilter) IChain
+	Insert(filters ...eocontext.IFilter) IChain
 }
 
 type IChainHandler interface {
@@ -20,6 +20,6 @@ type IChainHandler interface {
 	IChainReset
 }
 
-func NewChain(filters []context.IFilter) IChainHandler {
+func NewChain(filters []eocontext.IFilter) IChainHandler {
 	return createHandler(filters)
 }

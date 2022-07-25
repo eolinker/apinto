@@ -3,13 +3,13 @@ package circuit_breaker
 import (
 	"encoding/json"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/context"
-	http_service "github.com/eolinker/eosc/context/http-context"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"strconv"
 	"time"
 )
 
-var _ context.IFilter = (*CircuitBreaker)(nil)
+var _ eocontext.IFilter = (*CircuitBreaker)(nil)
 var _ http_service.HttpFilter = (*CircuitBreaker)(nil)
 
 type CircuitBreaker struct {
@@ -57,10 +57,10 @@ func (c *CircuitBreaker) Destroy() {
 func (c *CircuitBreaker) CheckSkill(skill string) bool {
 	return http_service.FilterSkillName == skill
 }
-func (c *CircuitBreaker) DoFilter(ctx context.Context, next context.IChain) (err error) {
+func (c *CircuitBreaker) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
 	return http_service.DoHttpFilter(c, ctx, next)
 }
-func (c *CircuitBreaker) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) error {
+func (c *CircuitBreaker) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
 	isContinue, err := c.access(ctx)
 	if !isContinue {
 		if err != nil {

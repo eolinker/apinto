@@ -8,7 +8,7 @@ import (
 
 	"github.com/eolinker/apinto/auth"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/context/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 //supportTypes 当前驱动支持的authorization type值

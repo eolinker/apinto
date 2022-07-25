@@ -1,7 +1,7 @@
 package upstream
 
 import (
-	"github.com/eolinker/eosc/context"
+	"github.com/eolinker/eosc/eocontext"
 	"time"
 )
 
@@ -11,7 +11,7 @@ func CheckSkill(skill string) bool {
 }
 
 type IUpstreamHandler interface {
-	context.IChain
+	eocontext.IChain
 }
 
 type IUpstream interface {

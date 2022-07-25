@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"compress/gzip"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/context"
-	http_service "github.com/eolinker/eosc/context/http-context"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"strings"
 )
 
 var _ http_service.HttpFilter = (*Gzip)(nil)
-var _ context.IFilter = (*Gzip)(nil)
+var _ eocontext.IFilter = (*Gzip)(nil)
 
 type Gzip struct {
 	*Driver
@@ -18,11 +18,11 @@ type Gzip struct {
 	conf *Config
 }
 
-func (g *Gzip) DoFilter(ctx context.Context, next context.IChain) (err error) {
+func (g *Gzip) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
 	return http_service.DoHttpFilter(g, ctx, next)
 }
 
-func (g *Gzip) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) (err error) {
+func (g *Gzip) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	head := ctx.Request().Header().GetHeader("Accept-Encoding")
 	if next != nil {
 		err = next.DoChain(ctx)

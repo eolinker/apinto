@@ -2,14 +2,13 @@ package upstream_http
 
 import (
 	"fmt"
-	"github.com/eolinker/eosc/context"
-	http_service "github.com/eolinker/eosc/context/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"time"
 
 	"github.com/eolinker/eosc/log"
 )
 
-var _ context.IChain = (*UpstreamHandler)(nil)
+var _ eocontext.IChain = (*UpstreamHandler)(nil)
 
 type UpstreamHandler struct {
 	id       string
@@ -39,7 +38,7 @@ func NewUpstreamHandler(id string, upstream *Upstream, retry int, timeout time.D
 }
 
 //DoChain 请求发送
-func (u *UpstreamHandler) DoChain(ctx context.Context) error {
+func (u *UpstreamHandler) DoChain(ctx eocontext.EoContext) error {
 
 	httpContext, err := http_service.Assert(ctx)
 	if err != nil {

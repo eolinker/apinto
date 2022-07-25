@@ -6,7 +6,7 @@ import (
 	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
-	http_service "github.com/eolinker/eosc/context/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/valyala/fasthttp"
 	"net"
 	"testing"

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	router_http "github.com/eolinker/apinto/router/router-http"
 	service2 "github.com/eolinker/apinto/service"
-	"github.com/eolinker/eosc/context"
-	service "github.com/eolinker/eosc/context/http-context"
+	"github.com/eolinker/eosc/eocontext"
+	service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 var _ service.HttpFilter = (*RouterHandler)(nil)
@@ -15,7 +15,7 @@ type RouterHandler struct {
 	serviceFilter service2.IService
 }
 
-func (r *RouterHandler) DoHttpFilter(ctx service.IHttpContext, next context.IChain) (err error) {
+func (r *RouterHandler) DoHttpFilter(ctx service.IHttpContext, next eocontext.IChain) (err error) {
 	return r.serviceFilter.DoChain(ctx)
 }
 
@@ -44,7 +44,7 @@ func NewDisableHandler(routerConfig *router_http.Config) *RouterHandler {
 type DisableHandler struct {
 }
 
-func (d *DisableHandler) DoChain(ctx context.Context) error {
+func (d *DisableHandler) DoChain(ctx eocontext.EoContext) error {
 	httpContext, err := service.Assert(ctx)
 	if err != nil {
 		return err

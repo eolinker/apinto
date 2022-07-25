@@ -1,16 +1,16 @@
 package filter
 
 import (
-	"github.com/eolinker/eosc/context"
+	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
 )
 
-var _ context.IChain = (*_ChainNode)(nil)
+var _ eocontext.IChain = (*_ChainNode)(nil)
 
 type _ChainNode struct {
-	filter context.IFilter
-	next   context.IChain
+	filter eocontext.IFilter
+	next   eocontext.IChain
 }
 
 func (c *_ChainNode) Destroy() {
@@ -29,7 +29,7 @@ func (c *_ChainNode) Destroy() {
 	}
 }
 
-func createNode(filters []context.IFilter, end context.IChain) *_ChainNode {
+func createNode(filters []eocontext.IFilter, end eocontext.IChain) *_ChainNode {
 
 	if len(filters) == 0 {
 		return nil
@@ -40,7 +40,7 @@ func createNode(filters []context.IFilter, end context.IChain) *_ChainNode {
 	}
 	return &_ChainNode{filter: filters[0], next: createNode(filters[1:], end)}
 }
-func (c *_ChainNode) DoChain(ctx context.Context) error {
+func (c *_ChainNode) DoChain(ctx eocontext.EoContext) error {
 	log.Debug(" chain: ", c, "filter: ", config.TypeNameOf(c.filter))
 	if c == nil {
 		return nil

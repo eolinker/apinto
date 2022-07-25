@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/eolinker/eosc/utils/config"
 
-	http_service "github.com/eolinker/eosc/context/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
 	"github.com/eolinker/apinto/auth"
 	"github.com/eolinker/eosc"

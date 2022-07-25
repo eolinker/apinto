@@ -1,16 +1,16 @@
 package response_rewrite
 
 import (
-	"github.com/eolinker/eosc/context"
+	"github.com/eolinker/eosc/eocontext"
 	"strconv"
 
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/context/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 var _ http_service.HttpFilter = (*ResponseRewrite)(nil)
-var _ context.IFilter = (*ResponseRewrite)(nil)
+var _ eocontext.IFilter = (*ResponseRewrite)(nil)
 
 type ResponseRewrite struct {
 	*Driver
@@ -21,7 +21,7 @@ type ResponseRewrite struct {
 	match      *MatchConf
 }
 
-func (r *ResponseRewrite) DoFilter(ctx context.Context, next context.IChain) (err error) {
+func (r *ResponseRewrite) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
 	return http_service.DoHttpFilter(r, ctx, next)
 }
 
@@ -70,7 +70,7 @@ func (r *ResponseRewrite) CheckSkill(skill string) bool {
 	return http_service.FilterSkillName == skill
 }
 
-func (r *ResponseRewrite) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) (err error) {
+func (r *ResponseRewrite) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	if next != nil {
 		err = next.DoChain(ctx)
 	}

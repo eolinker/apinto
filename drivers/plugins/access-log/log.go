@@ -4,12 +4,12 @@ import (
 	http_entry "github.com/eolinker/apinto/http-entry"
 	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/context"
-	http_service "github.com/eolinker/eosc/context/http-context"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
 )
 
-var _ context.IFilter = (*accessLog)(nil)
+var _ eocontext.IFilter = (*accessLog)(nil)
 var _ http_service.HttpFilter = (*accessLog)(nil)
 
 type accessLog struct {
@@ -18,11 +18,11 @@ type accessLog struct {
 	output []output.IEntryOutput
 }
 
-func (l *accessLog) DoFilter(ctx context.Context, next context.IChain) (err error) {
+func (l *accessLog) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
 	return http_service.DoHttpFilter(l, ctx, next)
 }
 
-func (l *accessLog) DoHttpFilter(ctx http_service.IHttpContext, next context.IChain) (err error) {
+func (l *accessLog) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	err = next.DoChain(ctx)
 	if err != nil {
 		log.Error(err)
