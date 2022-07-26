@@ -1,24 +1,25 @@
-package proxy_rewrite
+package proxy_rewrite2
 
 import (
 	"fmt"
-	"regexp"
-
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/http-service"
+	"regexp"
 )
 
 var _ http_service.IFilter = (*ProxyRewrite)(nil)
 
 type ProxyRewrite struct {
 	*Driver
-	id         string
-	scheme     string
-	uri        string
-	regexURI   []string
-	regexMatch *regexp.Regexp
-	host       string
-	headers    map[string]string
+	id          string
+	pathType    string
+	staticPath  string
+	prefixPath  []*SPrefixPath
+	regexPath   []*SRegexPath
+	regexMatch  []*regexp.Regexp
+	hostRewrite bool
+	host        string
+	headers     map[string]string
 }
 
 func (p *ProxyRewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
@@ -29,6 +30,7 @@ func (p *ProxyRewrite) DoFilter(ctx http_service.IHttpContext, next http_service
 	if next != nil {
 		return next.DoChain(ctx)
 	}
+
 	return nil
 }
 
@@ -80,19 +82,28 @@ func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]interface
 		return err
 	}
 
-	p.scheme = conf.Scheme
-	p.uri = conf.URI
-	p.regexURI = conf.RegexURI
+	p.pathType = conf.PathType
+	p.hostRewrite = conf.HostRewrite
 	p.host = conf.Host
 	p.headers = conf.Headers
 
-	if len(conf.RegexURI) > 0 {
-		p.regexMatch, err = regexp.Compile(conf.RegexURI[0])
-		if err != nil {
-			return fmt.Errorf(regexpErrInfo, conf.RegexURI[0])
+	switch conf.PathType {
+	case "static":
+		p.staticPath = conf.StaticPath
+	case "prefix":
+		p.prefixPath = conf.PrefixPath
+	case "regex":
+		regexMatch := make([]*regexp.Regexp, 0)
+
+		for _, rPath := range conf.RegexPath {
+			rMatch, err := regexp.Compile(rPath.RegexPathMatch)
+			if err != nil {
+				return fmt.Errorf(regexpErrInfo, rPath.RegexPathMatch)
+			}
+			regexMatch = append(regexMatch, rMatch)
 		}
-	} else {
-		p.regexMatch = nil
+		p.regexPath = conf.RegexPath
+		p.regexMatch = regexMatch
 	}
 
 	return nil
@@ -103,11 +114,13 @@ func (p *ProxyRewrite) Stop() error {
 }
 
 func (p *ProxyRewrite) Destroy() {
-	p.scheme = ""
-	p.uri = ""
-	p.regexURI = nil
-	p.regexMatch = nil
+	p.pathType = "none"
+	p.hostRewrite = false
 	p.host = ""
+	p.staticPath = ""
+	p.prefixPath = nil
+	p.regexPath = nil
+	p.regexMatch = nil
 	p.headers = nil
 }
 

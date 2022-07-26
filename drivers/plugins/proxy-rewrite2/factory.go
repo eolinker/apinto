@@ -1,4 +1,4 @@
-package proxy_rewrite
+package proxy_rewrite2
 
 import (
 	"github.com/eolinker/eosc/utils/schema"
@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	Name = "proxy_rewrite"
+	Name = "proxy_rewrite2"
 )
 
 func Register(register eosc.IExtenderDriverRegister) {
@@ -21,6 +21,7 @@ type Factory struct {
 func NewFactory() *Factory {
 	return &Factory{}
 }
+
 func (f *Factory) Render() interface{} {
 	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
 	if err != nil {
