@@ -5,9 +5,22 @@ import (
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/http-service"
 	"regexp"
+	"strings"
 )
 
 var _ http_service.IFilter = (*ProxyRewrite)(nil)
+
+const (
+	typeNone   = "none"
+	typeStatic = "static"
+	typePrefix = "prefix"
+	typeRegex  = "regex"
+)
+
+var (
+	regexpErrInfo = `[plugin proxy-rewrite2 config err] compile regexp fail. err regexp: %s `
+	hostErrInfo   = `[plugin proxy-rewrite2 config err] host can't be null. `
+)
 
 type ProxyRewrite struct {
 	*Driver
@@ -35,24 +48,34 @@ func (p *ProxyRewrite) DoFilter(ctx http_service.IHttpContext, next http_service
 }
 
 func (p *ProxyRewrite) rewrite(ctx http_service.IHttpContext) error {
-	//修改scheme
-	if p.scheme != "" {
-		ctx.Proxy().URI().SetScheme(p.scheme)
-	}
+	switch p.pathType {
+	case typeStatic:
+		ctx.Proxy().URI().SetPath(p.staticPath)
+	case typePrefix:
+		oldPath := ctx.Proxy().URI().Path()
 
-	//修改uri   uri比regexURI更优先
-	if p.uri != "" {
-		ctx.Proxy().URI().SetPath(p.uri)
-	} else if p.regexMatch != nil {
-		requestURI := ctx.Proxy().URI().Path()
-		if p.regexMatch.MatchString(requestURI) {
-			newURI := p.regexMatch.ReplaceAllString(requestURI, p.regexURI[1])
-			ctx.Proxy().URI().SetPath(newURI)
+		for _, pPath := range p.prefixPath {
+			if strings.HasPrefix(oldPath, pPath.PrefixPathMatch) {
+				newPath := strings.Replace(oldPath, pPath.PrefixPathMatch, pPath.PrefixPathReplace, 1)
+				ctx.Proxy().URI().SetPath(newPath)
+				break
+			}
+		}
+	case typeRegex:
+		for i, rPath := range p.regexPath {
+			oldPath := ctx.Proxy().URI().Path()
+			reg := p.regexMatch[i]
+
+			if reg.MatchString(oldPath) {
+				newPath := reg.ReplaceAllString(oldPath, rPath.RegexPathReplace)
+				ctx.Proxy().URI().SetPath(newPath)
+				break
+			}
 		}
 	}
 
 	//修改header中的host
-	if p.host != "" {
+	if p.hostRewrite {
 		ctx.Proxy().URI().SetHost(p.host)
 	}
 
@@ -88,11 +111,11 @@ func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]interface
 	p.headers = conf.Headers
 
 	switch conf.PathType {
-	case "static":
+	case typeStatic:
 		p.staticPath = conf.StaticPath
-	case "prefix":
+	case typePrefix:
 		p.prefixPath = conf.PrefixPath
-	case "regex":
+	case typeRegex:
 		regexMatch := make([]*regexp.Regexp, 0)
 
 		for _, rPath := range conf.RegexPath {
@@ -114,7 +137,7 @@ func (p *ProxyRewrite) Stop() error {
 }
 
 func (p *ProxyRewrite) Destroy() {
-	p.pathType = "none"
+	p.pathType = typeNone
 	p.hostRewrite = false
 	p.host = ""
 	p.staticPath = ""

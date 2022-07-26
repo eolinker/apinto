@@ -24,9 +24,9 @@ type SRegexPath struct {
 
 func (c *Config) doCheck() error {
 	switch c.PathType {
-	case "static", "prefix", "regex":
+	case typeStatic, typePrefix, typeRegex:
 	default:
-		c.PathType = "none"
+		c.PathType = typeNone
 	}
 
 	if c.HostRewrite && len(c.Host) == 0 {

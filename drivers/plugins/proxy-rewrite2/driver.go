@@ -57,11 +57,11 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	}
 
 	switch conf.PathType {
-	case "static":
+	case typeStatic:
 		pw.staticPath = conf.StaticPath
-	case "prefix":
+	case typePrefix:
 		pw.prefixPath = conf.PrefixPath
-	case "regex":
+	case typeRegex:
 		regexMatch := make([]*regexp.Regexp, 0)
 
 		for _, rPath := range conf.RegexPath {
