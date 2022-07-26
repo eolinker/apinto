@@ -33,7 +33,5 @@ func (c *Config) doCheck() error {
 		return fmt.Errorf(hostErrInfo)
 	}
 
-	//TODO 是否需要检验前缀替换和正则替换
-
 	return nil
 }

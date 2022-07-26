@@ -23,6 +23,7 @@ import (
 	ip_restriction "github.com/eolinker/apinto/drivers/plugins/ip-restriction"
 	params_transformer "github.com/eolinker/apinto/drivers/plugins/params-transformer"
 	proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/proxy-rewrite"
+	proxy_rewrite2 "github.com/eolinker/apinto/drivers/plugins/proxy-rewrite2"
 	rate_limiting "github.com/eolinker/apinto/drivers/plugins/rate-limiting"
 	response_rewrite "github.com/eolinker/apinto/drivers/plugins/response-rewrite"
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
@@ -86,4 +87,5 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	circuit_breaker.Register(extenderRegister)
 
 	access_log.Register(extenderRegister)
+	proxy_rewrite2.Register(extenderRegister)
 }
