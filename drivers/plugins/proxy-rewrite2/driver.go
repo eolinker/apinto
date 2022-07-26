@@ -51,6 +51,7 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		Driver:      d,
 		id:          id,
 		pathType:    conf.PathType,
+		notMatchErr: conf.NotMatchErr,
 		hostRewrite: conf.HostRewrite,
 		host:        conf.Host,
 		headers:     conf.Headers,

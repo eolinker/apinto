@@ -18,8 +18,9 @@ const (
 )
 
 var (
-	regexpErrInfo = `[plugin proxy-rewrite2 config err] compile regexp fail. err regexp: %s `
-	hostErrInfo   = `[plugin proxy-rewrite2 config err] host can't be null. `
+	regexpErrInfo   = `[plugin proxy-rewrite2 config err] Compile regexp fail. err regexp: %s `
+	hostErrInfo     = `[plugin proxy-rewrite2 config err] Host can't be null. `
+	notMatchErrInfo = `[plugin proxy-rewrite2 err] Proxy path rewrite fail. Request path can't match any rewrite-path. request path: %s `
 )
 
 type ProxyRewrite struct {
@@ -30,14 +31,18 @@ type ProxyRewrite struct {
 	prefixPath  []*SPrefixPath
 	regexPath   []*SRegexPath
 	regexMatch  []*regexp.Regexp
+	notMatchErr bool
 	hostRewrite bool
 	host        string
 	headers     map[string]string
 }
 
-func (p *ProxyRewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
-	err = p.rewrite(ctx)
-	if err != nil {
+func (p *ProxyRewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
+	isPathMatch := p.rewrite(ctx)
+	if !isPathMatch {
+		err := fmt.Errorf(notMatchErrInfo, ctx.Proxy().URI().Path())
+		ctx.Response().SetStatus(400, "400")
+		ctx.Response().SetBody([]byte(err.Error()))
 		return err
 	}
 	if next != nil {
@@ -47,33 +52,7 @@ func (p *ProxyRewrite) DoFilter(ctx http_service.IHttpContext, next http_service
 	return nil
 }
 
-func (p *ProxyRewrite) rewrite(ctx http_service.IHttpContext) error {
-	switch p.pathType {
-	case typeStatic:
-		ctx.Proxy().URI().SetPath(p.staticPath)
-	case typePrefix:
-		oldPath := ctx.Proxy().URI().Path()
-
-		for _, pPath := range p.prefixPath {
-			if strings.HasPrefix(oldPath, pPath.PrefixPathMatch) {
-				newPath := strings.Replace(oldPath, pPath.PrefixPathMatch, pPath.PrefixPathReplace, 1)
-				ctx.Proxy().URI().SetPath(newPath)
-				break
-			}
-		}
-	case typeRegex:
-		for i, rPath := range p.regexPath {
-			oldPath := ctx.Proxy().URI().Path()
-			reg := p.regexMatch[i]
-
-			if reg.MatchString(oldPath) {
-				newPath := reg.ReplaceAllString(oldPath, rPath.RegexPathReplace)
-				ctx.Proxy().URI().SetPath(newPath)
-				break
-			}
-		}
-	}
-
+func (p *ProxyRewrite) rewrite(ctx http_service.IHttpContext) bool {
 	//修改header中的host
 	if p.hostRewrite {
 		ctx.Proxy().URI().SetHost(p.host)
@@ -88,7 +67,39 @@ func (p *ProxyRewrite) rewrite(ctx http_service.IHttpContext) error {
 		ctx.Proxy().Header().SetHeader(k, v)
 	}
 
-	return nil
+	pathMatch := false
+	switch p.pathType {
+	case typeStatic:
+		ctx.Proxy().URI().SetPath(p.staticPath)
+		pathMatch = true
+	case typePrefix:
+		oldPath := ctx.Proxy().URI().Path()
+		for _, pPath := range p.prefixPath {
+			if strings.HasPrefix(oldPath, pPath.PrefixPathMatch) {
+				newPath := strings.Replace(oldPath, pPath.PrefixPathMatch, pPath.PrefixPathReplace, 1)
+				ctx.Proxy().URI().SetPath(newPath)
+				pathMatch = true
+				break
+			}
+		}
+
+	case typeRegex:
+		oldPath := ctx.Proxy().URI().Path()
+		for i, rPath := range p.regexPath {
+			reg := p.regexMatch[i]
+			if reg.MatchString(oldPath) {
+				newPath := reg.ReplaceAllString(oldPath, rPath.RegexPathReplace)
+				ctx.Proxy().URI().SetPath(newPath)
+				pathMatch = true
+				break
+			}
+		}
+
+	case typeNone:
+		pathMatch = true
+	}
+
+	return pathMatch
 }
 
 func (p *ProxyRewrite) Id() string {
@@ -106,6 +117,7 @@ func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]interface
 	}
 
 	p.pathType = conf.PathType
+	p.notMatchErr = conf.NotMatchErr
 	p.hostRewrite = conf.HostRewrite
 	p.host = conf.Host
 	p.headers = conf.Headers
