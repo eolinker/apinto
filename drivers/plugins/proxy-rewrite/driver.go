@@ -50,7 +50,6 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	pw := &ProxyRewrite{
 		Driver:   d,
 		id:       id,
-		scheme:   conf.Scheme,
 		uri:      conf.URI,
 		regexURI: conf.RegexURI,
 		host:     conf.Host,

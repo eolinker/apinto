@@ -6,7 +6,7 @@ type Config struct {
 	PrefixPath  []*SPrefixPath    `json:"prefix_path" label:"path前缀替换" switch:"path_type==='prefix'"`
 	RegexPath   []*SRegexPath     `json:"regex_path" label:"path正则替换" switch:"path_type==='regex'"`
 	NotMatchErr bool              `json:"not_match_err" label:"path替换失败是否报错"`
-	HostRewrite bool              `json:"host_rewrite" label:"是否重写host" `
+	HostRewrite bool              `json:"host_rewrite" label:"是否重写host"`
 	Host        string            `json:"host" label:"Host" switch:"host_rewrite===true"`
 	Headers     map[string]string `json:"headers" label:"请求头部"`
 }
