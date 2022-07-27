@@ -33,11 +33,6 @@ func (p *ProxyRewrite) DoFilter(ctx http_service.IHttpContext, next http_service
 }
 
 func (p *ProxyRewrite) rewrite(ctx http_service.IHttpContext) error {
-	//修改scheme
-	if p.scheme != "" {
-		ctx.Proxy().URI().SetScheme(p.scheme)
-	}
-
 	//修改uri   uri比regexURI更优先
 	if p.uri != "" {
 		ctx.Proxy().URI().SetPath(p.uri)
@@ -80,7 +75,6 @@ func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]interface
 		return err
 	}
 
-	p.scheme = conf.Scheme
 	p.uri = conf.URI
 	p.regexURI = conf.RegexURI
 	p.host = conf.Host
@@ -103,7 +97,6 @@ func (p *ProxyRewrite) Stop() error {
 }
 
 func (p *ProxyRewrite) Destroy() {
-	p.scheme = ""
 	p.uri = ""
 	p.regexURI = nil
 	p.regexMatch = nil
