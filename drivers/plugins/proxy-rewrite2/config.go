@@ -1,7 +1,5 @@
 package proxy_rewrite2
 
-import "fmt"
-
 type Config struct {
 	PathType    string            `json:"path_type" label:"path重写类型" enum:"none,static,prefix,regex"`
 	StaticPath  string            `json:"static_path" label:"静态path" switch:"path_type==='static'"`
@@ -30,9 +28,9 @@ func (c *Config) doCheck() error {
 		c.PathType = typeNone
 	}
 
-	if c.HostRewrite && len(c.Host) == 0 {
-		return fmt.Errorf(hostErrInfo)
-	}
+	//if c.HostRewrite && len(c.Host) == 0 {
+	//	return fmt.Errorf(hostErrInfo)
+	//}
 
 	return nil
 }

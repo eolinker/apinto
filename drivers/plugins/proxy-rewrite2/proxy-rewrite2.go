@@ -39,7 +39,7 @@ type ProxyRewrite struct {
 
 func (p *ProxyRewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
 	isPathMatch := p.rewrite(ctx)
-	if !isPathMatch {
+	if p.notMatchErr && !isPathMatch {
 		err := fmt.Errorf(notMatchErrInfo, ctx.Proxy().URI().Path())
 		ctx.Response().SetStatus(400, "400")
 		ctx.Response().SetBody([]byte(err.Error()))
@@ -156,6 +156,7 @@ func (p *ProxyRewrite) Destroy() {
 	p.prefixPath = nil
 	p.regexPath = nil
 	p.regexMatch = nil
+	p.notMatchErr = false
 	p.headers = nil
 }
 
