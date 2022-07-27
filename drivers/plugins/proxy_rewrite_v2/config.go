@@ -1,4 +1,4 @@
-package proxy_rewrite2
+package proxy_rewrite_v2
 
 type Config struct {
 	PathType    string            `json:"path_type" label:"path重写类型" enum:"none,static,prefix,regex"`

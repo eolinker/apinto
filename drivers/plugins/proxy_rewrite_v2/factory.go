@@ -1,4 +1,4 @@
-package proxy_rewrite2
+package proxy_rewrite_v2
 
 import (
 	"github.com/eolinker/eosc/utils/schema"
@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	Name = "proxy_rewrite2"
+	Name = "proxy_rewrite_v2"
 )
 
 func Register(register eosc.IExtenderDriverRegister) {

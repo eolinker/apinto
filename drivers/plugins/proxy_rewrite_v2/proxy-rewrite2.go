@@ -1,4 +1,4 @@
-package proxy_rewrite2
+package proxy_rewrite_v2
 
 import (
 	"fmt"
