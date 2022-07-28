@@ -2,12 +2,13 @@ package nacos
 
 import (
 	"net/url"
-	"strings"
 )
+
+const defaultScheme = "http"
 
 //Config nacos驱动配置
 type Config struct {
-	Scheme string       `json:"scheme" label:"请求协议" enum:"HTTP,HTTPS"`
+	Scheme string       `json:"scheme" label:"请求协议" enum:"HTTP,HTTPS" skip:""`
 	Config AccessConfig `json:"config" label:"配置信息"`
 }
 
@@ -15,14 +16,6 @@ type Config struct {
 type AccessConfig struct {
 	Address []string          `json:"address" label:"nacos地址"`
 	Params  map[string]string `json:"params" label:"参数"`
-}
-
-func (c *Config) getScheme() string {
-	scheme := strings.ToLower(c.Scheme)
-	if scheme != "http" && scheme != "https" {
-		scheme = "http"
-	}
-	return scheme
 }
 
 func (c *Config) getParams() url.Values {

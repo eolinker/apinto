@@ -19,11 +19,11 @@ type client struct {
 	params  url.Values
 }
 
-func newClient(address []string, params url.Values, scheme string) *client {
+func newClient(address []string, params url.Values) *client {
 	adds := make([]string, 0, len(address))
 	for _, a := range address {
 		if !strings.HasPrefix(a, "http://") && !strings.HasPrefix(a, "https://") {
-			a = fmt.Sprintf("%s://%s", scheme, a)
+			a = fmt.Sprintf("%s://%s", defaultScheme, a)
 		}
 		adds = append(adds, a)
 	}
