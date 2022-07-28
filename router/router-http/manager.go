@@ -78,9 +78,8 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, pluginManager
 	for _, cfg := range listenCfg.Listens {
 		port := int(cfg.Port)
 
-		l, err := tf.ListenTcp("", port)
-		if err != nil {
-			log.Warn("worker listen tcp error:", err)
+		l := tf.ListenTcp(port, traffic.Http1)
+		if l == nil {
 			continue
 		}
 		log.Debug("new http service ", port, cfg, l)
