@@ -9,6 +9,8 @@ Apinto is a microservice gateway developed based on golang. It can achieve the p
 
 **Note**：The **main** branch is the main development branch. Frequent updates may lead to unstable use. If you need to use a stable version, please look [release](https://github.com/eolinker/apinto/releases)
 
+**Apinto** integrates configuration and forwarding functions. Users can configure it through OpenAPI or through visual UI items [apinto dashboard](https://github.com/eolinker/apinto-dashboard) for configuration, click [apinto dashboard deployment document](https://help.apinto.com/docs/dashboard/quick/arrange) for relevant documents
+
 ### Summary / [中文介绍](https://github.com/eolinker/apinto/blob/main/README_CN.md)
 
 - [Why Apinto](#WhyApinto "Why Apinto")
