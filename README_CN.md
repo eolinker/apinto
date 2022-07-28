@@ -11,6 +11,7 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 注意：**main**分支为开发主要分支，频繁更新可能导致使用不稳定，若需要使用稳定版本，请查看[release](https://github.com/eolinker/apinto/releases)
 
+**Apinto** 集合了配置和转发功能，使用者可以通过openAPI进行配置，也可通过可视化UI项目[Apinto Dashboard](https://github.com/eolinker/apinto-dashboard)进行配置，相关文档可点击[Apinto Dashboard部署文档](https://help.apinto.com/docs/dashboard/quick/arrange)
 ### 概况 | [English Introduction](https://github.com/eolinker/apinto/blob/main/README.md)
 
 - [为什么要使用Apinto](#为什么要使用Apinto "Apinto")
