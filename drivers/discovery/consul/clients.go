@@ -6,16 +6,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/eosc/log"
 	"github.com/hashicorp/consul/api"
 )
 
-func newClients(addrs []string, param map[string]string, scheme string) (*consulClients, error) {
+func newClients(addrs []string, param map[string]string) (*consulClients, error) {
 	clients := make([]*api.Client, 0, len(addrs))
 
 	defaultConfig := api.DefaultConfig()
-	defaultConfig.Scheme = scheme
 	if _, has := param["token"]; has {
 		defaultConfig.Token = param["token"]
 	}
@@ -29,8 +28,16 @@ func newClients(addrs []string, param map[string]string, scheme string) (*consul
 			log.Warnf("consul address:%s is invalid", addr)
 			continue
 		}
+		//解析addr, client配置需要区分scheme和host
+		if !strings.HasPrefix(addr, "http://") && !strings.HasPrefix(addr, "https://") {
+			defaultConfig.Scheme = defaultScheme
+			defaultConfig.Address = addr
+		} else {
+			idx := strings.Index(addr, "://")
+			defaultConfig.Scheme = addr[:idx]
+			defaultConfig.Address = addr[idx+3:]
+		}
 
-		defaultConfig.Address = addr
 		client, err := api.NewClient(defaultConfig)
 		if err != nil {
 			log.Warnf("consul client create fail. addr: %s  err:%s", addr, err)
@@ -91,7 +98,7 @@ func getNodesFromClient(client *api.Client, service string) []discovery.INode {
 			}
 		}
 
-		newNode := discovery.NewNode(serviceEntry.Service.Meta, serviceEntry.Node.ID, ip, port, "")
+		newNode := discovery.NewNode(serviceEntry.Service.Meta, serviceEntry.Node.ID, ip, port)
 		nodes = append(nodes, newNode)
 	}
 

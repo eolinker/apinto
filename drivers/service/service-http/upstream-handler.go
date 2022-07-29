@@ -63,10 +63,9 @@ func (u *UpstreamHandler) DoChain(org eocontext.EoContext) error {
 		if err != nil {
 			return err
 		}
-		scheme := node.Scheme()
-		if scheme != "http" && scheme != "https" {
-			scheme = u.upstream.scheme
-		}
+
+		scheme := u.upstream.scheme
+
 		log.Debug("node: ", node.Addr())
 		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
 		lastErr = ctx.SendTo(addr, u.timeout)

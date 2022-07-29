@@ -94,7 +94,7 @@ func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) 
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
-	n.client = newClient(cfg.Config.Address, cfg.getParams(), cfg.getScheme())
+	n.client = newClient(cfg.Config.Address, cfg.getParams())
 	return nil
 }
 

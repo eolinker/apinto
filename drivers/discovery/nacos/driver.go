@@ -41,7 +41,7 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	return &nacos{
 		id:       id,
 		name:     name,
-		client:   newClient(cfg.Config.Address, cfg.getParams(), cfg.getScheme()),
+		client:   newClient(cfg.Config.Address, cfg.getParams()),
 		nodes:    discovery.NewNodesData(),
 		services: discovery.NewServices(),
 		locker:   sync.RWMutex{},

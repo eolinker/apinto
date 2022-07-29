@@ -10,8 +10,6 @@ import (
 func TestGetApp(t *testing.T) {
 	serviceName := "DEMO"
 	cfg := Config{
-
-		Scheme: "http",
 		Config: AccessConfig{
 			Address: []string{
 				"10.1.94.48:8761/eureka",

@@ -1,14 +1,13 @@
 package consul
 
 import (
-	"strings"
-
 	"github.com/hashicorp/consul/api"
 )
 
+const defaultScheme = "http"
+
 //Config consul驱动配置
 type Config struct {
-	Scheme string       `json:"scheme" label:"请求协议" enum:"HTTP,HTTPS"`
 	Config AccessConfig `json:"config" label:"配置信息"`
 }
 
@@ -20,12 +19,4 @@ type AccessConfig struct {
 
 type consulClients struct {
 	clients []*api.Client
-}
-
-func (c *Config) getScheme() string {
-	scheme := strings.ToLower(c.Scheme)
-	if scheme != "http" && scheme != "https" {
-		scheme = "http"
-	}
-	return scheme
 }

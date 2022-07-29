@@ -71,7 +71,7 @@ func (c *consul) Reset(cfg interface{}, workers map[eosc.RequireId]interface{}) 
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(cfg))
 	}
 
-	clients, err := newClients(workerConfig.Config.Address, workerConfig.Config.Params, workerConfig.getScheme())
+	clients, err := newClients(workerConfig.Config.Address, workerConfig.Config.Params)
 	if err != nil {
 		return err
 	}

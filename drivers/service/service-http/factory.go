@@ -16,15 +16,10 @@ import (
 var DriverName = "service_http"
 var (
 	defaultHttpDiscovery = static.CreateAnonymous(&static.Config{
-		Scheme:   "http",
 		Health:   nil,
 		HealthOn: false,
 	})
-	defaultHttpsDiscovery = static.CreateAnonymous(&static.Config{
-		Scheme:   "https",
-		Health:   nil,
-		HealthOn: false,
-	})
+
 	pluginManger plugin.IPluginManager
 )
 
