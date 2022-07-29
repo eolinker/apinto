@@ -48,7 +48,7 @@ func (c *client) GetNodeList(serviceName string) (discovery.Nodes, error) {
 				"weight": strconv.FormatFloat(host.Weight, 'f', -1, 64),
 			}
 			if _, exist := nodes[host.InstanceID]; !exist {
-				node := discovery.NewNode(label, host.InstanceID, host.IP, host.Port, "")
+				node := discovery.NewNode(label, host.InstanceID, host.IP, host.Port)
 				nodes[node.ID()] = node
 			}
 		}

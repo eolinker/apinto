@@ -98,7 +98,7 @@ func getNodesFromClient(client *api.Client, service string) []discovery.INode {
 			}
 		}
 
-		newNode := discovery.NewNode(serviceEntry.Service.Meta, serviceEntry.Node.ID, ip, port, "")
+		newNode := discovery.NewNode(serviceEntry.Service.Meta, serviceEntry.Node.ID, ip, port)
 		nodes = append(nodes, newNode)
 	}
 

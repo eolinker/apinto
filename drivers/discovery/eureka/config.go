@@ -10,7 +10,6 @@ const defaultScheme = "http"
 
 //Config eureka驱动配置
 type Config struct {
-	Scheme string       `json:"scheme" label:"请求协议" enum:"HTTP,HTTPS" skip:""`
 	Config AccessConfig `json:"config" label:"配置信息"`
 }
 
