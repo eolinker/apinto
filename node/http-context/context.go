@@ -2,6 +2,8 @@ package http_context
 
 import (
 	"context"
+	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"strings"
 	"time"
 
@@ -25,36 +27,39 @@ type Context struct {
 
 	requestReader *RequestReader
 	ctx           context.Context
+
+	completeHandler eoscContext.CompleteHandler
+
+	finishHandler eoscContext.FinishHandler
 }
 
 func (ctx *Context) Complete() eoscContext.CompleteHandler {
-	//TODO implement me
-	panic("implement me")
+	return ctx.completeHandler
 }
 
 func (ctx *Context) SetCompleteHandler(handler eoscContext.CompleteHandler) {
-	//TODO implement me
-	panic("implement me")
+	ctx.completeHandler = handler
 }
 
 func (ctx *Context) Finish() eoscContext.FinishHandler {
-	//TODO implement me
-	panic("implement me")
+	return ctx.finishHandler
 }
 
 func (ctx *Context) SetFinish(handler eoscContext.FinishHandler) {
-	//TODO implement me
-	panic("implement me")
+	ctx.finishHandler = handler
 }
 
 func (ctx *Context) Scheme() string {
-	//TODO implement me
-	panic("implement me")
+
+	return string(ctx.fastHttpRequestCtx.Request.URI().Scheme())
 }
 
 func (ctx *Context) Assert(i interface{}) error {
-	//TODO implement me
-	panic("implement me")
+	if v, ok := i.(*http_service.IHttpContext); ok {
+		*v = ctx
+		return nil
+	}
+	return fmt.Errorf("not suport:%s", config.TypeNameOf(i))
 }
 
 func (ctx *Context) Proxies() []http_service.IRequest {
