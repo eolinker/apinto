@@ -69,14 +69,7 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 			return err
 		}
 	} else {
-		var thisDiscovery discovery.IDiscovery
-		if strings.ToLower(data.Scheme) == "https" {
-			thisDiscovery = defaultHttpsDiscovery
-		} else {
-			thisDiscovery = defaultHttpDiscovery
-		}
-
-		apps, err = thisDiscovery.GetApp(strings.Join(data.Nodes, ";"))
+		apps, err = defaultHttpDiscovery.GetApp(strings.Join(data.Nodes, ";"))
 		if err != nil {
 			return err
 		}
