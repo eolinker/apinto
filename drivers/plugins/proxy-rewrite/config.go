@@ -3,7 +3,6 @@ package proxy_rewrite
 import "fmt"
 
 type Config struct {
-	Scheme   string            `json:"scheme" label:"协议(已废弃)"`
 	URI      string            `json:"uri" label:"路径"`
 	RegexURI []string          `json:"regex_uri" label:"正则替换路径（regex_uri）" description:"该数组需要配置两个正则，第一个是匹配正则，第二个是替换正则。"`
 	Host     string            `json:"host" label:"Host"`

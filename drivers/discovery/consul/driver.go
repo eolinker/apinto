@@ -37,10 +37,8 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		return nil, fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(v))
 	}
 
-	clients, err := newClients(workerConfig.Config.Address, workerConfig.Config.Params, workerConfig.getScheme())
-	if err != nil {
-		return nil, err
-	}
+	clients := newClients(workerConfig.Config.Address, workerConfig.Config.Params)
+
 	c := &consul{
 		id:       id,
 		name:     name,

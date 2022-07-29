@@ -19,11 +19,11 @@ type client struct {
 	params  url.Values
 }
 
-func newClient(address []string, params url.Values, scheme string) *client {
+func newClient(address []string, params url.Values) *client {
 	adds := make([]string, 0, len(address))
 	for _, a := range address {
 		if !strings.HasPrefix(a, "http://") && !strings.HasPrefix(a, "https://") {
-			a = fmt.Sprintf("%s://%s", scheme, a)
+			a = fmt.Sprintf("%s://%s", defaultScheme, a)
 		}
 		adds = append(adds, a)
 	}
@@ -48,7 +48,7 @@ func (c *client) GetNodeList(serviceName string) (discovery.Nodes, error) {
 				"weight": strconv.FormatFloat(host.Weight, 'f', -1, 64),
 			}
 			if _, exist := nodes[host.InstanceID]; !exist {
-				node := discovery.NewNode(label, host.InstanceID, host.IP, host.Port, "")
+				node := discovery.NewNode(label, host.InstanceID, host.IP, host.Port)
 				nodes[node.ID()] = node
 			}
 		}

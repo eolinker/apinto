@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/eosc/log"
 )
 
 type client struct {
@@ -46,7 +46,7 @@ func (c *client) GetNodeList(serviceName string) (discovery.Nodes, error) {
 				"hostName": ins.HostName,
 			}
 			if _, exist := nodes[ins.InstanceID]; !exist {
-				node := discovery.NewNode(label, ins.InstanceID, ins.IPAddr, port, "")
+				node := discovery.NewNode(label, ins.InstanceID, ins.IPAddr, port)
 				nodes[node.ID()] = node
 			}
 		}

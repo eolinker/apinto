@@ -59,10 +59,9 @@ func (u *UpstreamHandler) DoChain(ctx http_service.IHttpContext) error {
 		if err != nil {
 			return err
 		}
-		scheme := node.Scheme()
-		if scheme != "http" && scheme != "https" {
-			scheme = u.upstream.scheme
-		}
+
+		scheme := u.upstream.scheme
+
 		log.Debug("node: ", node.Addr())
 		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
 		lastErr = ctx.SendTo(addr, u.timeout)
