@@ -2,7 +2,6 @@ package consul
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -24,10 +23,6 @@ func newClients(addrs []string, param map[string]string) (*consulClients, error)
 
 	hasClientFlag := false
 	for _, addr := range addrs {
-		if !validAddr(addr) {
-			log.Warnf("consul address:%s is invalid", addr)
-			continue
-		}
 		//解析addr, client配置需要区分scheme和host
 		if !strings.HasPrefix(addr, "http://") && !strings.HasPrefix(addr, "https://") {
 			defaultConfig.Scheme = defaultScheme
@@ -39,6 +34,11 @@ func newClients(addrs []string, param map[string]string) (*consulClients, error)
 		}
 
 		client, err := api.NewClient(defaultConfig)
+		if err != nil {
+			log.Warnf("consul client create fail. addr: %s  err:%s", addr, err)
+			continue
+		}
+		_, err = client.Status().Leader()
 		if err != nil {
 			log.Warnf("consul client create fail. addr: %s  err:%s", addr, err)
 			continue
@@ -105,29 +105,29 @@ func getNodesFromClient(client *api.Client, service string) []discovery.INode {
 	return nodes
 }
 
-//validAddr 判断地址是否合法
-func validAddr(addr string) bool {
-	c := strings.Split(addr, ":")
-	if len(c) < 2 {
-		return false
-	}
-	ip := c[0]
-	if !validIP(ip) {
-		return false
-	}
-	_, err := strconv.Atoi(c[1])
-	if err != nil {
-		return false
-	}
-
-	return true
-}
-
-//validIP 判断ip是否合法
-func validIP(ip string) bool {
-	match, err := regexp.MatchString(`^(?:(?:1[0-9][0-9]\.)|(?:2[0-4][0-9]\.)|(?:25[0-5]\.)|(?:[1-9][0-9]\.)|(?:[0-9]\.)){3}(?:(?:1[0-9][0-9])|(?:2[0-4][0-9])|(?:25[0-5])|(?:[1-9][0-9])|(?:[0-9]))$`, ip)
-	if err != nil {
-		return false
-	}
-	return match
-}
+////validAddr 判断地址是否合法
+//func validAddr(addr string) bool {
+//	c := strings.Split(addr, ":")
+//	if len(c) < 2 {
+//		return false
+//	}
+//	ip := c[0]
+//	if !validIP(ip) {
+//		return false
+//	}
+//	_, err := strconv.Atoi(c[1])
+//	if err != nil {
+//		return false
+//	}
+//
+//	return true
+//}
+//
+////validIP 判断ip是否合法
+//func validIP(ip string) bool {
+//	match, err := regexp.MatchString(`^(?:(?:1[0-9][0-9]\.)|(?:2[0-4][0-9]\.)|(?:25[0-5]\.)|(?:[1-9][0-9]\.)|(?:[0-9]\.)){3}(?:(?:1[0-9][0-9])|(?:2[0-4][0-9])|(?:25[0-5])|(?:[1-9][0-9])|(?:[0-9]))$`, ip)
+//	if err != nil {
+//		return false
+//	}
+//	return match
+//}
