@@ -10,8 +10,6 @@ import (
 func TestGetApp(t *testing.T) {
 	serviceName := "nacos.naming.serviceName"
 	cfg := Config{
-		Name:   "nacos",
-		Scheme: "http",
 		Config: AccessConfig{
 			Address: []string{
 				"10.1.94.48:8848",
@@ -24,8 +22,8 @@ func TestGetApp(t *testing.T) {
 	}
 	n := &nacos{
 		id:       "1",
-		name:     cfg.Name,
-		client:   newClient(cfg.Config.Address, cfg.getParams(), cfg.getScheme()),
+		name:     "nacos",
+		client:   newClient(cfg.Config.Address, cfg.getParams()),
 		nodes:    discovery.NewNodesData(),
 		services: discovery.NewServices(),
 		locker:   sync.RWMutex{},

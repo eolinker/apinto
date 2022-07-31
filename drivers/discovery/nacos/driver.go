@@ -2,6 +2,7 @@ package nacos
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
 	"reflect"
 	"sync"
@@ -34,13 +35,13 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	cfg, ok := v.(*Config)
 	if !ok {
 		val := reflect.ValueOf(v)
-		fmt.Println("reflect", val.Kind(), val.Interface())
+		log.Debug("reflect", val.Kind(), val.Interface())
 		return nil, fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(v))
 	}
 	return &nacos{
 		id:       id,
 		name:     name,
-		client:   newClient(cfg.Config.Address, cfg.getParams(), cfg.getScheme()),
+		client:   newClient(cfg.Config.Address, cfg.getParams()),
 		nodes:    discovery.NewNodesData(),
 		services: discovery.NewServices(),
 		locker:   sync.RWMutex{},

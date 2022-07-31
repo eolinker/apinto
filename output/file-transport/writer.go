@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
+	"github.com/eolinker/eosc/log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -69,9 +69,13 @@ func (w *FileWriterByPeriod) Open() {
 	ctx, cancel := context.WithCancel(context.Background())
 	w.cancelFunc = cancel
 	w.wC = make(chan *bytes.Buffer, 100)
-	w.wg.Add(1)
+
 	w.enable = true
-	go w.do(ctx)
+	go func() {
+		w.wg.Add(1)
+		w.do(ctx)
+		w.wg.Done()
+	}()
 }
 
 //Close 关闭
@@ -115,7 +119,7 @@ func (w *FileWriterByPeriod) do(ctx context.Context) {
 	w.initFile()
 	f, lastTag, e := w.openFile()
 	if e != nil {
-		fmt.Printf("open log file:%s\n", e.Error())
+		log.Errorf("open log file:%s\n", e.Error())
 		return
 	}
 
@@ -136,7 +140,7 @@ func (w *FileWriterByPeriod) do(ctx context.Context) {
 				buf.Flush()
 				f.Close()
 				t.Stop()
-				w.wg.Done()
+				//w.wg.Done()
 				return
 			}
 
@@ -214,7 +218,7 @@ func (w *FileWriterByPeriod) dropHistory() {
 func (w *FileWriterByPeriod) initFile() {
 	err := os.MkdirAll(w.dir, 0755)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 	path := filepath.Join(w.dir, fmt.Sprintf("%s.log", w.file))
 	nowTag := w.timeTag(time.Now())

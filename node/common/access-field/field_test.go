@@ -83,7 +83,7 @@ package access_field
 //				HTTPUserAgent:     tt.fields.HTTPUserAgent,
 //			}
 //			 got := f.ToMap()
-//			 fmt.Println(got)
+//			 log.Debug(got)
 //
 //		})
 //	}
