@@ -1,8 +1,6 @@
 package consul
 
 import (
-	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -11,7 +9,7 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
-func newClients(addrs []string, param map[string]string) (*consulClients, error) {
+func newClients(addrs []string, param map[string]string) *consulClients {
 	clients := make([]*api.Client, 0, len(addrs))
 
 	defaultConfig := api.DefaultConfig()
@@ -22,12 +20,7 @@ func newClients(addrs []string, param map[string]string) (*consulClients, error)
 		defaultConfig.Namespace = param["namespace"]
 	}
 
-	hasClientFlag := false
 	for _, addr := range addrs {
-		if !validAddr(addr) {
-			log.Warnf("consul address:%s is invalid", addr)
-			continue
-		}
 		//解析addr, client配置需要区分scheme和host
 		if !strings.HasPrefix(addr, "http://") && !strings.HasPrefix(addr, "https://") {
 			defaultConfig.Scheme = defaultScheme
@@ -43,15 +36,11 @@ func newClients(addrs []string, param map[string]string) (*consulClients, error)
 			log.Warnf("consul client create fail. addr: %s  err:%s", addr, err)
 			continue
 		}
-		hasClientFlag = true
+
 		clients = append(clients, client)
 	}
 
-	if !hasClientFlag {
-		return nil, fmt.Errorf("consul create clients fail")
-	}
-
-	return &consulClients{clients: clients}, nil
+	return &consulClients{clients: clients}
 }
 
 //getNodes 通过接入地址获取节点信息
@@ -103,31 +92,4 @@ func getNodesFromClient(client *api.Client, service string) []discovery.INode {
 	}
 
 	return nodes
-}
-
-//validAddr 判断地址是否合法
-func validAddr(addr string) bool {
-	c := strings.Split(addr, ":")
-	if len(c) < 2 {
-		return false
-	}
-	ip := c[0]
-	if !validIP(ip) {
-		return false
-	}
-	_, err := strconv.Atoi(c[1])
-	if err != nil {
-		return false
-	}
-
-	return true
-}
-
-//validIP 判断ip是否合法
-func validIP(ip string) bool {
-	match, err := regexp.MatchString(`^(?:(?:1[0-9][0-9]\.)|(?:2[0-4][0-9]\.)|(?:25[0-5]\.)|(?:[1-9][0-9]\.)|(?:[0-9]\.)){3}(?:(?:1[0-9][0-9])|(?:2[0-4][0-9])|(?:25[0-5])|(?:[1-9][0-9])|(?:[0-9]))$`, ip)
-	if err != nil {
-		return false
-	}
-	return match
 }
