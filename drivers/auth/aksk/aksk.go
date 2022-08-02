@@ -84,6 +84,11 @@ func (a *aksk) Auth(context http_service.IHttpContext) error {
 						if a.hideCredential {
 							context.Proxy().Header().DelHeader(auth.Authorization)
 						}
+
+						//将label set进context
+						for k, v := range user.Labels {
+							context.SetLabel(k, v)
+						}
 						return nil
 					}
 				}
