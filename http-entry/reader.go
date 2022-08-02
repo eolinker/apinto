@@ -29,12 +29,11 @@ func (f Fields) Read(name string, ctx http_service.IHttpContext) (string, bool) 
 		return r.Read("", ctx)
 	}
 	fs := strings.SplitN(name, "_", 2)
-	if len(fs) != 2 {
-		return "", false
-	}
-	r, has = f[fs[0]]
-	if has {
-		return r.Read(fs[1], ctx)
+	if len(fs) == 2 {
+		r, has = f[fs[0]]
+		if has {
+			return r.Read(fs[1], ctx)
+		}
 	}
 
 	if label := ctx.GetLabel(name); label != "" {
