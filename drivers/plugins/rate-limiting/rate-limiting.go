@@ -80,7 +80,7 @@ func (r *RateLimiting) DoFilter(ctx http_service.IHttpContext, next http_service
 		r.addRateHeader(ctx, rateSecondType)
 		r.addRateHeader(ctx, rateMinuteType)
 		r.addRateHeader(ctx, rateHourType)
-		r.addRateHeader(ctx, rateHourType)
+		r.addRateHeader(ctx, rateDayType)
 	}
 	return err
 }
