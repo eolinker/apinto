@@ -16,6 +16,7 @@ import (
 )
 
 var _ http_service.IHttpContext = (*Context)(nil)
+var defaultFinisher = new(finishHttp)
 
 //Context fasthttpRequestCtx
 type Context struct {
@@ -31,6 +32,18 @@ type Context struct {
 	completeHandler eoscContext.CompleteHandler
 
 	finishHandler eoscContext.FinishHandler
+}
+
+type finishHttp struct {
+}
+
+func (f *finishHttp) Finish(ctx eoscContext.EoContext) error {
+	target, ok := ctx.(*Context)
+	if !ok {
+		return nil
+	}
+	target.finish()
+	return nil
 }
 
 func (ctx *Context) Complete() eoscContext.CompleteHandler {
@@ -68,10 +81,6 @@ func (ctx *Context) Proxies() []http_service.IRequest {
 
 func (ctx *Context) Response() http_service.IResponse {
 	return ctx.response
-}
-
-type Finish interface {
-	Finish() error
 }
 
 func (ctx *Context) SendTo(address string, timeout time.Duration) error {
@@ -122,6 +131,7 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteAddr().String()),
 		proxyRequests:      make([]http_service.IRequest, 0, 5),
 		response:           NewResponse(ctx),
+		finishHandler:      defaultFinisher,
 	}
 	//记录请求时间
 	newCtx.WithValue("request_time", ctx.Time())

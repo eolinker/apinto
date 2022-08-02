@@ -65,7 +65,10 @@ func (r *Router) Handler(requestCtx *fasthttp.RequestCtx) {
 			if err != nil {
 				log.Warn(err)
 			}
-			ctx.Finish()
+			finishHandler := ctx.Finish()
+			if finishHandler != nil {
+				finishHandler.Finish(ctx)
+			}
 			return
 		}
 	}
