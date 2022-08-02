@@ -36,6 +36,11 @@ func (f Fields) Read(name string, ctx http_service.IHttpContext) (string, bool) 
 	if has {
 		return r.Read(fs[1], ctx)
 	}
+
+	if label := ctx.GetLabel(name); label != "" {
+		return label, true
+	}
+
 	return "", false
 }
 
