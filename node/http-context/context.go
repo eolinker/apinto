@@ -22,9 +22,21 @@ type Context struct {
 	proxyRequests      []http_service.IRequest
 	requestID          string
 	response           *Response
+	requestReader      *RequestReader
+	ctx                context.Context
+	labels             map[string]string
+}
 
-	requestReader *RequestReader
-	ctx           context.Context
+func (ctx *Context) SetLabel(name string, value string) {
+	ctx.labels[name] = value
+}
+
+func (ctx *Context) GetLabel(name string) string {
+	return ctx.labels[name]
+}
+
+func (ctx *Context) Labels() map[string]string {
+	return ctx.labels
 }
 
 func (ctx *Context) Proxies() []http_service.IRequest {
@@ -87,6 +99,7 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteAddr().String()),
 		proxyRequests:      make([]http_service.IRequest, 0, 5),
 		response:           NewResponse(ctx),
+		labels:             make(map[string]string),
 	}
 	//记录请求时间
 	newCtx.WithValue("request_time", ctx.Time())
