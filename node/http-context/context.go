@@ -2,18 +2,21 @@ package http_context
 
 import (
 	"context"
+	"fmt"
+	"github.com/eolinker/eosc/utils/config"
 	"strings"
 	"time"
 
 	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
 
-	"github.com/valyala/fasthttp"
-
-	http_service "github.com/eolinker/eosc/http-service"
+	eoscContext "github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	uuid "github.com/satori/go.uuid"
+	"github.com/valyala/fasthttp"
 )
 
 var _ http_service.IHttpContext = (*Context)(nil)
+var defaultFinisher = new(finishHttp)
 
 //Context fasthttpRequestCtx
 type Context struct {
@@ -24,10 +27,12 @@ type Context struct {
 	response           *Response
 	requestReader      *RequestReader
 	ctx                context.Context
+	completeHandler    eoscContext.CompleteHandler
+	finishHandler      eoscContext.FinishHandler
 	labels             map[string]string
 }
 
-func (ctx *Context) SetLabel(name string, value string) {
+func (ctx *Context) SetLabel(name, value string) {
 	ctx.labels[name] = value
 }
 
@@ -39,16 +44,53 @@ func (ctx *Context) Labels() map[string]string {
 	return ctx.labels
 }
 
+type finishHttp struct {
+}
+
+func (f *finishHttp) Finish(ctx eoscContext.EoContext) error {
+	target, ok := ctx.(*Context)
+	if !ok {
+		return nil
+	}
+	target.finish()
+	return nil
+}
+
+func (ctx *Context) Complete() eoscContext.CompleteHandler {
+	return ctx.completeHandler
+}
+
+func (ctx *Context) SetCompleteHandler(handler eoscContext.CompleteHandler) {
+	ctx.completeHandler = handler
+}
+
+func (ctx *Context) Finish() eoscContext.FinishHandler {
+	return ctx.finishHandler
+}
+
+func (ctx *Context) SetFinish(handler eoscContext.FinishHandler) {
+	ctx.finishHandler = handler
+}
+
+func (ctx *Context) Scheme() string {
+
+	return string(ctx.fastHttpRequestCtx.Request.URI().Scheme())
+}
+
+func (ctx *Context) Assert(i interface{}) error {
+	if v, ok := i.(*http_service.IHttpContext); ok {
+		*v = ctx
+		return nil
+	}
+	return fmt.Errorf("not suport:%s", config.TypeNameOf(i))
+}
+
 func (ctx *Context) Proxies() []http_service.IRequest {
 	return ctx.proxyRequests
 }
 
 func (ctx *Context) Response() http_service.IResponse {
 	return ctx.response
-}
-
-type Finish interface {
-	Finish() error
 }
 
 func (ctx *Context) SendTo(address string, timeout time.Duration) error {
@@ -99,6 +141,7 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteAddr().String()),
 		proxyRequests:      make([]http_service.IRequest, 0, 5),
 		response:           NewResponse(ctx),
+		finishHandler:      defaultFinisher,
 		labels:             make(map[string]string),
 	}
 	//记录请求时间
@@ -112,7 +155,7 @@ func (ctx *Context) RequestId() string {
 }
 
 //Finish finish
-func (ctx *Context) Finish() {
+func (ctx *Context) finish() {
 	if ctx.response.responseError != nil {
 		ctx.fastHttpRequestCtx.SetStatusCode(504)
 		ctx.fastHttpRequestCtx.SetBodyString(ctx.response.responseError.Error())
