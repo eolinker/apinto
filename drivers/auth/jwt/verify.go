@@ -564,7 +564,7 @@ func (j *jwt) doJWTAuthentication(context http_service.IHttpContext) error {
 
 	// 从配置中获取jwt凭证配置
 
-	jwtSecret, err := loadCredential(j.credentials, key, token.Header["alg"].(string))
+	jwtSecret, err := loadCredential(context, j.credentials, key, token.Header["alg"].(string))
 	if err != nil {
 		return errors.New("[jwt_auth] No credentials found for given " + keyClaimName)
 	}
@@ -597,11 +597,16 @@ func (j *jwt) doJWTAuthentication(context http_service.IHttpContext) error {
 }
 
 // 从配置中获取jwt凭证配置
-func loadCredential(conf *jwtUsers, key, alg string) (JwtCredential, error) {
+func loadCredential(context http_service.IHttpContext, conf *jwtUsers, key, alg string) (JwtCredential, error) {
 
 	for _, credential := range conf.credentials {
 		if credential.Iss == key {
 			if credential.Algorithm == alg {
+				//将label set进context
+				for k, v := range credential.Labels {
+					context.SetLabel(k, v)
+				}
+
 				return credential, nil
 			}
 		}
