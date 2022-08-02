@@ -46,12 +46,21 @@ func (r *Response) BodyLen() int {
 func (r *Response) GetBody() []byte {
 	if strings.Contains(r.GetHeader("Content-Encoding"), "gzip") {
 		body, _ := r.BodyGunzip()
-		r.Headers().Del("Content-Encoding")
+		r.DelHeader("Content-Encoding")
 		r.SetHeader("Content-Length", strconv.Itoa(len(body)))
 		r.Response.SetBody(body)
 	}
 
 	return r.Response.Body()
+}
+
+func (r *Response) SetBody(bytes []byte) {
+	if strings.Contains(r.GetHeader("Content-Encoding"), "gzip") {
+		r.DelHeader("Content-Encoding")
+	}
+	r.Response.SetBody(bytes)
+	r.SetHeader("Content-Length", strconv.Itoa(len(bytes)))
+	r.responseError = nil
 }
 
 func (r *Response) StatusCode() int {
@@ -81,10 +90,4 @@ func (r *Response) ProxyStatus() string {
 
 func (r *Response) SetProxyStatus(code int, status string) {
 	r.proxyStatusCode = code
-}
-
-func (r *Response) SetBody(bytes []byte) {
-	r.Response.SetBody(bytes)
-	r.SetHeader("Content-Length", strconv.Itoa(len(bytes)))
-	r.responseError = nil
 }
