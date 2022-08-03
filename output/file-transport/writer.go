@@ -45,7 +45,7 @@ func NewFileWriteByPeriod(cfg *Config) *FileWriterByPeriod {
 		dir:    cfg.Dir,
 		file:   cfg.File,
 		period: cfg.Period,
-		expire: time.Duration(cfg.Expire) * time.Hour,
+		expire: time.Duration(cfg.Expire) * 24 * time.Hour,
 	}
 	w.Open()
 	return w
