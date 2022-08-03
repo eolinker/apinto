@@ -10,7 +10,7 @@ EXPOSE 9400 8099
 VOLUME /var/lib/apinto
 
 #设置环境变量
-ENV APP=APINTO
+ENV APP=apinto
 
 #解压网关程序压缩包
 COPY ./apinto.linux.x64.tar.gz /
