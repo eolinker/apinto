@@ -25,40 +25,44 @@ var (
 
 //FileWriterByPeriod 文件周期写入
 type FileWriterByPeriod struct {
-	wC         chan *bytes.Buffer
-	dir        string
-	file       string
-	period     LogPeriod
+	wC chan *bytes.Buffer
+
 	enable     bool
 	cancelFunc context.CancelFunc
-	locker     sync.Mutex
+	locker     sync.RWMutex
 	wg         sync.WaitGroup
-	expire     time.Duration
+	resetChan  chan FileController
 }
 
 //NewFileWriteByPeriod 获取新的FileWriterByPeriod
 func NewFileWriteByPeriod(cfg *Config) *FileWriterByPeriod {
 	w := &FileWriterByPeriod{
-		locker: sync.Mutex{},
-		wg:     sync.WaitGroup{},
-		enable: false,
+		locker:    sync.RWMutex{},
+		wg:        sync.WaitGroup{},
+		enable:    false,
+		resetChan: make(chan FileController),
+	}
+
+	w.Open(&FileController{
+		dir:    cfg.Dir,
+		file:   cfg.File,
+		period: cfg.Period,
+		expire: time.Duration(cfg.Expire) * 24 * time.Hour,
+	})
+	return w
+}
+
+func (w *FileWriterByPeriod) Reset(cfg *Config) {
+	w.resetChan <- FileController{
 		dir:    cfg.Dir,
 		file:   cfg.File,
 		period: cfg.Period,
 		expire: time.Duration(cfg.Expire) * 24 * time.Hour,
 	}
-	w.Open()
-	return w
-}
-func (w *FileWriterByPeriod) getExpire() time.Duration {
-	w.locker.Lock()
-	expire := w.expire
-	w.locker.Unlock()
-	return expire
 }
 
 //Open 打开
-func (w *FileWriterByPeriod) Open() {
+func (w *FileWriterByPeriod) Open(config *FileController) {
 	w.locker.Lock()
 	defer w.locker.Unlock()
 
@@ -73,7 +77,7 @@ func (w *FileWriterByPeriod) Open() {
 	w.enable = true
 	go func() {
 		w.wg.Add(1)
-		w.do(ctx)
+		w.do(ctx, config)
 		w.wg.Done()
 	}()
 }
@@ -98,26 +102,36 @@ func (w *FileWriterByPeriod) Close() {
 	if isClose {
 		w.wg.Wait()
 	}
-
+}
+func (w *FileWriterByPeriod) isEnable() bool {
+	w.locker.Lock()
+	defer w.locker.Unlock()
+	return w.enable
 }
 func (w *FileWriterByPeriod) Write(p []byte) (n int, err error) {
 
 	l := len(p)
-	if !w.enable {
+
+	if l == 0 {
+		return
+	}
+	if !w.isEnable() {
 		return l, nil
 	}
-
 	buffer := bufferPool.Get().(*bytes.Buffer)
 	buffer.Reset()
 	buffer.Write(p)
-
+	if p[l-1] != '\n' {
+		buffer.WriteByte('\n')
+	}
 	w.wC <- buffer
 	return l, nil
 }
 
-func (w *FileWriterByPeriod) do(ctx context.Context) {
-	w.initFile()
-	f, lastTag, e := w.openFile()
+func (w *FileWriterByPeriod) do(ctx context.Context, config *FileController) {
+	fileController := *config
+	fileController.initFile()
+	f, lastTag, e := fileController.openFile()
 	if e != nil {
 		log.Errorf("open log file:%s\n", e.Error())
 		return
@@ -150,11 +164,11 @@ func (w *FileWriterByPeriod) do(ctx context.Context) {
 					buf.Flush()
 					tFlush.Reset(time.Second)
 				}
-				if lastTag != w.timeTag(time.Now()) {
+				if lastTag != fileController.timeTag(time.Now()) {
 
 					f.Close()
-					w.history(lastTag)
-					fnew, tag, err := w.openFile()
+					fileController.history(lastTag)
+					fnew, tag, err := fileController.openFile()
 					if err != nil {
 						return
 					}
@@ -162,7 +176,7 @@ func (w *FileWriterByPeriod) do(ctx context.Context) {
 					f = fnew
 					buf.Reset(f)
 
-					go w.dropHistory()
+					go fileController.dropHistory()
 				}
 
 			}
@@ -182,40 +196,18 @@ func (w *FileWriterByPeriod) do(ctx context.Context) {
 				}
 				tFlush.Reset(time.Second)
 			}
-		}
-	}
-}
-func (w *FileWriterByPeriod) timeTag(t time.Time) string {
-
-	w.locker.Lock()
-	tag := t.Format(w.period.FormatLayout())
-	w.locker.Unlock()
-	return tag
-}
-func (w *FileWriterByPeriod) history(tag string) {
-
-	path := filepath.Join(w.dir, fmt.Sprintf("%s.log", w.file))
-	history := filepath.Join(w.dir, fmt.Sprintf("%s-%s.log", w.file, tag))
-	os.Rename(path, history)
-
-}
-func (w *FileWriterByPeriod) dropHistory() {
-	expire := w.getExpire()
-	expireTime := time.Now().Add(-expire)
-	pathPatten := filepath.Join(w.dir, fmt.Sprintf("%s-*", w.file))
-	files, err := filepath.Glob(pathPatten)
-	if err == nil {
-		for _, f := range files {
-			if info, e := os.Stat(f); e == nil {
-
-				if expireTime.After(info.ModTime()) {
-					_ = os.Remove(f)
+		case controller, ok := <-w.resetChan:
+			{
+				if ok {
+					fileController = controller
 				}
 			}
+
 		}
 	}
 }
-func (w *FileWriterByPeriod) initFile() {
+
+func (w *FileController) initFile() {
 	err := os.MkdirAll(w.dir, 0755)
 	if err != nil {
 		log.Error(err)
@@ -234,7 +226,7 @@ func (w *FileWriterByPeriod) initFile() {
 
 }
 
-func (w *FileWriterByPeriod) openFile() (*os.File, string, error) {
+func (w *FileController) openFile() (*os.File, string, error) {
 	path := filepath.Join(w.dir, fmt.Sprintf("%s.log", w.file))
 	nowTag := w.timeTag(time.Now())
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
