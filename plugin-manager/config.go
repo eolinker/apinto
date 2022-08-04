@@ -1,5 +1,9 @@
 package plugin_manager
 
+import (
+	"reflect"
+)
+
 const (
 	StatusDisable = "disable"
 	StatusEnable  = "enable"
@@ -17,4 +21,8 @@ type PluginConfig struct {
 	Status     string                 `json:"status" yaml:"status"`
 	Config     interface{}            `json:"config" yaml:"config"`
 	InitConfig map[string]interface{} `json:"init_config" yaml:"init_config"`
+}
+
+func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, params map[string]string) error {
+	return nil
 }
