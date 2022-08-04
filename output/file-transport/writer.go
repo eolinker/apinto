@@ -200,7 +200,9 @@ func (w *FileWriterByPeriod) do(ctx context.Context, config *FileController) {
 			{
 				if ok {
 					fileController = controller
-					lastTag = ""
+					//TODO 这里进行reset操作
+
+					//lastTag = fileController.timeTag(time.Now())
 				}
 			}
 
