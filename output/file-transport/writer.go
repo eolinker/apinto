@@ -200,6 +200,7 @@ func (w *FileWriterByPeriod) do(ctx context.Context, config *FileController) {
 			{
 				if ok {
 					fileController = controller
+					lastTag = ""
 				}
 			}
 
