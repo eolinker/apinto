@@ -18,12 +18,14 @@ func (w *FileController) timeTag(t time.Time) string {
 
 	tag := t.Format(w.period.FormatLayout())
 
-	return tag
+	return filepath.Join(w.dir, fmt.Sprintf("%s-%s.log", w.file, tag))
 }
-func (w *FileController) history(tag string) {
+func (w *FileController) fileName() string {
+	return filepath.Join(w.dir, fmt.Sprintf("%s.log", w.file))
+}
+func (w *FileController) history(history string) {
 
-	path := filepath.Join(w.dir, fmt.Sprintf("%s.log", w.file))
-	history := filepath.Join(w.dir, fmt.Sprintf("%s-%s.log", w.file, tag))
+	path := w.fileName()
 	os.Rename(path, history)
 
 }

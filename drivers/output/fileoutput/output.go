@@ -55,10 +55,12 @@ func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]interfac
 	}
 	a.rmu.Lock()
 	defer a.rmu.Unlock()
-	if a.cfg == nil || a.cfg.IsUpdate(c) {
-		a.cfg = c
+	if a.cfg == nil {
+		a.transport = file_transport.NewFileWriteByPeriod(c)
+	} else if a.cfg.IsUpdate(c) {
 		a.transport.Reset(c)
 	}
+	a.cfg = c
 
 	a.formatter, err = factory.Create(cfg.Formatter)
 	return

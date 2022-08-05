@@ -4,10 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"fmt"
 	"github.com/eolinker/eosc/log"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
 )
@@ -142,6 +140,26 @@ func (w *FileWriterByPeriod) do(ctx context.Context, config *FileController) {
 	defer t.Stop()
 	tFlush := time.NewTimer(time.Second)
 
+	resetFunc := func(controller FileController) {
+		if lastTag != fileController.timeTag(time.Now()) {
+			if buf.Buffered() > 0 {
+				buf.Flush()
+				tFlush.Reset(time.Second)
+			}
+			f.Close()
+			fileController.history(lastTag)
+			fnew, tag, err := fileController.openFile()
+			if err != nil {
+				return
+			}
+			lastTag = tag
+			f = fnew
+			buf.Reset(f)
+
+			go fileController.dropHistory()
+		}
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -160,24 +178,8 @@ func (w *FileWriterByPeriod) do(ctx context.Context, config *FileController) {
 
 		case <-t.C:
 			{
-				if buf.Buffered() > 0 {
-					buf.Flush()
-					tFlush.Reset(time.Second)
-				}
-				if lastTag != fileController.timeTag(time.Now()) {
 
-					f.Close()
-					fileController.history(lastTag)
-					fnew, tag, err := fileController.openFile()
-					if err != nil {
-						return
-					}
-					lastTag = tag
-					f = fnew
-					buf.Reset(f)
-
-					go fileController.dropHistory()
-				}
+				resetFunc(fileController)
 
 			}
 		case <-tFlush.C:
@@ -199,10 +201,10 @@ func (w *FileWriterByPeriod) do(ctx context.Context, config *FileController) {
 		case controller, ok := <-w.resetChan:
 			{
 				if ok {
+					resetFunc(controller)
 					fileController = controller
 				}
 			}
-
 		}
 	}
 }
@@ -212,12 +214,12 @@ func (w *FileController) initFile() {
 	if err != nil {
 		log.Error(err)
 	}
-	path := filepath.Join(w.dir, fmt.Sprintf("%s.log", w.file))
-	nowTag := w.timeTag(time.Now())
+	path := w.fileName()
+	nowHistoryName := w.timeTag(time.Now())
 	if info, e := os.Stat(path); e == nil {
 
 		timeTag := w.timeTag(info.ModTime())
-		if timeTag != nowTag {
+		if timeTag != nowHistoryName {
 			w.history(timeTag)
 		}
 	}
@@ -227,7 +229,7 @@ func (w *FileController) initFile() {
 }
 
 func (w *FileController) openFile() (*os.File, string, error) {
-	path := filepath.Join(w.dir, fmt.Sprintf("%s.log", w.file))
+	path := w.fileName()
 	nowTag := w.timeTag(time.Now())
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 
