@@ -1,44 +1,41 @@
 package plugin
 
 import (
-	"errors"
+	"fmt"
 	"github.com/eolinker/eosc/variable"
 	"reflect"
 )
 
-var (
-	ErrorVariableNotFound = errors.New("variable not found")
-	ErrorUnsupportedKind  = errors.New("unsupported kind")
-)
-
 type Plugins map[string]*Config
 
-func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, params map[string]string) error {
-	//if originVal.Kind() != reflect.Map {
-	//	return fmt.Errorf("plugin map reset error:%w %s", ErrorUnsupportedKind, originVal.Kind())
-	//}
-	//targetType := targetVal.Type()
-	//newMap := reflect.MakeMap(targetType)
-	//for _, key := range originVal.MapKeys() {
-	//	// 判断是否存在对应的插件配置
-	//	cfgType, ok := typeMap[key.String()]
-	//	if !ok {
-	//		return fmt.Errorf("plugin %s not found", key.String())
-	//	}
-	//	value := originVal.MapIndex(key)
-	//	newValue := reflect.New(targetType.Elem())
-	//
-	//	err := pluginConfigSet(value, newValue, params, cfgType)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	newMap.SetMapIndex(key, newValue.Elem())
-	//}
-	//targetVal.Set(newMap)
-	return nil
+func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variables map[string]string) ([]string, error) {
+	if originVal.Kind() != reflect.Map {
+		return nil, fmt.Errorf("plugin map reset error:%w %s", variable.ErrorUnsupportedKind, originVal.Kind())
+	}
+	targetType := targetVal.Type()
+	newMap := reflect.MakeMap(targetType)
+	usedVariables := make([]string, 0, len(variables))
+	for _, key := range originVal.MapKeys() {
+		// 判断是否存在对应的插件配
+		cfgType, ok := typeMap[key.String()]
+		if !ok {
+			return nil, fmt.Errorf("plugin %s not found", key.String())
+		}
+		value := originVal.MapIndex(key)
+		newValue := reflect.New(targetType.Elem())
+
+		used, err := pluginConfigSet(value, newValue, variables, cfgType)
+		if err != nil {
+			return nil, err
+		}
+		usedVariables = append(usedVariables, used...)
+		newMap.SetMapIndex(key, newValue.Elem())
+	}
+	targetVal.Set(newMap)
+	return usedVariables, nil
 }
 
-func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, params map[string]string, cfgType reflect.Type) error {
+func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, variables map[string]string, cfgType reflect.Type) ([]string, error) {
 	if targetVal.Kind() == reflect.Ptr {
 		if !targetVal.Elem().IsValid() {
 			targetType := targetVal.Type()
@@ -47,6 +44,7 @@ func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, params ma
 		}
 		targetVal = targetVal.Elem()
 	}
+	usedVariables := make([]string, 0, len(variables))
 	switch targetVal.Kind() {
 	case reflect.Struct:
 		{
@@ -63,7 +61,6 @@ func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, params ma
 				default:
 					fieldValue = reflect.New(field.Type)
 				}
-
 				var value reflect.Value
 				switch originVal.Elem().Kind() {
 				case reflect.Map:
@@ -74,16 +71,16 @@ func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, params ma
 				default:
 					value = originVal.Elem()
 				}
-
-				err := variable.RecurseReflect(value, fieldValue, params)
+				used, err := variable.RecurseReflect(value, fieldValue, variables)
 				if err != nil {
-					return err
+					return nil, err
 				}
+				usedVariables = append(usedVariables, used...)
 				targetVal.Field(i).Set(fieldValue.Elem())
 			}
 		}
 	case reflect.Ptr:
-		return pluginConfigSet(originVal, targetVal, params, cfgType)
+		return pluginConfigSet(originVal, targetVal, variables, cfgType)
 	}
-	return nil
+	return usedVariables, nil
 }
