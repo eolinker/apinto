@@ -47,6 +47,11 @@ func (a *apikey) Auth(ctx http_service.IHttpContext) error {
 	for _, user := range a.users.users {
 		if authorization == user.Apikey {
 			if user.Expire == 0 || time.Now().Unix() < user.Expire {
+				//将label set进context
+				for k, v := range user.Labels {
+					ctx.SetLabel(k, v)
+				}
+
 				return nil
 			}
 			return auth.ErrorExpireUser

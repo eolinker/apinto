@@ -33,10 +33,15 @@ type basicUsers struct {
 	users []User
 }
 
-func (b *basicUsers) check(username string, password string) error {
+func (b *basicUsers) check(ctx http_service.IHttpContext, username string, password string) error {
 	for _, u := range b.users {
 		if u.Username == username && u.Password == password {
 			if u.Expire == 0 || time.Now().Unix() < u.Expire {
+				//将label set进context
+				for k, v := range u.Labels {
+					ctx.SetLabel(k, v)
+				}
+
 				return nil
 			}
 			return auth.ErrorExpireUser
@@ -91,7 +96,7 @@ func (b *basic) Auth(ctx http_service.IHttpContext) error {
 	if err != nil {
 		return err
 	}
-	return b.users.check(username, password)
+	return b.users.check(ctx, username, password)
 }
 
 //retrieveCredentials 获取basicAuth认证信息
