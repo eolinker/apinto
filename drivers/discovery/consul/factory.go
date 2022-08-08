@@ -24,6 +24,10 @@ func (f *factory) Render() interface{} {
 	return render
 }
 
+func (f *factory) ConfigType() reflect.Type {
+	return reflect.TypeOf((*Config)(nil))
+}
+
 //NewFactory 创建consul驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
 	return &factory{}

@@ -8,7 +8,7 @@ import (
 
 type Plugins map[string]*Config
 
-func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variables map[string]string) ([]string, error) {
+func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variables map[string]string, configTypes map[string]reflect.Type) ([]string, error) {
 	if originVal.Kind() != reflect.Map {
 		return nil, fmt.Errorf("plugin map reset error:%w %s", variable.ErrorUnsupportedKind, originVal.Kind())
 	}
@@ -17,14 +17,14 @@ func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variabl
 	usedVariables := make([]string, 0, len(variables))
 	for _, key := range originVal.MapKeys() {
 		// 判断是否存在对应的插件配
-		cfgType, ok := typeMap[key.String()]
+		cfgType, ok := configTypes[key.String()]
 		if !ok {
 			return nil, fmt.Errorf("plugin %s not found", key.String())
 		}
 		value := originVal.MapIndex(key)
 		newValue := reflect.New(targetType.Elem())
 
-		used, err := pluginConfigSet(value, newValue, variables, cfgType)
+		used, err := pluginConfigSet(value, newValue, variables, cfgType, configTypes)
 		if err != nil {
 			return nil, err
 		}
@@ -35,7 +35,7 @@ func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variabl
 	return usedVariables, nil
 }
 
-func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, variables map[string]string, cfgType reflect.Type) ([]string, error) {
+func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, variables map[string]string, cfgType reflect.Type, configTypes map[string]reflect.Type) ([]string, error) {
 	if targetVal.Kind() == reflect.Ptr {
 		if !targetVal.Elem().IsValid() {
 			targetType := targetVal.Type()
@@ -71,16 +71,16 @@ func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, variables
 				default:
 					value = originVal.Elem()
 				}
-				used, err := variable.RecurseReflect(value, fieldValue, variables)
+				variables, err := variable.RecurseReflect(value, fieldValue, variables, configTypes)
 				if err != nil {
 					return nil, err
 				}
-				usedVariables = append(usedVariables, used...)
+				usedVariables = append(usedVariables, variables...)
 				targetVal.Field(i).Set(fieldValue.Elem())
 			}
 		}
 	case reflect.Ptr:
-		return pluginConfigSet(originVal, targetVal, variables, cfgType)
+		return pluginConfigSet(originVal, targetVal, variables, cfgType, configTypes)
 	}
 	return usedVariables, nil
 }

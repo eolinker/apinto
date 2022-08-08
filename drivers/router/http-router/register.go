@@ -26,6 +26,10 @@ func (r *RouterDriverFactory) Render() interface{} {
 	return render
 }
 
+func (f *RouterDriverFactory) ConfigType() reflect.Type {
+	return reflect.TypeOf((*Config)(nil))
+}
+
 //Create 创建http路由驱动
 func (r *RouterDriverFactory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 

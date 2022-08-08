@@ -24,6 +24,10 @@ func (f *factory) Render() interface{} {
 	return render
 }
 
+func (f *factory) ConfigType() reflect.Type {
+	return reflect.TypeOf((*Config)(nil))
+}
+
 //Create 创建apikey驱动
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 	return &driver{

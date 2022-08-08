@@ -25,7 +25,7 @@ type PluginConfig struct {
 	InitConfig map[string]interface{} `json:"init_config" yaml:"init_config"`
 }
 
-func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, params map[string]string) ([]string, error) {
+func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, params map[string]string, configTypes map[string]reflect.Type) ([]string, error) {
 	if originVal.Kind() == reflect.Ptr {
 		originVal = originVal.Elem()
 	}
@@ -37,7 +37,7 @@ func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, p
 		// 当name字段不存在，则报错
 		return nil, fmt.Errorf("missing field name")
 	}
-	cfgType, ok := typeMap[nameVal.Elem().String()]
+	cfgType, ok := configTypes[nameVal.Elem().String()]
 	if !ok {
 		return nil, fmt.Errorf("plugin %s not found", nameVal.Elem().String())
 	}
@@ -65,7 +65,7 @@ func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, p
 		default:
 			value = originVal
 		}
-		used, err := variable.RecurseReflect(value, fieldValue, params)
+		used, err := variable.RecurseReflect(value, fieldValue, params, configTypes)
 		if err != nil {
 			return nil, err
 		}

@@ -21,12 +21,17 @@ type factory struct {
 func NewFactory() eosc.IExtenderDriverFactory {
 	return &factory{}
 }
+
 func (f *factory) Render() interface{} {
 	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
 	if err != nil {
 		return nil
 	}
 	return render
+}
+
+func (f *factory) ConfigType() reflect.Type {
+	return reflect.TypeOf((*Config)(nil))
 }
 
 //Create 创建jwt鉴权驱动

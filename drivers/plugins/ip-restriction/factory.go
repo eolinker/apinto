@@ -24,6 +24,11 @@ func (f *Factory) Render() interface{} {
 	}
 	return render
 }
+
+func (f *Factory) ConfigType() reflect.Type {
+	return reflect.TypeOf((*Config)(nil))
+}
+
 func NewFactory() *Factory {
 	return &Factory{}
 }
