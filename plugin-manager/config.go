@@ -2,7 +2,6 @@ package plugin_manager
 
 import (
 	"fmt"
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/variable"
 	"reflect"
 )
@@ -26,7 +25,7 @@ type PluginConfig struct {
 	InitConfig map[string]interface{} `json:"init_config" yaml:"init_config"`
 }
 
-func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, params map[string]string, configTypes *eosc.ConfigType) ([]string, error) {
+func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, params map[string]string) ([]string, error) {
 	if originVal.Kind() == reflect.Ptr {
 		originVal = originVal.Elem()
 	}
@@ -38,7 +37,7 @@ func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, p
 		// 当name字段不存在，则报错
 		return nil, fmt.Errorf("missing field name")
 	}
-	cfgType, ok := configTypes.Get(nameVal.Elem().String())
+	cfgType, ok := singleton.GetConfigType(nameVal.String())
 	if !ok {
 		return nil, fmt.Errorf("plugin %s not found", nameVal.Elem().String())
 	}
@@ -66,7 +65,7 @@ func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, p
 		default:
 			value = originVal
 		}
-		used, err := variable.RecurseReflect(value, fieldValue, params, configTypes)
+		used, err := variable.RecurseReflect(value, fieldValue, params)
 		if err != nil {
 			return nil, err
 		}

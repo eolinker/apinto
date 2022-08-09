@@ -2,14 +2,23 @@ package plugin
 
 import (
 	"fmt"
-	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/variable"
 	"reflect"
+	"sync"
+)
+
+var (
+	pluginManger IPluginManager
+	ones         sync.Once
 )
 
 type Plugins map[string]*Config
 
-func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variables map[string]string, configTypes *eosc.ConfigType) ([]string, error) {
+func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variables map[string]string) ([]string, error) {
+	ones.Do(func() {
+		bean.Autowired(&pluginManger)
+	})
 	if originVal.Kind() != reflect.Map {
 		return nil, fmt.Errorf("plugin map reset error:%w %s", variable.ErrorUnsupportedKind, originVal.Kind())
 	}
@@ -18,14 +27,14 @@ func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variabl
 	usedVariables := make([]string, 0, len(variables))
 	for _, key := range originVal.MapKeys() {
 		// 判断是否存在对应的插件配
-		cfgType, ok := configTypes.GetByAlias(key.String())
+		cfgType, ok := pluginManger.GetConfigType(key.String())
 		if !ok {
 			return nil, fmt.Errorf("plugin %s not found", key.String())
 		}
 		value := originVal.MapIndex(key)
 		newValue := reflect.New(targetType.Elem())
 
-		used, err := pluginConfigSet(value, newValue, variables, cfgType, configTypes)
+		used, err := pluginConfigSet(value, newValue, variables, cfgType)
 		if err != nil {
 			return nil, err
 		}
@@ -36,7 +45,7 @@ func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variabl
 	return usedVariables, nil
 }
 
-func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, variables map[string]string, cfgType reflect.Type, configTypes *eosc.ConfigType) ([]string, error) {
+func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, variables map[string]string, cfgType reflect.Type) ([]string, error) {
 	if targetVal.Kind() == reflect.Ptr {
 		if !targetVal.Elem().IsValid() {
 			targetType := targetVal.Type()
@@ -72,7 +81,7 @@ func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, variables
 				default:
 					value = originVal.Elem()
 				}
-				variables, err := variable.RecurseReflect(value, fieldValue, variables, configTypes)
+				variables, err := variable.RecurseReflect(value, fieldValue, variables)
 				if err != nil {
 					return nil, err
 				}
@@ -81,7 +90,7 @@ func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, variables
 			}
 		}
 	case reflect.Ptr:
-		return pluginConfigSet(originVal, targetVal, variables, cfgType, configTypes)
+		return pluginConfigSet(originVal, targetVal, variables, cfgType)
 	}
 	return usedVariables, nil
 }

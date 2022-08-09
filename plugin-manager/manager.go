@@ -38,6 +38,15 @@ func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config)
 	return p.createChain(id, conf)
 }
 
+func (p *PluginManager) GetConfigType(name string) (reflect.Type, bool) {
+	for _, plg := range p.plugins {
+		if name == plg.Name {
+			return plg.drive.ConfigType(), true
+		}
+	}
+	return nil, false
+}
+
 func (p *PluginManager) Id() string {
 	return p.id
 }
