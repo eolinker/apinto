@@ -2,13 +2,14 @@ package plugin
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/variable"
 	"reflect"
 )
 
 type Plugins map[string]*Config
 
-func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variables map[string]string, configTypes map[string]reflect.Type) ([]string, error) {
+func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variables map[string]string, configTypes *eosc.ConfigType) ([]string, error) {
 	if originVal.Kind() != reflect.Map {
 		return nil, fmt.Errorf("plugin map reset error:%w %s", variable.ErrorUnsupportedKind, originVal.Kind())
 	}
@@ -17,7 +18,7 @@ func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variabl
 	usedVariables := make([]string, 0, len(variables))
 	for _, key := range originVal.MapKeys() {
 		// 判断是否存在对应的插件配
-		cfgType, ok := configTypes[key.String()]
+		cfgType, ok := configTypes.GetByAlias(key.String())
 		if !ok {
 			return nil, fmt.Errorf("plugin %s not found", key.String())
 		}
@@ -35,7 +36,7 @@ func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variabl
 	return usedVariables, nil
 }
 
-func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, variables map[string]string, cfgType reflect.Type, configTypes map[string]reflect.Type) ([]string, error) {
+func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, variables map[string]string, cfgType reflect.Type, configTypes *eosc.ConfigType) ([]string, error) {
 	if targetVal.Kind() == reflect.Ptr {
 		if !targetVal.Elem().IsValid() {
 			targetType := targetVal.Type()
