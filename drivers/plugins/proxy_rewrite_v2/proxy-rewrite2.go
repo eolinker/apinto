@@ -110,38 +110,38 @@ func (p *ProxyRewrite) Start() error {
 	return nil
 }
 
-func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]interface{}) error {
-	conf, err := p.check(v)
-	if err != nil {
-		return err
-	}
+func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+conf, err := p.check(v)
+if err != nil {
+return err
+}
 
-	p.pathType = conf.PathType
-	p.notMatchErr = conf.NotMatchErr
-	p.hostRewrite = conf.HostRewrite
-	p.host = conf.Host
-	p.headers = conf.Headers
+p.pathType = conf.PathType
+p.notMatchErr = conf.NotMatchErr
+p.hostRewrite = conf.HostRewrite
+p.host = conf.Host
+p.headers = conf.Headers
 
-	switch conf.PathType {
-	case typeStatic:
-		p.staticPath = conf.StaticPath
-	case typePrefix:
-		p.prefixPath = conf.PrefixPath
-	case typeRegex:
-		regexMatch := make([]*regexp.Regexp, 0)
+switch conf.PathType {
+case typeStatic:
+p.staticPath = conf.StaticPath
+case typePrefix:
+p.prefixPath = conf.PrefixPath
+case typeRegex:
+regexMatch := make([]*regexp.Regexp, 0)
 
-		for _, rPath := range conf.RegexPath {
-			rMatch, err := regexp.Compile(rPath.RegexPathMatch)
-			if err != nil {
-				return fmt.Errorf(regexpErrInfo, rPath.RegexPathMatch)
-			}
-			regexMatch = append(regexMatch, rMatch)
-		}
-		p.regexPath = conf.RegexPath
-		p.regexMatch = regexMatch
-	}
+for _, rPath := range conf.RegexPath {
+rMatch, err := regexp.Compile(rPath.RegexPathMatch)
+if err != nil {
+return fmt.Errorf(regexpErrInfo, rPath.RegexPathMatch)
+}
+regexMatch = append(regexMatch, rMatch)
+}
+p.regexPath = conf.RegexPath
+p.regexMatch = regexMatch
+}
 
-	return nil
+return nil
 }
 
 func (p *ProxyRewrite) Stop() error {

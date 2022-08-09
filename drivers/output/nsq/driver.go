@@ -47,7 +47,7 @@ func (d *Driver) Check(v interface{}) (*Config, error) {
 	return nsqConf, nil
 }
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 	worker := &NsqOutput{
 		Driver: d,
 		id:     id,

@@ -124,18 +124,18 @@ func (c *CorsFilter) Start() error {
 	return nil
 }
 
-func (c *CorsFilter) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	cfg, err := c.check(conf)
-	if err != nil {
-		return err
-	}
-	c.option = cfg.genOptionHandler()
-	c.originChecker = NewChecker(cfg.AllowOrigins, "Access-Control-Allow-Origin")
-	c.methodChecker = NewChecker(cfg.AllowMethods, "Access-Control-Allow-Methods")
-	c.headerChecker = NewChecker(cfg.AllowHeaders, "Access-Control-Allow-Headers")
-	c.exposeChecker = NewChecker(cfg.ExposeHeaders, "Access-Control-Expose-Headers")
-	c.allowCredentials = cfg.AllowCredentials
-	return nil
+func (c *CorsFilter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+cfg, err := c.check(conf)
+if err != nil {
+return err
+}
+c.option = cfg.genOptionHandler()
+c.originChecker = NewChecker(cfg.AllowOrigins, "Access-Control-Allow-Origin")
+c.methodChecker = NewChecker(cfg.AllowMethods, "Access-Control-Allow-Methods")
+c.headerChecker = NewChecker(cfg.AllowHeaders, "Access-Control-Allow-Headers")
+c.exposeChecker = NewChecker(cfg.ExposeHeaders, "Access-Control-Expose-Headers")
+c.allowCredentials = cfg.AllowCredentials
+return nil
 }
 
 func (c *CorsFilter) Stop() error {

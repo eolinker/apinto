@@ -30,7 +30,7 @@ func (r *Router) create(cf *DriverConfig, target service.IServiceCreate) (*Route
 	handler := NewRouterHandler(newConf, serviceHandler)
 	return handler, nil
 }
-func (r *Router) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (r *Router) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cf, ser, err := r.driver.check(conf, workers)
 	if err != nil {
 		return err

@@ -27,7 +27,7 @@ func (d *driver) ConfigType() reflect.Type {
 }
 
 //Create 创建静态服务发现驱动的实例
-func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 	s := &static{
 		id: id,
 	}

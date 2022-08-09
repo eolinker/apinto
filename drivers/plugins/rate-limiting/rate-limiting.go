@@ -101,15 +101,15 @@ func (r *RateLimiting) Start() error {
 	return nil
 }
 
-func (r *RateLimiting) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	confObj, err := r.check(conf)
-	if err != nil {
-		return err
-	}
-	r.rateInfo = CreateRateInfo(confObj)
-	r.hideClientHeader = confObj.HideClientHeader
-	r.responseType = confObj.ResponseType
-	return nil
+func (r *RateLimiting) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+confObj, err := r.check(conf)
+if err != nil {
+return err
+}
+r.rateInfo = CreateRateInfo(confObj)
+r.hideClientHeader = confObj.HideClientHeader
+r.responseType = confObj.ResponseType
+return nil
 }
 
 func (r *RateLimiting) Stop() error {

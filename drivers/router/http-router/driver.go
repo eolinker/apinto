@@ -30,7 +30,7 @@ func NewHTTPRouter() *HTTPRouterDriver {
 }
 
 //Create 创建一个http路由驱动实例
-func (h *HTTPRouterDriver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+func (h *HTTPRouterDriver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
 	conf, iService, err := h.check(v, workers)
 	if err != nil {
@@ -44,7 +44,7 @@ func (h *HTTPRouterDriver) Create(id, name string, v interface{}, workers map[eo
 }
 
 //check 检查http路由驱动配置
-func (h *HTTPRouterDriver) check(v interface{}, workers map[eosc.RequireId]interface{}) (*DriverConfig, service.IServiceCreate, error) {
+func (h *HTTPRouterDriver) check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) (*DriverConfig, service.IServiceCreate, error) {
 	conf, ok := v.(*DriverConfig)
 	if !ok {
 		return nil, nil, fmt.Errorf("get %s but %s %w", config.TypeNameOf(v), config.TypeNameOf(new(DriverConfig)), eosc.ErrorRequire)

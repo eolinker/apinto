@@ -69,7 +69,7 @@ func (a *Auth) Start() error {
 	return nil
 }
 
-func (a *Auth) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (a *Auth) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	confObj, err := a.check(conf)
 	if err != nil {
 		return err

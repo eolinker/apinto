@@ -33,16 +33,16 @@ func (c *CircuitBreaker) Start() error {
 	return nil
 }
 
-func (c *CircuitBreaker) Reset(v interface{}, workers map[eosc.RequireId]interface{}) error {
-	conf, err := c.check(v)
-	if err != nil {
-		return err
-	}
+func (c *CircuitBreaker) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+conf, err := c.check(v)
+if err != nil {
+return err
+}
 
-	c.counter = newCircuitCount()
-	c.conf = conf
+c.counter = newCircuitCount()
+c.conf = conf
 
-	return nil
+return nil
 }
 
 func (c *CircuitBreaker) Stop() error {

@@ -193,17 +193,17 @@ func (p *ParamsTransformer) Start() error {
 	return nil
 }
 
-func (p *ParamsTransformer) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	confObj, err := p.check(conf)
-	if err != nil {
-		return err
-	}
+func (p *ParamsTransformer) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+confObj, err := p.check(conf)
+if err != nil {
+return err
+}
 
-	p.params = confObj.Params
-	p.remove = confObj.Remove
-	p.errorType = confObj.ErrorType
+p.params = confObj.Params
+p.remove = confObj.Remove
+p.errorType = confObj.ErrorType
 
-	return nil
+return nil
 }
 
 func (p *ParamsTransformer) Stop() error {

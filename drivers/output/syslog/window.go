@@ -32,7 +32,7 @@ func (s *SysWriter) Start() error {
 	return fmt.Errorf("can not create syslog transporterReset in windows system")
 }
 
-func (s *SysWriter) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (s *SysWriter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	return fmt.Errorf("can not create syslog transporterReset in windows system")
 }
 

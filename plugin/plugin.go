@@ -1,6 +1,6 @@
 package plugin
 
-import "github.com/eolinker/apinto/filter"
+import "github.com/eolinker/eosc/eocontext"
 
 //Config 普通插件配置，在router、service、upstream的插件格式
 type Config struct {
@@ -12,12 +12,8 @@ type IPluginConfigMerge interface {
 	Merge(high map[string]*Config) map[string]*Config
 }
 
-type IPlugin interface {
-	filter.IChain
-	Destroy()
-}
 type IPluginManager interface {
-	CreateRequest(id string, conf map[string]*Config) IPlugin
+	CreateRequest(id string, conf map[string]*Config) eocontext.IChain
 	//CreateUpstream(id string, conf map[string]*Config) IPlugin
 }
 

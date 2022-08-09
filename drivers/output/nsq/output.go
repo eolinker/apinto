@@ -25,7 +25,7 @@ func (n *NsqOutput) Start() error {
 	return nil
 }
 
-func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	config, err := n.Driver.Check(conf)
 	if err != nil {
 		return err

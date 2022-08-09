@@ -52,7 +52,7 @@ func (o *Output) Start() error {
 	return nil
 }
 
-func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg, err := o.Driver.check(conf)
 	if err != nil {
 		return err

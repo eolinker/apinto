@@ -52,7 +52,7 @@ func (f *finishHttp) Finish(ctx eoscContext.EoContext) error {
 	if !ok {
 		return nil
 	}
-	target.finish()
+	target.FastFinish()
 	return nil
 }
 
@@ -155,7 +155,7 @@ func (ctx *Context) RequestId() string {
 }
 
 //Finish finish
-func (ctx *Context) finish() {
+func (ctx *Context) FastFinish() {
 	if ctx.response.responseError != nil {
 		ctx.fastHttpRequestCtx.SetStatusCode(504)
 		ctx.fastHttpRequestCtx.SetBodyString(ctx.response.responseError.Error())

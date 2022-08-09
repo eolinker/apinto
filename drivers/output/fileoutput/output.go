@@ -38,7 +38,7 @@ func (a *FileOutput) Start() error {
 	return nil
 }
 
-func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) (err error) {
+func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
 	cfg, err := a.Driver.Check(conf)
 	if err != nil {
 		return err

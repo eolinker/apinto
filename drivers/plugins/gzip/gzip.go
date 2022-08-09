@@ -95,13 +95,13 @@ func (g *Gzip) Start() error {
 	return nil
 }
 
-func (g *Gzip) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	cfg, err := g.check(conf)
-	if err != nil {
-		return err
-	}
-	g.conf = cfg
-	return nil
+func (g *Gzip) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+cfg, err := g.check(conf)
+if err != nil {
+return err
+}
+g.conf = cfg
+return nil
 }
 
 func (g *Gzip) Stop() error {

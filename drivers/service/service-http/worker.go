@@ -36,7 +36,7 @@ func (s *serviceWorker) Start() error {
 }
 
 //Reset 重置服务实例的配置
-func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	data, ok := conf.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))

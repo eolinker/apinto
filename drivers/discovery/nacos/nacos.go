@@ -89,7 +89,7 @@ func (n *nacos) Start() error {
 }
 
 //Reset 重置nacos实例配置
-func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))

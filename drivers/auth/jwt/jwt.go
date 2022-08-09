@@ -33,7 +33,7 @@ func (j *jwt) Start() error {
 	return nil
 }
 
-func (j *jwt) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (j *jwt) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	c, ok := conf.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))

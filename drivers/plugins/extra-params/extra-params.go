@@ -114,16 +114,16 @@ func (e *ExtraParams) Start() error {
 	return nil
 }
 
-func (e *ExtraParams) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	confObj, err := e.check(conf)
-	if err != nil {
-		return err
-	}
+func (e *ExtraParams) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+confObj, err := e.check(conf)
+if err != nil {
+return err
+}
 
-	e.params = confObj.Params
-	e.errorType = confObj.ErrorType
+e.params = confObj.Params
+e.errorType = confObj.ErrorType
 
-	return nil
+return nil
 }
 
 func (e *ExtraParams) Stop() error {

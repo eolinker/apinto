@@ -78,7 +78,7 @@ func (s *static) reset(cfg *Config) error {
 }
 
 //Reset 重置静态服务发现实例配置
-func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s:%w", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf), errorStructType)

@@ -36,7 +36,7 @@ func (h *HttpOutput) Start() error {
 	return nil
 }
 
-func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) (err error) {
+func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
 	config, err := h.Driver.Check(conf)
 	if err != nil {
 		return err

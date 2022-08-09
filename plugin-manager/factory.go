@@ -40,7 +40,7 @@ func (p *PluginManager) ConfigType() reflect.Type {
 	return reflect.TypeOf(new(PluginWorkerConfig))
 }
 
-func (p *PluginManager) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+func (p *PluginManager) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 	p.Reset(v, workers)
 	return p, nil
 }

@@ -50,7 +50,7 @@ func (l *accessLog) Start() error {
 	return nil
 }
 
-func (l *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (l *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	c, err := l.check(conf)
 	if err != nil {
 		return err

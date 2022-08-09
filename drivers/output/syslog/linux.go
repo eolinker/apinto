@@ -61,7 +61,7 @@ func (s *SysWriter) Start() error {
 	return nil
 }
 
-func (s *SysWriter) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (s *SysWriter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg, err := s.Driver.check(conf)
 	if err != nil {
 		return err

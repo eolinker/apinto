@@ -31,7 +31,7 @@ func (d *driver) ConfigType() reflect.Type {
 }
 
 //Create 创建nacos驱动实例
-func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 	cfg, ok := v.(*Config)
 	if !ok {
 		val := reflect.ValueOf(v)

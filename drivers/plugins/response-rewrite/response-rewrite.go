@@ -4,7 +4,6 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 	"strconv"
 
-	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -33,26 +32,26 @@ func (r *ResponseRewrite) Start() error {
 	return nil
 }
 
-func (r *ResponseRewrite) Reset(v interface{}, workers map[eosc.RequireId]interface{}) error {
-	conf, err := r.check(v)
-	if err != nil {
-		return err
-	}
+func (r *ResponseRewrite) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+conf, err := r.check(v)
+if err != nil {
+return err
+}
 
-	//若body非空且需要base64转码
-	if conf.Body != "" && conf.BodyBase64 {
-		conf.Body, err = utils.B64Decode(conf.Body)
-		if err != nil {
-			return err
-		}
-	}
+//若body非空且需要base64转码
+if conf.Body != "" && conf.BodyBase64 {
+conf.Body, err = utils.B64Decode(conf.Body)
+if err != nil {
+return err
+}
+}
 
-	r.statusCode = conf.StatusCode
-	r.body = conf.Body
-	r.headers = conf.Headers
-	r.match = conf.Match
+r.statusCode = conf.StatusCode
+r.body = conf.Body
+r.headers = conf.Headers
+r.match = conf.Match
 
-	return nil
+return nil
 }
 
 func (r *ResponseRewrite) Stop() error {
