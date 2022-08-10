@@ -44,15 +44,17 @@ func (h *Handler) Output(entry eosc.IEntry) error {
 }
 func (h *Handler) reset(config *Config) error {
 
-	if h.transport != nil {
-		h.transport.Close()
-	}
+	o := h.transport
 	transport, fm, err := create(config)
 	if err != nil {
 		return err
 	}
 	h.transport = transport
 	h.formatter = fm
+
+	if o != nil {
+		o.Close()
+	}
 	return nil
 }
 

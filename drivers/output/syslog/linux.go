@@ -4,7 +4,6 @@
 package syslog
 
 import (
-	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
 	sys "log/syslog"
@@ -13,20 +12,20 @@ import (
 
 //CreateTransporter 创建syslog-Transporter
 func CreateTransporter(conf *Config) (*SysWriter, error) {
-	sysWriter, err := newSysWriter(conf, "")
+	fm, w, err := create(conf)
 	if err != nil {
 		return nil, err
 	}
+
 	return &SysWriter{
-		writer: sysWriter,
+		writer:    w,
+		formatter: fm,
 	}, nil
 }
 
 const defaultTag = "apinto"
 
 type SysWriter struct {
-	*Driver
-	id        string
 	writer    *sys.Writer
 	formatter eosc.IFormatter
 }
@@ -44,9 +43,6 @@ func (s *SysWriter) Output(entry eosc.IEntry) error {
 	return nil
 }
 
-func (s *SysWriter) Id() string {
-	return s.id
-}
 func (s *SysWriter) Stop() error {
 	err := s.writer.Close()
 	if err != nil {
@@ -56,39 +52,33 @@ func (s *SysWriter) Stop() error {
 	s.formatter = nil
 	return nil
 }
-
-func (s *SysWriter) Start() error {
-	return nil
-}
-
-func (s *SysWriter) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	cfg, err := s.Driver.check(conf)
-	if err != nil {
-		return err
-	}
-	// 新建formatter
+func create(cfg *Config) (eosc.IFormatter, *sys.Writer, error) {
 	factory, has := formatter.GetFormatterFactory(cfg.Type)
 	if !has {
-		return errFormatterType
+		return nil, nil, errFormatterType
 	}
-	s.formatter, err = factory.Create(cfg.Formatter)
-	// 关闭旧的
-	if s.writer != nil {
-		err = s.writer.Close()
-		if err != nil {
-			return err
-		}
+	fm, err := factory.Create(cfg.Formatter)
+	if err != nil {
+		return nil, nil, err
 	}
 	w, err := newSysWriter(cfg, "")
 	if err != nil {
+		return nil, nil, err
+	}
+	return fm, w, nil
+}
+func (s *SysWriter) Reset(cfg *Config) error {
+
+	fm, w, err := create(cfg)
+	if err != nil {
 		return err
 	}
-	s.writer = w
+	o := s.writer
+	s.formatter, s.writer = fm, w
+	if o != nil {
+		o.Close()
+	}
 	return nil
-}
-
-func (s *SysWriter) CheckSkill(skill string) bool {
-	return output.CheckSkill(skill)
 }
 
 func newSysWriter(conf *Config, tag string) (*sys.Writer, error) {
