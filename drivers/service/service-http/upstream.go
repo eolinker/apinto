@@ -1,4 +1,4 @@
-package upstream_http
+package service_http
 
 import (
 	"time"

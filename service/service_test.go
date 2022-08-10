@@ -7,7 +7,7 @@ import (
 )
 
 func TestService(t *testing.T) {
-	fmt.Println(TypeNameOf((*IService)(nil)))
+	log.Debug(TypeNameOf((*IService)(nil)))
 }
 
 func TypeNameOf(v interface{}) string {

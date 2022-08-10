@@ -1,6 +1,7 @@
 package service_http
 
 import (
+	round_robin "github.com/eolinker/apinto/upstream/round-robin"
 	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 
@@ -14,11 +15,11 @@ import (
 
 var DriverName = "service_http"
 var (
-	defaultDiscovery = static.CreateAnonymous(&static.Config{
-		Scheme:   "http",
+	defaultHttpDiscovery = static.CreateAnonymous(&static.Config{
 		Health:   nil,
 		HealthOn: false,
 	})
+
 	pluginManger plugin.IPluginManager
 )
 
@@ -40,6 +41,7 @@ func (f *factory) Render() interface{} {
 
 //NewFactory 创建service_http驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
+	round_robin.Register()
 	return &factory{}
 }
 

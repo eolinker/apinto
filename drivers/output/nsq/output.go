@@ -1,19 +1,47 @@
 package nsq
 
 import (
+	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/formatter"
-	"sync"
+	"reflect"
 )
 
 type NsqOutput struct {
-	*Driver
-	id        string
-	pool      *producerPool
-	topic     string
-	formatter eosc.IFormatter
+	id     string
+	write  *Writer
+	config *Config
+}
 
-	lock sync.Mutex
+func (n *NsqOutput) Output(entry eosc.IEntry) error {
+	w := n.write
+	if w != nil {
+		return w.output(entry)
+	}
+	return eosc.ErrorWorkerNotRunning
+}
+
+func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+	cfg, err := Check(conf)
+	if err != nil {
+		return err
+	}
+	if reflect.DeepEqual(cfg, n.config) {
+		return nil
+	}
+	n.config = cfg
+	w := n.write
+	if w != nil {
+		return w.reset(cfg)
+	}
+	return nil
+}
+
+func (n *NsqOutput) Stop() error {
+	w := n.write
+	if w != nil {
+		return w.stop()
+	}
+	return nil
 }
 
 func (n *NsqOutput) Id() string {
@@ -21,66 +49,15 @@ func (n *NsqOutput) Id() string {
 }
 
 func (n *NsqOutput) Start() error {
-	return nil
-}
-
-func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	config, err := n.Driver.Check(conf)
-	if err != nil {
-		return err
+	w := n.write
+	if w != nil {
+		return nil
 	}
-
-	n.lock.Lock()
-	defer n.lock.Unlock()
-
-	if n.pool != nil {
-		n.pool.Close()
-	}
-
-	n.topic = config.Topic
-	//创建生产者pool
-	n.pool, err = CreateProducerPool(config.Address, config.AuthSecret, config.ClientConf)
-	if err != nil {
-		return err
-	}
-
-	//创建formatter
-	factory, has := formatter.GetFormatterFactory(config.Type)
-	if !has {
-		return errFormatterType
-	}
-	n.formatter, err = factory.Create(config.Formatter)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (n *NsqOutput) Stop() error {
-	n.lock.Lock()
-	defer n.lock.Unlock()
-
-	n.pool.Close()
-	n.formatter = nil
-	n.pool = nil
-
+	w = NewWriter(n.config)
+	n.write = w
 	return nil
 }
 
 func (n *NsqOutput) CheckSkill(skill string) bool {
-	return false
-}
-
-func (n *NsqOutput) Output(entry eosc.IEntry) error {
-	if n.formatter != nil {
-		data := n.formatter.Format(entry)
-		if n.pool != nil && len(data) > 0 {
-			err := n.pool.PublishAsync(n.topic, data)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+	return output.CheckSkill(skill)
 }

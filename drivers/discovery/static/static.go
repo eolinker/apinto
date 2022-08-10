@@ -22,8 +22,8 @@ var (
 )
 
 type static struct {
-	id         string
-	scheme     string
+	id string
+
 	healthOn   bool
 	checker    *health_check_http.HTTPCheck
 	context    context.Context
@@ -43,7 +43,6 @@ func (s *static) Start() error {
 }
 func (s *static) reset(cfg *Config) error {
 
-	s.scheme = cfg.getScheme()
 	s.healthOn = cfg.HealthOn
 
 	if s.healthOn {
@@ -133,11 +132,7 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 
 		if word == ";" {
 			if node != nil {
-				scheme, has := node.labels["scheme"]
-				if !has {
-					scheme = s.scheme
-				}
-				n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port, scheme)
+				n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port)
 				nodes[n.ID()] = n
 			}
 			index = 0
@@ -189,11 +184,7 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 		index++
 	}
 	if node != nil {
-		scheme, has := node.labels["scheme"]
-		if !has {
-			scheme = s.scheme
-		}
-		n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port, scheme)
+		n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port)
 		nodes[n.ID()] = n
 	}
 	index = 0

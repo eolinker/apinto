@@ -2,12 +2,15 @@ package balance
 
 import (
 	"errors"
+	"fmt"
+	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/eosc"
 )
 
 var (
+	ErrorInvalidBalance                                   = errors.New("invalid balance")
 	defaultBalanceFactoryRegister IBalanceFactoryRegister = newBalanceFactoryManager()
 )
 
@@ -44,8 +47,10 @@ func newBalanceFactoryManager() IBalanceFactoryRegister {
 
 //GetFactoryByKey 获取指定balance工厂
 func (dm *driverRegister) GetFactoryByKey(key string) (IBalanceFactory, bool) {
+	log.Debug("GetFactoryByKey:", key)
 	o, has := dm.register.Get(key)
 	if has {
+		log.Debug("GetFactoryByKey:", key, ":has")
 		f, ok := o.(IBalanceFactory)
 		return f, ok
 	}
@@ -54,7 +59,13 @@ func (dm *driverRegister) GetFactoryByKey(key string) (IBalanceFactory, bool) {
 
 //RegisterFactoryByKey 注册balance工厂
 func (dm *driverRegister) RegisterFactoryByKey(key string, factory IBalanceFactory) {
-	dm.register.Register(key, factory, true)
+	err := dm.register.Register(key, factory, true)
+	log.Debug("RegisterFactoryByKey:", key)
+
+	if err != nil {
+		log.Debug("RegisterFactoryByKey:", key, ":", err)
+		return
+	}
 	dm.keys = append(dm.keys, key)
 }
 
@@ -65,6 +76,7 @@ func (dm *driverRegister) Keys() []string {
 
 //Register 注册balance工厂到默认balanceFactory注册器
 func Register(key string, factory IBalanceFactory) {
+
 	defaultBalanceFactoryRegister.RegisterFactoryByKey(key, factory)
 }
 
@@ -89,7 +101,7 @@ func GetFactory(name string) (IBalanceFactory, error) {
 			}
 		}
 		if factory == nil {
-			return nil, errors.New("no valid balance handler")
+			return nil, fmt.Errorf("%s:%w", name, ErrorInvalidBalance)
 		}
 	}
 	return factory, nil

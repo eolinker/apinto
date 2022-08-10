@@ -60,12 +60,9 @@ func parseBodyParams(ctx http_service.IHttpContext, body []byte, contentType str
 	return bodyParams, formParams, nil
 }
 
-func getHeaderValue(headers map[string][]string, param *ExtraParam) (string, error) {
+func getHeaderValue(headers map[string][]string, param *ExtraParam, value string) (string, error) {
 	paramName := ConvertHeaderKey(param.Name)
-	if _, ok := param.Value.(string); !ok {
-		errInfo := "[extra_params] Header param " + param.Name + " must be a string"
-		return "", errors.New(errInfo)
-	}
+
 	if param.Conflict == "" {
 		param.Conflict = paramConvert
 	}
@@ -79,12 +76,7 @@ func getHeaderValue(headers map[string][]string, param *ExtraParam) (string, err
 	}
 
 	if param.Conflict == paramConvert {
-		if value, ok := param.Value.(string); ok {
-			paramValue = value
-		} else {
-			errInfo := `[extra_params] Illegal "paramValue" in "` + param.Name + `"`
-			return "", errors.New(errInfo)
-		}
+		paramValue = value
 	} else if param.Conflict == paramError {
 		errInfo := `[extra_params] "` + param.Name + `" has a conflict.`
 		return "", errors.New(errInfo)
@@ -115,12 +107,8 @@ func hasQueryValue(rawQuery string, paramName string) bool {
 	return false
 }
 
-func getQueryValue(ctx http_service.IHttpContext, param *ExtraParam) (string, error) {
-	if _, ok := param.Value.(string); !ok {
-		errInfo := "[extra_params] Query param " + param.Name + " must be a string"
-		return "", errors.New(errInfo)
-	}
-	value := ""
+func getQueryValue(ctx http_service.IHttpContext, param *ExtraParam, value string) (string, error) {
+	paramValue := ""
 	if param.Conflict == "" {
 		param.Conflict = paramConvert
 	}
@@ -129,49 +117,45 @@ func getQueryValue(ctx http_service.IHttpContext, param *ExtraParam) (string, er
 	if !hasQueryValue(ctx.Proxy().URI().RawQuery(), param.Name) {
 		param.Conflict = paramConvert
 	} else {
-		value = ctx.Proxy().URI().GetQuery(param.Name)
+		paramValue = ctx.Proxy().URI().GetQuery(param.Name)
 	}
 
 	if param.Conflict == paramConvert {
-		value = param.Value.(string)
+		paramValue = value
 	} else if param.Conflict == paramError {
 		errInfo := `[extra_params] "` + param.Name + `" has a conflict.`
 		return "", errors.New(errInfo)
 	}
 
-	return value, nil
+	return paramValue, nil
 }
 
-func getBodyValue(bodyParams map[string]interface{}, formParams map[string][]string, param *ExtraParam, contentType string) (interface{}, error) {
-	var value interface{} = nil
+func getBodyValue(bodyParams map[string]interface{}, formParams map[string][]string, param *ExtraParam, contentType string, value interface{}) (interface{}, error) {
+	var paramValue interface{} = nil
 	if param.Conflict == "" {
 		param.Conflict = paramConvert
 	}
 	if strings.Contains(contentType, FormParamType) {
-		if _, ok := param.Value.(string); !ok {
-			errInfo := "[extra_params] Body param " + param.Name + " must be a string"
-			return "", errors.New(errInfo)
-		}
 		if _, ok := formParams[param.Name]; !ok {
 			param.Conflict = paramConvert
 		} else {
-			value = formParams[param.Name][0]
+			paramValue = formParams[param.Name][0]
 		}
 	} else if strings.Contains(contentType, JsonType) {
 		if _, ok := bodyParams[param.Name]; !ok {
 			param.Conflict = paramConvert
 		} else {
-			value = bodyParams[param.Name]
+			paramValue = bodyParams[param.Name]
 		}
 	}
 	if param.Conflict == paramConvert {
-		value = param.Value
+		paramValue = value
 	} else if param.Conflict == paramError {
 		errInfo := `[extra_params] "` + param.Name + `" has a conflict.`
 		return "", errors.New(errInfo)
 	}
 
-	return value, nil
+	return paramValue, nil
 }
 
 func ConvertHeaderKey(header string) string {

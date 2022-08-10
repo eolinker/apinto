@@ -1,4 +1,4 @@
-package proxy_rewrite
+package proxy_rewrite_v2
 
 import (
 	"fmt"
@@ -48,19 +48,32 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	}
 
 	pw := &ProxyRewrite{
-		Driver:   d,
-		id:       id,
-		uri:      conf.URI,
-		regexURI: conf.RegexURI,
-		host:     conf.Host,
-		headers:  conf.Headers,
+		Driver:      d,
+		id:          id,
+		pathType:    conf.PathType,
+		notMatchErr: conf.NotMatchErr,
+		hostRewrite: conf.HostRewrite,
+		host:        conf.Host,
+		headers:     conf.Headers,
 	}
 
-	if len(conf.RegexURI) > 0 {
-		pw.regexMatch, err = regexp.Compile(conf.RegexURI[0])
-		if err != nil {
-			return nil, fmt.Errorf(regexpErrInfo, conf.RegexURI[0])
+	switch conf.PathType {
+	case typeStatic:
+		pw.staticPath = conf.StaticPath
+	case typePrefix:
+		pw.prefixPath = conf.PrefixPath
+	case typeRegex:
+		regexMatch := make([]*regexp.Regexp, 0)
+
+		for _, rPath := range conf.RegexPath {
+			rMatch, err := regexp.Compile(rPath.RegexPathMatch)
+			if err != nil {
+				return nil, fmt.Errorf(regexpErrInfo, rPath.RegexPathMatch)
+			}
+			regexMatch = append(regexMatch, rMatch)
 		}
+		pw.regexPath = conf.RegexPath
+		pw.regexMatch = regexMatch
 	}
 
 	return pw, nil

@@ -23,11 +23,12 @@ import (
 	ip_restriction "github.com/eolinker/apinto/drivers/plugins/ip-restriction"
 	params_transformer "github.com/eolinker/apinto/drivers/plugins/params-transformer"
 	proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/proxy-rewrite"
+	proxy_rewriteV2 "github.com/eolinker/apinto/drivers/plugins/proxy_rewrite_v2"
 	rate_limiting "github.com/eolinker/apinto/drivers/plugins/rate-limiting"
 	response_rewrite "github.com/eolinker/apinto/drivers/plugins/response-rewrite"
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
 	service_http "github.com/eolinker/apinto/drivers/service/service-http"
-	upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
+	//upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
 	plugin_manager "github.com/eolinker/apinto/plugin-manager"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/extends"
@@ -48,8 +49,8 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	// service
 	service_http.Register(extenderRegister)
 
-	// upstream
-	upstream_http.Register(extenderRegister)
+	////// upstream
+	//upstream_http.Register(extenderRegister)
 
 	// discovery
 	static.Register(extenderRegister)
@@ -86,4 +87,5 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	circuit_breaker.Register(extenderRegister)
 
 	access_log.Register(extenderRegister)
+	proxy_rewriteV2.Register(extenderRegister)
 }
