@@ -3,7 +3,7 @@ package service_http
 import (
 	"github.com/eolinker/apinto/filter"
 	"github.com/eolinker/apinto/plugin"
-	"github.com/eolinker/apinto/upstream"
+
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"

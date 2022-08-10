@@ -1,6 +1,7 @@
 package proxy_rewrite
 
 import (
+	"fmt"
 	"github.com/eolinker/eosc/eocontext"
 	"regexp"
 
@@ -73,26 +74,26 @@ func (p *ProxyRewrite) Start() error {
 }
 
 func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-conf, err := p.check(v)
-if err != nil {
-return err
-}
+	conf, err := p.check(v)
+	if err != nil {
+		return err
+	}
 
-p.uri = conf.URI
-p.regexURI = conf.RegexURI
-p.host = conf.Host
-p.headers = conf.Headers
+	p.uri = conf.URI
+	p.regexURI = conf.RegexURI
+	p.host = conf.Host
+	p.headers = conf.Headers
 
-if len(conf.RegexURI) > 0 {
-p.regexMatch, err = regexp.Compile(conf.RegexURI[0])
-if err != nil {
-return fmt.Errorf(regexpErrInfo, conf.RegexURI[0])
-}
-} else {
-p.regexMatch = nil
-}
+	if len(conf.RegexURI) > 0 {
+		p.regexMatch, err = regexp.Compile(conf.RegexURI[0])
+		if err != nil {
+			return fmt.Errorf(regexpErrInfo, conf.RegexURI[0])
+		}
+	} else {
+		p.regexMatch = nil
+	}
 
-return nil
+	return nil
 }
 
 func (p *ProxyRewrite) Stop() error {

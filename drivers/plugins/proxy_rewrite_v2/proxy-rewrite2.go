@@ -3,12 +3,15 @@ package proxy_rewrite_v2
 import (
 	"fmt"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
+
 	"regexp"
 	"strings"
 )
 
-var _ http_service.IFilter = (*ProxyRewrite)(nil)
+var _ eocontext.IFilter = (*ProxyRewrite)(nil)
+var _ http_service.HttpFilter = (*ProxyRewrite)(nil)
 
 const (
 	typeNone   = "none"
@@ -37,7 +40,11 @@ type ProxyRewrite struct {
 	headers     map[string]string
 }
 
-func (p *ProxyRewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
+func (p *ProxyRewrite) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return http_service.DoHttpFilter(p, ctx, next)
+}
+
+func (p *ProxyRewrite) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	isPathMatch := p.rewrite(ctx)
 	if p.notMatchErr && !isPathMatch {
 		err := fmt.Errorf(notMatchErrInfo, ctx.Proxy().URI().Path())
@@ -111,37 +118,37 @@ func (p *ProxyRewrite) Start() error {
 }
 
 func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-conf, err := p.check(v)
-if err != nil {
-return err
-}
+	conf, err := p.check(v)
+	if err != nil {
+		return err
+	}
 
-p.pathType = conf.PathType
-p.notMatchErr = conf.NotMatchErr
-p.hostRewrite = conf.HostRewrite
-p.host = conf.Host
-p.headers = conf.Headers
+	p.pathType = conf.PathType
+	p.notMatchErr = conf.NotMatchErr
+	p.hostRewrite = conf.HostRewrite
+	p.host = conf.Host
+	p.headers = conf.Headers
 
-switch conf.PathType {
-case typeStatic:
-p.staticPath = conf.StaticPath
-case typePrefix:
-p.prefixPath = conf.PrefixPath
-case typeRegex:
-regexMatch := make([]*regexp.Regexp, 0)
+	switch conf.PathType {
+	case typeStatic:
+		p.staticPath = conf.StaticPath
+	case typePrefix:
+		p.prefixPath = conf.PrefixPath
+	case typeRegex:
+		regexMatch := make([]*regexp.Regexp, 0)
 
-for _, rPath := range conf.RegexPath {
-rMatch, err := regexp.Compile(rPath.RegexPathMatch)
-if err != nil {
-return fmt.Errorf(regexpErrInfo, rPath.RegexPathMatch)
-}
-regexMatch = append(regexMatch, rMatch)
-}
-p.regexPath = conf.RegexPath
-p.regexMatch = regexMatch
-}
+		for _, rPath := range conf.RegexPath {
+			rMatch, err := regexp.Compile(rPath.RegexPathMatch)
+			if err != nil {
+				return fmt.Errorf(regexpErrInfo, rPath.RegexPathMatch)
+			}
+			regexMatch = append(regexMatch, rMatch)
+		}
+		p.regexPath = conf.RegexPath
+		p.regexMatch = regexMatch
+	}
 
-return nil
+	return nil
 }
 
 func (p *ProxyRewrite) Stop() error {
