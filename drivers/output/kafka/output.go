@@ -28,7 +28,7 @@ func (o *Output) Id() string {
 func (o *Output) Start() error {
 
 	p := o.producer
-	if p != nil {
+	if p == nil {
 		return nil
 	}
 

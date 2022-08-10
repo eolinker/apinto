@@ -26,7 +26,7 @@ func (h *HttpOutput) Id() string {
 
 func (h *HttpOutput) Start() error {
 	hd := h.handler
-	if hd != nil {
+	if hd == nil {
 		return nil
 	}
 	handler, err := NewHandler(h.config)
