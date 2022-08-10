@@ -30,6 +30,11 @@ func (h *HttpRouter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	return nil
 }
 func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+	cfg, ok := conf.(*Config)
+	if !ok {
+		return eosc.ErrorConfigFieldUnknown
+	}
+
 	return nil
 }
 func (h *HttpRouter) Stop() error {

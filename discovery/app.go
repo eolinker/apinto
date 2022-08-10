@@ -17,6 +17,7 @@ type app struct {
 
 //Reset 重置app的节点列表
 func (s *app) Reset(nodes Nodes) {
+
 	tmp := make(map[string]INode)
 
 	for _, node := range nodes {
@@ -34,11 +35,15 @@ func (s *app) Reset(nodes Nodes) {
 
 //GetAttrs 获取app的属性集合
 func (s *app) GetAttrs() Attrs {
+	s.locker.RLock()
+	defer s.locker.RUnlock()
 	return s.attrs
 }
 
 //GetAttrByName 通过属性名获取app对应属性
 func (s *app) GetAttrByName(name string) (string, bool) {
+	s.locker.RLock()
+	defer s.locker.RUnlock()
 	attr, ok := s.attrs[name]
 	return attr, ok
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/upstream/balance"
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
 	"reflect"
@@ -13,12 +14,25 @@ import (
 )
 
 type Service struct {
-	balanceHandler balance.IBalanceHandler
-	retry          int
-	scheme         string
-	timeout        time.Duration
+	eocontext.BalanceHandler
+	app discovery.IApp
+
+	scheme  string
+	timeout time.Duration
 
 	lastConfig *Config
+}
+
+func (s *Service) Nodes() []eocontext.INode {
+	return s.app.Nodes()
+}
+
+func (s *Service) Scheme() string {
+	return s.scheme
+}
+
+func (s *Service) TimeOut() time.Duration {
+	return s.timeout
 }
 
 //Reset 重置服务实例的配置
@@ -71,9 +85,7 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 	}
 
 	s.timeout = time.Duration(data.Timeout) * time.Millisecond
-
-	s.retry = data.Retry
-	s.balanceHandler = balanceHandler
+	s.BalanceHandler = balanceHandler
 
 	return nil
 

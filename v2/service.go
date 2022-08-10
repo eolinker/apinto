@@ -8,11 +8,16 @@ import (
 
 type IService interface {
 	eosc.IWorker
-	eoscContext.CompleteHandler
-	eoscContext.FinishHandler
+	eoscContext.EoApp
+	eoscContext.BalanceHandler
 }
 
 type ITemplate interface {
 	eosc.IWorker
 	Create(id string, conf map[string]*plugin.Config) eoscContext.IChain
+}
+
+//CheckSkill 检查目标技能是否符合
+func CheckSkill(skill string) bool {
+	return skill == "github.com/eolinker/apinto/service.service.IService"
 }

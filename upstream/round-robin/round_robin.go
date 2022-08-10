@@ -2,6 +2,7 @@ package round_robin
 
 import (
 	"errors"
+	eoscContext "github.com/eolinker/eosc/eocontext"
 	"strconv"
 	"time"
 
@@ -30,7 +31,7 @@ type roundRobinFactory struct {
 }
 
 //Create 创建一个round-Robin算法处理器
-func (r *roundRobinFactory) Create(app discovery.IApp) (balance.IBalanceHandler, error) {
+func (r *roundRobinFactory) Create(app discovery.IApp) (eoscContext.BalanceHandler, error) {
 	rr := newRoundRobin(app)
 	return rr, nil
 }
@@ -58,6 +59,10 @@ type roundRobin struct {
 	updateTime time.Time
 
 	downNodes map[int]discovery.INode
+}
+
+func (r *roundRobin) Select(ctx eoscContext.EoContext) (eoscContext.INode, error) {
+	return r.Next()
 }
 
 //Next 由现有节点根据round_Robin决策出一个可用节点

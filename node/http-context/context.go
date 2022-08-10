@@ -16,7 +16,6 @@ import (
 )
 
 var _ http_service.IHttpContext = (*Context)(nil)
-var defaultFinisher = new(finishHttp)
 
 //Context fasthttpRequestCtx
 type Context struct {
@@ -32,6 +31,26 @@ type Context struct {
 	labels             map[string]string
 }
 
+func (ctx *Context) GetApp() eoscContext.EoApp {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (ctx *Context) SetApp(app eoscContext.EoApp) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (ctx *Context) GetBalance() eoscContext.BalanceHandler {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (ctx *Context) SetBalance(handler eoscContext.BalanceHandler) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (ctx *Context) SetLabel(name, value string) {
 	ctx.labels[name] = value
 }
@@ -44,19 +63,7 @@ func (ctx *Context) Labels() map[string]string {
 	return ctx.labels
 }
 
-type finishHttp struct {
-}
-
-func (f *finishHttp) Finish(ctx eoscContext.EoContext) error {
-	target, ok := ctx.(*Context)
-	if !ok {
-		return nil
-	}
-	target.FastFinish()
-	return nil
-}
-
-func (ctx *Context) Complete() eoscContext.CompleteHandler {
+func (ctx *Context) GetComplete() eoscContext.CompleteHandler {
 	return ctx.completeHandler
 }
 
@@ -64,7 +71,7 @@ func (ctx *Context) SetCompleteHandler(handler eoscContext.CompleteHandler) {
 	ctx.completeHandler = handler
 }
 
-func (ctx *Context) Finish() eoscContext.FinishHandler {
+func (ctx *Context) GetFinish() eoscContext.FinishHandler {
 	return ctx.finishHandler
 }
 
@@ -141,7 +148,6 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 		proxyRequest:       NewProxyRequest(&ctx.Request, ctx.RemoteAddr().String()),
 		proxyRequests:      make([]http_service.IRequest, 0, 5),
 		response:           NewResponse(ctx),
-		finishHandler:      defaultFinisher,
 		labels:             make(map[string]string),
 	}
 	//记录请求时间
