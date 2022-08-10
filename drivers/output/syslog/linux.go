@@ -30,7 +30,7 @@ type SysWriter struct {
 	formatter eosc.IFormatter
 }
 
-func (s *SysWriter) Output(entry eosc.IEntry) error {
+func (s *SysWriter) output(entry eosc.IEntry) error {
 	if s.formatter == nil || s.writer == nil {
 		return nil
 	}
@@ -42,7 +42,7 @@ func (s *SysWriter) Output(entry eosc.IEntry) error {
 	return err
 }
 
-func (s *SysWriter) Stop() error {
+func (s *SysWriter) stop() error {
 	err := s.writer.Close()
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func create(cfg *Config) (eosc.IFormatter, *sys.Writer, error) {
 	}
 	return fm, w, nil
 }
-func (s *SysWriter) Reset(cfg *Config) error {
+func (s *SysWriter) reset(cfg *Config) error {
 
 	fm, w, err := create(cfg)
 	if err != nil {

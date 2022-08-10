@@ -14,6 +14,14 @@ type Syslog struct {
 	writer *SysWriter
 }
 
+func (s *Syslog) Output(entry eosc.IEntry) error {
+	w := s.writer
+	if w != nil {
+		return w.output(entry)
+	}
+	return eosc.ErrorWorkerNotRunning
+}
+
 func (s *Syslog) Id() string {
 	return s.id
 }
@@ -43,7 +51,7 @@ func (s *Syslog) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	s.config = cfg
 	w := s.writer
 	if w != nil {
-		w.Reset(cfg)
+		w.reset(cfg)
 	}
 	return nil
 }
@@ -51,7 +59,7 @@ func (s *Syslog) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 func (s *Syslog) Stop() error {
 	w := s.writer
 	if w != nil {
-		return w.Stop()
+		return w.stop()
 	}
 	return nil
 }

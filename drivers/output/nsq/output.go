@@ -12,6 +12,14 @@ type NsqOutput struct {
 	config *Config
 }
 
+func (n *NsqOutput) Output(entry eosc.IEntry) error {
+	w := n.write
+	if w != nil {
+		return w.output(entry)
+	}
+	return eosc.ErrorWorkerNotRunning
+}
+
 func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, err := Check(conf)
 	if err != nil {
