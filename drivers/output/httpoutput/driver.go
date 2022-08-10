@@ -1,9 +1,6 @@
 package httpoutput
 
 import (
-	http_transport "github.com/eolinker/apinto/output/http-transport"
-	"github.com/eolinker/eosc/formatter"
-	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 
 	"github.com/eolinker/eosc"
@@ -17,15 +14,7 @@ func (d *Driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
-func (d *Driver) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
-	if err != nil {
-		return nil
-	}
-	return render
-}
-
-func (d *Driver) Check(v interface{}) (*Config, error) {
+func Check(v interface{}) (*Config, error) {
 	conf, ok := v.(*Config)
 	if !ok {
 		return nil, errConfigType
@@ -63,36 +52,15 @@ func (d *Driver) Check(v interface{}) (*Config, error) {
 }
 
 func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+
+	conf, err := Check(v)
+	if err != nil {
+		return nil, err
+	}
 	worker := &HttpOutput{
-		Driver: d,
 		id:     id,
+		config: conf,
 	}
 
-	conf, err := d.Check(v)
-	if err != nil {
-		return nil, err
-	}
-
-	worker.config = conf
-
-	cfg := &http_transport.Config{
-		Method:       conf.Method,
-		Url:          conf.Url,
-		Headers:      toHeader(conf.Headers),
-		HandlerCount: 5, // 默认值， 以后可能会改成配置
-	}
-
-	worker.transport, err = http_transport.CreateTransporter(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	//创建formatter
-	factory, has := formatter.GetFormatterFactory(conf.Type)
-	if !has {
-		return nil, errFormatterType
-	}
-	worker.formatter, err = factory.Create(conf.Formatter)
-
-	return worker, err
+	return worker, nil
 }

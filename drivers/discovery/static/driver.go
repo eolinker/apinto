@@ -46,6 +46,5 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 
 func CreateAnonymous(conf *Config) discovery.IDiscovery {
 	s := &static{}
-	s.reset(conf)
 	return s
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func TestPing(t *testing.T) {
-	conf := &SysConfig{
+	conf := &Config{
 		Network: "tcp",
 		Address: "127.0.0.1:514",
 		Level:   "info",

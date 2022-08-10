@@ -2,29 +2,48 @@ package fileoutput
 
 import (
 	"github.com/eolinker/apinto/output"
-	file_transport "github.com/eolinker/apinto/output/file-transport"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/formatter"
+	"reflect"
 )
 
 type FileOutput struct {
-	*Driver
-	id        string
-	cfg       *file_transport.Config
-	formatter eosc.IFormatter
-	transport formatter.ITransport
+	id     string
+	name   string
+	config *Config
+	writer *FileWriter
 }
 
 func (a *FileOutput) Output(entry eosc.IEntry) error {
-	if a.formatter != nil {
-		data := a.formatter.Format(entry)
-		if a.transport != nil && len(data) > 0 {
-			err := a.transport.Write(data)
-			if err != nil {
-				return err
-			}
-			return a.transport.Write([]byte("\n"))
-		}
+	w := a.writer
+	if w != nil {
+		return w.output(entry)
+	}
+	return eosc.ErrorWorkerNotRunning
+}
+
+func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+	cfg, err := Check(conf)
+	if err != nil {
+		return err
+	}
+	if reflect.DeepEqual(cfg, a.config) {
+		return nil
+	}
+	a.config = cfg
+
+	w := a.writer
+	if w != nil {
+		return w.reset(cfg)
+	}
+	return nil
+}
+
+func (a *FileOutput) Stop() error {
+	w := a.writer
+	if w != nil {
+		err := w.stop()
+		a.writer = nil
+		return err
 	}
 	return nil
 }
@@ -34,42 +53,12 @@ func (a *FileOutput) Id() string {
 }
 
 func (a *FileOutput) Start() error {
-	return nil
-}
+	w := a.writer
+	if w != nil {
+		return nil
+	}
+	return w.reset(a.config)
 
-func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) (err error) {
-	cfg, err := a.Driver.Check(conf)
-	if err != nil {
-		return err
-	}
-	factory, has := formatter.GetFormatterFactory(cfg.Type)
-	if !has {
-		return errorFormatterType
-	}
-	c := &file_transport.Config{
-		Dir:    cfg.Dir,
-		File:   cfg.File,
-		Expire: cfg.Expire,
-		Period: file_transport.ParsePeriod(cfg.Period),
-	}
-	if a.cfg == nil || a.cfg.IsUpdate(c) {
-		transport := file_transport.NewtTransporter(c)
-		if a.transport != nil {
-			a.transport.Close()
-		}
-		a.transport = transport
-		a.cfg = c
-	}
-
-	a.formatter, err = factory.Create(cfg.Formatter)
-	return
-}
-
-func (a *FileOutput) Stop() error {
-	a.transport.Close()
-	a.transport = nil
-	a.formatter = nil
-	return nil
 }
 
 func (a *FileOutput) CheckSkill(skill string) bool {
