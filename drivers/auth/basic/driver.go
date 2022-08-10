@@ -1,6 +1,7 @@
 package basic
 
 import (
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 
 	"github.com/eolinker/eosc"
@@ -20,12 +21,20 @@ type driver struct {
 	configType reflect.Type
 }
 
-//ConfigType 返回http_proxy驱动配置的反射类型
+//ConfigType 返回basic驱动配置的反射类型
 func (d *driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
-//Create 创建http_proxy驱动的实例
+func (d *driver) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
+}
+
+//Create 创建basic驱动的实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	w := &basic{
 		id: id,

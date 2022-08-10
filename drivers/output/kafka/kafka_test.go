@@ -1,8 +1,8 @@
 package kafka
 
 import (
-	"fmt"
 	"github.com/Shopify/sarama"
+	"github.com/eolinker/eosc/log"
 	"testing"
 	"time"
 )

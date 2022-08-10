@@ -1,6 +1,9 @@
 package plugin
 
-import "github.com/eolinker/apinto/filter"
+import (
+	"github.com/eolinker/apinto/filter"
+	"reflect"
+)
 
 //Config 普通插件配置，在router、service、upstream的插件格式
 type Config struct {
@@ -18,6 +21,7 @@ type IPlugin interface {
 }
 type IPluginManager interface {
 	CreateRequest(id string, conf map[string]*Config) IPlugin
+	GetConfigType(name string) (reflect.Type, bool)
 	//CreateUpstream(id string, conf map[string]*Config) IPlugin
 }
 

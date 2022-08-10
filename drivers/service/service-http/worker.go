@@ -83,8 +83,8 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 
 	s.Service.retry = data.Retry
 
-	log.Debug("reset service:", data.PluginConfig)
-	s.Service.reset(data.Scheme, apps, balanceHandler, data.PluginConfig)
+	log.Debug("reset service:", data.Plugins)
+	s.Service.reset(data.Scheme, apps, balanceHandler, data.Plugins)
 
 	return nil
 

@@ -2,7 +2,6 @@ package eureka
 
 import (
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 )
 
@@ -19,13 +18,6 @@ type factory struct {
 //NewFactory 创建eureka驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
 	return &factory{}
-}
-func (f *factory) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
-	if err != nil {
-		return nil
-	}
-	return render
 }
 
 //Create 创建eureka驱动

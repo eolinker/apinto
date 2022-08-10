@@ -23,8 +23,21 @@ func (f *Factory) Render() interface{} {
 	}
 	return render
 }
+
+func (f *Factory) ConfigType() reflect.Type {
+	return reflect.TypeOf((*Config)(nil))
+}
+
 func NewFactory() *Factory {
 	return &Factory{}
+}
+
+func (d *Driver) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
 }
 
 func (f *Factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
