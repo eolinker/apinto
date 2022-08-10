@@ -1,10 +1,9 @@
 package router
 
 import (
+	"github.com/eolinker/apinto/checker"
 	"strings"
 	"testing"
-
-	http_service "github.com/eolinker/eosc/http-service"
 )
 
 type testSource map[string]string
@@ -70,7 +69,7 @@ func (tr *TestRule) toRule() Rule {
 		if i < 0 {
 			continue
 		}
-		c, e := http_service.Parse(p[i:])
+		c, e := checker.Parse(p[i:])
 		if e != nil {
 			continue
 		}
