@@ -2,7 +2,6 @@ package aksk
 
 import (
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 )
 
@@ -14,18 +13,6 @@ func Register(register eosc.IExtenderDriverRegister) {
 }
 
 type factory struct {
-}
-
-func (f *factory) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
-	if err != nil {
-		return nil
-	}
-	return render
-}
-
-func (f *factory) ConfigType() reflect.Type {
-	return reflect.TypeOf((*Config)(nil))
 }
 
 //NewFactory 创建aksk鉴权驱动工厂

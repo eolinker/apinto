@@ -3,6 +3,7 @@ package http_router
 import (
 	"fmt"
 	"github.com/eolinker/eosc/utils/config"
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 
 	"github.com/eolinker/apinto/plugin"
@@ -64,6 +65,14 @@ func (h *HTTPRouterDriver) check(v interface{}, workers map[eosc.RequireId]inter
 //ConfigType 返回http路由驱动配置的反射类型
 func (h *HTTPRouterDriver) ConfigType() reflect.Type {
 	return h.configType
+}
+
+func (h *HTTPRouterDriver) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
 }
 
 //NewRouter 创建http路由驱动实例

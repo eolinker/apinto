@@ -25,23 +25,54 @@ type PluginConfig struct {
 	InitConfig map[string]interface{} `json:"init_config" yaml:"init_config"`
 }
 
-func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, params map[string]string) ([]string, error) {
+func (p *PluginConfig) GetType(originVal reflect.Value) (reflect.Type, error) {
+	idVal := originVal.MapIndex(reflect.ValueOf("id"))
+
+	if !idVal.IsValid() {
+		// 当id字段不存在，则报错
+		return nil, fmt.Errorf("missing field name")
+	}
+	id := idVal.Elem().String()
+	nameVal := originVal.MapIndex(reflect.ValueOf("id"))
+	if !nameVal.IsValid() {
+		// 当name字段不存在，则报错
+		return nil, fmt.Errorf("missing field name")
+	}
+	name := nameVal.Elem().String()
+
+	var params map[string]interface{} = nil
+	paramsVal := originVal.MapIndex(reflect.ValueOf("init_config"))
+	if paramsVal.IsValid() {
+		tmp, ok := paramsVal.Elem().Interface().(map[string]interface{})
+		if ok {
+			params = tmp
+		}
+	}
+
+	factory, has := singleton.extenderDrivers.GetDriver(id)
+	if !has {
+		return nil, fmt.Errorf("driver(%s) not found", id)
+	}
+	driver, err := factory.Create(id, name, name, name, params)
+	if err != nil {
+		return nil, fmt.Errorf("create driver(%s) error:%s", idVal.Elem().String(), err)
+	}
+	return driver.ConfigType(), nil
+}
+
+func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, variables map[string]string) ([]string, error) {
 	if originVal.Kind() == reflect.Ptr {
 		originVal = originVal.Elem()
 	}
 	if originVal.Kind() != reflect.Map {
 		return nil, fmt.Errorf("plugin map reset error:%w %s", variable.ErrorUnsupportedKind, originVal.Kind())
 	}
-	nameVal := originVal.MapIndex(reflect.ValueOf("name"))
-	if !nameVal.IsValid() {
-		// 当name字段不存在，则报错
-		return nil, fmt.Errorf("missing field name")
+
+	cfgType, err := p.GetType(originVal)
+	if err != nil {
+		return nil, err
 	}
-	cfgType, ok := singleton.GetConfigType(nameVal.String())
-	if !ok {
-		return nil, fmt.Errorf("plugin %s not found", nameVal.Elem().String())
-	}
-	usedVariables := make([]string, 0, len(params))
+	usedVariables := make([]string, 0, len(variables))
 	targetType := targetVal.Type()
 	for i := 0; i < targetType.NumField(); i++ {
 		field := targetType.Field(i)
@@ -65,7 +96,7 @@ func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, p
 		default:
 			value = originVal
 		}
-		used, err := variable.RecurseReflect(value, fieldValue, params)
+		used, err := variable.RecurseReflect(value, fieldValue, variables)
 		if err != nil {
 			return nil, err
 		}

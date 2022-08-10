@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 
 	"github.com/eolinker/apinto/plugin"
@@ -34,11 +35,29 @@ type PluginManager struct {
 	workers         eosc.IWorkers
 }
 
+func (p *PluginManager) ConfigType() reflect.Type {
+	return reflect.TypeOf(new(PluginWorkerConfig))
+}
+
+func (p *PluginManager) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+	p.Reset(v, workers)
+	return p, nil
+}
+
+func (p *PluginManager) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*PluginWorkerConfig)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
+}
+
 func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config) plugin.IPlugin {
 	return p.createChain(id, conf)
 }
 
 func (p *PluginManager) GetConfigType(name string) (reflect.Type, bool) {
+	log.Debug("plugin manager get config type:", p.plugins)
 	for _, plg := range p.plugins {
 		if name == plg.Name {
 			return plg.drive.ConfigType(), true
