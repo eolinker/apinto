@@ -46,14 +46,13 @@ func Check(v interface{}) (*Config, error) {
 }
 
 func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	worker := &NsqOutput{
-
-		id: id,
-	}
 
 	conf, err := Check(v)
 	if err != nil {
 		return nil, err
+	}
+	worker := &NsqOutput{
+		id: id,
 	}
 	worker.config = conf
 	return worker, nil

@@ -39,7 +39,7 @@ func (s *Output) Start() error {
 	return nil
 }
 
-func (s *Output) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (s *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg, err := check(conf)
 	if err != nil {
 		return err
