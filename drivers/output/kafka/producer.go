@@ -50,7 +50,9 @@ func (o *tProducer) reset(cfg *ProducerConfig) (err error) {
 }
 
 func newTProducer(config *ProducerConfig) *tProducer {
-	return &tProducer{}
+	p := &tProducer{}
+	p.reset(config)
+	return p
 }
 
 func (o *tProducer) close() {

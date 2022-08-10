@@ -3,6 +3,7 @@ package kafka
 import (
 	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
+	"reflect"
 )
 
 type Output struct {
@@ -25,10 +26,15 @@ func (o *Output) Id() string {
 }
 
 func (o *Output) Start() error {
-	if o.producer != nil {
+
+	p := o.producer
+	if p != nil {
 		return nil
 	}
+
 	o.producer = newTProducer(o.config)
+	o.producer.reset(o.config)
+
 	return nil
 }
 
@@ -36,6 +42,9 @@ func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	cfg, err := check(conf)
 	if err != nil {
 		return err
+	}
+	if reflect.DeepEqual(cfg, o.config) {
+		return nil
 	}
 	o.config = cfg
 
