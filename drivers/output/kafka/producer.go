@@ -76,23 +76,23 @@ func (o *tProducer) close() {
 }
 
 func (o *tProducer) output(entry eosc.IEntry) error {
-	if o.producer == nil {
+	if o.producer == nil && o.formatter == nil {
 		return nil
 	}
-	if o.formatter != nil {
-		data := o.formatter.Format(entry)
-		msg := &sarama.ProducerMessage{
-			Topic: o.conf.Topic,
-			Value: sarama.ByteEncoder(data),
-		}
-		if o.conf.PartitionType == "manual" {
-			msg.Partition = o.conf.Partition
-		}
-		if o.conf.PartitionType == "hash" {
-			msg.Key = sarama.StringEncoder(entry.Read(o.conf.PartitionKey))
-		}
-		o.write(msg)
+
+	data := o.formatter.Format(entry)
+	msg := &sarama.ProducerMessage{
+		Topic: o.conf.Topic,
+		Value: sarama.ByteEncoder(data),
 	}
+	if o.conf.PartitionType == "manual" {
+		msg.Partition = o.conf.Partition
+	}
+	if o.conf.PartitionType == "hash" {
+		msg.Key = sarama.StringEncoder(entry.Read(o.conf.PartitionKey))
+	}
+	o.write(msg)
+
 	return nil
 }
 

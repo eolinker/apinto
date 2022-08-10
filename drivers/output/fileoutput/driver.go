@@ -14,7 +14,7 @@ func (d *Driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
-func (d *Driver) Check(v interface{}) (*Config, error) {
+func Check(v interface{}) (*Config, error) {
 	conf, ok := v.(*Config)
 	if !ok {
 		return nil, errorConfigType
@@ -49,10 +49,15 @@ func (d *Driver) Check(v interface{}) (*Config, error) {
 }
 
 func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
-	worker := &FileOutput{
-		Driver: d,
-		id:     id,
+
+	cfg, err := Check(v)
+	if err != nil {
+		return nil, err
 	}
-	err := worker.Reset(v, workers)
+	worker := &FileOutput{
+		id:     id,
+		name:   name,
+		config: cfg,
+	}
 	return worker, err
 }

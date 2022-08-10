@@ -62,14 +62,13 @@ func (n *Writer) stop() error {
 }
 
 func (n *Writer) output(entry eosc.IEntry) error {
-	if n.formatter != nil {
-		data := n.formatter.Format(entry)
-		if n.pool != nil && len(data) > 0 {
-			err := n.pool.PublishAsync(n.topic, data)
-			if err != nil {
-				return err
-			}
-		}
+	if n.formatter == nil || n.pool == nil {
+		return nil
 	}
-	return nil
+	data := n.formatter.Format(entry)
+	if len(data) == 0 {
+		return nil
+	}
+	return n.pool.PublishAsync(n.topic, data)
+
 }

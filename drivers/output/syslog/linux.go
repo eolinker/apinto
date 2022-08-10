@@ -31,16 +31,15 @@ type SysWriter struct {
 }
 
 func (s *SysWriter) Output(entry eosc.IEntry) error {
-	if s.formatter != nil {
-		data := s.formatter.Format(entry)
-		if s.writer != nil && len(data) > 0 {
-			_, err := s.writer.Write(data)
-			if err != nil {
-				return err
-			}
-		}
+	if s.formatter == nil || s.writer == nil {
+		return nil
 	}
-	return nil
+	data := s.formatter.Format(entry)
+	if len(data) == 0 {
+		return nil
+	}
+	_, err := s.writer.Write(data)
+	return err
 }
 
 func (s *SysWriter) Stop() error {

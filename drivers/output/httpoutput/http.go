@@ -31,16 +31,14 @@ func (h *Handler) Close() error {
 }
 
 func (h *Handler) Output(entry eosc.IEntry) error {
-	if h.formatter != nil {
-		data := h.formatter.Format(entry)
-		if h.transport != nil && len(data) > 0 {
-			err := h.transport.Write(data)
-			if err != nil {
-				return err
-			}
-		}
+	if h.formatter == nil && h.transport == nil {
+		return nil
 	}
-	return nil
+	data := h.formatter.Format(entry)
+	if len(data) == 0 {
+		return nil
+	}
+	return h.transport.Write(data)
 }
 func (h *Handler) reset(config *Config) error {
 
