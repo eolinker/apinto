@@ -21,7 +21,6 @@ type IDiscovery interface {
 
 //IApp app接口
 type IApp interface {
-	eocontext.EoApp
 	IAttributes
 	ID() string
 	Nodes() []INode

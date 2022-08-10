@@ -6,6 +6,9 @@ import (
 	"reflect"
 )
 
+var _ output.IEntryOutput = (*Output)(nil)
+var _ eosc.IWorker = (*Output)(nil)
+
 type Output struct {
 	id       string
 	name     string
@@ -38,13 +41,10 @@ func (o *Output) Start() error {
 	return nil
 }
 
-<<<<<<< ours
 func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	cfg, err := o.Driver.check(conf)
-=======
-func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+
 	cfg, err := check(conf)
->>>>>>> theirs
+
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 
 	p := o.producer
 	if p != nil {
-		p.reset(cfg)
+		return p.reset(cfg)
 	}
 	return nil
 }

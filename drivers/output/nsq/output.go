@@ -6,6 +6,9 @@ import (
 	"reflect"
 )
 
+var _ output.IEntryOutput = (*NsqOutput)(nil)
+var _ eosc.IWorker = (*NsqOutput)(nil)
+
 type NsqOutput struct {
 	id     string
 	write  *Writer
@@ -20,13 +23,8 @@ func (n *NsqOutput) Output(entry eosc.IEntry) error {
 	return eosc.ErrorWorkerNotRunning
 }
 
-<<<<<<< ours
 func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	config, err := n.Driver.Check(conf)
-=======
-func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, err := Check(conf)
->>>>>>> theirs
 	if err != nil {
 		return err
 	}

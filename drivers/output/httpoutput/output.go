@@ -5,6 +5,9 @@ import (
 	"github.com/eolinker/eosc"
 )
 
+var _ output.IEntryOutput = (*HttpOutput)(nil)
+var _ eosc.IWorker = (*HttpOutput)(nil)
+
 type HttpOutput struct {
 	id      string
 	config  *Config
@@ -37,13 +40,10 @@ func (h *HttpOutput) Start() error {
 	return nil
 }
 
-<<<<<<< ours
 func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
-	config, err := h.Driver.Check(conf)
-=======
-func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) (err error) {
+
 	config, err := Check(conf)
->>>>>>> theirs
+
 	if err != nil {
 		return err
 	}

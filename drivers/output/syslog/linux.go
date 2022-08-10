@@ -51,21 +51,8 @@ func (s *SysWriter) stop() error {
 	s.formatter = nil
 	return nil
 }
-<<<<<<< ours
 
-func (s *SysWriter) Start() error {
-	return nil
-}
-
-func (s *SysWriter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	cfg, err := s.Driver.check(conf)
-	if err != nil {
-		return err
-	}
-	// 新建formatter
-=======
 func create(cfg *Config) (eosc.IFormatter, *sys.Writer, error) {
->>>>>>> theirs
 	factory, has := formatter.GetFormatterFactory(cfg.Type)
 	if !has {
 		return nil, nil, errFormatterType

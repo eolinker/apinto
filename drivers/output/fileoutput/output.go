@@ -6,6 +6,9 @@ import (
 	"reflect"
 )
 
+var _ output.IEntryOutput = (*FileOutput)(nil)
+var _ eosc.IWorker = (*FileOutput)(nil)
+
 type FileOutput struct {
 	id     string
 	name   string
@@ -21,13 +24,10 @@ func (a *FileOutput) Output(entry eosc.IEntry) error {
 	return eosc.ErrorWorkerNotRunning
 }
 
-<<<<<<< ours
 func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
-	cfg, err := a.Driver.Check(conf)
-=======
-func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+
 	cfg, err := Check(conf)
->>>>>>> theirs
+
 	if err != nil {
 		return err
 	}

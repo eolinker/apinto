@@ -15,11 +15,11 @@ type Driver struct {
 }
 
 func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-_, err := d.check(v)
-if err != nil {
-return err
-}
-return nil
+	_, err := d.check(v)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *Driver) check(v interface{}) (*Config, error) {
@@ -40,7 +40,7 @@ func (d *Driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (interface{}, error) {
+func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 	conf, err := d.check(v)
 	if err != nil {
 		return nil, err

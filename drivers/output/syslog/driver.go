@@ -26,13 +26,9 @@ func check(v interface{}) (*Config, error) {
 
 }
 
-<<<<<<< ours
 func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	cfg, err := d.check(v)
-=======
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
 	cfg, err := check(v)
->>>>>>> theirs
+
 	if err != nil {
 		return nil, err
 	}

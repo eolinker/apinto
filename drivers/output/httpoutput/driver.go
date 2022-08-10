@@ -51,21 +51,7 @@ func Check(v interface{}) (*Config, error) {
 	return httpConf, nil
 }
 
-<<<<<<< ours
 func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	worker := &HttpOutput{
-		Driver: d,
-		id:     id,
-	}
-
-	conf, err := d.Check(v)
-	if err != nil {
-		return nil, err
-	}
-=======
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
->>>>>>> theirs
-
 	conf, err := Check(v)
 	if err != nil {
 		return nil, err

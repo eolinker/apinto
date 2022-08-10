@@ -6,6 +6,9 @@ import (
 	"reflect"
 )
 
+var _ output.IEntryOutput = (*Output)(nil)
+var _ eosc.IWorker = (*Output)(nil)
+
 type Output struct {
 	id   string
 	name string
