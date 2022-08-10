@@ -32,7 +32,7 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		return nil, err
 	}
 
-	return &Syslog{
+	return &Output{
 		id:     id,
 		name:   name,
 		config: cfg,

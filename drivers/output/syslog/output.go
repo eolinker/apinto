@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-type Syslog struct {
+type Output struct {
 	id   string
 	name string
 
@@ -14,7 +14,7 @@ type Syslog struct {
 	writer *SysWriter
 }
 
-func (s *Syslog) Output(entry eosc.IEntry) error {
+func (s *Output) Output(entry eosc.IEntry) error {
 	w := s.writer
 	if w != nil {
 		return w.output(entry)
@@ -22,11 +22,11 @@ func (s *Syslog) Output(entry eosc.IEntry) error {
 	return eosc.ErrorWorkerNotRunning
 }
 
-func (s *Syslog) Id() string {
+func (s *Output) Id() string {
 	return s.id
 }
 
-func (s *Syslog) Start() error {
+func (s *Output) Start() error {
 	w := s.writer
 	if w != nil {
 		return nil
@@ -39,7 +39,7 @@ func (s *Syslog) Start() error {
 	return nil
 }
 
-func (s *Syslog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (s *Output) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
 	cfg, err := check(conf)
 	if err != nil {
 		return err
@@ -56,13 +56,13 @@ func (s *Syslog) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 	return nil
 }
 
-func (s *Syslog) Stop() error {
+func (s *Output) Stop() error {
 	w := s.writer
 	if w != nil {
 		return w.stop()
 	}
 	return nil
 }
-func (s *Syslog) CheckSkill(skill string) bool {
+func (s *Output) CheckSkill(skill string) bool {
 	return output.CheckSkill(skill)
 }
