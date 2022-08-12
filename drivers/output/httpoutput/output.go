@@ -9,6 +9,7 @@ type HttpOutput struct {
 	id      string
 	config  *Config
 	handler *Handler
+	running bool
 }
 
 func (h *HttpOutput) Output(entry eosc.IEntry) error {
@@ -26,13 +27,15 @@ func (h *HttpOutput) Id() string {
 
 func (h *HttpOutput) Start() error {
 	hd := h.handler
-	if hd == nil {
+	if hd != nil {
 		return nil
 	}
+	h.running = true
 	handler, err := NewHandler(h.config)
 	if err != nil {
 		return err
 	}
+
 	h.handler = handler
 	return nil
 }
@@ -50,6 +53,15 @@ func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]interfac
 
 	if hd != nil {
 		return hd.reset(config)
+	}
+
+	if h.running {
+		handler, err := NewHandler(h.config)
+		if err != nil {
+			return err
+		}
+		h.running = true
+		h.handler = handler
 	}
 
 	return nil

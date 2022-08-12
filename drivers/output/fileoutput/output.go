@@ -54,11 +54,11 @@ func (a *FileOutput) Id() string {
 
 func (a *FileOutput) Start() error {
 	w := a.writer
-	if w == nil {
+	if w != nil {
 		return nil
 	}
-	return w.reset(a.config)
-
+	a.writer = new(FileWriter)
+	return a.writer.reset(a.config)
 }
 
 func (a *FileOutput) CheckSkill(skill string) bool {
