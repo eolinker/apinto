@@ -2,6 +2,7 @@ package http_router
 
 import (
 	"fmt"
+	router_http_manager "github.com/eolinker/apinto/v2/router-http-manager"
 	"github.com/eolinker/eosc/utils/config"
 	"reflect"
 
@@ -17,6 +18,7 @@ import (
 type HTTPRouterDriver struct {
 	configType    reflect.Type
 	pluginManager plugin.IPluginManager
+	routerManger  router_http_manager.IManger
 }
 
 //NewHTTPRouter 创建一个http路由驱动
@@ -25,7 +27,9 @@ func NewHTTPRouterDriver() *HTTPRouterDriver {
 	h := &HTTPRouterDriver{
 		configType: reflect.TypeOf(new(Config)),
 	}
+
 	bean.Autowired(&h.pluginManager)
+	bean.Autowired(&h.routerManger)
 	return h
 }
 

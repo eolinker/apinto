@@ -31,7 +31,7 @@ func initTestContext(address string) (http_service.IHttpContext, error) {
 		return nil, err
 	}
 	fast.Init(freq, addr, nil)
-	return http_context.NewContext(fast), nil
+	return http_context.NewContext(fast, 0), nil
 }
 
 type workers struct {

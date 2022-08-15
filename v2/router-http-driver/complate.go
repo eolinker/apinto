@@ -51,7 +51,7 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	timeOut := app.TimeOut()
 	for index := 0; index <= h.retry; index++ {
 
-		if time.Now().Sub(proxyTime) > h.timeOut {
+		if h.timeOut > 0 && time.Now().Sub(proxyTime) > h.timeOut {
 			return ErrorTimeoutComplete
 		}
 		node, err := balance.Select(ctx)

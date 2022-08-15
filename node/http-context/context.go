@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/eolinker/eosc/utils/config"
+	"net"
 	"strings"
 	"time"
 
@@ -28,27 +29,39 @@ type Context struct {
 	ctx                context.Context
 	completeHandler    eoscContext.CompleteHandler
 	finishHandler      eoscContext.FinishHandler
+	app                eoscContext.EoApp
+	balance            eoscContext.BalanceHandler
 	labels             map[string]string
+	port               int
+}
+
+func (ctx *Context) LocalIP() net.IP {
+	return ctx.fastHttpRequestCtx.LocalIP()
+}
+
+func (ctx *Context) LocalAddr() net.Addr {
+	return ctx.fastHttpRequestCtx.LocalAddr()
+}
+
+func (ctx *Context) LocalPort() int {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (ctx *Context) GetApp() eoscContext.EoApp {
-	//TODO implement me
-	panic("implement me")
+	return ctx.app
 }
 
 func (ctx *Context) SetApp(app eoscContext.EoApp) {
-	//TODO implement me
-	panic("implement me")
+	ctx.app = app
 }
 
 func (ctx *Context) GetBalance() eoscContext.BalanceHandler {
-	//TODO implement me
-	panic("implement me")
+	return ctx.balance
 }
 
 func (ctx *Context) SetBalance(handler eoscContext.BalanceHandler) {
-	//TODO implement me
-	panic("implement me")
+	ctx.balance = handler
 }
 
 func (ctx *Context) SetLabel(name, value string) {
@@ -138,7 +151,7 @@ func (ctx *Context) Request() http_service.IRequestReader {
 }
 
 //NewContext 创建Context
-func NewContext(ctx *fasthttp.RequestCtx) *Context {
+func NewContext(ctx *fasthttp.RequestCtx, port int) *Context {
 	id := uuid.NewV4()
 	requestID := id.String()
 	newCtx := &Context{
@@ -149,6 +162,7 @@ func NewContext(ctx *fasthttp.RequestCtx) *Context {
 		proxyRequests:      make([]http_service.IRequest, 0, 5),
 		response:           NewResponse(ctx),
 		labels:             make(map[string]string),
+		port:               port,
 	}
 	//记录请求时间
 	newCtx.WithValue("request_time", ctx.Time())

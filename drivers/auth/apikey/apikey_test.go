@@ -66,7 +66,7 @@ func TestHeaderAuthorization(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req))
+	err = worker.Auth(http_context.NewContext(req, 0))
 	if err != nil {
 		t.Error(err)
 		return
@@ -100,7 +100,7 @@ func TestQueryAuthorization(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req))
+	err = worker.Auth(http_context.NewContext(req, 0))
 
 	if err != nil {
 		t.Error(err)
@@ -154,7 +154,7 @@ func TestBodyAuthorization(t *testing.T) {
 		Response: *fasthttp.AcquireResponse(),
 	}
 	req.CopyTo(&context.Request)
-	err = worker.Auth(http_context.NewContext(context))
+	err = worker.Auth(http_context.NewContext(context, 0))
 	if err != nil {
 		t.Error(err)
 		return
@@ -207,7 +207,7 @@ func TestMultipartFormAuthorization(t *testing.T) {
 		Response: *fasthttp.AcquireResponse(),
 	}
 	req.CopyTo(&context.Request)
-	err = worker.Auth(http_context.NewContext(context))
+	err = worker.Auth(http_context.NewContext(context, 0))
 	if err != nil {
 		t.Error(err)
 		return
@@ -242,7 +242,7 @@ func TestFormAuthorization(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req))
+	err = worker.Auth(http_context.NewContext(req, 0))
 
 	if err != nil {
 		t.Error(err)

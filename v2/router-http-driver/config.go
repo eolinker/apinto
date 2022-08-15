@@ -15,6 +15,8 @@ type Config struct {
 	Template eosc.RequireId            `json:"template" yaml:"template" skill:"github.com/eolinker/apinto/scheme/http/http.ITemplate" required:"true" label:"插件模版"`
 	Disable  bool                      `json:"disable" yaml:"disable" label:"禁用路由"`
 	Plugins  map[string]*plugin.Config `json:"plugins" yaml:"plugins" label:"插件配置"`
+	Retry    int                       `json:"retry" label:"重试次数" yaml:"retry"`
+	TimeOut  int                       `json:"time_out" label:"超时时间"`
 }
 
 //Rule 规则

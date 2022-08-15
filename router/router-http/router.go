@@ -2,7 +2,6 @@ package router_http
 
 import (
 	http_context "github.com/eolinker/apinto/node/http-context"
-	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"sync"
@@ -36,12 +35,12 @@ type Router struct {
 }
 
 //NewRouter 新建路由树
-func NewRouter(routerFilter plugin.IPlugin) *Router {
+func NewRouter(routerFilter eocontext.IChain) *Router {
 
 	return &Router{
 		locker:       &sync.Mutex{},
 		data:         eosc.NewUntyped(),
-		routerFilter: routerFilter.Append(new(NotFond)),
+		routerFilter: routerFilter,
 	}
 }
 
@@ -54,7 +53,7 @@ func (r *Router) Count() int {
 //Handler 路由树的handler方法
 func (r *Router) Handler(requestCtx *fasthttp.RequestCtx) {
 	match := r.match
-	ctx := http_context.NewContext(requestCtx)
+	ctx := http_context.NewContext(requestCtx, 0)
 
 	if r.match != nil {
 		log.DebugF("router handler\n%s", requestCtx.Request.String())

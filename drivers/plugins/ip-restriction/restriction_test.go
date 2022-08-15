@@ -29,7 +29,7 @@ func initTestContext(address string) (http_service.IHttpContext, error) {
 		return nil, err
 	}
 	fast.Init(freq, addr, nil)
-	return http_context.NewContext(fast), nil
+	return http_context.NewContext(fast, 0), nil
 }
 func TestDoRestriction(t *testing.T) {
 	http_ctx, err := getContext("127.0.0.1:8080")

@@ -137,7 +137,7 @@ func TestJWT(t *testing.T) {
 			context.Request.Header.SetMethod(fasthttp.MethodGet)
 			context.Request.Header.Set("Content-Type", "multipart/form-data")
 			context.Request.SetRequestURI("/asd/asd/asd?jwt_token=" + test.token)
-			ctx := http_context.NewContext(context)
+			ctx := http_context.NewContext(context, 0)
 
 			err = jwtMoudule.Auth(ctx)
 

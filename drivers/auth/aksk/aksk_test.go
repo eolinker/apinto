@@ -71,7 +71,7 @@ func createTestContext() {
 	}
 	request1.CopyTo(&context1.Request)
 
-	Context1 := http_context.NewContext(context1)
+	Context1 := http_context.NewContext(context1, 0)
 
 	testContexts = append(testContexts, Context1)
 
@@ -99,7 +99,7 @@ func createTestContext() {
 	}
 	request2.CopyTo(&context2.Request)
 
-	Context2 := http_context.NewContext(context2)
+	Context2 := http_context.NewContext(context2, 0)
 	testContexts = append(testContexts, Context2)
 
 	//传输了不存在的ak
@@ -125,7 +125,7 @@ func createTestContext() {
 		Response: *fasthttp.AcquireResponse(),
 	}
 	request3.CopyTo(&context3.Request)
-	Context3 := http_context.NewContext(context3)
+	Context3 := http_context.NewContext(context3, 0)
 	testContexts = append(testContexts, Context3)
 }
 

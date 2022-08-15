@@ -4,7 +4,20 @@ import (
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
+	"github.com/eolinker/eosc/utils/config"
 )
+
+var (
+	ServiceSkill  string
+	TemplateSkill string
+)
+
+func init() {
+	var s IService
+	ServiceSkill = config.TypeNameOf(&s)
+	var t ITemplate
+	TemplateSkill = config.TypeNameOf(&t)
+}
 
 type IService interface {
 	eosc.IWorker

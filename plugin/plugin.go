@@ -8,10 +8,6 @@ type Config struct {
 	Config  interface{} `json:"config"`
 }
 
-type IPluginConfigMerge interface {
-	Merge(high map[string]*Config) map[string]*Config
-}
-
 type IPluginManager interface {
 	CreateRequest(id string, conf map[string]*Config) eocontext.IChain
 	//CreateUpstream(id string, conf map[string]*Config) IPlugin
