@@ -26,9 +26,9 @@ import (
 	proxy_rewriteV2 "github.com/eolinker/apinto/drivers/plugins/proxy_rewrite_v2"
 	rate_limiting "github.com/eolinker/apinto/drivers/plugins/rate-limiting"
 	response_rewrite "github.com/eolinker/apinto/drivers/plugins/response-rewrite"
-	http_router "github.com/eolinker/apinto/v2/router-http-driver"
-	service_http "github.com/eolinker/apinto/v2/service-http"
-	template "github.com/eolinker/apinto/v2/template"
+	http_router "github.com/eolinker/apinto/drivers/router/http-router"
+	service "github.com/eolinker/apinto/drivers/service"
+	template "github.com/eolinker/apinto/drivers/template"
 	//upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
 	plugin_manager "github.com/eolinker/apinto/plugin-manager"
 	"github.com/eolinker/eosc"
@@ -49,7 +49,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	template.Register(extenderRegister)
 
 	// service
-	service_http.Register(extenderRegister)
+	service.Register(extenderRegister)
 
 	////// upstream
 	//upstream_http.Register(extenderRegister)
