@@ -54,18 +54,18 @@ func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		return nil
 	}
 	h.config = config
-	hd := h.handler
-
-	if hd != nil {
-		return hd.reset(config)
-	}
 
 	if h.running {
+		hd := h.handler
+		if hd != nil {
+			return hd.reset(config)
+		}
+
 		handler, err := NewHandler(h.config)
 		if err != nil {
 			return err
 		}
-		h.running = true
+
 		h.handler = handler
 	}
 

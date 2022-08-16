@@ -40,10 +40,15 @@ func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	if a.isRunning {
 		w := a.writer
 		if w == nil {
-			a.writer = new(FileWriter)
-			w = a.writer
+			w = new(FileWriter)
 		}
-		return w.reset(cfg)
+
+		err = w.reset(cfg)
+		if err != nil {
+			return err
+		}
+		a.writer = w
+
 	}
 
 	return nil
@@ -69,10 +74,14 @@ func (a *FileOutput) Start() error {
 	w := a.writer
 	if w == nil {
 		w = new(FileWriter)
-		a.writer = w
 	}
 
-	return w.reset(a.config)
+	err := w.reset(a.config)
+	if err != nil {
+		return err
+	}
+	a.writer = w
+	return nil
 
 }
 

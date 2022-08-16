@@ -10,10 +10,11 @@ var _ output.IEntryOutput = (*Output)(nil)
 var _ eosc.IWorker = (*Output)(nil)
 
 type Output struct {
-	id       string
-	name     string
-	producer Producer
-	config   *ProducerConfig
+	id        string
+	name      string
+	producer  Producer
+	config    *ProducerConfig
+	isRunning bool
 }
 
 func (o *Output) Output(entry eosc.IEntry) error {
@@ -29,15 +30,19 @@ func (o *Output) Id() string {
 }
 
 func (o *Output) Start() error {
-
+	o.isRunning = true
 	p := o.producer
 	if p != nil {
 		return nil
 	}
 
-	o.producer = newTProducer(o.config)
-	o.producer.reset(o.config)
+	p = newTProducer(o.config)
 
+	err := p.reset(o.config)
+	if err != nil {
+		return err
+	}
+	o.producer = p
 	return nil
 }
 
@@ -53,9 +58,16 @@ func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 	}
 	o.config = cfg
 
-	p := o.producer
-	if p != nil {
-		return p.reset(cfg)
+	if o.isRunning {
+		p := o.producer
+		if p == nil {
+			p = newTProducer(o.config)
+		}
+		err = p.reset(o.config)
+		if err != nil {
+			return err
+		}
+		o.producer = p
 	}
 	return nil
 }

@@ -10,9 +10,10 @@ var _ output.IEntryOutput = (*NsqOutput)(nil)
 var _ eosc.IWorker = (*NsqOutput)(nil)
 
 type NsqOutput struct {
-	id     string
-	write  *Writer
-	config *Config
+	id        string
+	write     *Writer
+	config    *Config
+	isRunning bool
 }
 
 func (n *NsqOutput) Output(entry eosc.IEntry) error {
@@ -32,10 +33,19 @@ func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWor
 		return nil
 	}
 	n.config = cfg
-	w := n.write
-	if w != nil {
-		return w.reset(cfg)
+	if n.isRunning {
+		w := n.write
+		if w == nil {
+			w = NewWriter()
+		}
+
+		err = w.reset(cfg)
+		if err != nil {
+			return err
+		}
+		n.write = w
 	}
+
 	return nil
 }
 
@@ -52,11 +62,17 @@ func (n *NsqOutput) Id() string {
 }
 
 func (n *NsqOutput) Start() error {
+	n.isRunning = true
 	w := n.write
-	if w != nil {
-		return nil
+	if w == nil {
+		w = NewWriter()
 	}
-	n.write = NewWriter(n.config)
+	err := w.reset(n.config)
+	if err != nil {
+		return err
+	}
+	n.write = w
+
 	return nil
 }
 
