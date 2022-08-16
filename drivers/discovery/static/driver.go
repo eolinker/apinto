@@ -1,6 +1,10 @@
 package static
 
 import (
+	"fmt"
+	"github.com/eolinker/eosc/log"
+	"github.com/eolinker/eosc/utils/config"
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 
 	"github.com/eolinker/apinto/discovery"
@@ -26,12 +30,28 @@ func (d *driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
+func (d *driver) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
+}
+
 //Create 创建静态服务发现驱动的实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	s := &static{
-		id: id,
+
+	cfg, ok := v.(*Config)
+	if !ok {
+		val := reflect.ValueOf(v)
+		log.Debug("reflect", val.Kind(), val.Interface())
+		return nil, fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(v))
 	}
-	s.Reset(v, workers)
+ 
+	s := &static{
+		id:  id,
+		cfg: cfg,
+	}
 	return s, nil
 }
 

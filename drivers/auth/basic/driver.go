@@ -20,13 +20,14 @@ type driver struct {
 	configType reflect.Type
 }
 
-//ConfigType 返回http_proxy驱动配置的反射类型
+//ConfigType 返回basic驱动配置的反射类型
 func (d *driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
 //Create 创建http_proxy驱动的实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+
 	w := &basic{
 		id: id,
 	}

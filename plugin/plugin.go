@@ -1,6 +1,9 @@
 package plugin
 
-import "github.com/eolinker/eosc/eocontext"
+import (
+	"github.com/eolinker/eosc/eocontext"
+	"reflect"
+)
 
 //Config 普通插件配置，在router、service、upstream的插件格式
 type Config struct {
@@ -10,6 +13,8 @@ type Config struct {
 
 type IPluginManager interface {
 	CreateRequest(id string, conf map[string]*Config) eocontext.IChain
+	GetConfigType(name string) (reflect.Type, bool)
+
 	//CreateUpstream(id string, conf map[string]*Config) IPlugin
 }
 

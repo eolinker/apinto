@@ -16,9 +16,10 @@ var (
 )
 
 type static struct {
-	id      string
-	handler *HeathCheckHandler
-	cfg     *Config
+	id        string
+	handler   *HeathCheckHandler
+	isRunning bool
+	cfg       *Config
 }
 
 //Id 返回 worker id
@@ -30,6 +31,7 @@ func (s *static) Id() string {
 func (s *static) Start() error {
 
 	handler := s.handler
+	s.isRunning = true
 	if handler != nil {
 		return nil
 	}
@@ -48,15 +50,21 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 	if reflect.DeepEqual(cfg, s.cfg) {
 		return nil
 	}
-	ck := s.handler
-	if ck != nil {
-		return ck.reset(cfg)
+	s.cfg = cfg
+
+	if s.isRunning {
+		ck := s.handler
+		if ck != nil {
+			return ck.reset(cfg)
+		}
+		return s.Start()
 	}
 	return nil
 }
 
 //Stop 停止服务发现
 func (s *static) Stop() error {
+	s.isRunning = false
 	handler := s.handler
 	if handler == nil {
 		return nil

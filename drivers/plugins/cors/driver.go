@@ -35,6 +35,7 @@ func (d *Driver) ConfigType() reflect.Type {
 }
 
 func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+
 	conf, err := d.check(v)
 	if err != nil {
 		return nil, err

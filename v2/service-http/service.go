@@ -86,7 +86,7 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 
 	s.timeout = time.Duration(data.Timeout) * time.Millisecond
 	s.BalanceHandler = balanceHandler
-
+ 
 	return nil
 
 }

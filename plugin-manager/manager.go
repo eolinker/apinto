@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"reflect"
+
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
-	"reflect"
 )
 
 var (
@@ -29,8 +31,23 @@ type PluginManager struct {
 	workers         eosc.IWorkers
 }
 
+func (p *PluginManager) ConfigType() reflect.Type {
+	return reflect.TypeOf(new(PluginWorkerConfig))
+}
+
 func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config) eocontext.IChain {
+
 	return p.createChain(id, conf)
+}
+
+func (p *PluginManager) GetConfigType(name string) (reflect.Type, bool) {
+	log.Debug("plugin manager get config type:", p.plugins)
+	for _, plg := range p.plugins {
+		if name == plg.Name {
+			return plg.drive.ConfigType(), true
+		}
+	}
+	return nil, false
 }
 
 func (p *PluginManager) Id() string {

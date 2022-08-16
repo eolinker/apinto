@@ -18,7 +18,7 @@ func Register(register eosc.IExtenderDriverRegister) {
 type RouterDriverFactory struct {
 }
 
-func (r *RouterDriverFactory) Render() interface{} {
+func (h *RouterDriverFactory) Render() interface{} {
 	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
 	if err != nil {
 		return nil
@@ -28,8 +28,9 @@ func (r *RouterDriverFactory) Render() interface{} {
 
 //Create 创建http路由驱动
 func (r *RouterDriverFactory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
- 
+
 	return NewHTTPRouterDriver(), nil
+
 }
 
 //NewRouterDriverFactory 创建一个http路由驱动工厂

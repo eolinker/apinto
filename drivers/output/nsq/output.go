@@ -53,7 +53,7 @@ func (n *NsqOutput) Id() string {
 
 func (n *NsqOutput) Start() error {
 	w := n.write
-	if w != nil {
+	if w == nil {
 		return nil
 	}
 	w = NewWriter(n.config)

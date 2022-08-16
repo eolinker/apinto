@@ -14,11 +14,11 @@ type Driver struct {
 }
 
 func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-_, err := d.check(v)
-if err != nil {
-return err
-}
-return nil
+	_, err := d.check(v)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *Driver) check(v interface{}) (*Config, error) {

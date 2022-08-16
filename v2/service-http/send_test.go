@@ -23,6 +23,6 @@ func TestSend(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	node, _ := balanceHandler.Next()
+	node, _ := balanceHandler.Select(nil)
 	t.Log(node.Addr())
 }
