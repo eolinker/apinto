@@ -24,6 +24,11 @@ func Register(register eosc.IExtenderDriverRegister) {
 type factory struct {
 }
 
+func (f *factory) Render() interface{} {
+	//TODO implement me
+	panic("implement me")
+}
+
 //NewFactory 创建service_http驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
 	round_robin.Register()

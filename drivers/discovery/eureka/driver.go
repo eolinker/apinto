@@ -3,7 +3,6 @@ package eureka
 import (
 	"fmt"
 	"github.com/eolinker/eosc/utils/config"
-	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 	"sync"
 
@@ -28,14 +27,6 @@ type driver struct {
 //ConfigType 返回eureka驱动配置的反射类型
 func (d *driver) ConfigType() reflect.Type {
 	return d.configType
-}
-
-func (d *driver) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
-	if err != nil {
-		return nil
-	}
-	return render
 }
 
 //Create 创建eureka驱动实例

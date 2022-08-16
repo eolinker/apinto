@@ -10,10 +10,11 @@ var _ output.IEntryOutput = (*FileOutput)(nil)
 var _ eosc.IWorker = (*FileOutput)(nil)
 
 type FileOutput struct {
-	id     string
-	name   string
-	config *Config
-	writer *FileWriter
+	id        string
+	name      string
+	config    *Config
+	writer    *FileWriter
+	isRunning bool
 }
 
 func (a *FileOutput) Output(entry eosc.IEntry) error {
@@ -36,14 +37,20 @@ func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	}
 	a.config = cfg
 
-	w := a.writer
-	if w != nil {
+	if a.isRunning {
+		w := a.writer
+		if w == nil {
+			a.writer = new(FileWriter)
+			w = a.writer
+		}
 		return w.reset(cfg)
 	}
+
 	return nil
 }
 
 func (a *FileOutput) Stop() error {
+	a.isRunning = false
 	w := a.writer
 	if w != nil {
 		err := w.stop()
@@ -58,10 +65,13 @@ func (a *FileOutput) Id() string {
 }
 
 func (a *FileOutput) Start() error {
+	a.isRunning = true
 	w := a.writer
 	if w == nil {
-		return nil
+		w = new(FileWriter)
+		a.writer = w
 	}
+
 	return w.reset(a.config)
 
 }

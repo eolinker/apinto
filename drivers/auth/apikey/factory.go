@@ -2,6 +2,7 @@ package apikey
 
 import (
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 )
 
@@ -25,6 +26,13 @@ func (f *factory) Create(profession string, name string, label string, desc stri
 		driver:     driverName,
 		configType: reflect.TypeOf((*Config)(nil)),
 	}, nil
+}
+func (f *factory) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
 }
 
 //NewFactory 生成一个 auth_apiKey工厂
