@@ -13,8 +13,9 @@ type Output struct {
 	id   string
 	name string
 
-	config *Config
-	writer *SysWriter
+	config  *Config
+	writer  *SysWriter
+	running bool
 }
 
 func (s *Output) Output(entry eosc.IEntry) error {
@@ -34,6 +35,7 @@ func (s *Output) Start() error {
 	if w != nil {
 		return nil
 	}
+	s.running = true
 	writer, err := CreateTransporter(s.config)
 	if err != nil {
 		return err
@@ -55,6 +57,13 @@ func (s *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 	w := s.writer
 	if w != nil {
 		w.reset(cfg)
+	}
+	if s.running {
+		writer, err := CreateTransporter(s.config)
+		if err != nil {
+			return err
+		}
+		s.writer = writer
 	}
 	return nil
 }
