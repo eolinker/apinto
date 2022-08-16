@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
 	"io/ioutil"
 	"net/http"

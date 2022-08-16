@@ -3,7 +3,7 @@ package router_http
 import (
 	"github.com/eolinker/apinto/router"
 	"github.com/eolinker/apinto/service"
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 //IMatcher IMatcher接口实现了Match方法：根据http请求返回服务接口

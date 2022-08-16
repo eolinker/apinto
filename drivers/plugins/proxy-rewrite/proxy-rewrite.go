@@ -2,13 +2,15 @@ package proxy_rewrite
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/eocontext"
 	"regexp"
 
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
-var _ http_service.IFilter = (*ProxyRewrite)(nil)
+var _ http_service.HttpFilter = (*ProxyRewrite)(nil)
+var _ eocontext.IFilter = (*ProxyRewrite)(nil)
 
 type ProxyRewrite struct {
 	*Driver
@@ -20,7 +22,10 @@ type ProxyRewrite struct {
 	headers    map[string]string
 }
 
-func (p *ProxyRewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (p *ProxyRewrite) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return http_service.DoHttpFilter(p, ctx, next)
+}
+func (p *ProxyRewrite) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	err = p.rewrite(ctx)
 	if err != nil {
 		return err
@@ -68,7 +73,7 @@ func (p *ProxyRewrite) Start() error {
 	return nil
 }
 
-func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]interface{}) error {
+func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	conf, err := p.check(v)
 	if err != nil {
 		return err

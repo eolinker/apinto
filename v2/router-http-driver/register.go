@@ -3,6 +3,8 @@ package http_router
 import (
 	_ "github.com/eolinker/apinto/router/router-http"
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/utils/schema"
+	"reflect"
 )
 
 var name = "http_router"
@@ -16,10 +18,19 @@ func Register(register eosc.IExtenderDriverRegister) {
 type RouterDriverFactory struct {
 }
 
-//Create 创建http路由驱动
-func (h *RouterDriverFactory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
+func (h *RouterDriverFactory) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
+}
 
-	return NewHTTPRouter(), nil
+//Create 创建http路由驱动
+func (r *RouterDriverFactory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
+
+	return NewHTTPRouterDriver(), nil
+
 }
 
 //NewRouterDriverFactory 创建一个http路由驱动工厂

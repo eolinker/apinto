@@ -3,7 +3,6 @@ package consul
 import (
 	"fmt"
 	"github.com/eolinker/eosc/utils/config"
-	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 	"sync"
 
@@ -31,16 +30,8 @@ func (d *driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
-func (d *driver) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
-	if err != nil {
-		return nil
-	}
-	return render
-}
-
 //Create 创建consul驱动实例
-func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 	workerConfig, ok := v.(*Config)
 	if !ok {
 		return nil, fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(v))

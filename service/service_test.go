@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/log"
 	"reflect"
 	"testing"
 )

@@ -1,7 +1,6 @@
 package fileoutput
 
 import (
-	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 
 	"github.com/eolinker/eosc"
@@ -13,14 +12,6 @@ type Driver struct {
 
 func (d *Driver) ConfigType() reflect.Type {
 	return d.configType
-}
-
-func (d *Driver) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
-	if err != nil {
-		return nil
-	}
-	return render
 }
 
 func Check(v interface{}) (*Config, error) {
@@ -57,12 +48,13 @@ func Check(v interface{}) (*Config, error) {
 	return conf, nil
 }
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
 	cfg, err := Check(v)
 	if err != nil {
 		return nil, err
 	}
+
 	worker := &FileOutput{
 		id:     id,
 		name:   name,

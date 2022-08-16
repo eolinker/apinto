@@ -6,7 +6,7 @@ import (
 	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/valyala/fasthttp"
 	"net"
 	"testing"
@@ -31,7 +31,7 @@ func initTestContext(address string) (http_service.IHttpContext, error) {
 		return nil, err
 	}
 	fast.Init(freq, addr, nil)
-	return http_context.NewContext(fast), nil
+	return http_context.NewContext(fast, 0), nil
 }
 
 type workers struct {
@@ -82,7 +82,7 @@ func TestFilter(t *testing.T) {
 	if err != nil {
 		t.Errorf("create handler error : %v", err)
 	}
-	h, ok := g.(http_service.IFilter)
+	h, ok := g.(http_service.HttpFilter)
 	if !ok {
 		t.Errorf("parse filter error")
 		return

@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 )
 
@@ -17,6 +18,13 @@ func Register(register eosc.IExtenderDriverRegister) {
 type Factory struct {
 }
 
+func (f *Factory) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
+}
 func NewFactory() *Factory {
 	return &Factory{}
 }

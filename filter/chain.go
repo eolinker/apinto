@@ -1,23 +1,17 @@
 package filter
 
-import http_service "github.com/eolinker/eosc/http-service"
+import (
+	"github.com/eolinker/eosc/eocontext"
+)
 
 type IChainReset interface {
-	Reset(filters ...http_service.IFilter)
-}
-
-type IChain interface {
-	http_service.IChain
-	ToFilter() http_service.IFilter
-	Append(filters ...http_service.IFilter) IChain
-	Insert(filters ...http_service.IFilter) IChain
+	Reset(filters ...eocontext.IFilter)
 }
 
 type IChainHandler interface {
-	IChain
 	IChainReset
 }
 
-func NewChain(filters []http_service.IFilter) IChainHandler {
+func NewChain(filters []eocontext.IFilter) IChainHandler {
 	return createHandler(filters)
 }

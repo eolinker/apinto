@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 type jwtToken struct {

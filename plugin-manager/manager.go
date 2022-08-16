@@ -4,17 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/eolinker/eosc/utils/schema"
+
 	"reflect"
 
 	"github.com/eolinker/apinto/plugin"
-
-	"github.com/eolinker/eosc/common/bean"
-
 	"github.com/eolinker/eosc"
-
-	"github.com/eolinker/apinto/filter"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/common/bean"
+	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 )
 
@@ -39,20 +35,8 @@ func (p *PluginManager) ConfigType() reflect.Type {
 	return reflect.TypeOf(new(PluginWorkerConfig))
 }
 
-func (p *PluginManager) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
-	p.Reset(v, workers)
-	return p, nil
-}
+func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config) eocontext.IChain {
 
-func (p *PluginManager) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*PluginWorkerConfig)(nil)), nil)
-	if err != nil {
-		return nil
-	}
-	return render
-}
-
-func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config) plugin.IPlugin {
 	return p.createChain(id, conf)
 }
 
@@ -74,7 +58,7 @@ func (p *PluginManager) Start() error {
 	return nil
 }
 
-func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 
 	plugins, err := p.check(conf)
 	if err != nil {
@@ -89,7 +73,7 @@ func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]inter
 		if !ok {
 			continue
 		}
-		v.IChainHandler.Reset(p.createFilters(v.conf)...)
+		v.Filters = p.createFilters(v.conf)
 	}
 
 	return nil
@@ -103,27 +87,23 @@ func (p *PluginManager) CheckSkill(skill string) bool {
 	return false
 }
 
-func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []http_service.IFilter {
-	filters := make([]http_service.IFilter, 0, len(conf))
+func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []eocontext.IFilter {
+	filters := make([]eocontext.IFilter, 0, len(conf))
 	plugins := p.plugins
 	for _, plg := range plugins {
-		if plg.Status == StatusDisable || plg.Status == "" {
-			// 当插件类型不匹配，跳过
+		if plg.Status == StatusDisable {
+			// 禁用插件，跳过
 			continue
 		}
 		c := plg.Config
 		if v, ok := conf[plg.Name]; ok {
 			if v.Disable {
-				// 不启用该插件
+				// 局部禁用
 				continue
 			}
-			if plg.Status != StatusGlobal && plg.Status != StatusEnable {
-				continue
+			if v.Config != nil {
+				c = v.Config
 			}
-			if v.Config == nil && plg.Status != StatusGlobal {
-				continue
-			}
-			c = v.Config
 		} else if plg.Status != StatusGlobal {
 			continue
 		}
@@ -137,7 +117,7 @@ func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []http_ser
 			log.Error("plg manager: fail to createFilters filter,error is ", err)
 			continue
 		}
-		fi, ok := worker.(http_service.IFilter)
+		fi, ok := worker.(eocontext.IFilter)
 		if !ok {
 			log.Error("extender ", plg.ID, " not plg for http-service.Filter")
 			continue
@@ -147,15 +127,15 @@ func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []http_ser
 	return filters
 }
 
-func (p *PluginManager) createChain(id string, conf map[string]*plugin.Config) plugin.IPlugin {
-	chain := filter.NewChain(p.createFilters(conf))
-
-	obj, has := p.pluginObjs.Del(id)
-	if has {
-		o := obj.(*PluginObj)
-		o.Destroy()
+func (p *PluginManager) createChain(id string, conf map[string]*plugin.Config) *PluginObj {
+	chain := p.createFilters(conf)
+	obj, has := p.pluginObjs.Get(id)
+	if !has {
+		obj = NewPluginObj(chain, id, conf)
+		p.pluginObjs.Set(id, obj)
+	} else {
+		obj.(*PluginObj).Filters = chain
 	}
-	obj = NewPluginObj(chain, id, conf, p.pluginObjs)
 
 	return obj.(*PluginObj)
 }

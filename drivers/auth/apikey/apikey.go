@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
 	"github.com/eolinker/apinto/auth"
 	"github.com/eolinker/eosc"
@@ -150,7 +150,7 @@ func (a *apikey) Start() error {
 }
 
 //Reset 重新加载配置
-func (a *apikey) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (a *apikey) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))

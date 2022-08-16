@@ -3,12 +3,15 @@ package proxy_rewrite_v2
 import (
 	"fmt"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
+
 	"regexp"
 	"strings"
 )
 
-var _ http_service.IFilter = (*ProxyRewrite)(nil)
+var _ eocontext.IFilter = (*ProxyRewrite)(nil)
+var _ http_service.HttpFilter = (*ProxyRewrite)(nil)
 
 const (
 	typeNone   = "none"
@@ -37,7 +40,11 @@ type ProxyRewrite struct {
 	headers     map[string]string
 }
 
-func (p *ProxyRewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
+func (p *ProxyRewrite) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return http_service.DoHttpFilter(p, ctx, next)
+}
+
+func (p *ProxyRewrite) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	isPathMatch := p.rewrite(ctx)
 	if p.notMatchErr && !isPathMatch {
 		err := fmt.Errorf(notMatchErrInfo, ctx.Proxy().URI().Path())
@@ -110,7 +117,7 @@ func (p *ProxyRewrite) Start() error {
 	return nil
 }
 
-func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]interface{}) error {
+func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	conf, err := p.check(v)
 	if err != nil {
 		return err

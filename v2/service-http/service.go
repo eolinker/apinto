@@ -1,47 +1,52 @@
 package service_http
 
 import (
-	"errors"
 	"fmt"
 	"github.com/eolinker/apinto/discovery"
-	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/upstream/balance"
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
+	"reflect"
 	"strings"
 	"time"
 )
 
-var (
-	ErrorNeedUpstream = errors.New("need upstream")
+type Service struct {
+	eocontext.BalanceHandler
+	app discovery.IApp
 
-	ErrorInvalidDiscovery = errors.New("invalid Discovery")
-)
+	scheme  string
+	timeout time.Duration
 
-type serviceWorker struct {
-	Service
-	id     string
-	name   string
-	driver string
+	lastConfig *Config
 }
 
-//Id 返回服务实例 worker id
-func (s *serviceWorker) Id() string {
-	return s.id
+func (s *Service) Nodes() []eocontext.INode {
+	return s.app.Nodes()
 }
 
-func (s *serviceWorker) Start() error {
-	return nil
+func (s *Service) Scheme() string {
+	return s.scheme
+}
+
+func (s *Service) TimeOut() time.Duration {
+	return s.timeout
 }
 
 //Reset 重置服务实例的配置
-func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+
 	data, ok := conf.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
 	data.rebuild()
+	if reflect.DeepEqual(data, s.lastConfig) {
+		return nil
+	}
+	s.lastConfig = data
 
 	log.Debug("serviceWorker:", data.String())
 	if data.Discovery == "" && len(data.Nodes) == 0 {
@@ -79,25 +84,9 @@ func (s *serviceWorker) Reset(conf interface{}, workers map[eosc.RequireId]inter
 		return err
 	}
 
-	s.Service.timeout = time.Duration(data.Timeout) * time.Millisecond
-
-	s.Service.retry = data.Retry
-
-	log.Debug("reset service:", data.Plugins)
-	s.Service.reset(data.Scheme, apps, balanceHandler, data.Plugins)
-
+	s.timeout = time.Duration(data.Timeout) * time.Millisecond
+	s.BalanceHandler = balanceHandler
+ 
 	return nil
 
-}
-
-func (s *serviceWorker) Stop() error {
-	for _, h := range s.handlers.List() {
-		h.Destroy()
-	}
-	return nil
-}
-
-//CheckSkill 检查目标能力是否存在
-func (s *serviceWorker) CheckSkill(skill string) bool {
-	return service.CheckSkill(skill)
 }

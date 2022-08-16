@@ -6,12 +6,16 @@ import (
 	"reflect"
 )
 
+var _ output.IEntryOutput = (*Output)(nil)
+var _ eosc.IWorker = (*Output)(nil)
+
 type Output struct {
 	id   string
 	name string
 
-	config *Config
-	writer *SysWriter
+	config  *Config
+	writer  *SysWriter
+	running bool
 }
 
 func (s *Output) Output(entry eosc.IEntry) error {
@@ -27,19 +31,19 @@ func (s *Output) Id() string {
 }
 
 func (s *Output) Start() error {
+	s.running = true
 	w := s.writer
-	if w != nil {
-		return nil
+	if w == nil {
+		writer, err := CreateTransporter(s.config)
+		if err != nil {
+			return err
+		}
+		s.writer = writer
 	}
-	writer, err := CreateTransporter(s.config)
-	if err != nil {
-		return err
-	}
-	s.writer = writer
 	return nil
 }
 
-func (s *Output) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (s *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg, err := check(conf)
 	if err != nil {
 		return err
@@ -49,9 +53,17 @@ func (s *Output) Reset(conf interface{}, workers map[eosc.RequireId]interface{})
 		return nil
 	}
 	s.config = cfg
-	w := s.writer
-	if w != nil {
-		w.reset(cfg)
+
+	if s.running {
+		w := s.writer
+		if w != nil {
+			return w.reset(cfg)
+		}
+		writer, err := CreateTransporter(s.config)
+		if err != nil {
+			return err
+		}
+		s.writer = writer
 	}
 	return nil
 }

@@ -2,7 +2,6 @@ package circuit_breaker
 
 import (
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 )
 
@@ -14,7 +13,7 @@ type Driver struct {
 	configType reflect.Type
 }
 
-func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]interface{}) error {
+func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	_, err := d.check(v)
 	if err != nil {
 		return err
@@ -40,15 +39,7 @@ func (d *Driver) ConfigType() reflect.Type {
 	return d.configType
 }
 
-func (d *Driver) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
-	if err != nil {
-		return nil
-	}
-	return render
-}
-
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 	conf, err := d.check(v)
 	if err != nil {
 		return nil, err

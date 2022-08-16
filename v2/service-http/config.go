@@ -25,12 +25,6 @@ func (c *Config) String() string {
 	data, _ := json.Marshal(c)
 	return string(data)
 }
-
-var validScheme = []string{
-	"HTTP",
-	"HTTPS",
-}
-
 func (c *Config) rebuild() {
 	if c.Retry < 0 {
 		c.Retry = 0
@@ -38,17 +32,9 @@ func (c *Config) rebuild() {
 	if c.Timeout < 0 {
 		c.Timeout = 0
 	}
-
-	if !checkValidParams(strings.ToUpper(c.Scheme), validScheme) {
+	c.Scheme = strings.ToLower(c.Scheme)
+	if c.Scheme != "http" && c.Scheme != "https" {
 		c.Scheme = "http"
 	}
-}
 
-func checkValidParams(data string, params []string) bool {
-	for _, p := range params {
-		if data == p {
-			return true
-		}
-	}
-	return false
 }

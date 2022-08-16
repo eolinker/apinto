@@ -1,6 +1,7 @@
 package extra_params
 
 import (
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 
 	"github.com/eolinker/eosc"
@@ -17,6 +18,13 @@ func Register(register eosc.IExtenderDriverRegister) {
 type Factory struct {
 }
 
+func (f *Factory) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
+}
 func NewFactory() *Factory {
 	return &Factory{}
 }
