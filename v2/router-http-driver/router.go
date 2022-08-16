@@ -20,6 +20,12 @@ type HttpRouter struct {
 	routerManager router_http_manager.IManger
 }
 
+func (h *HttpRouter) Destroy() error {
+
+	h.routerManager.Delete(h.id)
+	return nil
+}
+
 func (h *HttpRouter) Id() string {
 	return h.id
 }
@@ -89,6 +95,7 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	return nil
 }
 func (h *HttpRouter) Stop() error {
+	h.Destroy()
 	return nil
 }
 
