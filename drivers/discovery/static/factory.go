@@ -2,6 +2,7 @@ package static
 
 import (
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 )
 
@@ -18,6 +19,14 @@ type factory struct {
 //NewFactory 创建静态服务发现的驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
 	return &factory{}
+}
+
+func (d *factory) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
 }
 
 //Create 创建静态服务发现驱动

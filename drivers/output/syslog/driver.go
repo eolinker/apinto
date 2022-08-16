@@ -2,7 +2,6 @@ package syslog
 
 import (
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 )
 
@@ -12,14 +11,6 @@ type Driver struct {
 
 func (d *Driver) ConfigType() reflect.Type {
 	return d.configType
-}
-
-func (d *Driver) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
-	if err != nil {
-		return nil
-	}
-	return render
 }
 
 func check(v interface{}) (*Config, error) {
