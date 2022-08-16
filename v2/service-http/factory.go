@@ -2,6 +2,7 @@ package service_http
 
 import (
 	round_robin "github.com/eolinker/apinto/upstream/round-robin"
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 
 	"github.com/eolinker/apinto/drivers/discovery/static"
@@ -25,8 +26,11 @@ type factory struct {
 }
 
 func (f *factory) Render() interface{} {
-	//TODO implement me
-	panic("implement me")
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
 }
 
 //NewFactory 创建service_http驱动工厂

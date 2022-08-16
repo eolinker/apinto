@@ -42,7 +42,7 @@ func (t *Template) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 		return eosc.ErrorConfigIsNil
 	}
 
-	t.proxyDatas.Reset(cf.plugins)
+	t.proxyDatas.Reset(cf.Plugins)
 
 	return nil
 }
