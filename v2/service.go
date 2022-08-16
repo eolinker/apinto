@@ -32,5 +32,5 @@ type ITemplate interface {
 
 //CheckSkill 检查目标技能是否符合
 func CheckSkill(skill string) bool {
-	return skill == "github.com/eolinker/apinto/service.service.IService"
+	return skill == ServiceSkill
 }
