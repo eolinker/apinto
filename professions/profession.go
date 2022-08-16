@@ -18,7 +18,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Name:         "router",
 			Label:        "路由",
 			Desc:         "路由",
-			Dependencies: []string{"service"},
+			Dependencies: []string{"service", "template"},
 			AppendLabels: []string{"host", "target", "listen", "disable"},
 			Drivers: []*eosc.DriverConfig{
 				{
@@ -44,6 +44,22 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Name:  "http",
 					Label: "service",
 					Desc:  "服务",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		},
+		{
+			Name:         "template",
+			Label:        "模版",
+			Desc:         "模版",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:apinto:plugin_template",
+					Name:  "plugin_template",
+					Label: "插件模版",
+					Desc:  "插件模版",
 				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
