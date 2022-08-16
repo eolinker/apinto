@@ -3,13 +3,15 @@ package http_router
 import (
 	"fmt"
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
+	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/template"
+	"github.com/eolinker/eosc/common/bean"
+	trafficConfig "github.com/eolinker/eosc/config"
+	"github.com/eolinker/eosc/log"
+	"github.com/eolinker/eosc/traffic"
 	"github.com/eolinker/eosc/utils/config"
 	"reflect"
-
-	"github.com/eolinker/apinto/plugin"
-	"github.com/eolinker/eosc/common/bean"
 
 	"github.com/eolinker/eosc"
 )
@@ -17,6 +19,7 @@ import (
 //HTTPRouterDriver 实现github.com/eolinker/eosc.eosc.IProfessionDriver接口
 type HTTPRouterDriver struct {
 	configType    reflect.Type
+	routerManager manager.IManger
 	pluginManager plugin.IPluginManager
 	routerManger  manager.IManger
 }
@@ -35,17 +38,30 @@ func NewHTTPRouterDriver() *HTTPRouterDriver {
 	h := &HTTPRouterDriver{
 		configType: reflect.TypeOf(new(Config)),
 	}
+	var tf traffic.ITraffic
+	var cfg *trafficConfig.ListensMsg
+	var pluginManager plugin.IPluginManager
 
-	bean.Autowired(&h.pluginManager)
-	bean.Autowired(&h.routerManger)
+	bean.Autowired(&tf)
+	bean.Autowired(&cfg)
+	bean.Autowired(&pluginManager)
+
+	bean.AddInitializingBeanFunc(func() {
+		log.Debug("init router manager")
+		h.pluginManager = pluginManager
+		h.routerManager = manager.NewManager(tf, cfg, pluginManager.CreateRequest("global", map[string]*plugin.Config{}))
+
+	})
 	return h
 }
 
 //Create 创建一个http路由驱动实例
 func (h *HTTPRouterDriver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 	r := &HttpRouter{
-		id:   id,
-		name: name,
+		id:            id,
+		name:          name,
+		routerManager: h.routerManager,
+		pluginManager: h.pluginManager,
 	}
 
 	err := r.reset(v, workers)

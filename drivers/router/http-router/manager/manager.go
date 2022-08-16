@@ -65,6 +65,7 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters
 	log.Debug("new router manager")
 	m := &Manager{
 		globalFilters: globalFilters,
+		routersData:   new(RouterData),
 	}
 
 	if tf.IsStop() {
@@ -76,8 +77,7 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters
 	for _, cfg := range listenCfg.Listens {
 		port := int(cfg.Port)
 		var ln net.Listener
-
-		log.Debug("new http service ", port, cfg, ln.Addr())
+		log.Debug("read listener:", cfg.Scheme, ":", port)
 		if cfg.Scheme == "https" {
 			ln = tf.ListenTcp(port, traffic.Https)
 			if ln == nil {
@@ -101,6 +101,7 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters
 
 		wg.Add(1)
 		go func(ln net.Listener, port int) {
+			log.Debug("fast server:", port, ln.Addr())
 			wg.Done()
 			fasthttp.Serve(ln, func(ctx *fasthttp.RequestCtx) {
 				m.FastHandler(port, ctx)
@@ -111,6 +112,7 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters
 	return m
 }
 func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
+	log.Debug("fastHandler:", port)
 	httpContext := http_context.NewContext(ctx, port)
 	r, has := m.matcher.Match(port, httpContext.Request())
 	if !has {
@@ -118,6 +120,7 @@ func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 		httpContext.SetCompleteHandler(notFound)
 		m.globalFilters.DoChain(httpContext)
 	} else {
+		log.Debug("match has:", port)
 		r.ServeHTTP(httpContext)
 	}
 }

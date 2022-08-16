@@ -4,17 +4,11 @@ import (
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
-	"github.com/eolinker/eosc/utils/config"
 )
 
-var (
-	TemplateSkill string
+const (
+	TemplateSkill = "github.com/eolinker/apinto/template.template.ITemplate"
 )
-
-func init() {
-	var t ITemplate
-	TemplateSkill = config.TypeNameOf(&t)
-}
 
 type ITemplate interface {
 	eosc.IWorker

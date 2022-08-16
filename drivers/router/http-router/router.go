@@ -13,13 +13,11 @@ import (
 )
 
 type HttpRouter struct {
-	id   string
-	name string
-
-	handler *Handler
-
-	pluginManager plugin.IPluginManager
+	id            string
+	name          string
 	routerManager manager.IManger
+	pluginManager plugin.IPluginManager
+	handler       *Handler
 }
 
 func (h *HttpRouter) Destroy() error {
