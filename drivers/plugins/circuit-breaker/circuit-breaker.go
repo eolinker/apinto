@@ -3,10 +3,14 @@ package circuit_breaker
 import (
 	"encoding/json"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"strconv"
 	"time"
 )
+
+var _ eocontext.IFilter = (*CircuitBreaker)(nil)
+var _ http_service.HttpFilter = (*CircuitBreaker)(nil)
 
 type CircuitBreaker struct {
 	*Driver
@@ -29,16 +33,16 @@ func (c *CircuitBreaker) Start() error {
 	return nil
 }
 
-func (c *CircuitBreaker) Reset(v interface{}, workers map[eosc.RequireId]interface{}) error {
-	conf, err := c.check(v)
-	if err != nil {
-		return err
-	}
+func (c *CircuitBreaker) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+conf, err := c.check(v)
+if err != nil {
+return err
+}
 
-	c.counter = newCircuitCount()
-	c.conf = conf
+c.counter = newCircuitCount()
+c.conf = conf
 
-	return nil
+return nil
 }
 
 func (c *CircuitBreaker) Stop() error {
@@ -53,8 +57,10 @@ func (c *CircuitBreaker) Destroy() {
 func (c *CircuitBreaker) CheckSkill(skill string) bool {
 	return http_service.FilterSkillName == skill
 }
-
-func (c *CircuitBreaker) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (c *CircuitBreaker) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return http_service.DoHttpFilter(c, ctx, next)
+}
+func (c *CircuitBreaker) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
 	isContinue, err := c.access(ctx)
 	if !isContinue {
 		if err != nil {
@@ -67,7 +73,7 @@ func (c *CircuitBreaker) DoFilter(ctx http_service.IHttpContext, next http_servi
 		err = next.DoChain(ctx)
 	}
 	if err != nil {
-		return
+		return err
 	}
 
 	return c.proxy(ctx)

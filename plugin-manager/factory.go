@@ -21,13 +21,6 @@ func Register(register eosc.IExtenderDriverRegister) {
 type PluginFactory struct {
 }
 
-func (f *PluginFactory) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*PluginWorkerConfig)(nil)), nil)
-	if err != nil {
-		return nil
-	}
-	return render
-}
 func NewPluginFactory() *PluginFactory {
 	return &PluginFactory{}
 }
@@ -35,12 +28,15 @@ func NewPluginFactory() *PluginFactory {
 func (f *PluginFactory) Check(v interface{}, workers map[eosc.RequireId]interface{}) error {
 	return nil
 }
-
-func (p *PluginManager) ConfigType() reflect.Type {
-	return reflect.TypeOf(new(PluginWorkerConfig))
+func (f *PluginFactory) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*PluginWorkerConfig)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
 }
 
-func (p *PluginManager) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+func (p *PluginManager) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 	p.Reset(v, workers)
 	return p, nil
 }

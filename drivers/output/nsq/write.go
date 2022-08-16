@@ -14,10 +14,9 @@ type Writer struct {
 	lock sync.Mutex
 }
 
-func NewWriter(conf *Config) *Writer {
+func NewWriter() *Writer {
 
 	w := &Writer{}
-	w.reset(conf)
 	return w
 }
 

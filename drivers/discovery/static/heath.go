@@ -29,6 +29,7 @@ func (s *HeathCheckHandler) reset(cfg *Config) error {
 			s.checker = nil
 			checker.Stop()
 		}
+		return nil
 	}
 	checker := s.checker
 	if checker == nil {

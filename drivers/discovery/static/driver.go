@@ -1,6 +1,9 @@
 package static
 
 import (
+	"fmt"
+	"github.com/eolinker/eosc/log"
+	"github.com/eolinker/eosc/utils/config"
 	"reflect"
 
 	"github.com/eolinker/apinto/discovery"
@@ -27,16 +30,24 @@ func (d *driver) ConfigType() reflect.Type {
 }
 
 //Create 创建静态服务发现驱动的实例
-func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
-	s := &static{
-		id: id,
+func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+
+	cfg, ok := v.(*Config)
+	if !ok {
+		val := reflect.ValueOf(v)
+		log.Debug("reflect", val.Kind(), val.Interface())
+		return nil, fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(v))
 	}
-	s.Reset(v, workers)
+
+	s := &static{
+		id:  id,
+		cfg: cfg,
+	}
 	return s, nil
 }
 
 func CreateAnonymous(conf *Config) discovery.IDiscovery {
 	s := &static{}
-	s.reset(conf)
+
 	return s
 }

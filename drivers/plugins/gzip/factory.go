@@ -20,10 +20,6 @@ func Register(register eosc.IExtenderDriverRegister) {
 type Factory struct {
 }
 
-func NewFactory() *Factory {
-	return &Factory{}
-}
-
 func (f *Factory) Render() interface{} {
 	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
 	if err != nil {
@@ -31,6 +27,11 @@ func (f *Factory) Render() interface{} {
 	}
 	return render
 }
+
+func NewFactory() *Factory {
+	return &Factory{}
+}
+
 func (f *Factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 	d := &Driver{
 		profession: profession,

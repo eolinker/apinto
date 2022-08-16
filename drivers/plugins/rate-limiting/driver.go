@@ -13,7 +13,7 @@ type Driver struct {
 	configType reflect.Type
 }
 
-func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]interface{}) error {
+func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	_, err := d.check(v)
 	if err != nil {
 		return err
@@ -24,6 +24,7 @@ func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]interface{}) er
 func (d *Driver) ConfigType() reflect.Type {
 	return d.configType
 }
+
 func (d *Driver) check(v interface{}) (*Config, error) {
 	conf, ok := v.(*Config)
 	if !ok {
@@ -32,7 +33,7 @@ func (d *Driver) check(v interface{}) (*Config, error) {
 	return conf, nil
 }
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 	conf, err := d.check(v)
 	if err != nil {
 		return nil, err

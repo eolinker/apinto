@@ -3,6 +3,7 @@ package balance
 import (
 	"errors"
 	"fmt"
+	eoscContext "github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/discovery"
@@ -16,12 +17,7 @@ var (
 
 //IBalanceFactory 实现了负载均衡算法工厂
 type IBalanceFactory interface {
-	Create(app discovery.IApp) (IBalanceHandler, error)
-}
-
-//IBalanceHandler 实现了负载均衡算法
-type IBalanceHandler interface {
-	Next() (discovery.INode, error)
+	Create(app discovery.IApp) (eoscContext.BalanceHandler, error)
 }
 
 //IBalanceFactoryRegister 实现了负载均衡算法工厂管理器

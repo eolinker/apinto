@@ -25,6 +25,7 @@ func (f *Factory) Render() interface{} {
 	}
 	return render
 }
+
 func NewFactory() *Factory {
 	return &Factory{}
 }

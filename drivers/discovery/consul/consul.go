@@ -65,7 +65,7 @@ func (c *consul) Start() error {
 }
 
 //Reset 重置consul实例配置
-func (c *consul) Reset(cfg interface{}, workers map[eosc.RequireId]interface{}) error {
+func (c *consul) Reset(cfg interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	workerConfig, ok := cfg.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(cfg))

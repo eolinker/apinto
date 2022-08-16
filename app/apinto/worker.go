@@ -27,7 +27,8 @@ import (
 	rate_limiting "github.com/eolinker/apinto/drivers/plugins/rate-limiting"
 	response_rewrite "github.com/eolinker/apinto/drivers/plugins/response-rewrite"
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
-	service_http "github.com/eolinker/apinto/drivers/service/service-http"
+	service "github.com/eolinker/apinto/drivers/service"
+	template "github.com/eolinker/apinto/drivers/template"
 	//upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
 	plugin_manager "github.com/eolinker/apinto/plugin-manager"
 	"github.com/eolinker/eosc"
@@ -45,9 +46,10 @@ func registerInnerExtenders() {
 func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	// router
 	http_router.Register(extenderRegister)
+	template.Register(extenderRegister)
 
 	// service
-	service_http.Register(extenderRegister)
+	service.Register(extenderRegister)
 
 	////// upstream
 	//upstream_http.Register(extenderRegister)

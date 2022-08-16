@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"github.com/eolinker/eosc/utils/config"
 
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
 	"github.com/eolinker/apinto/auth"
 	"github.com/eolinker/eosc"
 )
+
+var _ auth.IAuth = (*jwt)(nil)
 
 //supportTypes 当前驱动支持的authorization type值
 var supportTypes = []string{
@@ -31,7 +33,7 @@ func (j *jwt) Start() error {
 	return nil
 }
 
-func (j *jwt) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (j *jwt) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	c, ok := conf.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))

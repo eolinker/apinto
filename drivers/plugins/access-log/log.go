@@ -1,12 +1,16 @@
 package access_log
 
 import (
-	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
-	"github.com/eolinker/eosc/log"
 	http_entry "github.com/eolinker/apinto/http-entry"
 	"github.com/eolinker/apinto/output"
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/eosc/log"
 )
+
+var _ eocontext.IFilter = (*accessLog)(nil)
+var _ http_service.HttpFilter = (*accessLog)(nil)
 
 type accessLog struct {
 	*Driver
@@ -14,7 +18,11 @@ type accessLog struct {
 	output []output.IEntryOutput
 }
 
-func (l *accessLog) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (l *accessLog) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return http_service.DoHttpFilter(l, ctx, next)
+}
+
+func (l *accessLog) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	err = next.DoChain(ctx)
 	if err != nil {
 		log.Error(err)
@@ -42,7 +50,7 @@ func (l *accessLog) Start() error {
 	return nil
 }
 
-func (l *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (l *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	c, err := l.check(conf)
 	if err != nil {
 		return err

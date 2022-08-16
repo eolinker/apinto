@@ -1,6 +1,9 @@
 package discovery
 
-import "errors"
+import (
+	"errors"
+	"github.com/eolinker/eosc/eocontext"
+)
 
 var (
 	ErrDiscoveryDown = errors.New("discovery down")
@@ -32,35 +35,22 @@ type IAppContainer interface {
 }
 
 //INode 节点接口
-type INode interface {
-	IAttributes
-	ID() string
-	IP() string
-	Port() int
-	Addr() string
-	Status() NodeStatus
-	Up()
-	Down()
-	Leave()
-}
+type INode = eocontext.INode
 
 //Attrs 属性集合
-type Attrs map[string]string
+type Attrs = eocontext.Attrs
 
 //IAttributes 属性接口
-type IAttributes interface {
-	GetAttrs() Attrs
-	GetAttrByName(name string) (string, bool)
-}
+type IAttributes = eocontext.IAttributes
 
 //NodeStatus 节点状态类型
-type NodeStatus int
+type NodeStatus = eocontext.NodeStatus
 
 const (
 	//Running 节点运行中状态
-	Running NodeStatus = 1
+	Running = eocontext.Running
 	//Down 节点不可用状态
-	Down NodeStatus = 2
+	Down = eocontext.Down
 	//Leave 节点离开状态
-	Leave NodeStatus = 3
+	Leave = eocontext.Leave
 )

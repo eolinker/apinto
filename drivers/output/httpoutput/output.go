@@ -5,10 +5,14 @@ import (
 	"github.com/eolinker/eosc"
 )
 
+var _ output.IEntryOutput = (*HttpOutput)(nil)
+var _ eosc.IWorker = (*HttpOutput)(nil)
+
 type HttpOutput struct {
 	id      string
 	config  *Config
 	handler *Handler
+	running bool
 }
 
 func (h *HttpOutput) Output(entry eosc.IEntry) error {
@@ -29,16 +33,20 @@ func (h *HttpOutput) Start() error {
 	if hd != nil {
 		return nil
 	}
+	h.running = true
 	handler, err := NewHandler(h.config)
 	if err != nil {
 		return err
 	}
+
 	h.handler = handler
 	return nil
 }
 
-func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) (err error) {
+func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
+
 	config, err := Check(conf)
+
 	if err != nil {
 		return err
 	}
@@ -46,10 +54,19 @@ func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]interfac
 		return nil
 	}
 	h.config = config
-	hd := h.handler
 
-	if hd != nil {
-		return hd.reset(config)
+	if h.running {
+		hd := h.handler
+		if hd != nil {
+			return hd.reset(config)
+		}
+
+		handler, err := NewHandler(h.config)
+		if err != nil {
+			return err
+		}
+
+		h.handler = handler
 	}
 
 	return nil

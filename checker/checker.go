@@ -20,11 +20,12 @@ type Checker interface {
 
 //Parse 可根据路由指标字符串生成相应的检查器
 func Parse(pattern string) (Checker, error) {
+	pattern = strings.TrimSpace(pattern)
+
 	i := strings.Index(pattern, "=")
 
 	if i < 0 {
-		p := strings.TrimSpace(pattern)
-		return parseValue(p)
+		return parseValue(pattern)
 	}
 
 	tp := strings.TrimSpace(pattern[:i])

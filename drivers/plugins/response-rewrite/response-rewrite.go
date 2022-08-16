@@ -1,12 +1,16 @@
 package response_rewrite
 
 import (
+	"github.com/eolinker/apinto/utils"
+	"github.com/eolinker/eosc/eocontext"
 	"strconv"
 
-	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
+
+var _ http_service.HttpFilter = (*ResponseRewrite)(nil)
+var _ eocontext.IFilter = (*ResponseRewrite)(nil)
 
 type ResponseRewrite struct {
 	*Driver
@@ -17,6 +21,10 @@ type ResponseRewrite struct {
 	match      *MatchConf
 }
 
+func (r *ResponseRewrite) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return http_service.DoHttpFilter(r, ctx, next)
+}
+
 func (r *ResponseRewrite) Id() string {
 	return r.id
 }
@@ -25,7 +33,7 @@ func (r *ResponseRewrite) Start() error {
 	return nil
 }
 
-func (r *ResponseRewrite) Reset(v interface{}, workers map[eosc.RequireId]interface{}) error {
+func (r *ResponseRewrite) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	conf, err := r.check(v)
 	if err != nil {
 		return err
@@ -62,7 +70,7 @@ func (r *ResponseRewrite) CheckSkill(skill string) bool {
 	return http_service.FilterSkillName == skill
 }
 
-func (r *ResponseRewrite) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (r *ResponseRewrite) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	if next != nil {
 		err = next.DoChain(ctx)
 	}

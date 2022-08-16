@@ -3,14 +3,22 @@ package ip_restriction
 import (
 	"encoding/json"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
+
+var _ http_service.HttpFilter = (*IPHandler)(nil)
+var _ eocontext.IFilter = (*IPHandler)(nil)
 
 type IPHandler struct {
 	*Driver
 	id           string
 	responseType string
 	filter       IPFilter
+}
+
+func (I *IPHandler) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return http_service.DoHttpFilter(I, ctx, next)
 }
 
 func (I *IPHandler) doRestriction(ctx http_service.IHttpContext) error {
@@ -32,13 +40,13 @@ func (I *IPHandler) Start() error {
 	return nil
 }
 
-func (I *IPHandler) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	confObj, err := I.check(conf)
-	if err != nil {
-		return err
-	}
-	I.filter = confObj.genFilter()
-	return nil
+func (I *IPHandler) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+confObj, err := I.check(conf)
+if err != nil {
+return err
+}
+I.filter = confObj.genFilter()
+return nil
 }
 
 func (I *IPHandler) Stop() error {
@@ -65,7 +73,7 @@ func (I *IPHandler) Destroy() {
 	I.responseType = ""
 }
 
-func (I *IPHandler) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
+func (I *IPHandler) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
 	err := I.doRestriction(ctx)
 	if err != nil {
 		resp := ctx.Response()

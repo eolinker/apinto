@@ -51,6 +51,7 @@ func (s *SysWriter) stop() error {
 	s.formatter = nil
 	return nil
 }
+
 func create(cfg *Config) (eosc.IFormatter, *sys.Writer, error) {
 	factory, has := formatter.GetFormatterFactory(cfg.Type)
 	if !has {
