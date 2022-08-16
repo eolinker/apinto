@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"strconv"
 	"strings"
 )
 
-var _ http_service.IFilter = (*ExtraParams)(nil)
+var _ http_service.HttpFilter = (*ExtraParams)(nil)
+var _ eocontext.IFilter = (*ExtraParams)(nil)
 
 type ExtraParams struct {
 	*Driver
@@ -18,7 +20,11 @@ type ExtraParams struct {
 	errorType string
 }
 
-func (e *ExtraParams) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) error {
+func (e *ExtraParams) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return http_service.DoHttpFilter(e, ctx, next)
+}
+
+func (e *ExtraParams) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
 	statusCode, err := e.access(ctx)
 	if err != nil {
 		ctx.Response().SetBody([]byte(err.Error()))
@@ -108,16 +114,16 @@ func (e *ExtraParams) Start() error {
 	return nil
 }
 
-func (e *ExtraParams) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	confObj, err := e.check(conf)
-	if err != nil {
-		return err
-	}
+func (e *ExtraParams) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+confObj, err := e.check(conf)
+if err != nil {
+return err
+}
 
-	e.params = confObj.Params
-	e.errorType = confObj.ErrorType
+e.params = confObj.Params
+e.errorType = confObj.ErrorType
 
-	return nil
+return nil
 }
 
 func (e *ExtraParams) Stop() error {

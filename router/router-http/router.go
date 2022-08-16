@@ -1,11 +1,10 @@
 package router_http
 
 import (
-	"sync"
-
-	http_service "github.com/eolinker/eosc/http-service"
 	http_context "github.com/eolinker/apinto/node/http-context"
-	"github.com/eolinker/apinto/plugin"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"sync"
 
 	"github.com/eolinker/apinto/service"
 
@@ -32,16 +31,16 @@ type Router struct {
 	data         eosc.IUntyped
 	match        IMatcher
 	handler      fasthttp.RequestHandler
-	routerFilter http_service.IChain
+	routerFilter eocontext.IChain
 }
 
 //NewRouter 新建路由树
-func NewRouter(routerFilter plugin.IPlugin) *Router {
+func NewRouter(routerFilter eocontext.IChain) *Router {
 
 	return &Router{
 		locker:       &sync.Mutex{},
 		data:         eosc.NewUntyped(),
-		routerFilter: routerFilter.Append(new(NotFond)),
+		routerFilter: routerFilter,
 	}
 }
 
@@ -54,7 +53,7 @@ func (r *Router) Count() int {
 //Handler 路由树的handler方法
 func (r *Router) Handler(requestCtx *fasthttp.RequestCtx) {
 	match := r.match
-	ctx := http_context.NewContext(requestCtx)
+	ctx := http_context.NewContext(requestCtx, 0)
 
 	if r.match != nil {
 		log.DebugF("router handler\n%s", requestCtx.Request.String())
@@ -65,7 +64,10 @@ func (r *Router) Handler(requestCtx *fasthttp.RequestCtx) {
 			if err != nil {
 				log.Warn(err)
 			}
-			ctx.Finish()
+			finishHandler := ctx.GetFinish()
+			if finishHandler != nil {
+				finishHandler.Finish(ctx)
+			}
 			return
 		}
 	}
@@ -126,13 +128,22 @@ func parseData(data eosc.IUntyped) (IMatcher, error) {
 	return parse(cs)
 }
 
+var (
+	_ eocontext.IFilter       = (*NotFond)(nil)
+	_ http_service.HttpFilter = (*NotFond)(nil)
+)
+
 type NotFond struct {
 }
 
-func (n *NotFond) DoFilter(ctx http_service.IHttpContext, chain http_service.IChain) (err error) {
+func (n *NotFond) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	ctx.Response().SetStatus(404, "404")
 	ctx.Response().SetBody([]byte("404 Not Found"))
 	return nil
+}
+
+func (n *NotFond) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return http_service.DoHttpFilter(n, ctx, next)
 }
 
 func (n *NotFond) Destroy() {

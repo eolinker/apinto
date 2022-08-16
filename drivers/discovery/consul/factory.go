@@ -2,6 +2,7 @@ package consul
 
 import (
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 )
 
@@ -13,6 +14,14 @@ func Register(register eosc.IExtenderDriverRegister) {
 }
 
 type factory struct {
+}
+
+func (f *factory) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+	if err != nil {
+		return nil
+	}
+	return render
 }
 
 //NewFactory 创建consul驱动工厂

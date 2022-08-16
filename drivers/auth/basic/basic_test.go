@@ -77,7 +77,7 @@ func TestSuccessAuthorization(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req))
+	err = worker.Auth(http_context.NewContext(req, 0))
 	if err != nil {
 		t.Error(err)
 		return
@@ -111,7 +111,7 @@ func TestExpireAuthorization(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req))
+	err = worker.Auth(http_context.NewContext(req, 0))
 
 	if err == auth.ErrorExpireUser {
 		t.Log("success")
@@ -144,7 +144,7 @@ func TestNoAuthorization(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req))
+	err = worker.Auth(http_context.NewContext(req, 0))
 	if err.Error() == "[basic_auth] authorization required" {
 		t.Log("success")
 		return
@@ -174,7 +174,7 @@ func TestNoAuthorizationType(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = worker.Auth(http_context.NewContext(req))
+	err = worker.Auth(http_context.NewContext(req, 0))
 	if err == auth.ErrorInvalidType {
 		t.Log("success")
 		return

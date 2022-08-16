@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	"github.com/eolinker/apinto/filter"
+	"github.com/eolinker/eosc/eocontext"
 	"reflect"
 )
 
@@ -11,17 +11,10 @@ type Config struct {
 	Config  interface{} `json:"config"`
 }
 
-type IPluginConfigMerge interface {
-	Merge(high map[string]*Config) map[string]*Config
-}
-
-type IPlugin interface {
-	filter.IChain
-	Destroy()
-}
 type IPluginManager interface {
-	CreateRequest(id string, conf map[string]*Config) IPlugin
+	CreateRequest(id string, conf map[string]*Config) eocontext.IChain
 	GetConfigType(name string) (reflect.Type, bool)
+
 	//CreateUpstream(id string, conf map[string]*Config) IPlugin
 }
 

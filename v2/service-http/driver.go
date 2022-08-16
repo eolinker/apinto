@@ -30,15 +30,13 @@ func (d *driver) Render() interface{} {
 }
 
 //Create 创建service_http驱动的实例
-func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]interface{}) (eosc.IWorker, error) {
+func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
 	w := &serviceWorker{
 		id:     id,
 		name:   name,
 		driver: d.driver,
-		Service: Service{
-			handlers: NewHandlers(),
-		},
+		Service: Service{},
 	}
 
 	err := w.Reset(v, workers)
