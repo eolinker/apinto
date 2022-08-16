@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/eolinker/apinto/plugin"
-
 	"github.com/eolinker/eosc"
 )
 
@@ -18,7 +16,6 @@ type Config struct {
 	Service   string         `json:"service" required:"false" label:"服务名 or 配置" switch:"discovery !==''"`
 	Nodes     []string       `json:"nodes" label:"静态配置" switch:"discovery===''"`
 	Balance   string         `json:"balance" enum:"round-robin" label:"负载均衡算法"`
-	Plugins   plugin.Plugins `json:"plugins" label:"插件"`
 }
 
 func (c *Config) String() string {

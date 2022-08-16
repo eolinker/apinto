@@ -3,18 +3,11 @@ package service
 import (
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
-	"github.com/eolinker/eosc/utils/config"
 )
 
-var (
-	ServiceSkill string
+const (
+	ServiceSkill = "github.com/eolinker/apinto/service.service.IService"
 )
-
-func init() {
-	var s IService
-	ServiceSkill = config.TypeNameOf(&s)
-
-}
 
 type IService interface {
 	eosc.IWorker
