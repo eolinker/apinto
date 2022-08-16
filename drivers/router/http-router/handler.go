@@ -1,7 +1,7 @@
 package http_router
 
 import (
-	service "github.com/eolinker/apinto/v2"
+	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/eosc/eocontext"
 )
 

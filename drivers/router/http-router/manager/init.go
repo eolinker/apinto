@@ -1,4 +1,4 @@
-package router_http_manager
+package manager
 
 import (
 	"github.com/eolinker/apinto/plugin"

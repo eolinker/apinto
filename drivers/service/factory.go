@@ -1,4 +1,4 @@
-package service_http
+package service
 
 import (
 	round_robin "github.com/eolinker/apinto/upstream/round-robin"

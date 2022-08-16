@@ -1,6 +1,6 @@
-package router_http_manager
+package manager
 
-import "github.com/eolinker/apinto/v2/router"
+import http_router "github.com/eolinker/apinto/router/http-router"
 
 type Router struct {
 	Id          string
@@ -9,5 +9,5 @@ type Router struct {
 	Method      []string
 	Path        string
 	Appends     []AppendRule
-	HttpHandler router.IRouterHandler
+	HttpHandler http_router.IRouterHandler
 }

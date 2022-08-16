@@ -1,8 +1,8 @@
-package service_http
+package service
 
 import (
 	"errors"
-	"github.com/eolinker/apinto/v2"
+	"github.com/eolinker/apinto/service"
 )
 
 var (

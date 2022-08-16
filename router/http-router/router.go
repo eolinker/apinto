@@ -1,4 +1,4 @@
-package router
+package http_router
 
 import (
 	eoscContext "github.com/eolinker/eosc/eocontext"

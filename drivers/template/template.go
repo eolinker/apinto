@@ -2,13 +2,11 @@ package template
 
 import (
 	"github.com/eolinker/apinto/plugin"
-	service "github.com/eolinker/apinto/v2"
+	"github.com/eolinker/apinto/template"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
-	"github.com/eolinker/eosc/utils/config"
 )
-
-var it service.ITemplate = (*Template)(nil)
 
 type Template struct {
 	id   string
@@ -53,7 +51,7 @@ func (t *Template) Stop() error {
 }
 
 func (t *Template) CheckSkill(skill string) bool {
-	return skill == config.TypeNameOf(it)
+	return template.CheckSkill(skill)
 }
 
 func (t *Template) Create(id string, conf map[string]*plugin.Config) eocontext.IChain {

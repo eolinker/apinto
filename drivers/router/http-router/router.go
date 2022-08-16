@@ -1,10 +1,12 @@
 package http_router
 
 import (
+	"github.com/eolinker/apinto/drivers/router/http-router/manager"
 	"github.com/eolinker/apinto/plugin"
-	service "github.com/eolinker/apinto/v2"
-	"github.com/eolinker/apinto/v2/router"
-	router_http_manager "github.com/eolinker/apinto/v2/router-http-manager"
+	http_router "github.com/eolinker/apinto/router/http-router"
+	"github.com/eolinker/apinto/service"
+	"github.com/eolinker/apinto/template"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	"time"
@@ -17,7 +19,7 @@ type HttpRouter struct {
 	handler *Handler
 
 	pluginManager plugin.IPluginManager
-	routerManager router_http_manager.IManger
+	routerManager manager.IManger
 }
 
 func (h *HttpRouter) Destroy() error {
@@ -59,11 +61,11 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	var plugins eocontext.IChain
 	if cfg.Template != "" {
 		templateWorker, has := workers[cfg.Template]
-		if !has || !templateWorker.CheckSkill(service.TemplateSkill) {
+		if !has || !templateWorker.CheckSkill(template.TemplateSkill) {
 			return eosc.ErrorNotGetSillForRequire
 		}
-		template := templateWorker.(service.ITemplate)
-		plugins = template.Create(h.id, cfg.Plugins)
+		tp := templateWorker.(template.ITemplate)
+		plugins = tp.Create(h.id, cfg.Plugins)
 	} else {
 		plugins = h.pluginManager.CreateRequest(h.id, cfg.Plugins)
 	}
@@ -79,9 +81,9 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		service:  serviceHandler,
 		filters:  plugins,
 	}
-	appendRule := make([]router.AppendRule, 0, len(cfg.Rules))
+	appendRule := make([]http_router.AppendRule, 0, len(cfg.Rules))
 	for _, r := range cfg.Rules {
-		appendRule = append(appendRule, router.AppendRule{
+		appendRule = append(appendRule, http_router.AppendRule{
 			Type:    r.Type,
 			Name:    r.Name,
 			Pattern: r.Value,

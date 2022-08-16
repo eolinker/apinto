@@ -1,10 +1,10 @@
-package router_http_manager
+package manager
 
 import (
 	"crypto/tls"
 	"errors"
 	http_context "github.com/eolinker/apinto/node/http-context"
-	"github.com/eolinker/apinto/v2/router"
+	http_router "github.com/eolinker/apinto/router/http-router"
 	"github.com/eolinker/eosc/config"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -19,19 +19,19 @@ var _ IManger = (*Manager)(nil)
 var notFound = new(NotFoundHandler)
 
 type IManger interface {
-	Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) error
+	Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router http_router.IRouterHandler) error
 	Delete(id string)
 }
 
 type Manager struct {
 	lock    sync.RWMutex
-	matcher router.IMatcher
+	matcher http_router.IMatcher
 
 	routersData   IRouterData
 	globalFilters eoscContext.IChain
 }
 
-func (m *Manager) Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) error {
+func (m *Manager) Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router http_router.IRouterHandler) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	routersData := m.routersData.Set(id, port, hosts, method, path, append, router)

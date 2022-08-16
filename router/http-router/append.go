@@ -1,4 +1,4 @@
-package router
+package http_router
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type RuleType string
+type RuleType = string
 
 const (
 	HttpHeader RuleType = "header"
@@ -33,17 +33,17 @@ func Parse(rules []AppendRule) MatcherChecker {
 		ck, _ := checker.Parse(r.Pattern)
 
 		switch strings.ToLower(r.Type) {
-		case "header":
+		case HttpHeader:
 			rls = append(rls, &HeaderChecker{
 				name:    r.Name,
 				Checker: ck,
 			})
-		case "query":
+		case HttpQuery:
 			rls = append(rls, &QueryChecker{
 				name:    r.Name,
 				Checker: ck,
 			})
-		case "cookie":
+		case HttpCookie:
 			rls = append(rls, &CookieChecker{
 				name:    r.Name,
 				Checker: ck,

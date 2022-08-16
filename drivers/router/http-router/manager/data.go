@@ -1,20 +1,22 @@
-package router_http_manager
+package manager
 
-import "github.com/eolinker/apinto/v2/router"
+import (
+	http_router "github.com/eolinker/apinto/router/http-router"
+)
 
 var _ IRouterData = (*RouterData)(nil)
 
 type IRouterData interface {
-	Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) IRouterData
+	Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router http_router.IRouterHandler) IRouterData
 	Delete(id string) IRouterData
-	Parse() (router.IMatcher, error)
+	Parse() (http_router.IMatcher, error)
 }
 type RouterData struct {
 	data map[string]*Router
 }
 
-func (rs *RouterData) Parse() (router.IMatcher, error) {
-	root := router.NewRoot()
+func (rs *RouterData) Parse() (http_router.IMatcher, error) {
+	root := http_router.NewRoot()
 	for _, v := range rs.data {
 		err := root.Add(v.Id, v.HttpHandler, v.Port, v.Hosts, v.Method, v.Path, v.Appends)
 		if err != nil {
@@ -28,7 +30,7 @@ func (rs *RouterData) set(r *Router) *RouterData {
 	rs.data[r.Id] = r
 	return rs
 }
-func (rs *RouterData) Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) IRouterData {
+func (rs *RouterData) Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router http_router.IRouterHandler) IRouterData {
 	r := &Router{
 		Id:          id,
 		Port:        port,

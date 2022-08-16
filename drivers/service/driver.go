@@ -1,4 +1,4 @@
-package service_http
+package service
 
 import (
 	"github.com/eolinker/eosc/utils/schema"
@@ -33,9 +33,9 @@ func (d *driver) Render() interface{} {
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
 	w := &serviceWorker{
-		id:     id,
-		name:   name,
-		driver: d.driver,
+		id:      id,
+		name:    name,
+		driver:  d.driver,
 		Service: Service{},
 	}
 

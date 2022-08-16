@@ -1,4 +1,4 @@
-package service_http
+package service
 
 import (
 	"github.com/eolinker/apinto/upstream/balance"

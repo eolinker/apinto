@@ -1,4 +1,4 @@
-package service_http
+package service
 
 import (
 	"encoding/json"
