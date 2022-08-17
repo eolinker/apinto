@@ -3,6 +3,7 @@ package http_router
 import (
 	"github.com/eolinker/apinto/checker"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/eosc/log"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,6 +16,7 @@ type readerHandler func(port int, request http_service.IRequestReader) (string, 
 func newPortMatcher(children map[string]IMatcher) IMatcher {
 	return &SimpleMatcher{
 		children: children,
+		name:     "port",
 		read: func(port int, request http_service.IRequestReader) (string, bool) {
 			return strconv.Itoa(port), true
 		},
@@ -23,6 +25,7 @@ func newPortMatcher(children map[string]IMatcher) IMatcher {
 func newMethodMatcher(children map[string]IMatcher, handler IRouterHandler) IMatcher {
 	return &SimpleMatcher{
 		children: children,
+		name:     "method",
 		read: func(port int, request http_service.IRequestReader) (string, bool) {
 			return request.Method(), true
 		},
@@ -31,6 +34,7 @@ func newMethodMatcher(children map[string]IMatcher, handler IRouterHandler) IMat
 func newHostMatcher(children map[string]IMatcher) IMatcher {
 	return &SimpleMatcher{
 		children: children,
+		name:     "host",
 		read: func(port int, request http_service.IRequestReader) (string, bool) {
 			orgHost := request.URI().Host()
 			if i := strings.Index(orgHost, ":"); i > 0 {
@@ -44,13 +48,16 @@ func newHostMatcher(children map[string]IMatcher) IMatcher {
 type SimpleMatcher struct {
 	children map[string]IMatcher
 	read     readerHandler
+	name     string
 }
 
 func (s *SimpleMatcher) Match(port int, request http_service.IRequestReader) (IRouterHandler, bool) {
+	log.Debug("SimpleMatcher:", s.name)
 	if s == nil || s.children == nil || len(s.children) == 0 {
 		return nil, false
 	}
 	value, _ := s.read(port, request)
+	log.Debug("SimpleMatcher:", s.name, "-", value)
 
 	next, has := s.children[value]
 	if has {
@@ -72,41 +79,54 @@ func (s *SimpleMatcher) Match(port int, request http_service.IRequestReader) (IR
 }
 
 type CheckMatcher struct {
-	equals   SimpleMatcher //存放使用全等匹配的指标节点
+	equals   map[string]IMatcher //存放使用全等匹配的指标节点
 	read     readerHandler
 	checkers []*CheckerHandler //按优先顺序存放除全等匹配外的checker，顺序与nodes对应
-
+	all      IMatcher
+	name     string
 }
 
-func NewPathMatcher(equals map[string]IMatcher, checkers []*CheckerHandler) *CheckMatcher {
+func NewPathMatcher(equals map[string]IMatcher, checkers []*CheckerHandler, all IMatcher) *CheckMatcher {
 	read := func(port int, request http_service.IRequestReader) (string, bool) {
 		return request.URI().Path(), true
 	}
 	sort.Sort(CheckerSort(checkers))
 
-	return &CheckMatcher{equals: SimpleMatcher{
-		children: equals,
+	return &CheckMatcher{
+		name:     "path",
+		equals:   equals,
+		checkers: checkers,
 		read:     read,
-	}, checkers: checkers,
-		read: read,
+		all:      all,
 	}
 }
 
 func (c *CheckMatcher) Match(port int, request http_service.IRequestReader) (IRouterHandler, bool) {
 
-	handler, ok := c.equals.Match(port, request)
-	if ok {
-		return handler, true
+	value, hasvalue := c.read(port, request)
+	log.Debug("CheckMatcher::Match", "(", len(c.checkers), ")", c.name, "=", value)
+
+	next, has := c.equals[value]
+	if has {
+		handler, ok := next.Match(port, request)
+		if ok {
+			return handler, true
+		}
 	}
-	value, has := c.read(port, request)
+
 	for _, ck := range c.checkers {
-		pass := ck.checker.Check(value, has)
+		pass := ck.checker.Check(value, hasvalue)
+		log.Debug("CheckMatcher::check,", c.name, "=", ck.checker.Key(), pass)
+
 		if pass {
-			handler, ok = ck.next.Match(port, request)
+			handler, ok := ck.next.Match(port, request)
 			if ok {
 				return handler, true
 			}
 		}
+	}
+	if c.all != nil {
+		return c.all.Match(port, request)
 	}
 	return nil, false
 }
@@ -148,6 +168,7 @@ func (as AppendMatchers) Swap(i, j int) {
 }
 
 func (a *AppendMatcher) Match(port int, request http_service.IRequestReader) (IRouterHandler, bool) {
+	log.Debug("AppendMatcher")
 	if a.checkers.MatchCheck(request) {
 		return a.handler, true
 	}

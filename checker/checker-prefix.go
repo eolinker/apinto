@@ -2,6 +2,7 @@ package checker
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/log"
 	"strings"
 )
 
@@ -22,10 +23,12 @@ func (p *PrefixChecker) Value() string {
 
 //Check 判断待检测的路由指标值是否满足检查器的匹配规则
 func (p *PrefixChecker) Check(v string, has bool) bool {
+	log.Debug("PrefixChecker:check", v, has, " on ", p.prefix)
 	//当待检测的路由指标值存在 且 检查器的检测值为其前缀时匹配成功
 	if !has {
 		return false
 	}
+
 	return strings.HasPrefix(v, p.prefix)
 }
 
