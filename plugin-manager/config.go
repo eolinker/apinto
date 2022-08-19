@@ -2,6 +2,7 @@ package plugin_manager
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/variable"
 	"reflect"
 )
@@ -48,7 +49,7 @@ func (p *PluginConfig) GetType(originVal reflect.Value) (reflect.Type, error) {
 			params = tmp
 		}
 	}
-
+	log.Debug("plugin reset id is: ", id)
 	factory, has := singleton.extenderDrivers.GetDriver(id)
 	if !has {
 		return nil, fmt.Errorf("driver(%s) not found", id)

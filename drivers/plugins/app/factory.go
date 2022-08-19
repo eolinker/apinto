@@ -1,19 +1,17 @@
-package params_transformer
+package app
 
 import (
-	"github.com/eolinker/eosc/log"
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
-
-	"github.com/eolinker/eosc"
 )
 
 const (
-	Name = "params_transformer"
+	Name = "app"
 )
 
 func Register(register eosc.IExtenderDriverRegister) {
-	log.Debug("register params_transformer is ", Name)
 	register.RegisterExtenderDriver(Name, NewFactory())
 }
 
@@ -39,6 +37,6 @@ func (f *Factory) Create(profession string, name string, label string, desc stri
 		desc:       desc,
 		configType: reflect.TypeOf((*Config)(nil)),
 	}
-
+	bean.Autowired(&d.workers)
 	return d, nil
 }

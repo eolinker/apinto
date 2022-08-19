@@ -1,6 +1,7 @@
 package application
 
 import (
+	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/utils/config"
 )
 
@@ -14,6 +15,7 @@ func init() {
 }
 
 type IApp interface {
+	Auth(ctx eocontext.EoContext) error
 }
 
 func CheckSkill(skill string) bool {
