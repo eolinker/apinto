@@ -54,15 +54,39 @@ func Parse(rules []AppendRule) MatcherChecker {
 	return rls
 }
 
+type AppendRules []AppendRule
+
+func (as AppendRules) Len() int {
+	return len(as)
+}
+
+func (as AppendRules) Less(i, j int) bool {
+	if as[i].Type != as[j].Type {
+		return as[i].Type < as[j].Type
+	}
+	if as[i].Name != as[j].Name {
+		return as[i].Name < as[j].Name
+	}
+	return as[i].Pattern < as[j].Pattern
+}
+
+func (as AppendRules) Swap(i, j int) {
+	as[i], as[j] = as[j], as[i]
+}
+
 func Key(rules []AppendRule) string {
 	if len(rules) == 0 {
 		return All
 	}
-	rs := make([]string, 0, len(rules))
-	for _, r := range rules {
-		rs = append(rs, fmt.Sprintf("%s[%s]=%s", strings.ToLower(r.Type), r.Name, strings.TrimSpace(r.Pattern)))
+	strs := make([]string, 0, len(rules))
+	rs := make(AppendRules, len(rules))
+	copy(rs, rules)
+	sort.Sort(rs)
+	for _, r := range rs {
+		strs = append(strs, fmt.Sprintf("%s[%s]=%s", strings.ToLower(r.Type), r.Name, strings.TrimSpace(r.Pattern)))
 	}
-	return strings.Join(rs, "&")
+
+	return strings.Join(strs, "&")
 }
 
 type EmptyChecker struct {
