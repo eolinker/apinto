@@ -576,13 +576,14 @@ func (j *jwt) doJWTAuthentication(context http_service.IHttpContext) error {
 	}
 	if algorithm == "HS256" || algorithm == "HS384" || algorithm == "HS512" {
 		jwtSecretValue = jwtSecret.Secret
-	}
-	if j.signatureIsBase64 {
-		jwtSecretValue, err = b64Decode(jwtSecretValue)
-		if err != nil {
-			return errors.New("[jwt_auth] Invalid key/secret")
+		if j.signatureIsBase64 {
+			jwtSecretValue, err = b64Decode(jwtSecretValue)
+			if err != nil {
+				return errors.New("[jwt_auth] Invalid key/secret")
+			}
 		}
 	}
+
 	if jwtSecretValue == "" {
 		return errors.New("[jwt_auth] Invalid key/secret")
 	}
