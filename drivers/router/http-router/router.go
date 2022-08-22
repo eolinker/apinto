@@ -13,13 +13,11 @@ import (
 )
 
 type HttpRouter struct {
-	id   string
-	name string
-
-	handler *Handler
-
-	pluginManager plugin.IPluginManager
+	id            string
+	name          string
 	routerManager manager.IManger
+	pluginManager plugin.IPluginManager
+	handler       *Handler
 }
 
 func (h *HttpRouter) Destroy() error {
@@ -49,38 +47,45 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	if !ok {
 		return eosc.ErrorConfigFieldUnknown
 	}
-
-	serviceWorker, has := workers[cfg.Service]
-	if !has || !serviceWorker.CheckSkill(service.ServiceSkill) {
-		return eosc.ErrorNotGetSillForRequire
-	}
-
-	if cfg.Plugins == nil {
-		cfg.Plugins = map[string]*plugin.Config{}
-	}
-	var plugins eocontext.IChain
-	if cfg.Template != "" {
-		templateWorker, has := workers[cfg.Template]
-		if !has || !templateWorker.CheckSkill(template.TemplateSkill) {
-			return eosc.ErrorNotGetSillForRequire
-		}
-		tp := templateWorker.(template.ITemplate)
-		plugins = tp.Create(h.id, cfg.Plugins)
-	} else {
-		plugins = h.pluginManager.CreateRequest(h.id, cfg.Plugins)
-	}
-
-	serviceHandler := serviceWorker.(service.IService)
-
 	handler := &Handler{
 		completeHandler: HttpComplete{
 			retry:   cfg.Retry,
 			timeOut: time.Duration(cfg.TimeOut) * time.Millisecond,
 		},
 		finisher: Finisher{},
-		service:  serviceHandler,
-		filters:  plugins,
+		service:  nil,
+		filters:  nil,
+		disable:  cfg.Disable,
 	}
+	if !cfg.Disable {
+
+		serviceWorker, has := workers[cfg.Service]
+		if !has || !serviceWorker.CheckSkill(service.ServiceSkill) {
+			return eosc.ErrorNotGetSillForRequire
+		}
+
+		if cfg.Plugins == nil {
+			cfg.Plugins = map[string]*plugin.Config{}
+		}
+		var plugins eocontext.IChain
+		if cfg.Template != "" {
+			templateWorker, has := workers[cfg.Template]
+			if !has || !templateWorker.CheckSkill(template.TemplateSkill) {
+				return eosc.ErrorNotGetSillForRequire
+			}
+			tp := templateWorker.(template.ITemplate)
+			plugins = tp.Create(h.id, cfg.Plugins)
+		} else {
+			plugins = h.pluginManager.CreateRequest(h.id, cfg.Plugins)
+		}
+
+		serviceHandler := serviceWorker.(service.IService)
+
+		handler.service = serviceHandler
+		handler.filters = plugins
+
+	}
+
 	appendRule := make([]http_router.AppendRule, 0, len(cfg.Rules))
 	for _, r := range cfg.Rules {
 		appendRule = append(appendRule, http_router.AppendRule{

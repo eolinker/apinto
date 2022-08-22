@@ -59,18 +59,24 @@ func (m *Methods) Build() IMatcher {
 
 	checkers := make([]*CheckerHandler, 0, len(m.paths))
 	equals := make(map[string]IMatcher, len(m.paths))
+	var all IMatcher
 	for _, next := range m.paths {
+		matcher := next.Build()
 		if next.checker.CheckType() == checker.CheckTypeEqual {
-			equals[next.checker.Value()] = next.Build()
+			equals[next.checker.Value()] = matcher
+			continue
+		}
+		if next.checker.CheckType() == checker.CheckTypeAll {
+			all = next.Build()
 			continue
 		}
 
 		checkers = append(checkers, &CheckerHandler{
 			checker: next.checker,
-			next:    next.Build(),
+			next:    matcher,
 		})
 	}
-	return NewPathMatcher(equals, checkers)
+	return NewPathMatcher(equals, checkers, all)
 }
 
 type Paths struct {
