@@ -3,9 +3,9 @@ package auth
 import (
 	"errors"
 	"fmt"
-	eoscContext "github.com/eolinker/eosc/eocontext"
+	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/eosc/log"
-
+	
 	"github.com/eolinker/eosc"
 )
 
@@ -16,7 +16,7 @@ var (
 
 //IAuthFactory 鉴权工厂方法
 type IAuthFactory interface {
-	Create(driver string, config interface{}) (eoscContext.IAuthHandler, error)
+	Create(tokenName string, position string, users []*application.User, rule interface{}) (application.IAuth, error)
 }
 
 //IAuthFactoryRegister 实现了鉴权工厂管理器
@@ -56,7 +56,7 @@ func (dm *driverRegister) GetFactoryByKey(key string) (IAuthFactory, bool) {
 func (dm *driverRegister) RegisterFactoryByKey(key string, factory IAuthFactory) {
 	err := dm.register.Register(key, factory, true)
 	log.Debug("RegisterFactoryByKey:", key)
-
+	
 	if err != nil {
 		log.Debug("RegisterFactoryByKey:", key, ":", err)
 		return
@@ -71,7 +71,7 @@ func (dm *driverRegister) Keys() []string {
 
 //Register 注册auth工厂到默认auth工厂注册器
 func Register(key string, factory IAuthFactory) {
-
+	
 	defaultAuthFactoryRegister.RegisterFactoryByKey(key, factory)
 }
 

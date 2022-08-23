@@ -1,41 +1,33 @@
 package apikey
 
 import (
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/utils/schema"
-	"reflect"
+	"fmt"
+	"github.com/eolinker/apinto/application"
+	"github.com/eolinker/apinto/application/auth"
 )
 
-var name = "auth_apikey"
+var _ auth.IAuthFactory = (*factory)(nil)
+
+var name = "apikey"
 
 //Register 注册auth驱动工厂
-func Register(register eosc.IExtenderDriverRegister) {
-	register.RegisterExtenderDriver(name, NewFactory())
+func Register() {
+	auth.Register(name, NewFactory())
 }
 
 type factory struct {
 }
 
-//Create 创建apikey驱动
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
-	return &driver{
-		profession: profession,
-		name:       name,
-		label:      label,
-		desc:       desc,
-		driver:     driverName,
-		configType: reflect.TypeOf((*Config)(nil)),
-	}, nil
-}
-func (f *factory) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
-	if err != nil {
-		return nil
-	}
-	return render
+func (f *factory) Create(tokenName string, position string, users []*application.User, rule interface{}) (application.IAuth, error) {
+	
+	return nil, nil
 }
 
 //NewFactory 生成一个 auth_apiKey工厂
-func NewFactory() eosc.IExtenderDriverFactory {
+func NewFactory() auth.IAuthFactory {
 	return &factory{}
+}
+
+func toId(tokenName, position string) string {
+	return fmt.Sprintf("%s@%s", tokenName, position)
 }

@@ -1,17 +1,20 @@
 package app
 
 import (
-	"github.com/eolinker/apinto/auth"
+	"github.com/eolinker/apinto/drivers/app/manager"
 	"github.com/eolinker/eosc"
 )
 
+var (
+	appManager manager.IManager
+)
+
 type App struct {
-	auths []auth.IAuth
+	id string
 }
 
 func (a *App) Id() string {
-	//TODO implement me
-	panic("implement me")
+	return a.id
 }
 
 func (a *App) Start() error {

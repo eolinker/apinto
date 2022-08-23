@@ -1,10 +1,7 @@
 package main
 
 import (
-	"github.com/eolinker/apinto/drivers/auth/aksk"
-	"github.com/eolinker/apinto/drivers/auth/apikey"
-	"github.com/eolinker/apinto/drivers/auth/basic"
-	"github.com/eolinker/apinto/drivers/auth/jwt"
+	"github.com/eolinker/apinto/drivers/app"
 	"github.com/eolinker/apinto/drivers/discovery/consul"
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
@@ -15,7 +12,6 @@ import (
 	"github.com/eolinker/apinto/drivers/output/nsq"
 	"github.com/eolinker/apinto/drivers/output/syslog"
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
-	"github.com/eolinker/apinto/drivers/plugins/auth"
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
@@ -47,37 +43,32 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	// router
 	http_router.Register(extenderRegister)
 	template.Register(extenderRegister)
-
+	
 	// service
 	service.Register(extenderRegister)
-
+	
 	////// upstream
 	//upstream_http.Register(extenderRegister)
-
+	
 	// discovery
 	static.Register(extenderRegister)
 	nacos.Register(extenderRegister)
 	consul.Register(extenderRegister)
 	eureka.Register(extenderRegister)
-
+	
 	//output
 	fileoutput.Register(extenderRegister)
 	nsq.Register(extenderRegister)
 	httpoutput.Register(extenderRegister)
 	kafka.Register(extenderRegister)
 	syslog.Register(extenderRegister)
-
-	// auth
-	basic.Register(extenderRegister)
-	apikey.Register(extenderRegister)
-	aksk.Register(extenderRegister)
-	jwt.Register(extenderRegister)
-
+	
+	//app
+	app.Register(extenderRegister)
+	
 	//plugin
 	plugin_manager.Register(extenderRegister)
-
-	auth.Register(extenderRegister)
-
+	
 	extra_params.Register(extenderRegister)
 	params_transformer.Register(extenderRegister)
 	proxy_rewrite.Register(extenderRegister)
@@ -87,7 +78,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	gzip.Register(extenderRegister)
 	response_rewrite.Register(extenderRegister)
 	circuit_breaker.Register(extenderRegister)
-
+	
 	access_log.Register(extenderRegister)
 	proxy_rewriteV2.Register(extenderRegister)
 }
