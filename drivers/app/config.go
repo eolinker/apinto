@@ -4,8 +4,9 @@ import "github.com/eolinker/apinto/application"
 
 //Config App驱动配置
 type Config struct {
-	Auth    []*Auth `json:"auth"`
-	Disable bool    `json:"disable"`
+	Auth    []*Auth           `json:"auth"`
+	Labels  map[string]string `json:"labels"`
+	Disable bool              `json:"disable"`
 }
 
 type Auth struct {

@@ -16,7 +16,7 @@ var (
 
 //IAuthFactory 鉴权工厂方法
 type IAuthFactory interface {
-	Create(tokenName string, position string, users []*application.User, rule interface{}) (application.IAuth, error)
+	Create(tokenName string, position string, rule interface{}) (application.IAuth, error)
 }
 
 //IAuthFactoryRegister 实现了鉴权工厂管理器

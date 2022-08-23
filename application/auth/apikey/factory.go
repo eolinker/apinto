@@ -8,19 +8,23 @@ import (
 
 var _ auth.IAuthFactory = (*factory)(nil)
 
-var name = "apikey"
+var driverName = "apikey"
 
 //Register 注册auth驱动工厂
 func Register() {
-	auth.Register(name, NewFactory())
+	auth.Register(driverName, NewFactory())
 }
 
 type factory struct {
 }
 
-func (f *factory) Create(tokenName string, position string, users []*application.User, rule interface{}) (application.IAuth, error) {
-	
-	return nil, nil
+func (f *factory) Create(tokenName string, position string, rule interface{}) (application.IAuth, error) {
+	a := &apikey{
+		id:        toId(tokenName, position),
+		tokenName: tokenName,
+		position:  position,
+	}
+	return a, nil
 }
 
 //NewFactory 生成一个 auth_apiKey工厂
