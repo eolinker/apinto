@@ -1,19 +1,24 @@
-package params_transformer
+package app
 
 import (
-	"github.com/eolinker/eosc/log"
+	"github.com/eolinker/apinto/drivers/app/manager"
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
-
-	"github.com/eolinker/eosc"
+	"sync"
 )
 
 const (
-	Name = "params_transformer"
+	Name = "plugin_app"
+)
+
+var (
+	ones       sync.Once
+	appManager manager.IManager
 )
 
 func Register(register eosc.IExtenderDriverRegister) {
-	log.Debug("register params_transformer is ", Name)
 	register.RegisterExtenderDriver(Name, NewFactory())
 }
 
@@ -32,6 +37,10 @@ func NewFactory() *Factory {
 }
 
 func (f *Factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
+	ones.Do(func() {
+		bean.Autowired(&appManager)
+	})
+	
 	d := &Driver{
 		profession: profession,
 		name:       name,
@@ -39,6 +48,5 @@ func (f *Factory) Create(profession string, name string, label string, desc stri
 		desc:       desc,
 		configType: reflect.TypeOf((*Config)(nil)),
 	}
-
 	return d, nil
 }
