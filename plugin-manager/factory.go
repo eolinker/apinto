@@ -14,6 +14,11 @@ var (
 	once      sync.Once
 )
 
+func init() {
+	singleton = NewPluginManager()
+	var i plugin.IPluginManager = singleton
+	bean.Injection(&i)
+}
 func Register(register eosc.IExtenderDriverRegister) {
 	register.RegisterExtenderDriver("plugin", NewPluginFactory())
 }
@@ -43,10 +48,5 @@ func (p *PluginManager) Create(id, name string, v interface{}, workers map[eosc.
 
 func (f *PluginFactory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 
-	once.Do(func() {
-		singleton = NewPluginManager(profession, name)
-		var i plugin.IPluginManager = singleton
-		bean.Injection(&i)
-	})
 	return singleton, nil
 }

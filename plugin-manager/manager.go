@@ -22,8 +22,8 @@ var (
 )
 
 type PluginManager struct {
-	id              string
-	profession      string
+	id string
+	//profession      string
 	name            string
 	extenderDrivers eosc.IExtenderDrivers
 	plugins         Plugins
@@ -171,12 +171,12 @@ func (p *PluginManager) IsExists(id string) bool {
 	return has
 }
 
-func NewPluginManager(profession, name string) *PluginManager {
+func NewPluginManager() *PluginManager {
 
 	pm := &PluginManager{
-		id:         fmt.Sprintf("%s@%s", name, profession),
-		profession: profession,
-		name:       name,
+		//id: fmt.Sprintf("%s@%s", name, profession),
+		//profession: profession,
+		//name:       name,
 		plugins:    nil,
 		pluginObjs: eosc.NewUntyped(),
 	}
