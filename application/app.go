@@ -9,6 +9,7 @@ var (
 	appSkill         string
 	ErrTokenNotFound = errors.New("token not found")
 	ErrInvalidToken  = errors.New("invalid token")
+	ErrTokenExpired  = errors.New("token is expired")
 )
 
 //func init() {

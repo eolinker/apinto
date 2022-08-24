@@ -11,6 +11,7 @@ type User struct {
 
 type UserInfo struct {
 	Name           string
+	Value          string
 	Expire         int64
 	Labels         map[string]string
 	HideCredential bool
@@ -32,6 +33,15 @@ type IUserManager interface {
 type UserManager struct {
 	users   eosc.IUntyped
 	connApp eosc.IUntyped
+}
+
+func (u *UserManager) Map() map[string]*UserInfo {
+	users := u.users.All()
+	us := make(map[string]*UserInfo)
+	for k, v := range users {
+		us[k] = v.(*UserInfo)
+	}
+	return us
 }
 
 func (u *UserManager) Count() int {

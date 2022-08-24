@@ -3,11 +3,9 @@ package aksk
 import (
 	"errors"
 	"fmt"
-	"github.com/eolinker/eosc/utils/config"
+	"github.com/eolinker/apinto/application"
 	"time"
-
-	"github.com/eolinker/apinto/auth"
-	"github.com/eolinker/eosc"
+	
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
@@ -17,84 +15,121 @@ var supportTypes = []string{
 	"aksk",
 }
 
+var _ application.IAuth = (*aksk)(nil)
+
 type aksk struct {
-	id             string
-	hideCredential bool
-	users          *akskUsers
+	id        string
+	tokenName string
+	position  string
+	users     application.IUserManager
 }
 
-func (a *aksk) Id() string {
+func (a *aksk) ID() string {
 	return a.id
 }
 
-func (a *aksk) Start() error {
+func (a *aksk) Driver() string {
+	return a.Driver()
+}
+
+func (a *aksk) Check(users []*application.User) error {
+	us := make(map[string]*application.User)
+	for _, user := range users {
+		name, has := getUser(user.Pattern)
+		if !has {
+			return errors.New("invalid user")
+		}
+		_, ok := a.users.Get(name)
+		if ok {
+			return errors.New("user is existed")
+		}
+		if _, ok = us[name]; ok {
+			return errors.New("user is existed")
+		}
+		us[name] = user
+	}
 	return nil
 }
 
-func (a *aksk) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	c, ok := conf.(*Config)
-	if !ok {
-		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
+func (a *aksk) Set(appID string, labels map[string]string, disable bool, users []*application.User) {
+	if a.users == nil {
+		a.users = application.NewUserManager()
 	}
-
-	a.hideCredential = c.HideCredentials
-
-	a.users = &akskUsers{
-		users: c.Users,
+	infos := make([]*application.UserInfo, 0, len(users))
+	for _, user := range users {
+		name, _ := getUser(user.Pattern)
+		infos = append(infos, &application.UserInfo{
+			Name:           name,
+			Value:          getValue(user.Pattern),
+			Expire:         user.Expire,
+			Labels:         user.Labels,
+			HideCredential: user.HideCredential,
+			AppLabels:      labels,
+			Disable:        disable,
+		})
 	}
-
-	return nil
+	a.users.Set(appID, infos)
 }
 
-func (a *aksk) Stop() error {
-	return nil
+func (a *aksk) Del(appID string) {
+	a.users.DelByAppID(appID)
 }
 
-func (a *aksk) CheckSkill(skill string) bool {
-	return auth.CheckSkill(skill)
+func (a *aksk) UserCount() int {
+	return a.users.Count()
 }
 
-func (a *aksk) Auth(context http_service.IHttpContext) error {
-	authorizationType := context.Request().Header().GetHeader(auth.AuthorizationType)
-	if authorizationType == "" {
-		return auth.ErrorInvalidType
-	}
-	err := auth.CheckAuthorizationType(supportTypes, authorizationType)
-	if err != nil {
-		return err
+func (a *aksk) Auth(ctx http_service.IHttpContext) error {
+	token, has := application.GetToken(ctx, a.tokenName, a.position)
+	if !has || token == "" {
+		return fmt.Errorf("%s error: %s in %s:%s", driverName, application.ErrTokenNotFound, a.position, a.tokenName)
 	}
 	//解析Authorization字符串
-	encType, ak, signHeaders, signature, err := parseAuthorization(context)
-	//判断配置中是否存在该ak
-	for _, user := range a.users.users {
-		if ak == user.AK {
-			switch encType {
-			case "SDK-HMAC-SHA256", "HMAC-SHA256":
-				{
-					//结合context内的信息与配置的sk生成新的签名，与context携带的签名进行对比
-					toSign := buildToSign(context, encType, signHeaders)
-					s := hmaxBySHA256(user.SK, toSign)
-					if s == signature {
-						// 判断鉴权是否已过期
-						if user.Expire != 0 && time.Now().Unix() > user.Expire {
-							return errors.New("[ak/sk_auth] authorization expired")
-						}
-
-						//若隐藏证书信息
-						if a.hideCredential {
-							context.Proxy().Header().DelHeader(auth.Authorization)
-						}
-
-						//将label set进context
-						for k, v := range user.Labels {
-							context.SetLabel(k, v)
-						}
-						return nil
+	encType, ak, signHeaders, signature, err := parseAuthorization(ctx)
+	if err != nil {
+		return fmt.Errorf("%s error: %s", driverName, err.Error())
+	}
+	user, has := a.users.Get(ak)
+	if has {
+		switch encType {
+		case "SDK-HMAC-SHA256", "HMAC-SHA256":
+			{
+				//结合context内的信息与配置的sk生成新的签名，与context携带的签名进行对比
+				toSign := buildToSign(ctx, encType, signHeaders)
+				s := hMaxBySHA256(user.Value, toSign)
+				if s == signature {
+					// 判断鉴权是否已过期
+					if user.Expire <= time.Now().Unix() {
+						return fmt.Errorf("%s error: %s", driverName, application.ErrTokenExpired)
 					}
+					for k, v := range user.Labels {
+						ctx.SetLabel(k, v)
+					}
+					for k, v := range user.AppLabels {
+						ctx.SetLabel(k, v)
+					}
+					if user.HideCredential {
+						application.HideToken(ctx, a.tokenName, a.position)
+					}
+					return nil
 				}
 			}
 		}
 	}
+	
+	return fmt.Errorf("%s error: %s %s", driverName, application.ErrInvalidToken, token)
+}
 
-	return errors.New("[ak/sk_auth] Invalid authorization")
+func getUser(pattern map[string]string) (string, bool) {
+	if v, ok := pattern["ak"]; ok {
+		return v, true
+	}
+	return "", false
+}
+
+func getValue(pattern map[string]string) string {
+	if v, ok := pattern["sk"]; ok {
+		return v
+	}
+	return ""
 }

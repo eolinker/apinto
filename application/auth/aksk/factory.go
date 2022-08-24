@@ -1,42 +1,37 @@
 package aksk
 
 import (
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/utils/schema"
-	"reflect"
+	"fmt"
+	"github.com/eolinker/apinto/application"
+	"github.com/eolinker/apinto/application/auth"
 )
 
-var name = "auth_aksk"
+var _ auth.IAuthFactory = (*factory)(nil)
 
-//Register 注册aksk鉴权驱动工厂
-func Register(register eosc.IExtenderDriverRegister) {
-	register.RegisterExtenderDriver(name, NewFactory())
+var driverName = "basic"
+
+//Register 注册auth驱动工厂
+func Register() {
+	auth.Register(driverName, NewFactory())
 }
 
 type factory struct {
 }
 
-func (f *factory) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
-	if err != nil {
-		return nil
+func (f *factory) Create(tokenName string, position string, rule interface{}) (application.IAuth, error) {
+	a := &aksk{
+		id:        toId(tokenName, position),
+		tokenName: tokenName,
+		position:  position,
 	}
-	return render
+	return a, nil
 }
 
-//NewFactory 创建aksk鉴权驱动工厂
-func NewFactory() eosc.IExtenderDriverFactory {
+//NewFactory 生成一个 auth_apiKey工厂
+func NewFactory() auth.IAuthFactory {
 	return &factory{}
 }
 
-//Create 创建aksk鉴权驱动
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
-	return &driver{
-		profession: profession,
-		name:       name,
-		label:      label,
-		desc:       desc,
-		driver:     driverName,
-		configType: reflect.TypeOf((*Config)(nil)),
-	}, nil
+func toId(tokenName, position string) string {
+	return fmt.Sprintf("%s@%s", tokenName, position)
 }

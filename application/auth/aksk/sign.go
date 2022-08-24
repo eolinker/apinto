@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-
+	
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-
+	
 	"github.com/eolinker/apinto/auth"
 )
 
@@ -21,7 +21,7 @@ func buildToSign(ctx http_service.IHttpContext, encType string, signedHeaders []
 	toSign.WriteString(encType + "\n")
 	dh := ctx.Request().Header().GetHeader(dateHeader)
 	toSign.WriteString(dh + "\n")
-
+	
 	cr := buildHexCanonicalRequest(ctx, signedHeaders)
 	toSign.WriteString(strings.ToLower(cr))
 	return toSign.String()
@@ -30,11 +30,11 @@ func buildToSign(ctx http_service.IHttpContext, encType string, signedHeaders []
 //buildHexCanonicalRequest 构建规范消息头
 func buildHexCanonicalRequest(ctx http_service.IHttpContext, signedHeaders []string) string {
 	cr := strings.Builder{}
-
+	
 	cr.WriteString(strings.ToUpper(ctx.Request().Method()) + "\n")
 	cr.WriteString(buildPath(ctx.Request().URI().Path()) + "\n")
 	cr.WriteString(ctx.Request().URI().RawQuery() + "\n")
-
+	
 	for _, header := range signedHeaders {
 		if strings.ToLower(header) == "host" {
 			cr.WriteString(buildHeaders(header, ctx.Request().Header().Host()) + "\n")
@@ -47,7 +47,7 @@ func buildHexCanonicalRequest(ctx http_service.IHttpContext, signedHeaders []str
 	cr.WriteString(strings.Join(signedHeaders, ";") + "\n")
 	body, _ := ctx.Request().Body().RawBody()
 	cr.WriteString(hexEncode(body))
-
+	
 	return hexEncode([]byte(cr.String()))
 }
 
@@ -65,7 +65,7 @@ func hexEncode(data []byte) string {
 	return hex.EncodeToString(sha.Sum(nil))
 }
 
-func hmaxBySHA256(secretKey, toSign string) string {
+func hMaxBySHA256(secretKey, toSign string) string {
 	// 创建对应的sha256哈希加密算法
 	hm := hmac.New(sha256.New, []byte(secretKey))
 	//写入加密数据
@@ -75,24 +75,20 @@ func hmaxBySHA256(secretKey, toSign string) string {
 
 func parseAuthorization(ctx http_service.IHttpContext) (encType string, accessKey string, signHeaders []string, signature string, err error) {
 	authStr := ctx.Request().Header().GetHeader(auth.Authorization)
-
+	
 	infos := strings.Split(authStr, ",")
 	if len(infos) < 3 {
-		err = errors.New("[ak/sk_auth] error authorization")
+		err = errors.New("invalid authorization")
 		return
 	}
 	encType, accessKey, err = parseAccessKey(infos[0])
 	if err != nil {
 		return
 	}
-	signHeaders, err = parseSignHeaders(infos[1])
-	if err != nil {
-		return
-	}
-	signature, err = parseSignature(infos[2])
-	if err != nil {
-		return
-	}
+	signHeaders = parseSignHeaders(infos[1])
+	
+	signature = parseSignature(infos[2])
+	
 	return
 }
 
@@ -102,7 +98,7 @@ func parseAccessKey(info string) (string, string, error) {
 	encType := ""
 	accessKey := ""
 	if len(akInfos) < 1 {
-		return "", "", errors.New("[ak/sk_auth] error access key")
+		return "", "", errors.New("error access key")
 	} else if len(akInfos) == 1 {
 		accessKey = strings.Replace(akInfos[0], "Access=", "", 1)
 	} else if len(akInfos) == 2 {
@@ -112,13 +108,13 @@ func parseAccessKey(info string) (string, string, error) {
 	return encType, accessKey, nil
 }
 
-func parseSignHeaders(info string) ([]string, error) {
+func parseSignHeaders(info string) []string {
 	info = strings.Replace(strings.TrimSpace(info), "SignedHeaders=", "", 1)
 	headers := strings.Split(strings.ToLower(info), ";")
-	return headers, nil
+	return headers
 }
 
-func parseSignature(info string) (string, error) {
+func parseSignature(info string) string {
 	info = strings.Replace(strings.TrimSpace(info), "Signature=", "", 1)
-	return info, nil
+	return info
 }
