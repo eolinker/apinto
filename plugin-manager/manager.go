@@ -22,13 +22,29 @@ var (
 )
 
 type PluginManager struct {
-	id string
-	//profession      string
 	name            string
 	extenderDrivers eosc.IExtenderDrivers
 	plugins         Plugins
 	pluginObjs      eosc.IUntyped
 	workers         eosc.IWorkers
+
+	render interface{}
+}
+
+func (p *PluginManager) Render() interface{} {
+	return p.render
+}
+
+func (p *PluginManager) Set(conf interface{}) error {
+	return p.Reset(conf)
+}
+
+func (p *PluginManager) Get() interface{} {
+	return p.plugins
+}
+
+func (p *PluginManager) ReadOnly() bool {
+	return false
 }
 
 func (p *PluginManager) ConfigType() reflect.Type {
@@ -50,15 +66,7 @@ func (p *PluginManager) GetConfigType(name string) (reflect.Type, bool) {
 	return nil, false
 }
 
-func (p *PluginManager) Id() string {
-	return p.id
-}
-
-func (p *PluginManager) Start() error {
-	return nil
-}
-
-func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+func (p *PluginManager) Reset(conf interface{}) error {
 
 	plugins, err := p.check(conf)
 	if err != nil {
@@ -77,14 +85,6 @@ func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]eosc.
 	}
 
 	return nil
-}
-
-func (p *PluginManager) Stop() error {
-	return nil
-}
-
-func (p *PluginManager) CheckSkill(skill string) bool {
-	return false
 }
 
 func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []eocontext.IFilter {
@@ -174,14 +174,15 @@ func (p *PluginManager) IsExists(id string) bool {
 func NewPluginManager() *PluginManager {
 
 	pm := &PluginManager{
-		//id: fmt.Sprintf("%s@%s", name, profession),
-		//profession: profession,
-		//name:       name,
+
 		plugins:    nil,
 		pluginObjs: eosc.NewUntyped(),
+		render:     genRender(),
 	}
 	log.Debug("autowired extenderDrivers")
 	bean.Autowired(&pm.extenderDrivers)
+	bean.Autowired(&pm.workers)
+
 	log.DebugF("autowired extenderDrivers = %p", pm.extenderDrivers)
 
 	return pm
