@@ -4,14 +4,15 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/eosc/utils/config"
 	"strings"
 	"time"
-
+	
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-
+	
 	"github.com/eolinker/eosc"
-
+	
 	"github.com/eolinker/apinto/auth"
 )
 
@@ -23,14 +24,41 @@ var supportTypes = []string{
 	"basicauth",
 }
 
+var _ application.IAuth = (*basic)(nil)
+
 type basic struct {
-	id             string
-	hideCredential bool
-	users          *basicUsers
+	id        string
+	tokenName string
+	position  string
+	users     application.IUserManager
 }
 
-type basicUsers struct {
-	users []User
+func (b *basic) ID() string {
+	return b.id
+}
+
+func (b *basic) Driver() string {
+	return driverName
+}
+
+func (b *basic) Check(users []*application.User) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (b *basic) Set(appID string, labels map[string]string, disable bool, users []*application.User) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (b *basic) Del(appID string) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (b *basic) UserCount() int {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (b *basicUsers) check(ctx http_service.IHttpContext, username string, password string) error {
@@ -41,7 +69,7 @@ func (b *basicUsers) check(ctx http_service.IHttpContext, username string, passw
 				for k, v := range u.Labels {
 					ctx.SetLabel(k, v)
 				}
-
+				
 				return nil
 			}
 			return auth.ErrorExpireUser
@@ -91,7 +119,7 @@ func (b *basic) Auth(ctx http_service.IHttpContext) error {
 	if b.hideCredential {
 		ctx.Proxy().Header().DelHeader(auth.Authorization)
 	}
-
+	
 	username, password, err := retrieveCredentials(authorization)
 	if err != nil {
 		return err
@@ -101,11 +129,11 @@ func (b *basic) Auth(ctx http_service.IHttpContext) error {
 
 //retrieveCredentials 获取basicAuth认证信息
 func retrieveCredentials(authInfo string) (string, string, error) {
-
+	
 	if authInfo != "" {
 		const basic = "basic"
 		l := len(basic)
-
+		
 		if len(authInfo) > l+1 && strings.ToLower(authInfo[:l]) == basic {
 			b, err := base64.StdEncoding.DecodeString(authInfo[l+1:])
 			if err != nil {

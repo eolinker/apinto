@@ -89,6 +89,10 @@ func (a *apikey) Driver() string {
 	return driverName
 }
 
+func (a *apikey) UserCount() int {
+	return a.users.Count()
+}
+
 func getUser(pattern map[string]string) string {
 	if v, ok := pattern["apikey"]; ok {
 		return v

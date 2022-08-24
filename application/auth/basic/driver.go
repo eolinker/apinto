@@ -2,19 +2,15 @@ package basic
 
 import (
 	"reflect"
-
+	
 	"github.com/eolinker/eosc"
-)
-
-const (
-	driverName = "basic"
 )
 
 //driver 实现github.com/eolinker/eosc.eosc.IProfessionDriver接口
 type driver struct {
 	profession string
 	name       string
-
+	
 	label      string
 	desc       string
 	configType reflect.Type
@@ -27,7 +23,7 @@ func (d *driver) ConfigType() reflect.Type {
 
 //Create 创建http_proxy驱动的实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-
+	
 	w := &basic{
 		id: id,
 	}
@@ -35,6 +31,6 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	if err != nil {
 		return nil, err
 	}
-
+	
 	return w, nil
 }

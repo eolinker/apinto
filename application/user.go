@@ -26,11 +26,16 @@ type IUserManager interface {
 	Del(name string)
 	DelByAppID(appID string)
 	List() []*UserInfo
+	Count() int
 }
 
 type UserManager struct {
 	users   eosc.IUntyped
 	connApp eosc.IUntyped
+}
+
+func (u *UserManager) Count() int {
+	return u.users.Count()
 }
 
 func (u *UserManager) List() []*UserInfo {

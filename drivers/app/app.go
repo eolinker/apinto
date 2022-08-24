@@ -13,7 +13,7 @@ type app struct {
 }
 
 func (a *app) Destroy() error {
-	
+	appManager.Del(a.id)
 	return nil
 }
 
@@ -25,15 +25,34 @@ func (a *app) Start() error {
 	if a.config == nil {
 		return nil
 	}
-	filters, err := createFilters(a.config.Auth)
+	filters, users, err := createFilters(a.config.Auth)
 	if err != nil {
 		return err
 	}
+	appManager.Set(a.Id(), a.config.Labels, a.config.Disable, filters, users)
 	
 	return nil
 }
 
 func (a *app) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+	cfg, err := checkConfig(conf)
+	if err != nil {
+		return err
+	}
+	err = set(a.id, cfg)
+	if err != nil {
+		return err
+	}
+	a.config = cfg
+	return nil
+}
+
+func set(id string, cfg *Config) error {
+	filters, users, err := createFilters(cfg.Auth)
+	if err != nil {
+		return err
+	}
+	appManager.Set(id, cfg.Labels, cfg.Disable, filters, users)
 	return nil
 }
 
@@ -45,16 +64,18 @@ func (a *app) CheckSkill(skill string) bool {
 	return true
 }
 
-func createFilters(auths []*Auth) ([]application.IAuth, error) {
+func createFilters(auths []*Auth) ([]application.IAuth, map[string][]*application.User, error) {
 	filters := make([]application.IAuth, 0, len(auths))
+	userMap := make(map[string][]*application.User)
 	for _, v := range auths {
 		filter, err := createFilter(v.Type, v.TokenName, v.Position, v.Users, v.Config)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		filters = append(filters, filter)
+		userMap[filter.ID()] = v.Users
 	}
-	return filters, nil
+	return filters, userMap, nil
 }
 
 func createFilter(driver string, tokenName string, position string, users []*application.User, rule interface{}) (application.IAuth, error) {
@@ -62,7 +83,7 @@ func createFilter(driver string, tokenName string, position string, users []*app
 	if err != nil {
 		return nil, err
 	}
-	filter, err := fac.Create(tokenName, position, users, rule)
+	filter, err := fac.Create(tokenName, position, rule)
 	if err != nil {
 		return nil, err
 	}

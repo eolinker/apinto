@@ -69,6 +69,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	//plugin
 	plugin_manager.Register(extenderRegister)
 	
+	app.Register(extenderRegister)
 	extra_params.Register(extenderRegister)
 	params_transformer.Register(extenderRegister)
 	proxy_rewrite.Register(extenderRegister)

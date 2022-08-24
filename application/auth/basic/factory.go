@@ -1,40 +1,37 @@
 package basic
 
 import (
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/utils/schema"
-	"reflect"
+	"fmt"
+	"github.com/eolinker/apinto/application"
+	"github.com/eolinker/apinto/application/auth"
 )
 
-var name = "auth_basic"
+var _ auth.IAuthFactory = (*factory)(nil)
 
-//Register 注册http_proxy驱动工厂
-func Register(register eosc.IExtenderDriverRegister) {
-	register.RegisterExtenderDriver(name, NewFactory())
+var driverName = "basic"
+
+//Register 注册auth驱动工厂
+func Register() {
+	auth.Register(driverName, NewFactory())
 }
 
 type factory struct {
 }
 
-//NewFactory 创建http_proxy驱动工厂
-func NewFactory() eosc.IExtenderDriverFactory {
-	return &factory{}
-}
-func (f *factory) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
-	if err != nil {
-		return nil
+func (f *factory) Create(tokenName string, position string, rule interface{}) (application.IAuth, error) {
+	a := &basic{
+		id:        toId(tokenName, position),
+		tokenName: tokenName,
+		position:  position,
 	}
-	return render
+	return a, nil
 }
 
-//Create 创建http_proxy驱动
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
-	return &driver{
-		profession: profession,
-		name:       name,
-		label:      label,
-		desc:       desc,
-		configType: reflect.TypeOf((*Config)(nil)),
-	}, nil
+//NewFactory 生成一个 auth_apiKey工厂
+func NewFactory() auth.IAuthFactory {
+	return &factory{}
+}
+
+func toId(tokenName, position string) string {
+	return fmt.Sprintf("%s@%s", tokenName, position)
 }

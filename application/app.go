@@ -30,6 +30,7 @@ type IAuth interface {
 	Check(users []*User) error
 	Set(appID string, labels map[string]string, disable bool, users []*User)
 	Del(appID string)
+	UserCount() int
 	IAuthFilter
 }
 

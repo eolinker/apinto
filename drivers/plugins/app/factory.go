@@ -1,14 +1,21 @@
 package app
 
 import (
+	"github.com/eolinker/apinto/drivers/app/manager"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
+	"sync"
 )
 
 const (
 	Name = "app"
+)
+
+var (
+	ones       sync.Once
+	appManager manager.IManager
 )
 
 func Register(register eosc.IExtenderDriverRegister) {
@@ -30,6 +37,10 @@ func NewFactory() *Factory {
 }
 
 func (f *Factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
+	ones.Do(func() {
+		bean.Autowired(&appManager)
+	})
+	
 	d := &Driver{
 		profession: profession,
 		name:       name,
@@ -37,6 +48,5 @@ func (f *Factory) Create(profession string, name string, label string, desc stri
 		desc:       desc,
 		configType: reflect.TypeOf((*Config)(nil)),
 	}
-	bean.Autowired(&d.workers)
 	return d, nil
 }

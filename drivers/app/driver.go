@@ -43,9 +43,8 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	}
 	
 	return &app{
-		id:         id,
-		config:     cfg,
-		appManager: appManager,
+		id:     id,
+		config: cfg,
 	}, nil
 }
 

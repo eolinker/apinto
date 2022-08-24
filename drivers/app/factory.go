@@ -36,17 +36,17 @@ func (f *factory) Render() interface{} {
 
 //NewFactory 创建service_http驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
-	// 鉴权驱动注册
-	return &factory{}
-}
-
-//Create 创建service_http驱动
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 	ones.Do(func() {
 		apikey.Register()
 		appManager = manager.NewManager()
 		bean.Injection(&appManager)
 	})
+	return &factory{}
+}
+
+//Create 创建service_http驱动
+func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
+	
 	return &driver{
 		profession: profession,
 		label:      label,
