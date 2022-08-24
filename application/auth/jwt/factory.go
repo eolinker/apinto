@@ -1,43 +1,44 @@
 package jwt
 
 import (
-	"github.com/eolinker/eosc/utils/schema"
+	"github.com/eolinker/apinto/application"
+	"github.com/eolinker/apinto/application/auth"
+	"github.com/eolinker/eosc/variable"
 	"reflect"
-
-	"github.com/eolinker/eosc"
 )
 
-var name = "auth_jwt"
+var _ auth.IAuthFactory = (*factory)(nil)
 
-//Register 注册jwt鉴权驱动工厂
-func Register(register eosc.IExtenderDriverRegister) {
-	register.RegisterExtenderDriver(name, NewFactory())
+var driverName = "basic"
+
+//Register 注册auth驱动工厂
+func Register() {
+	auth.Register(driverName, NewFactory())
 }
 
 type factory struct {
 }
 
-func (f *factory) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
+func (f *factory) Create(tokenName string, position string, rule interface{}) (application.IAuth, error) {
+	cfg := &Config{}
+	_, err := variable.RecurseReflect(reflect.ValueOf(rule), reflect.ValueOf(cfg), nil)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return render
+	id, err := cfg.ToID()
+	if err != nil {
+		return nil, err
+	}
+	a := &jwt{
+		id:        id,
+		tokenName: tokenName,
+		position:  position,
+		cfg:       cfg,
+	}
+	return a, nil
 }
 
-//NewFactory 创建jwt鉴权驱动工厂
-func NewFactory() eosc.IExtenderDriverFactory {
+//NewFactory 生成一个 auth_apiKey工厂
+func NewFactory() auth.IAuthFactory {
 	return &factory{}
-}
-
-//Create 创建jwt鉴权驱动
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
-	return &driver{
-		profession: profession,
-		name:       name,
-		label:      label,
-		desc:       desc,
-		driver:     driverName,
-		configType: reflect.TypeOf((*Config)(nil)),
-	}, nil
 }

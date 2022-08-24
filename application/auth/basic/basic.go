@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/eolinker/apinto/application"
 	"strings"
+	"time"
 	
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -86,6 +87,9 @@ func (b *basic) Auth(ctx http_service.IHttpContext) error {
 	user, has := b.users.Get(username)
 	if has {
 		if password == user.Value {
+			if user.Expire <= time.Now().Unix() {
+				return fmt.Errorf("%s error: %s", driverName, application.ErrTokenExpired)
+			}
 			for k, v := range user.Labels {
 				ctx.SetLabel(k, v)
 			}
