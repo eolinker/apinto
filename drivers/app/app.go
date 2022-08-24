@@ -4,6 +4,7 @@ import (
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/log"
 )
 
 type app struct {
@@ -25,13 +26,8 @@ func (a *app) Start() error {
 	if a.config == nil {
 		return nil
 	}
-	filters, users, err := createFilters(a.config.Auth)
-	if err != nil {
-		return err
-	}
-	appManager.Set(a.Id(), a.config.Labels, a.config.Disable, filters, users)
-	
-	return nil
+	log.Debug("start app...")
+	return set(a.id, a.config)
 }
 
 func (a *app) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
@@ -48,10 +44,11 @@ func (a *app) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) e
 }
 
 func set(id string, cfg *Config) error {
-	filters, users, err := createFilters(cfg.Auth)
+	filters, users, err := createFilters(id, cfg.Auth)
 	if err != nil {
 		return err
 	}
+	
 	appManager.Set(id, cfg.Labels, cfg.Disable, filters, users)
 	return nil
 }
@@ -64,11 +61,15 @@ func (a *app) CheckSkill(skill string) bool {
 	return true
 }
 
-func createFilters(auths []*Auth) ([]application.IAuth, map[string][]*application.User, error) {
+func createFilters(id string, auths []*Auth) ([]application.IAuth, map[string][]*application.User, error) {
 	filters := make([]application.IAuth, 0, len(auths))
 	userMap := make(map[string][]*application.User)
 	for _, v := range auths {
-		filter, err := createFilter(v.Type, v.TokenName, v.Position, v.Users, v.Config)
+		filter, err := createFilter(v.Type, v.TokenName, v.Position, v.Config)
+		if err != nil {
+			return nil, nil, err
+		}
+		err = checkUsers(id, filter, v.Users)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -78,7 +79,11 @@ func createFilters(auths []*Auth) ([]application.IAuth, map[string][]*applicatio
 	return filters, userMap, nil
 }
 
-func createFilter(driver string, tokenName string, position string, users []*application.User, rule interface{}) (application.IAuth, error) {
+func checkUsers(id string, filter application.IAuth, users []*application.User) error {
+	return filter.Check(id, users)
+}
+
+func createFilter(driver string, tokenName string, position string, rule interface{}) (application.IAuth, error) {
 	fac, err := auth.GetFactory(driver)
 	if err != nil {
 		return nil, err
@@ -92,5 +97,5 @@ func createFilter(driver string, tokenName string, position string, users []*app
 		return filter, nil
 	}
 	
-	return filter, old.Check(users)
+	return old, nil
 }

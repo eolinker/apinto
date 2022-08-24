@@ -9,7 +9,7 @@ import (
 
 var _ auth.IAuthFactory = (*factory)(nil)
 
-var driverName = "basic"
+var driverName = "jwt"
 
 //Register 注册auth驱动工厂
 func Register() {
@@ -34,6 +34,7 @@ func (f *factory) Create(tokenName string, position string, rule interface{}) (a
 		tokenName: tokenName,
 		position:  position,
 		cfg:       cfg,
+		users:     application.NewUserManager(getUser),
 	}
 	return a, nil
 }

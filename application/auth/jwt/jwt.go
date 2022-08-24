@@ -1,7 +1,6 @@
 package jwt
 
 import (
-	"errors"
 	"fmt"
 	"github.com/eolinker/apinto/application"
 	"time"
@@ -32,33 +31,16 @@ func (j *jwt) Driver() string {
 	return driverName
 }
 
-func (j *jwt) Check(users []*application.User) error {
-	us := make(map[string]*application.User)
-	for _, user := range users {
-		name, has := getUser(user.Pattern)
-		if !has {
-			return errors.New("invalid user")
-		}
-		_, ok := j.users.Get(name)
-		if ok {
-			return errors.New("user is existed")
-		}
-		if _, ok = us[name]; ok {
-			return errors.New("user is existed")
-		}
-		us[name] = user
-	}
-	return nil
+func (j *jwt) Check(appID string, users []*application.User) error {
+	return j.users.Check(appID, driverName, users)
 }
 
 func (j *jwt) Set(appID string, labels map[string]string, disable bool, users []*application.User) {
-	if j.users == nil {
-		j.users = application.NewUserManager()
-	}
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, user := range users {
 		name, _ := getUser(user.Pattern)
 		infos = append(infos, &application.UserInfo{
+			AppID:          appID,
 			Name:           name,
 			Expire:         user.Expire,
 			Labels:         user.Labels,
@@ -90,7 +72,7 @@ func (j *jwt) Auth(ctx http_service.IHttpContext) error {
 	}
 	user, has := j.users.Get(name)
 	if has {
-		if user.Expire <= time.Now().Unix() {
+		if user.Expire <= time.Now().Unix() && user.Expire != 0 {
 			return fmt.Errorf("%s error: %s", driverName, application.ErrTokenExpired)
 		}
 		for k, v := range user.Labels {

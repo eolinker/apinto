@@ -40,13 +40,13 @@ func NewHTTPRouterDriver() *HTTPRouterDriver {
 	var tf traffic.ITraffic
 	var cfg *trafficConfig.ListensMsg
 	var pluginManager plugin.IPluginManager
-	
 	bean.Autowired(&tf)
 	bean.Autowired(&cfg)
 	bean.Autowired(&pluginManager)
 	
 	bean.AddInitializingBeanFunc(func() {
 		log.Debug("init router manager")
+		
 		h.pluginManager = pluginManager
 		h.routerManager = manager.NewManager(tf, cfg, pluginManager.CreateRequest("global", map[string]*plugin.Config{}))
 		

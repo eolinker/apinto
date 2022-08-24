@@ -1,7 +1,10 @@
 package app
 
 import (
+	"github.com/eolinker/apinto/application/auth/aksk"
 	"github.com/eolinker/apinto/application/auth/apikey"
+	"github.com/eolinker/apinto/application/auth/basic"
+	"github.com/eolinker/apinto/application/auth/jwt"
 	"github.com/eolinker/apinto/drivers/app/manager"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/utils/schema"
@@ -38,6 +41,9 @@ func (f *factory) Render() interface{} {
 func NewFactory() eosc.IExtenderDriverFactory {
 	ones.Do(func() {
 		apikey.Register()
+		basic.Register()
+		aksk.Register()
+		jwt.Register()
 		appManager = manager.NewManager()
 		bean.Injection(&appManager)
 	})

@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/eolinker/eosc/log"
 	"reflect"
 	
 	"github.com/eolinker/eosc"
@@ -36,10 +35,7 @@ func (d *Driver) ConfigType() reflect.Type {
 }
 
 func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	conf, err := d.check(v)
-	if err != nil {
-		return nil, err
-	}
-	log.Info(conf)
-	return nil, nil
+	return &App{
+		id: id,
+	}, nil
 }

@@ -2,7 +2,6 @@ package basic
 
 import (
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"github.com/eolinker/apinto/application"
 	"strings"
@@ -28,33 +27,16 @@ func (b *basic) Driver() string {
 	return driverName
 }
 
-func (b *basic) Check(users []*application.User) error {
-	us := make(map[string]*application.User)
-	for _, user := range users {
-		name, has := getUser(user.Pattern)
-		if !has {
-			return errors.New("invalid user")
-		}
-		_, ok := b.users.Get(name)
-		if ok {
-			return errors.New("user is existed")
-		}
-		if _, ok = us[name]; ok {
-			return errors.New("user is existed")
-		}
-		us[name] = user
-	}
-	return nil
+func (b *basic) Check(appID string, users []*application.User) error {
+	return b.users.Check(appID, driverName, users)
 }
 
 func (b *basic) Set(appID string, labels map[string]string, disable bool, users []*application.User) {
-	if b.users == nil {
-		b.users = application.NewUserManager()
-	}
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, user := range users {
 		name, _ := getUser(user.Pattern)
 		infos = append(infos, &application.UserInfo{
+			AppID:          appID,
 			Name:           name,
 			Value:          getPassword(user.Pattern),
 			Expire:         user.Expire,
@@ -87,7 +69,7 @@ func (b *basic) Auth(ctx http_service.IHttpContext) error {
 	user, has := b.users.Get(username)
 	if has {
 		if password == user.Value {
-			if user.Expire <= time.Now().Unix() {
+			if user.Expire <= time.Now().Unix() && user.Expire != 0 {
 				return fmt.Errorf("%s error: %s", driverName, application.ErrTokenExpired)
 			}
 			for k, v := range user.Labels {

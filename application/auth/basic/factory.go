@@ -23,6 +23,7 @@ func (f *factory) Create(tokenName string, position string, rule interface{}) (a
 		id:        toId(tokenName, position),
 		tokenName: tokenName,
 		position:  position,
+		users:     application.NewUserManager(getUser),
 	}
 	return a, nil
 }

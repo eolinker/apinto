@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	Name = "app"
+	Name = "plugin_app"
 )
 
 var (

@@ -96,20 +96,20 @@ func (m *Manager) All() []application.IAuthFilter {
 func (m *Manager) Set(appID string, labels map[string]string, disable bool, filters []application.IAuth, users map[string][]*application.User) {
 	idMap := make(map[string][]string)
 	for _, filter := range filters {
+		f, has := m.get(filter.ID())
+		if !has {
+			f = filter
+		}
+		var us []*application.User
+		if v, ok := users[f.ID()]; ok {
+			us = v
+		}
+		f.Set(appID, labels, disable, us)
+		m.filters.Set(filter.ID(), filter)
 		if _, ok := idMap[filter.Driver()]; !ok {
 			idMap[filter.Driver()] = make([]string, 0, len(filters))
 		}
 		idMap[filter.Driver()] = append(idMap[filter.Driver()], filter.ID())
-		f, has := m.get(filter.ID())
-		if has {
-			var us []*application.User
-			if v, ok := users[filter.ID()]; ok {
-				us = v
-			}
-			f.Set(appID, labels, disable, us)
-			continue
-		}
-		m.filters.Set(filter.ID(), filter)
 	}
 	for driver, ids := range idMap {
 		m.appManager.Set(appID, driver, ids)

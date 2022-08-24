@@ -35,13 +35,16 @@ func (d *driver) Render() interface{} {
 	return render
 }
 
-//Create 创建service_http驱动的实例
+//Create 创建驱动实例
 func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 	cfg, err := checkConfig(v)
 	if err != nil {
 		return nil, err
 	}
-	
+	_, _, err = createFilters(id, cfg.Auth)
+	if err != nil {
+		return nil, err
+	}
 	return &app{
 		id:     id,
 		config: cfg,
@@ -58,6 +61,7 @@ func checkConfig(v interface{}) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+		
 	}
 	return conf, nil
 }

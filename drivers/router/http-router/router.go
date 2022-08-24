@@ -6,7 +6,7 @@ import (
 	http_router "github.com/eolinker/apinto/router/http-router"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/template"
-
+	
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	"time"
@@ -21,7 +21,7 @@ type HttpRouter struct {
 }
 
 func (h *HttpRouter) Destroy() error {
-
+	
 	h.routerManager.Delete(h.id)
 	return nil
 }
@@ -39,7 +39,7 @@ func (h *HttpRouter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	if err != nil {
 		return err
 	}
-
+	
 	return nil
 }
 func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
@@ -58,12 +58,12 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		disable:  cfg.Disable,
 	}
 	if !cfg.Disable {
-
+		
 		serviceWorker, has := workers[cfg.Service]
 		if !has || !serviceWorker.CheckSkill(service.ServiceSkill) {
 			return eosc.ErrorNotGetSillForRequire
 		}
-
+		
 		if cfg.Plugins == nil {
 			cfg.Plugins = map[string]*plugin.Config{}
 		}
@@ -78,14 +78,14 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		} else {
 			plugins = h.pluginManager.CreateRequest(h.id, cfg.Plugins)
 		}
-
+		
 		serviceHandler := serviceWorker.(service.IService)
-
+		
 		handler.service = serviceHandler
 		handler.filters = plugins
-
+		
 	}
-
+	
 	appendRule := make([]http_router.AppendRule, 0, len(cfg.Rules))
 	for _, r := range cfg.Rules {
 		appendRule = append(appendRule, http_router.AppendRule{

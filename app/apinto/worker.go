@@ -12,6 +12,7 @@ import (
 	"github.com/eolinker/apinto/drivers/output/nsq"
 	"github.com/eolinker/apinto/drivers/output/syslog"
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
+	plugin_app "github.com/eolinker/apinto/drivers/plugins/app"
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
@@ -69,7 +70,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	//plugin
 	plugin_manager.Register(extenderRegister)
 	
-	app.Register(extenderRegister)
+	plugin_app.Register(extenderRegister)
 	extra_params.Register(extenderRegister)
 	params_transformer.Register(extenderRegister)
 	proxy_rewrite.Register(extenderRegister)

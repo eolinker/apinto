@@ -1,7 +1,6 @@
 package aksk
 
 import (
-	"errors"
 	"fmt"
 	"github.com/eolinker/apinto/application"
 	"time"
@@ -32,33 +31,16 @@ func (a *aksk) Driver() string {
 	return a.Driver()
 }
 
-func (a *aksk) Check(users []*application.User) error {
-	us := make(map[string]*application.User)
-	for _, user := range users {
-		name, has := getUser(user.Pattern)
-		if !has {
-			return errors.New("invalid user")
-		}
-		_, ok := a.users.Get(name)
-		if ok {
-			return errors.New("user is existed")
-		}
-		if _, ok = us[name]; ok {
-			return errors.New("user is existed")
-		}
-		us[name] = user
-	}
-	return nil
+func (a *aksk) Check(appID string, users []*application.User) error {
+	return a.users.Check(appID, driverName, users)
 }
 
 func (a *aksk) Set(appID string, labels map[string]string, disable bool, users []*application.User) {
-	if a.users == nil {
-		a.users = application.NewUserManager()
-	}
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, user := range users {
 		name, _ := getUser(user.Pattern)
 		infos = append(infos, &application.UserInfo{
+			AppID:          appID,
 			Name:           name,
 			Value:          getValue(user.Pattern),
 			Expire:         user.Expire,
@@ -99,7 +81,7 @@ func (a *aksk) Auth(ctx http_service.IHttpContext) error {
 				s := hMaxBySHA256(user.Value, toSign)
 				if s == signature {
 					// 判断鉴权是否已过期
-					if user.Expire <= time.Now().Unix() {
+					if user.Expire <= time.Now().Unix() && user.Expire != 0 {
 						return fmt.Errorf("%s error: %s", driverName, application.ErrTokenExpired)
 					}
 					for k, v := range user.Labels {

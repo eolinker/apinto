@@ -28,7 +28,7 @@ var (
 type IAuth interface {
 	ID() string
 	Driver() string
-	Check(users []*User) error
+	Check(appID string, users []*User) error
 	Set(appID string, labels map[string]string, disable bool, users []*User)
 	Del(appID string)
 	UserCount() int
