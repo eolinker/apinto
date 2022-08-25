@@ -6,7 +6,7 @@
  * Vestibulum commodo. Ut rhoncus gravida arcu.
  */
 
-package professions
+package main
 
 import (
 	"github.com/eolinker/eosc"
