@@ -48,6 +48,9 @@ func set(id string, cfg *Config) error {
 	if err != nil {
 		return err
 	}
+	if cfg.Labels == nil {
+		cfg.Labels = make(map[string]string)
+	}
 	cfg.Labels["appID"] = id
 	appManager.Set(id, cfg.Labels, cfg.Disable, filters, users)
 	return nil
