@@ -18,6 +18,13 @@ func Register() {
 type factory struct {
 }
 
+func (f *factory) Alias() []string {
+	return []string{
+		"basic",
+		"basic_auth",
+	}
+}
+
 func (f *factory) Create(tokenName string, position string, rule interface{}) (application.IAuth, error) {
 	a := &basic{
 		id:        toId(tokenName, position),

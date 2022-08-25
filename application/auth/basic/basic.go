@@ -2,11 +2,9 @@ package basic
 
 import (
 	"encoding/base64"
-	"fmt"
 	"github.com/eolinker/apinto/application"
 	"strings"
-	"time"
-	
+
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
@@ -17,6 +15,32 @@ type basic struct {
 	tokenName string
 	position  string
 	users     application.IUserManager
+}
+
+func (b *basic) Alias() []string {
+	return []string{
+		"basic",
+		"basic_auth",
+	}
+}
+
+func (b *basic) GetUser(ctx http_service.IHttpContext) (*application.UserInfo, bool) {
+	token, has := application.GetToken(ctx, b.tokenName, b.position)
+	if !has || token == "" {
+		return nil, false
+	}
+	username, password := parseToken(token)
+	if username == "" {
+		return nil, true
+	}
+	user, has := b.users.Get(username)
+	if has {
+		if password == user.Value {
+			return user, true
+		}
+		return nil, true
+	}
+	return nil, false
 }
 
 func (b *basic) ID() string {
@@ -44,6 +68,8 @@ func (b *basic) Set(appID string, labels map[string]string, disable bool, users 
 			HideCredential: user.HideCredential,
 			AppLabels:      labels,
 			Disable:        disable,
+			TokenName:      b.tokenName,
+			Position:       b.position,
 		})
 	}
 	b.users.Set(appID, infos)
@@ -57,41 +83,10 @@ func (b *basic) UserCount() int {
 	return b.users.Count()
 }
 
-func (b *basic) Auth(ctx http_service.IHttpContext) error {
-	token, has := application.GetToken(ctx, b.tokenName, b.position)
-	if !has || token == "" {
-		return fmt.Errorf("%s error: %s in %s:%s", driverName, application.ErrTokenNotFound, b.position, b.tokenName)
-	}
-	username, password := parseToken(token)
-	if username == "" {
-		return fmt.Errorf("%s error: %s %s", driverName, application.ErrInvalidToken, token)
-	}
-	user, has := b.users.Get(username)
-	if has {
-		if password == user.Value {
-			if user.Expire <= time.Now().Unix() && user.Expire != 0 {
-				return fmt.Errorf("%s error: %s", driverName, application.ErrTokenExpired)
-			}
-			for k, v := range user.Labels {
-				ctx.SetLabel(k, v)
-			}
-			for k, v := range user.AppLabels {
-				ctx.SetLabel(k, v)
-			}
-			if user.HideCredential {
-				application.HideToken(ctx, b.tokenName, b.position)
-			}
-			return nil
-		}
-	}
-	
-	return fmt.Errorf("%s error: %s %s", driverName, application.ErrInvalidToken, token)
-}
-
 func parseToken(token string) (username string, password string) {
 	const basic = "basic"
 	l := len(basic)
-	
+
 	if len(token) > l+1 && strings.ToLower(token[:l]) == basic {
 		b, err := base64.StdEncoding.DecodeString(token[l+1:])
 		if err != nil {

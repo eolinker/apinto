@@ -19,6 +19,12 @@ func Register() {
 type factory struct {
 }
 
+func (f *factory) Alias() []string {
+	return []string{
+		"jwt",
+	}
+}
+
 func (f *factory) Create(tokenName string, position string, rule interface{}) (application.IAuth, error) {
 	cfg := &Config{}
 	_, err := variable.RecurseReflect(reflect.ValueOf(rule), reflect.ValueOf(cfg), nil)

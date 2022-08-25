@@ -1,11 +1,7 @@
 package apikey
 
 import (
-	"fmt"
 	"github.com/eolinker/apinto/application"
-	"github.com/eolinker/eosc/log"
-	"time"
-	
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
@@ -23,12 +19,11 @@ func (a *apikey) ID() string {
 }
 
 func (a *apikey) Check(appID string, users []*application.User) error {
-	log.Debug("check appID:", appID)
 	return a.users.Check(appID, driverName, users)
 }
 
 func (a *apikey) Set(appID string, labels map[string]string, disable bool, users []*application.User) {
-	
+
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, user := range users {
 		name, _ := getUser(user.Pattern)
@@ -41,6 +36,8 @@ func (a *apikey) Set(appID string, labels map[string]string, disable bool, users
 			HideCredential: user.HideCredential,
 			AppLabels:      labels,
 			Disable:        disable,
+			TokenName:      a.tokenName,
+			Position:       a.position,
 		})
 	}
 	a.users.Set(appID, infos)
@@ -50,31 +47,17 @@ func (a *apikey) Del(appID string) {
 	a.users.DelByAppID(appID)
 }
 
-//Auth 鉴权处理
-func (a *apikey) Auth(ctx http_service.IHttpContext) error {
+//GetUser 鉴权处理
+func (a *apikey) GetUser(ctx http_service.IHttpContext) (*application.UserInfo, bool) {
 	token, has := application.GetToken(ctx, a.tokenName, a.position)
-	if !has {
-		return fmt.Errorf("%s error: %s in %s:%s", driverName, application.ErrTokenNotFound, a.position, a.tokenName)
+	if !has || token == "" {
+		return nil, false
 	}
-	
 	user, has := a.users.Get(token)
 	if has {
-		if user.Expire <= time.Now().Unix() && user.Expire != 0 {
-			return fmt.Errorf("%s error: %s", driverName, application.ErrTokenExpired)
-		}
-		for k, v := range user.Labels {
-			ctx.SetLabel(k, v)
-		}
-		for k, v := range user.AppLabels {
-			ctx.SetLabel(k, v)
-		}
-		if user.HideCredential {
-			application.HideToken(ctx, a.tokenName, a.position)
-		}
-		return nil
+		return user, true
 	}
-	
-	return fmt.Errorf("%s error: %s %s", driverName, application.ErrInvalidToken, token)
+	return nil, false
 }
 
 func (a *apikey) Driver() string {

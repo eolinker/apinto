@@ -24,6 +24,8 @@ type UserInfo struct {
 	HideCredential bool
 	AppLabels      map[string]string
 	Disable        bool
+	TokenName      string
+	Position       string
 }
 
 var _ IUserManager = (*UserManager)(nil)
@@ -95,12 +97,12 @@ func (u *UserManager) get(name string) (*UserInfo, bool) {
 	if !has {
 		return nil, false
 	}
-	
+
 	return user.(*UserInfo), true
 }
 
 func (u *UserManager) Set(appID string, users []*UserInfo) {
-	
+
 	userMap := make(map[string]bool)
 	names, has := u.getByAppID(appID)
 	if has {
@@ -108,10 +110,10 @@ func (u *UserManager) Set(appID string, users []*UserInfo) {
 			userMap[name] = true
 		}
 	}
-	
+
 	newUsers := make([]string, 0, len(users))
 	for _, user := range users {
-		
+
 		u.users.Set(user.Name, user)
 		newUsers = append(newUsers, user.Name)
 		delete(userMap, user.Name)

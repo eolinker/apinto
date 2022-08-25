@@ -48,7 +48,7 @@ func set(id string, cfg *Config) error {
 	if err != nil {
 		return err
 	}
-	
+	cfg.Labels["appID"] = id
 	appManager.Set(id, cfg.Labels, cfg.Disable, filters, users)
 	return nil
 }
@@ -58,7 +58,7 @@ func (a *app) Stop() error {
 }
 
 func (a *app) CheckSkill(skill string) bool {
-	return true
+	return false
 }
 
 func createFilters(id string, auths []*Auth) ([]application.IAuth, map[string][]*application.User, error) {
@@ -96,6 +96,6 @@ func createFilter(driver string, tokenName string, position string, rule interfa
 	if !has {
 		return filter, nil
 	}
-	
+
 	return old, nil
 }

@@ -1,19 +1,13 @@
 package jwt
 
 import (
-	"fmt"
 	"github.com/eolinker/apinto/application"
-	"time"
-	
+	"github.com/eolinker/eosc/log"
+
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 var _ application.IAuth = (*jwt)(nil)
-
-//supportTypes 当前驱动支持的authorization type值
-var supportTypes = []string{
-	"jwt",
-}
 
 type jwt struct {
 	id        string
@@ -21,6 +15,19 @@ type jwt struct {
 	position  string
 	cfg       *Config
 	users     application.IUserManager
+}
+
+func (j *jwt) GetUser(ctx http_service.IHttpContext) (*application.UserInfo, bool) {
+	token, has := application.GetToken(ctx, j.tokenName, j.position)
+	if !has || token == "" {
+		return nil, false
+	}
+	name, err := j.doJWTAuthentication(token)
+	if err != nil {
+		log.DebugF("[%s] get user error:%s", driverName, token)
+		return nil, false
+	}
+	return j.users.Get(name)
 }
 
 func (j *jwt) ID() string {
@@ -47,6 +54,8 @@ func (j *jwt) Set(appID string, labels map[string]string, disable bool, users []
 			HideCredential: user.HideCredential,
 			AppLabels:      labels,
 			Disable:        disable,
+			TokenName:      j.tokenName,
+			Position:       j.position,
 		})
 	}
 	j.users.Set(appID, infos)
@@ -58,36 +67,6 @@ func (j *jwt) Del(appID string) {
 
 func (j *jwt) UserCount() int {
 	return j.users.Count()
-}
-
-func (j *jwt) Auth(ctx http_service.IHttpContext) error {
-	token, has := application.GetToken(ctx, j.tokenName, j.position)
-	if !has || token == "" {
-		return fmt.Errorf("%s error: %s in %s:%s", driverName, application.ErrTokenNotFound, j.position, j.tokenName)
-	}
-	
-	name, err := j.doJWTAuthentication(token)
-	if err != nil {
-		return err
-	}
-	user, has := j.users.Get(name)
-	if has {
-		if user.Expire <= time.Now().Unix() && user.Expire != 0 {
-			return fmt.Errorf("%s error: %s", driverName, application.ErrTokenExpired)
-		}
-		for k, v := range user.Labels {
-			ctx.SetLabel(k, v)
-		}
-		for k, v := range user.AppLabels {
-			ctx.SetLabel(k, v)
-		}
-		if user.HideCredential {
-			application.HideToken(ctx, j.tokenName, j.position)
-		}
-		return nil
-	}
-	
-	return fmt.Errorf("%s error: %s %s", driverName, application.ErrInvalidToken, token)
 }
 
 func getUser(pattern map[string]string) (string, bool) {

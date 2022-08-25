@@ -3,6 +3,7 @@ package manager
 import (
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/eosc"
+	"strings"
 	"sync"
 )
 
@@ -12,26 +13,28 @@ var _ IManager = (*Manager)(nil)
 
 type IManager interface {
 	Get(id string) (application.IAuth, bool)
-	List() []application.IAuthFilter
-	ListByDriver(driver string) []application.IAuthFilter
+	List() []application.IAuthUser
+	ListByDriver(driver string) []application.IAuthUser
 	Set(appID string, labels map[string]string, disable bool, filters []application.IAuth, users map[string][]*application.User)
 	Del(appID string)
 	Count() int
 }
 
 type Manager struct {
-	// filters map[string]application.IAuthFilter
-	filters    eosc.IUntyped
-	appManager *AppManager
-	locker     sync.RWMutex
+	// filters map[string]application.IAuthUser
+	filters     eosc.IUntyped
+	appManager  *AppManager
+	driverAlias map[string]string
+	drivers     []string
+	locker      sync.RWMutex
 }
 
 func (m *Manager) Count() int {
 	return m.filters.Count()
 }
 
-func NewManager() *Manager {
-	return &Manager{filters: eosc.NewUntyped(), appManager: NewAppManager()}
+func NewManager(driverAlias map[string]string, drivers []string) *Manager {
+	return &Manager{filters: eosc.NewUntyped(), appManager: NewAppManager(), driverAlias: driverAlias, drivers: drivers}
 }
 
 func (m *Manager) Get(id string) (application.IAuth, bool) {
@@ -47,22 +50,25 @@ func (m *Manager) get(id string) (application.IAuth, bool) {
 	return f, ok
 }
 
-func (m *Manager) List() []application.IAuthFilter {
-	keys := m.filters.Keys()
-	filters := make([]application.IAuthFilter, 0, len(keys))
-	for _, key := range keys {
-		filter, has := m.get(key)
-		if !has {
-			continue
-		}
-		filters = append(filters, filter)
+func (m *Manager) List() []application.IAuthUser {
+	filters := make([]application.IAuthUser, 0, len(m.drivers)*5)
+	for _, driver := range m.drivers {
+		filters = append(filters, m.getByDriver(driver)...)
 	}
 	return filters
 }
 
-func (m *Manager) ListByDriver(driver string) []application.IAuthFilter {
+func (m *Manager) ListByDriver(driver string) []application.IAuthUser {
+	tmp := driver
+	if v, ok := m.driverAlias[strings.ToLower(driver)]; ok {
+		tmp = v
+	}
+	return m.getByDriver(tmp)
+}
+
+func (m *Manager) getByDriver(driver string) []application.IAuthUser {
 	ids := m.appManager.GetByDriver(driver)
-	filters := make([]application.IAuthFilter, 0, len(ids))
+	filters := make([]application.IAuthUser, 0, len(ids))
 	for _, id := range ids {
 		filter, has := m.get(id)
 		if has {
@@ -72,15 +78,15 @@ func (m *Manager) ListByDriver(driver string) []application.IAuthFilter {
 	return filters
 }
 
-func (m *Manager) all() []application.IAuthFilter {
+func (m *Manager) all() []application.IAuthUser {
 	keys := m.filters.Keys()
-	filters := make([]application.IAuthFilter, 0, 10*len(keys))
+	filters := make([]application.IAuthUser, 0, 10*len(keys))
 	for _, key := range keys {
 		filter, has := m.filters.Get(key)
 		if !has {
 			continue
 		}
-		f, ok := filter.(application.IAuthFilter)
+		f, ok := filter.(application.IAuthUser)
 		if !ok {
 			continue
 		}
@@ -89,7 +95,7 @@ func (m *Manager) all() []application.IAuthFilter {
 	return filters
 }
 
-func (m *Manager) All() []application.IAuthFilter {
+func (m *Manager) All() []application.IAuthUser {
 	return m.all()
 }
 
@@ -114,7 +120,7 @@ func (m *Manager) Set(appID string, labels map[string]string, disable bool, filt
 	for driver, ids := range idMap {
 		m.appManager.Set(appID, driver, ids)
 	}
-	
+
 	return
 }
 

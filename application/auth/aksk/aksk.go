@@ -3,16 +3,11 @@ package aksk
 import (
 	"fmt"
 	"github.com/eolinker/apinto/application"
+	"github.com/eolinker/eosc/log"
 	"time"
-	
+
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
-
-//supportTypes 当前驱动支持的authorization type值
-var supportTypes = []string{
-	"ak/sk",
-	"aksk",
-}
 
 var _ application.IAuth = (*aksk)(nil)
 
@@ -21,6 +16,36 @@ type aksk struct {
 	tokenName string
 	position  string
 	users     application.IUserManager
+}
+
+func (a *aksk) GetUser(ctx http_service.IHttpContext) (*application.UserInfo, bool) {
+	token, has := application.GetToken(ctx, a.tokenName, a.position)
+	if !has || token == "" {
+		return nil, false
+	}
+	//解析Authorization字符串
+	encType, ak, signHeaders, signature, err := parseAuthorization(token)
+	if err != nil {
+		log.DebugF("[%s] get user error: %s", driverName, err)
+		return nil, true
+	}
+	user, has := a.users.Get(ak)
+	if has {
+		switch encType {
+		case "SDK-HMAC-SHA256", "HMAC-SHA256":
+			{
+				//结合context内的信息与配置的sk生成新的签名，与context携带的签名进行对比
+				toSign := buildToSign(ctx, encType, signHeaders)
+				s := hMaxBySHA256(user.Value, toSign)
+				if s == signature {
+					return user, true
+				}
+			}
+		default:
+			return nil, true
+		}
+	}
+	return nil, false
 }
 
 func (a *aksk) ID() string {
@@ -48,6 +73,8 @@ func (a *aksk) Set(appID string, labels map[string]string, disable bool, users [
 			HideCredential: user.HideCredential,
 			AppLabels:      labels,
 			Disable:        disable,
+			TokenName:      a.tokenName,
+			Position:       a.position,
 		})
 	}
 	a.users.Set(appID, infos)
@@ -67,7 +94,7 @@ func (a *aksk) Auth(ctx http_service.IHttpContext) error {
 		return fmt.Errorf("%s error: %s in %s:%s", driverName, application.ErrTokenNotFound, a.position, a.tokenName)
 	}
 	//解析Authorization字符串
-	encType, ak, signHeaders, signature, err := parseAuthorization(ctx)
+	encType, ak, signHeaders, signature, err := parseAuthorization(token)
 	if err != nil {
 		return fmt.Errorf("%s error: %s", driverName, err.Error())
 	}
@@ -98,7 +125,7 @@ func (a *aksk) Auth(ctx http_service.IHttpContext) error {
 			}
 		}
 	}
-	
+
 	return fmt.Errorf("%s error: %s %s", driverName, application.ErrInvalidToken, token)
 }
 

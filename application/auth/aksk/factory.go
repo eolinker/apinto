@@ -18,6 +18,13 @@ func Register() {
 type factory struct {
 }
 
+func (f *factory) Alias() []string {
+	return []string{
+		"ak/sk",
+		"aksk",
+	}
+}
+
 func (f *factory) Create(tokenName string, position string, rule interface{}) (application.IAuth, error) {
 	a := &aksk{
 		id:        toId(tokenName, position),
@@ -34,5 +41,5 @@ func NewFactory() auth.IAuthFactory {
 }
 
 func toId(tokenName, position string) string {
-	return fmt.Sprintf("%s@%s", tokenName, position)
+	return fmt.Sprintf("%s@%s@%s", tokenName, position, driverName)
 }
