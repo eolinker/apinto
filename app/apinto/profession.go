@@ -31,7 +31,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
-
+		
 		{
 			Name:         "service",
 			Label:        "服务",
@@ -96,35 +96,17 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Mod: eosc.ProfessionConfig_Worker,
 		},
 		{
-			Name:         "auth",
-			Label:        "鉴权",
-			Desc:         "鉴权",
+			Name:         "app",
+			Label:        "应用",
+			Desc:         "应用",
 			Dependencies: nil,
 			AppendLabels: nil,
 			Drivers: []*eosc.DriverConfig{
 				{
-					Id:    "eolinker.com:apinto:auth_basic",
-					Name:  "basic",
-					Label: "basic鉴权",
-					Desc:  "basic鉴权",
-				},
-				{
-					Id:    "eolinker.com:apinto:auth_apikey",
-					Name:  "apikey",
-					Label: "apikey鉴权",
-					Desc:  "apikey鉴权",
-				},
-				{
-					Id:    "eolinker.com:apinto:auth_aksk",
-					Name:  "aksk",
-					Label: "ak/sk鉴权",
-					Desc:  "ak/sk鉴权",
-				},
-				{
-					Id:    "eolinker.com:apinto:auth_jwt",
-					Name:  "jwt",
-					Label: "jwt鉴权",
-					Desc:  "jwt鉴权",
+					Id:    "eolinker.com:apinto:app",
+					Name:  "app",
+					Label: "应用",
+					Desc:  "应用",
 				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,

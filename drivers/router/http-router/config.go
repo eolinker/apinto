@@ -11,7 +11,7 @@ type Config struct {
 	Host     []string                  `json:"host" yaml:"host" label:"域名"`
 	Path     string                    `json:"location"`
 	Rules    []Rule                    `json:"rules" yaml:"rules" label:"路由规则"`
-	Service  eosc.RequireId            `json:"Service" yaml:"Service" skill:"github.com/eolinker/apinto/service.service.IService" required:"true" label:"目标服务"`
+	Service  eosc.RequireId            `json:"service" yaml:"service" skill:"github.com/eolinker/apinto/service.service.IService" required:"true" label:"目标服务"`
 	Template eosc.RequireId            `json:"template" yaml:"template" skill:"github.com/eolinker/apinto/template.template.ITemplate" required:"false" label:"插件模版"`
 	Disable  bool                      `json:"disable" yaml:"disable" label:"禁用路由"`
 	Plugins  map[string]*plugin.Config `json:"plugins" yaml:"plugins" label:"插件配置"`
