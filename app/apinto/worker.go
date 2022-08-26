@@ -11,6 +11,7 @@ import (
 	"github.com/eolinker/apinto/drivers/output/kafka"
 	"github.com/eolinker/apinto/drivers/output/nsq"
 	"github.com/eolinker/apinto/drivers/output/syslog"
+	"github.com/eolinker/apinto/drivers/plugin-manager"
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
 	plugin_app "github.com/eolinker/apinto/drivers/plugins/app"
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
@@ -26,8 +27,7 @@ import (
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
 	service "github.com/eolinker/apinto/drivers/service"
 	template "github.com/eolinker/apinto/drivers/template"
-	//upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
-	plugin_manager "github.com/eolinker/apinto/plugin-manager"
+	
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/extends"
 	process_worker "github.com/eolinker/eosc/process-worker"
