@@ -2,10 +2,11 @@ package http_router
 
 import (
 	"fmt"
-	"github.com/eolinker/apinto/checker"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"sort"
 	"strings"
+
+	"github.com/eolinker/apinto/checker"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 type RuleType = string
@@ -27,7 +28,7 @@ func Parse(rules []AppendRule) MatcherChecker {
 
 		return &EmptyChecker{}
 	}
-	rls := make(RuleCheckers, len(rules))
+	rls := make(RuleCheckers, 0, len(rules))
 
 	for _, r := range rules {
 		ck, _ := checker.Parse(r.Pattern)

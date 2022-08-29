@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
+	
 	"reflect"
-
+	
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
@@ -27,12 +27,6 @@ type PluginManager struct {
 	plugins         Plugins
 	pluginObjs      eosc.IUntyped
 	workers         eosc.IWorkers
-
-	render interface{}
-}
-
-func (p *PluginManager) Render() interface{} {
-	return p.render
 }
 
 func (p *PluginManager) Set(conf interface{}) error {
@@ -52,7 +46,7 @@ func (p *PluginManager) ConfigType() reflect.Type {
 }
 
 func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config) eocontext.IChain {
-
+	
 	return p.createChain(id, conf)
 }
 
@@ -67,12 +61,12 @@ func (p *PluginManager) GetConfigType(name string) (reflect.Type, bool) {
 }
 
 func (p *PluginManager) Reset(conf interface{}) error {
-
+	
 	plugins, err := p.check(conf)
 	if err != nil {
 		return err
 	}
-
+	
 	p.plugins = plugins
 	list := p.pluginObjs.List()
 	// 遍历，全量更新
@@ -83,7 +77,7 @@ func (p *PluginManager) Reset(conf interface{}) error {
 		}
 		v.Filters = p.createFilters(v.conf)
 	}
-
+	
 	return nil
 }
 
@@ -136,7 +130,7 @@ func (p *PluginManager) createChain(id string, conf map[string]*plugin.Config) *
 	} else {
 		obj.(*PluginObj).Filters = chain
 	}
-
+	
 	return obj.(*PluginObj)
 }
 
@@ -145,7 +139,7 @@ func (p *PluginManager) check(conf interface{}) (Plugins, error) {
 	if !ok {
 		return nil, errConfig
 	}
-
+	
 	plugins := make(Plugins, 0, len(cfg.Plugins))
 	for i, cf := range cfg.Plugins {
 		log.DebugF("new plugin:%d=>%v", i, cf)
@@ -156,7 +150,7 @@ func (p *PluginManager) check(conf interface{}) (Plugins, error) {
 		plugins = append(plugins, newPlugin)
 	}
 	return plugins, nil
-
+	
 }
 func (p *PluginManager) Check(conf interface{}) error {
 	_, err := p.check(conf)
@@ -172,19 +166,18 @@ func (p *PluginManager) IsExists(id string) bool {
 }
 
 func NewPluginManager() *PluginManager {
-
+	
 	pm := &PluginManager{
-
+		
 		plugins:    nil,
 		pluginObjs: eosc.NewUntyped(),
-		render:     genRender(),
 	}
 	log.Debug("autowired extenderDrivers")
 	bean.Autowired(&pm.extenderDrivers)
 	bean.Autowired(&pm.workers)
-
+	
 	log.DebugF("autowired extenderDrivers = %p", pm.extenderDrivers)
-
+	
 	return pm
 }
 

@@ -6,7 +6,7 @@ import (
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/eosc/log"
 	"strings"
-
+	
 	"github.com/eolinker/eosc"
 )
 
@@ -61,7 +61,7 @@ func (dm *driverRegister) GetFactoryByKey(key string) (IAuthFactory, bool) {
 func (dm *driverRegister) RegisterFactoryByKey(key string, factory IAuthFactory) {
 	err := dm.register.Register(key, factory, true)
 	log.Debug("RegisterFactoryByKey:", key)
-
+	
 	if err != nil {
 		log.Debug("RegisterFactoryByKey:", key, ":", err)
 		return
@@ -83,7 +83,7 @@ func (dm *driverRegister) Alias() map[string]string {
 
 //Register 注册auth工厂到默认auth工厂注册器
 func Register(key string, factory IAuthFactory) {
-
+	
 	defaultAuthFactoryRegister.RegisterFactoryByKey(key, factory)
 }
 
