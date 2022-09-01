@@ -2,8 +2,10 @@ package basic
 
 import (
 	"encoding/base64"
-	"github.com/eolinker/apinto/application"
+	"fmt"
 	"strings"
+
+	"github.com/eolinker/apinto/application"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -51,21 +53,30 @@ func (b *basic) Driver() string {
 	return driverName
 }
 
-func (b *basic) Check(appID string, users []*application.User) error {
-	return b.users.Check(appID, driverName, users)
+func (b *basic) Check(appID string, users []*application.BaseConfig) error {
+	us := make([]application.IUser, 0, len(users))
+	for _, u := range users {
+		v, ok := u.Config().(*User)
+		if !ok {
+			return fmt.Errorf("%s check error: invalid config type", driverName)
+		}
+		us = append(us, v)
+	}
+	return b.users.Check(appID, driverName, us)
 }
 
-func (b *basic) Set(appID string, labels map[string]string, disable bool, users []*application.User) {
+func (b *basic) Set(appID string, labels map[string]string, disable bool, users []*application.BaseConfig) {
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, user := range users {
-		name, _ := getUser(user.Pattern)
+		v, _ := user.Config().(*User)
+
 		infos = append(infos, &application.UserInfo{
 			AppID:          appID,
-			Name:           name,
-			Value:          getPassword(user.Pattern),
-			Expire:         user.Expire,
-			Labels:         user.Labels,
-			HideCredential: user.HideCredential,
+			Name:           v.Username(),
+			Value:          v.Pattern.Password,
+			Expire:         v.Expire,
+			Labels:         v.Labels,
+			HideCredential: v.HideCredential,
 			AppLabels:      labels,
 			Disable:        disable,
 			TokenName:      b.tokenName,

@@ -2,9 +2,10 @@ package aksk
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/eosc/log"
-	"time"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -56,21 +57,30 @@ func (a *aksk) Driver() string {
 	return a.Driver()
 }
 
-func (a *aksk) Check(appID string, users []*application.User) error {
-	return a.users.Check(appID, driverName, users)
+func (a *aksk) Check(appID string, users []*application.BaseConfig) error {
+	us := make([]application.IUser, 0, len(users))
+	for _, u := range users {
+		v, ok := u.Config().(*User)
+		if !ok {
+			return fmt.Errorf("%s check error: invalid config type", driverName)
+		}
+		us = append(us, v)
+	}
+	return a.users.Check(appID, driverName, us)
 }
 
-func (a *aksk) Set(appID string, labels map[string]string, disable bool, users []*application.User) {
+func (a *aksk) Set(appID string, labels map[string]string, disable bool, users []*application.BaseConfig) {
 	infos := make([]*application.UserInfo, 0, len(users))
-	for _, user := range users {
-		name, _ := getUser(user.Pattern)
+	for _, u := range users {
+		v, _ := u.Config().(*User)
+
 		infos = append(infos, &application.UserInfo{
 			AppID:          appID,
-			Name:           name,
-			Value:          getValue(user.Pattern),
-			Expire:         user.Expire,
-			Labels:         user.Labels,
-			HideCredential: user.HideCredential,
+			Name:           v.Username(),
+			Value:          v.Pattern.SK,
+			Expire:         v.Expire,
+			Labels:         v.Labels,
+			HideCredential: v.HideCredential,
 			AppLabels:      labels,
 			Disable:        disable,
 			TokenName:      a.tokenName,

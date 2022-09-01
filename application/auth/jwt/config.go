@@ -2,13 +2,35 @@ package jwt
 
 import (
 	"errors"
-	"github.com/eolinker/apinto/utils"
 	"strconv"
 	"strings"
+
+	"github.com/eolinker/apinto/application"
+
+	"github.com/eolinker/apinto/utils"
 )
 
 type Config struct {
-	Iss               string   `json:"iss" mapstructure:"iss"`
+	application.Auth
+	Config *Rule   `json:"config"`
+	Users  []*User `json:"users"`
+}
+
+type User struct {
+	application.User
+	Pattern Pattern `json:"pattern"`
+}
+
+type Pattern struct {
+	Username string `json:"username"`
+}
+
+func (u *User) Username() string {
+	return u.Pattern.Username
+}
+
+type Rule struct {
+	Iss               string   `json:"iss" `
 	Secret            string   `json:"secret"`
 	RsaPublicKey      string   `json:"rsa_public_key"`
 	Algorithm         string   `json:"algorithm"`
@@ -17,7 +39,7 @@ type Config struct {
 	Path              string   `json:"path"`
 }
 
-func (c *Config) ToID() (string, error) {
+func (c *Rule) ToID() (string, error) {
 	builder := strings.Builder{}
 	switch c.Algorithm {
 	case "HS256", "HS384", "HS512":
@@ -29,7 +51,7 @@ func (c *Config) ToID() (string, error) {
 		for _, claim := range c.ClaimsToVerify {
 			builder.WriteString(strings.TrimSpace(claim))
 		}
-	
+
 	case "RS256", "RS384", "RS512", "ES256", "ES384", "ES512":
 		builder.WriteString(strings.TrimSpace(c.Iss))
 		builder.WriteString(strings.TrimSpace(c.RsaPublicKey))
