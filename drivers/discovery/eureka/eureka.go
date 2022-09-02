@@ -105,7 +105,7 @@ func (e *eureka) Start() error {
 }
 
 //Reset 重置eureka实例配置
-func (e *eureka) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (e *eureka) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))

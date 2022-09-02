@@ -1,120 +1,111 @@
 package http_router
 
 import (
-	router_http "github.com/eolinker/apinto/router/router-http"
+	"time"
+
+	"github.com/eolinker/apinto/drivers/router/http-router/manager"
+	"github.com/eolinker/apinto/plugin"
+	http_router "github.com/eolinker/apinto/router/http-router"
 	"github.com/eolinker/apinto/service"
+	"github.com/eolinker/apinto/template"
+
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/log"
+	"github.com/eolinker/eosc/eocontext"
 )
 
-//Router http路由驱动实例结构体，实现了worker接口
-type Router struct {
-	id   string
-	name string
-	port int
-
-	driver  *HTTPRouterDriver
-	handler *RouterHandler
+type HttpRouter struct {
+	id            string
+	name          string
+	routerManager manager.IManger
+	pluginManager plugin.IPluginManager
+	handler       *Handler
 }
 
-//Reset 重置http路由配置
-func (r *Router) create(cf *DriverConfig, target service.IServiceCreate) (*RouterHandler, error) {
+func (h *HttpRouter) Destroy() error {
 
-	newConf := getConfig(cf)
-	newConf.ID = r.id
-	newConf.Name = r.name
-	if cf.Disable {
-		return NewDisableHandler(newConf), nil
-	}
-	serviceHandler := target.Create(r.id, cf.Plugins)
-	handler := NewRouterHandler(newConf, serviceHandler)
-	return handler, nil
-}
-func (r *Router) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	cf, ser, err := r.driver.check(conf, workers)
-	if err != nil {
-		return err
-	}
-
-	routerHandler, err := r.create(cf, ser)
-	if err != nil {
-		return err
-	}
-
-	err = router_http.Add(cf.Listen, r.id, routerHandler.routerConfig)
-	if err != nil {
-		routerHandler.Destroy()
-		return err
-	}
-
-	if cf.Listen != r.port {
-		router_http.Del(r.port, r.id)
-	}
-
-	r.port = cf.Listen
-	r.handler = routerHandler
+	h.routerManager.Delete(h.id)
 	return nil
 }
 
-//CheckSkill 技能检查
-func (r *Router) CheckSkill(skill string) bool {
+func (h *HttpRouter) Id() string {
+	return h.id
+}
+
+func (h *HttpRouter) Start() error {
+	return nil
+}
+
+func (h *HttpRouter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+	err := h.reset(conf, workers)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+	cfg, ok := conf.(*Config)
+	if !ok {
+		return eosc.ErrorConfigFieldUnknown
+	}
+	handler := &Handler{
+		completeHandler: HttpComplete{
+			retry:   cfg.Retry,
+			timeOut: time.Duration(cfg.TimeOut) * time.Millisecond,
+		},
+		finisher: Finisher{},
+		service:  nil,
+		filters:  nil,
+		disable:  cfg.Disable,
+	}
+	if !cfg.Disable {
+
+		serviceWorker, has := workers[cfg.Service]
+		if !has || !serviceWorker.CheckSkill(service.ServiceSkill) {
+			return eosc.ErrorNotGetSillForRequire
+		}
+
+		if cfg.Plugins == nil {
+			cfg.Plugins = map[string]*plugin.Config{}
+		}
+		var plugins eocontext.IChain
+		if cfg.Template != "" {
+			templateWorker, has := workers[cfg.Template]
+			if !has || !templateWorker.CheckSkill(template.TemplateSkill) {
+				return eosc.ErrorNotGetSillForRequire
+			}
+			tp := templateWorker.(template.ITemplate)
+			plugins = tp.Create(h.id, cfg.Plugins)
+		} else {
+			plugins = h.pluginManager.CreateRequest(h.id, cfg.Plugins)
+		}
+
+		serviceHandler := serviceWorker.(service.IService)
+
+		handler.service = serviceHandler
+		handler.filters = plugins
+	}
+
+	appendRule := make([]http_router.AppendRule, 0, len(cfg.Rules))
+	for _, r := range cfg.Rules {
+		appendRule = append(appendRule, http_router.AppendRule{
+			Type:    r.Type,
+			Name:    r.Name,
+			Pattern: r.Value,
+		})
+	}
+	err := h.routerManager.Set(h.id, cfg.Listen, cfg.Host, cfg.Method, cfg.Path, appendRule, handler)
+	if err != nil {
+		return err
+	}
+	h.handler = handler
+	return nil
+}
+func (h *HttpRouter) Stop() error {
+	h.Destroy()
+	return nil
+}
+
+func (h *HttpRouter) CheckSkill(skill string) bool {
 	return false
-}
-
-//Id 返回workerID
-func (r *Router) Id() string {
-	return r.id
-}
-
-//Start 启动路由worker，将路由实例加入到路由树中
-func (r *Router) Start() error {
-	log.Debug("router:start")
-	return router_http.Add(r.port, r.id, r.handler.routerConfig)
-}
-
-//Stop 停止路由worker，将路由实例从路由树中删去
-func (r *Router) Stop() error {
-	return router_http.Del(r.port, r.id)
-}
-
-func getConfig(cf *DriverConfig) *router_http.Config {
-
-	rules := make([]router_http.Rule, 0, len(cf.Rules))
-	for _, r := range cf.Rules {
-		rr := router_http.Rule{
-			Location: r.Location,
-			Header:   make([]router_http.HeaderItem, 0, len(r.Header)),
-			Query:    make([]router_http.QueryItem, 0, len(r.Query)),
-		}
-		for k, v := range r.Header {
-			rr.Header = append(rr.Header, router_http.HeaderItem{
-				Name:    k,
-				Pattern: v,
-			})
-		}
-		for k, v := range r.Query {
-			rr.Query = append(rr.Query, router_http.QueryItem{
-				Name:    k,
-				Pattern: v,
-			})
-		}
-		rules = append(rules, rr)
-	}
-	// 配置里的Host或Method字段若为空，则默认该路由允许任何的host或method值
-	hosts := cf.Host
-	if len(hosts) == 0 {
-		hosts = []string{"*"}
-	}
-	methods := cf.Method
-	if len(methods) == 0 {
-		methods = []string{"*"}
-	}
-
-	return &router_http.Config{
-		//Cert:    certs,
-		Methods: methods,
-		Hosts:   hosts,
-		Rules:   rules,
-	}
-
 }

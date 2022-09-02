@@ -2,30 +2,26 @@ package httpoutput
 
 import (
 	"github.com/eolinker/apinto/output"
-	http_transport "github.com/eolinker/apinto/output/http-transport"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/formatter"
 )
 
+var _ output.IEntryOutput = (*HttpOutput)(nil)
+var _ eosc.IWorker = (*HttpOutput)(nil)
+
 type HttpOutput struct {
-	*Driver
-	id        string
-	config    *Config
-	formatter eosc.IFormatter
-	transport formatter.ITransport
+	id      string
+	config  *Config
+	handler *Handler
+	running bool
 }
 
 func (h *HttpOutput) Output(entry eosc.IEntry) error {
-	if h.formatter != nil {
-		data := h.formatter.Format(entry)
-		if h.transport != nil && len(data) > 0 {
-			err := h.transport.Write(data)
-			if err != nil {
-				return err
-			}
-		}
+	hd := h.handler
+	if hd != nil {
+		return hd.Output(entry)
 	}
-	return nil
+
+	return eosc.ErrorWorkerNotRunning
 }
 
 func (h *HttpOutput) Id() string {
@@ -33,49 +29,55 @@ func (h *HttpOutput) Id() string {
 }
 
 func (h *HttpOutput) Start() error {
+	hd := h.handler
+	if hd != nil {
+		return nil
+	}
+	h.running = true
+	handler, err := NewHandler(h.config)
+	if err != nil {
+		return err
+	}
+
+	h.handler = handler
 	return nil
 }
 
-func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) (err error) {
-	config, err := h.Driver.Check(conf)
+func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
+
+	config, err := Check(conf)
+
 	if err != nil {
 		return err
 	}
+	if h.config != nil && !h.config.isConfUpdate(config) {
+		return nil
+	}
+	h.config = config
 
-	if h.config == nil || h.config.isConfUpdate(config) {
-		if h.transport != nil {
-			h.transport.Close()
-		}
-		cfg := &http_transport.Config{
-			Method:       config.Method,
-			Url:          config.Url,
-			Headers:      toHeader(config.Headers),
-			HandlerCount: 5, // 默认值， 以后可能会改成配置
+	if h.running {
+		hd := h.handler
+		if hd != nil {
+			return hd.reset(config)
 		}
 
-		h.transport, err = http_transport.CreateTransporter(cfg)
+		handler, err := NewHandler(h.config)
 		if err != nil {
 			return err
 		}
+
+		h.handler = handler
 	}
 
-	//创建formatter
-	factory, has := formatter.GetFormatterFactory(config.Type)
-	if !has {
-		return errFormatterType
-	}
-	h.formatter, err = factory.Create(config.Formatter)
-	if err != nil {
-		return err
-	}
-	h.config = config
-	return
+	return nil
 }
 
 func (h *HttpOutput) Stop() error {
-	h.transport.Close()
-	h.transport = nil
-	h.formatter = nil
+	hd := h.handler
+	if hd != nil {
+		h.handler = nil
+		hd.Close()
+	}
 	h.config = nil
 	return nil
 }

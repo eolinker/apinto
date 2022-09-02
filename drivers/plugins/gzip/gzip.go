@@ -4,9 +4,13 @@ import (
 	"bytes"
 	"compress/gzip"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"strings"
 )
+
+var _ http_service.HttpFilter = (*Gzip)(nil)
+var _ eocontext.IFilter = (*Gzip)(nil)
 
 type Gzip struct {
 	*Driver
@@ -14,7 +18,11 @@ type Gzip struct {
 	conf *Config
 }
 
-func (g *Gzip) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (g *Gzip) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return http_service.DoHttpFilter(g, ctx, next)
+}
+
+func (g *Gzip) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	head := ctx.Request().Header().GetHeader("Accept-Encoding")
 	if next != nil {
 		err = next.DoChain(ctx)
@@ -87,13 +95,13 @@ func (g *Gzip) Start() error {
 	return nil
 }
 
-func (g *Gzip) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	cfg, err := g.check(conf)
-	if err != nil {
-		return err
-	}
-	g.conf = cfg
-	return nil
+func (g *Gzip) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+cfg, err := g.check(conf)
+if err != nil {
+return err
+}
+g.conf = cfg
+return nil
 }
 
 func (g *Gzip) Stop() error {

@@ -1,53 +1,34 @@
 package http_router
 
 import (
-	"fmt"
-	router_http "github.com/eolinker/apinto/router/router-http"
-	service2 "github.com/eolinker/apinto/service"
-	service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/apinto/service"
+	"github.com/eolinker/eosc/eocontext"
+	http_context "github.com/eolinker/eosc/eocontext/http-context"
+	"net/http"
 )
 
-type RouterHandler struct {
-	routerConfig  *router_http.Config
-	serviceFilter service2.IService
+type Handler struct {
+	completeHandler HttpComplete
+	finisher        Finisher
+	service         service.IService
+	filters         eocontext.IChain
+	disable         bool
 }
 
-func (r *RouterHandler) DoFilter(ctx service.IHttpContext, next service.IChain) (err error) {
-	return r.serviceFilter.DoChain(ctx)
-}
-
-func (r *RouterHandler) Destroy() {
-	s := r.serviceFilter
-	if s != nil {
-		r.serviceFilter = nil
-		s.Destroy()
+func (h *Handler) ServeHTTP(ctx eocontext.EoContext) {
+	if h.disable {
+		httpContext, err := http_context.Assert(ctx)
+		if err != nil {
+			return
+		}
+		httpContext.Response().SetStatus(http.StatusNotFound, "")
+		httpContext.Response().SetBody([]byte("router disable"))
+		httpContext.FastFinish()
+		return
 	}
-
-}
-
-func NewRouterHandler(routerConfig *router_http.Config, handler service2.IService) *RouterHandler {
-
-	r := &RouterHandler{routerConfig: routerConfig, serviceFilter: handler}
-	routerConfig.Target = handler
-	return r
-}
-
-func NewDisableHandler(routerConfig *router_http.Config) *RouterHandler {
-	r := &RouterHandler{routerConfig: routerConfig, serviceFilter: &DisableHandler{}}
-	routerConfig.Target = r.serviceFilter
-	return r
-}
-
-type DisableHandler struct {
-}
-
-func (d *DisableHandler) DoChain(ctx service.IHttpContext) error {
-	resp := ctx.Response()
-	resp.SetBody([]byte("the router is disabled"))
-	resp.SetStatus(416, "416")
-	return fmt.Errorf("the router is disabled")
-}
-
-func (d *DisableHandler) Destroy() {
-	return
+	ctx.SetFinish(&h.finisher)
+	ctx.SetCompleteHandler(&h.completeHandler)
+	ctx.SetApp(h.service)
+	ctx.SetBalance(h.service)
+	h.filters.DoChain(ctx)
 }

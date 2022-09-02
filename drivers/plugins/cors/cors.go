@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"strconv"
 	"strings"
 )
+
+var _ http_service.HttpFilter = (*CorsFilter)(nil)
+var _ eocontext.IFilter = (*CorsFilter)(nil)
 
 type CorsFilter struct {
 	*Driver
@@ -21,7 +25,11 @@ type CorsFilter struct {
 	exposeChecker    *Checker
 }
 
-func (c *CorsFilter) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (c *CorsFilter) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return http_service.DoHttpFilter(c, ctx, next)
+}
+
+func (c *CorsFilter) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	if ctx.Request().Method() == "OPTION" {
 		return c.doOption(ctx)
 	}
@@ -116,18 +124,18 @@ func (c *CorsFilter) Start() error {
 	return nil
 }
 
-func (c *CorsFilter) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	cfg, err := c.check(conf)
-	if err != nil {
-		return err
-	}
-	c.option = cfg.genOptionHandler()
-	c.originChecker = NewChecker(cfg.AllowOrigins, "Access-Control-Allow-Origin")
-	c.methodChecker = NewChecker(cfg.AllowMethods, "Access-Control-Allow-Methods")
-	c.headerChecker = NewChecker(cfg.AllowHeaders, "Access-Control-Allow-Headers")
-	c.exposeChecker = NewChecker(cfg.ExposeHeaders, "Access-Control-Expose-Headers")
-	c.allowCredentials = cfg.AllowCredentials
-	return nil
+func (c *CorsFilter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+cfg, err := c.check(conf)
+if err != nil {
+return err
+}
+c.option = cfg.genOptionHandler()
+c.originChecker = NewChecker(cfg.AllowOrigins, "Access-Control-Allow-Origin")
+c.methodChecker = NewChecker(cfg.AllowMethods, "Access-Control-Allow-Methods")
+c.headerChecker = NewChecker(cfg.AllowHeaders, "Access-Control-Allow-Headers")
+c.exposeChecker = NewChecker(cfg.ExposeHeaders, "Access-Control-Expose-Headers")
+c.allowCredentials = cfg.AllowCredentials
+return nil
 }
 
 func (c *CorsFilter) Stop() error {

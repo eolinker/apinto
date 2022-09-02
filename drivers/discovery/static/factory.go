@@ -16,17 +16,17 @@ func Register(register eosc.IExtenderDriverRegister) {
 type factory struct {
 }
 
-func (f *factory) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), map[string][]string{"health_on": []string{}})
+//NewFactory 创建静态服务发现的驱动工厂
+func NewFactory() eosc.IExtenderDriverFactory {
+	return &factory{}
+}
+
+func (d *factory) Render() interface{} {
+	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
 	if err != nil {
 		return nil
 	}
 	return render
-}
-
-//NewFactory 创建静态服务发现的驱动工厂
-func NewFactory() eosc.IExtenderDriverFactory {
-	return &factory{}
 }
 
 //Create 创建静态服务发现驱动

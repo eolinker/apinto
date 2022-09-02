@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/eolinker/eosc"
-	http_service "github.com/eolinker/eosc/http-service"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"strconv"
 )
 
@@ -15,12 +16,19 @@ const (
 	rateDayType    = "Day"
 )
 
+var _ http_service.HttpFilter = (*RateLimiting)(nil)
+var _ eocontext.IFilter = (*RateLimiting)(nil)
+
 type RateLimiting struct {
 	*Driver
 	id               string
 	rateInfo         *rateInfo
 	hideClientHeader bool
 	responseType     string
+}
+
+func (r *RateLimiting) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return http_service.DoHttpFilter(r, ctx, next)
 }
 
 func (r *RateLimiting) doLimit() (bool, string, int) {
@@ -61,7 +69,7 @@ func (r *RateLimiting) Destroy() {
 	r.rateInfo = nil
 }
 
-func (r *RateLimiting) DoFilter(ctx http_service.IHttpContext, next http_service.IChain) (err error) {
+func (r *RateLimiting) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	// 前置处理
 	flag, result, status := r.doLimit()
 	if !flag {
@@ -93,15 +101,15 @@ func (r *RateLimiting) Start() error {
 	return nil
 }
 
-func (r *RateLimiting) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
-	confObj, err := r.check(conf)
-	if err != nil {
-		return err
-	}
-	r.rateInfo = CreateRateInfo(confObj)
-	r.hideClientHeader = confObj.HideClientHeader
-	r.responseType = confObj.ResponseType
-	return nil
+func (r *RateLimiting) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+confObj, err := r.check(conf)
+if err != nil {
+return err
+}
+r.rateInfo = CreateRateInfo(confObj)
+r.hideClientHeader = confObj.HideClientHeader
+r.responseType = confObj.ResponseType
+return nil
 }
 
 func (r *RateLimiting) Stop() error {

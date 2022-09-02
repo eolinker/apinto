@@ -1,7 +1,7 @@
 package http_context
 
 import (
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/valyala/fasthttp"
 )
 

@@ -1,20 +1,14 @@
 package static
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"github.com/eolinker/eosc/utils/config"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
-	"unicode"
-
-	health_check_http "github.com/eolinker/apinto/health-check-http"
-
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/utils/config"
+	"reflect"
+	"strconv"
+	"strings"
 )
 
 var (
@@ -22,12 +16,10 @@ var (
 )
 
 type static struct {
-	id string
-
-	healthOn   bool
-	checker    *health_check_http.HTTPCheck
-	context    context.Context
-	cancelFunc context.CancelFunc
+	id        string
+	handler   *HeathCheckHandler
+	isRunning bool
+	cfg       *Config
 }
 
 //Id 返回 worker id
@@ -37,58 +29,48 @@ func (s *static) Id() string {
 
 //Start 开始服务发现
 func (s *static) Start() error {
-	s.context, s.cancelFunc = context.WithCancel(context.Background())
 
-	return nil
-}
-func (s *static) reset(cfg *Config) error {
-
-	s.healthOn = cfg.HealthOn
-
-	if s.healthOn {
-		if s.checker == nil {
-			s.checker = health_check_http.NewHTTPCheck(
-				health_check_http.Config{
-					Protocol:    cfg.Health.Scheme,
-					Method:      cfg.Health.Method,
-					URL:         cfg.Health.URL,
-					SuccessCode: cfg.Health.SuccessCode,
-					Period:      time.Duration(cfg.Health.Period) * time.Second,
-					Timeout:     time.Duration(cfg.Health.Timeout) * time.Millisecond,
-				})
-		} else {
-			s.checker.Reset(
-				health_check_http.Config{
-					Protocol:    cfg.Health.Scheme,
-					Method:      cfg.Health.Method,
-					URL:         cfg.Health.URL,
-					SuccessCode: cfg.Health.SuccessCode,
-					Period:      time.Duration(cfg.Health.Period) * time.Second,
-					Timeout:     time.Duration(cfg.Health.Timeout) * time.Millisecond,
-				},
-			)
-		}
-	} else {
-		if s.checker != nil {
-			s.checker.Stop()
-			s.checker = nil
-		}
+	handler := s.handler
+	s.isRunning = true
+	if handler != nil {
+		return nil
 	}
+	handler = NewHeathCheckHandler(s.cfg)
+
 	return nil
 }
 
 //Reset 重置静态服务发现实例配置
-func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]interface{}) error {
+func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s:%w", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf), errorStructType)
 	}
-	return s.reset(cfg)
+
+	if reflect.DeepEqual(cfg, s.cfg) {
+		return nil
+	}
+	s.cfg = cfg
+
+	if s.isRunning {
+		ck := s.handler
+		if ck != nil {
+			return ck.reset(cfg)
+		}
+		return s.Start()
+	}
+	return nil
 }
 
 //Stop 停止服务发现
 func (s *static) Stop() error {
+	s.isRunning = false
+	handler := s.handler
+	if handler == nil {
+		return nil
+	}
 
+	handler.stop()
 	return nil
 }
 
@@ -191,26 +173,11 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 	node = nil
 
 	agent := (discovery.IHealthChecker)(nil)
-	if s.checker != nil {
-		agent, _ = s.checker.Agent()
+	handler := s.handler
+	if handler != nil && handler.checker != nil {
+		agent, _ = handler.checker.Agent()
 	}
 
 	app := discovery.NewApp(agent, s, attrs, nodes)
 	return app, nil
-}
-
-func fields(str string) []string {
-	words := strings.FieldsFunc(strings.Join(strings.Split(str, ";"), " ; "), func(r rune) bool {
-		return unicode.IsSpace(r)
-	})
-	return words
-}
-
-//validIP 判断ip是否合法
-func validIP(ip string) bool {
-	match, err := regexp.MatchString(`^(?:(?:1[0-9][0-9]\.)|(?:2[0-4][0-9]\.)|(?:25[0-5]\.)|(?:[1-9][0-9]\.)|(?:[0-9]\.)){3}(?:(?:1[0-9][0-9])|(?:2[0-4][0-9])|(?:25[0-5])|(?:[1-9][0-9])|(?:[0-9]))$`, ip)
-	if err != nil {
-		return false
-	}
-	return match
 }

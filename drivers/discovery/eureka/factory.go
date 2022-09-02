@@ -16,16 +16,17 @@ func Register(register eosc.IExtenderDriverRegister) {
 type factory struct {
 }
 
-//NewFactory 创建eureka驱动工厂
-func NewFactory() eosc.IExtenderDriverFactory {
-	return &factory{}
-}
 func (f *factory) Render() interface{} {
 	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
 	if err != nil {
 		return nil
 	}
 	return render
+}
+
+//NewFactory 创建eureka驱动工厂
+func NewFactory() eosc.IExtenderDriverFactory {
+	return &factory{}
 }
 
 //Create 创建eureka驱动

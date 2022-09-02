@@ -1,10 +1,8 @@
 package main
 
 import (
-	"github.com/eolinker/apinto/drivers/auth/aksk"
-	"github.com/eolinker/apinto/drivers/auth/apikey"
-	"github.com/eolinker/apinto/drivers/auth/basic"
-	"github.com/eolinker/apinto/drivers/auth/jwt"
+	"github.com/eolinker/apinto/application/auth"
+	"github.com/eolinker/apinto/drivers/app"
 	"github.com/eolinker/apinto/drivers/discovery/consul"
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
@@ -14,8 +12,9 @@ import (
 	"github.com/eolinker/apinto/drivers/output/kafka"
 	"github.com/eolinker/apinto/drivers/output/nsq"
 	"github.com/eolinker/apinto/drivers/output/syslog"
+	plugin_manager "github.com/eolinker/apinto/drivers/plugin-manager"
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
-	"github.com/eolinker/apinto/drivers/plugins/auth"
+	plugin_app "github.com/eolinker/apinto/drivers/plugins/app"
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
@@ -27,9 +26,9 @@ import (
 	rate_limiting "github.com/eolinker/apinto/drivers/plugins/rate-limiting"
 	response_rewrite "github.com/eolinker/apinto/drivers/plugins/response-rewrite"
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
-	service_http "github.com/eolinker/apinto/drivers/service/service-http"
-	//upstream_http "github.com/eolinker/apinto/drivers/upstream/upstream-http"
-	plugin_manager "github.com/eolinker/apinto/plugin-manager"
+	service "github.com/eolinker/apinto/drivers/service"
+	template "github.com/eolinker/apinto/drivers/template"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/extends"
 	process_worker "github.com/eolinker/eosc/process-worker"
@@ -45,9 +44,10 @@ func registerInnerExtenders() {
 func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	// router
 	http_router.Register(extenderRegister)
+	template.Register(extenderRegister)
 
 	// service
-	service_http.Register(extenderRegister)
+	service.Register(extenderRegister)
 
 	////// upstream
 	//upstream_http.Register(extenderRegister)
@@ -65,17 +65,14 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	kafka.Register(extenderRegister)
 	syslog.Register(extenderRegister)
 
-	// auth
-	basic.Register(extenderRegister)
-	apikey.Register(extenderRegister)
-	aksk.Register(extenderRegister)
-	jwt.Register(extenderRegister)
+	//app
+	app.Register(extenderRegister)
+	auth.Register(extenderRegister)
 
 	//plugin
 	plugin_manager.Register(extenderRegister)
 
-	auth.Register(extenderRegister)
-
+	plugin_app.Register(extenderRegister)
 	extra_params.Register(extenderRegister)
 	params_transformer.Register(extenderRegister)
 	proxy_rewrite.Register(extenderRegister)

@@ -3,6 +3,8 @@ package balance
 import (
 	"errors"
 	"fmt"
+
+	eoscContext "github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/discovery"
@@ -16,12 +18,7 @@ var (
 
 //IBalanceFactory 实现了负载均衡算法工厂
 type IBalanceFactory interface {
-	Create(app discovery.IApp) (IBalanceHandler, error)
-}
-
-//IBalanceHandler 实现了负载均衡算法
-type IBalanceHandler interface {
-	Next() (discovery.INode, error)
+	Create(app discovery.IApp) (eoscContext.BalanceHandler, error)
 }
 
 //IBalanceFactoryRegister 实现了负载均衡算法工厂管理器
@@ -47,7 +44,6 @@ func newBalanceFactoryManager() IBalanceFactoryRegister {
 
 //GetFactoryByKey 获取指定balance工厂
 func (dm *driverRegister) GetFactoryByKey(key string) (IBalanceFactory, bool) {
-	log.Debug("GetFactoryByKey:", key)
 	o, has := dm.register.Get(key)
 	if has {
 		log.Debug("GetFactoryByKey:", key, ":has")
@@ -60,8 +56,6 @@ func (dm *driverRegister) GetFactoryByKey(key string) (IBalanceFactory, bool) {
 //RegisterFactoryByKey 注册balance工厂
 func (dm *driverRegister) RegisterFactoryByKey(key string, factory IBalanceFactory) {
 	err := dm.register.Register(key, factory, true)
-	log.Debug("RegisterFactoryByKey:", key)
-
 	if err != nil {
 		log.Debug("RegisterFactoryByKey:", key, ":", err)
 		return

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	http_context "github.com/eolinker/apinto/node/http-context"
-	http_service "github.com/eolinker/eosc/http-service"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/valyala/fasthttp"
 )
 
@@ -28,7 +28,7 @@ func initTestContext(address string) (http_service.IHttpContext, error) {
 		return nil, err
 	}
 	fast.Init(freq, addr, nil)
-	return http_context.NewContext(fast), nil
+	return http_context.NewContext(fast, 0), nil
 }
 
 func TestFilter(t *testing.T) {
@@ -45,7 +45,7 @@ func TestFilter(t *testing.T) {
 	if err != nil {
 		t.Errorf("create handler error : %v", err)
 	}
-	h, ok := g.(http_service.IFilter)
+	h, ok := g.(http_service.HttpFilter)
 	if !ok {
 		t.Errorf("parse filter error")
 		return

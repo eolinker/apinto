@@ -3,9 +3,10 @@ package consul
 import (
 	"context"
 	"fmt"
-	"github.com/eolinker/eosc/utils/config"
 	"sync"
 	"time"
+
+	"github.com/eolinker/eosc/utils/config"
 
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/log"
@@ -45,7 +46,7 @@ func (c *consul) Start() error {
 					for _, serviceName := range keys {
 						nodeSet, err := c.clients.getNodes(serviceName)
 						if err != nil {
-							log.Warnf("consul %s:%w for service %s", c.name, discovery.ErrDiscoveryDown, serviceName)
+							log.Warnf("consul %s:%s for service %s", c.name, discovery.ErrDiscoveryDown, serviceName)
 							continue
 						}
 						//更新目标服务的节点列表
@@ -65,7 +66,7 @@ func (c *consul) Start() error {
 }
 
 //Reset 重置consul实例配置
-func (c *consul) Reset(cfg interface{}, workers map[eosc.RequireId]interface{}) error {
+func (c *consul) Reset(cfg interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	workerConfig, ok := cfg.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(cfg))
