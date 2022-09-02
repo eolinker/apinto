@@ -1,10 +1,11 @@
 package manager
 
 import (
-	"github.com/eolinker/apinto/application"
-	"github.com/eolinker/eosc"
 	"strings"
 	"sync"
+
+	"github.com/eolinker/apinto/application"
+	"github.com/eolinker/eosc"
 )
 
 // 管理器：可以通过driver快速获取驱动列表
@@ -15,7 +16,7 @@ type IManager interface {
 	Get(id string) (application.IAuth, bool)
 	List() []application.IAuthUser
 	ListByDriver(driver string) []application.IAuthUser
-	Set(appID string, labels map[string]string, disable bool, filters []application.IAuth, users map[string][]*application.User)
+	Set(appID string, labels map[string]string, disable bool, filters []application.IAuth, users map[string][]*application.BaseConfig)
 	Del(appID string)
 	Count() int
 }
@@ -99,18 +100,18 @@ func (m *Manager) All() []application.IAuthUser {
 	return m.all()
 }
 
-func (m *Manager) Set(appID string, labels map[string]string, disable bool, filters []application.IAuth, users map[string][]*application.User) {
+func (m *Manager) Set(appID string, labels map[string]string, disable bool, filters []application.IAuth, users map[string][]*application.BaseConfig) {
 	idMap := make(map[string][]string)
 	for _, filter := range filters {
 		f, has := m.get(filter.ID())
 		if !has {
 			f = filter
 		}
-		var us []*application.User
-		if v, ok := users[f.ID()]; ok {
-			us = v
+		v, ok := users[f.ID()]
+		if !ok {
+			continue
 		}
-		f.Set(appID, labels, disable, us)
+		f.Set(appID, labels, disable, v)
 		m.filters.Set(filter.ID(), filter)
 		if _, ok := idMap[filter.Driver()]; !ok {
 			idMap[filter.Driver()] = make([]string, 0, len(filters))

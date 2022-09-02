@@ -2,10 +2,11 @@ package app
 
 import (
 	"errors"
+	"reflect"
+
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/eosc/utils/schema"
-	"reflect"
-	
+
 	"github.com/eolinker/eosc"
 )
 
@@ -45,6 +46,10 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	if err != nil {
 		return nil, err
 	}
+	err = set(id, cfg)
+	if err != nil {
+		return nil, err
+	}
 	return &app{
 		id:     id,
 		config: cfg,
@@ -61,7 +66,7 @@ func checkConfig(v interface{}) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		
+
 	}
 	return conf, nil
 }
