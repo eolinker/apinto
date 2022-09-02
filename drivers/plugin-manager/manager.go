@@ -30,6 +30,7 @@ type PluginManager struct {
 }
 
 func (p *PluginManager) Set(conf interface{}) error {
+	log.Debug("plugin manager set")
 	return p.Reset(conf)
 }
 
@@ -171,8 +172,8 @@ func (p *PluginManager) IsExists(id string) bool {
 func NewPluginManager() *PluginManager {
 
 	pm := &PluginManager{
-
-		plugins:    nil,
+		name:       "plugin",
+		plugins:    make(Plugins, 0),
 		pluginObjs: eosc.NewUntyped(),
 	}
 	log.Debug("autowired extenderDrivers")
