@@ -30,6 +30,7 @@ type PluginManager struct {
 }
 
 func (p *PluginManager) Set(conf interface{}) error {
+	log.Debug("plugin manager set")
 	return p.Reset(conf)
 }
 
