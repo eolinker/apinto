@@ -84,7 +84,6 @@ func (p *PluginManager) Reset(conf interface{}) error {
 }
 
 func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []eocontext.IFilter {
-	log.Debug("all plugins len: ", len(p.plugins))
 	filters := make([]eocontext.IFilter, 0, len(conf))
 	plugins := p.plugins
 	for _, plg := range plugins {
