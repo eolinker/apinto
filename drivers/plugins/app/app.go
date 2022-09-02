@@ -3,11 +3,13 @@ package app
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"time"
+	"github.com/eolinker/eosc/log"
 )
 
 type App struct {
@@ -22,6 +24,7 @@ func (a *App) Destroy() {
 }
 
 func (a *App) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
+	log.Debug("auth beginning")
 	err := a.auth(ctx)
 	if err != nil {
 		ctx.Response().SetStatus(403, "403")
