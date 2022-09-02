@@ -172,8 +172,8 @@ func (p *PluginManager) IsExists(id string) bool {
 func NewPluginManager() *PluginManager {
 
 	pm := &PluginManager{
-
-		plugins:    nil,
+		name:       "plugin",
+		plugins:    make(Plugins, 0),
 		pluginObjs: eosc.NewUntyped(),
 	}
 	log.Debug("autowired extenderDrivers")
