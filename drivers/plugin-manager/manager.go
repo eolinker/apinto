@@ -29,17 +29,28 @@ type PluginManager struct {
 	workers         eosc.IWorkers
 }
 
-func (p *PluginManager) Set(conf interface{}) error {
-	log.Debug("plugin manager set")
-	return p.Reset(conf)
+func (p *PluginManager) Check(cfg interface{}) (id, profession, name, driver, desc string, err error) {
+	err = eosc.ErrorUnsupportedKind
+	return
+}
+
+func (p *PluginManager) AllWorkers() []string {
+	return []string{"plugin@setting"}
+}
+
+func (p *PluginManager) Mode() eosc.SettingMode {
+	return eosc.SettingModeSingleton
+}
+
+func (p *PluginManager) Set(conf interface{}) (err error) {
+
+	err = p.Reset(conf)
+
+	return
 }
 
 func (p *PluginManager) Get() interface{} {
 	return p.plugins
-}
-
-func (p *PluginManager) ReadOnly() bool {
-	return false
 }
 
 func (p *PluginManager) ConfigType() reflect.Type {
@@ -155,13 +166,14 @@ func (p *PluginManager) check(conf interface{}) (Plugins, error) {
 	return plugins, nil
 
 }
-func (p *PluginManager) Check(conf interface{}) error {
-	_, err := p.check(conf)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+
+//func (p *PluginManager) Check(conf interface{}) error {
+//	_, err := p.check(conf)
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 func (p *PluginManager) IsExists(id string) bool {
 	_, has := p.extenderDrivers.GetDriver(id)

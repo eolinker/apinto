@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	ErrorInvalidAuth           = errors.New("invalid auth")
-	defaultAuthFactoryRegister = newAuthFactoryManager()
+	ErrorInvalidAuth                         = errors.New("invalid auth")
+	defaultAuthFactoryRegister               = newAuthFactoryManager()
+	_                          eosc.ISetting = defaultAuthFactoryRegister
 )
 
 //IAuthFactory 鉴权工厂方法
@@ -42,12 +43,24 @@ type driverRegister struct {
 	render      map[string]interface{}
 }
 
+func (dm *driverRegister) Check(cfg interface{}) (id, profession, name, driver, desc string, err error) {
+	return
+}
+
+func (dm *driverRegister) AllWorkers() []string {
+	return nil
+}
+
+func (dm *driverRegister) Mode() eosc.SettingMode {
+	return eosc.SettingModeReadonly
+}
+
 func (dm *driverRegister) ConfigType() reflect.Type {
 	return nil
 }
 
-func (dm *driverRegister) Set(conf interface{}) error {
-	return nil
+func (dm *driverRegister) Set(conf interface{}) (err error) {
+	return
 }
 
 func (dm *driverRegister) Get() interface{} {
