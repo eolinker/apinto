@@ -60,6 +60,20 @@ func TestParse(t *testing.T) {
 			},
 			want: "name-test",
 		},
+		{
+			name: "skip1",
+			args: args{
+				metrics: []string{"name", "{name}", ""},
+			},
+			want: "name-test",
+		},
+		{
+			name: "skip2",
+			args: args{
+				metrics: []string{"name", "{name}", "{}"},
+			},
+			want: "name-test",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
