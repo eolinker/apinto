@@ -43,7 +43,7 @@ type driverRegister struct {
 	render      map[string]interface{}
 }
 
-func (dm *driverRegister) Check(cfg interface{}) (id, profession, name, driver, desc string, err error) {
+func (dm *driverRegister) Check(cfg interface{}) (profession, name, driver, desc string, err error) {
 	return
 }
 

@@ -2,23 +2,36 @@ package limiting_stragety
 
 import (
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/setting"
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 )
 
 const Name = "strategy-limiting"
 
+var (
+	configType = reflect.TypeOf((*Config)(nil))
+)
+
 //Register 注册http路由驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
+
 	register.RegisterExtenderDriver(Name, newFactory())
+	setting.RegisterSetting("strategies-limiting", NewController())
 }
 
 type factory struct {
-	configType reflect.Type
-	render     interface{}
+	render interface{}
 }
 
 func newFactory() *factory {
-	return &factory{}
+	render, err := schema.Generate(configType, nil)
+	if err != nil {
+		panic(err)
+	}
+	return &factory{
+		render: render,
+	}
 }
 
 func (f *factory) Render() interface{} {
@@ -26,5 +39,5 @@ func (f *factory) Render() interface{} {
 }
 
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
-	return &driver{configType: f.configType}, nil
+	return &driver{}, nil
 }

@@ -6,10 +6,6 @@ type IStrategyHandler interface {
 	Strategy(ctx eoscContext.EoContext, next eoscContext.IChain) error
 }
 
-func Strategy(ctx eoscContext.EoContext, next eoscContext.IChain) error {
-	return nil
-}
-
 type IFilter interface {
 	Check(ctx eoscContext.EoContext) bool
 }

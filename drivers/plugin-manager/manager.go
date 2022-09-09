@@ -29,7 +29,7 @@ type PluginManager struct {
 	workers         eosc.IWorkers
 }
 
-func (p *PluginManager) Check(cfg interface{}) (id, profession, name, driver, desc string, err error) {
+func (p *PluginManager) Check(cfg interface{}) (profession, name, driver, desc string, err error) {
 	err = eosc.ErrorUnsupportedKind
 	return
 }
