@@ -1,6 +1,6 @@
 # 名称：apinto镜像，携带了部署k8s集群所需要的脚本
 # 创建时间：2022-3-30
-FROM centos:latest
+FROM centos:7.9.2009
 MAINTAINER eolink
 
 #声明端口
