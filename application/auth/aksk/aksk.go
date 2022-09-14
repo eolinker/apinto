@@ -54,7 +54,7 @@ func (a *aksk) ID() string {
 }
 
 func (a *aksk) Driver() string {
-	return a.Driver()
+	return driverName
 }
 
 func (a *aksk) Check(appID string, users []*application.BaseConfig) error {
