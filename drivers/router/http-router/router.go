@@ -1,6 +1,7 @@
 package http_router
 
 import (
+	"strings"
 	"time"
 
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
@@ -57,7 +58,12 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		service:  nil,
 		filters:  nil,
 		disable:  cfg.Disable,
+		labels: map[string]string{
+			"api":     h.name,
+			"service": strings.TrimSuffix(string(cfg.Service), "@service"),
+		},
 	}
+
 	if !cfg.Disable {
 
 		serviceWorker, has := workers[cfg.Service]
