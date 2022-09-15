@@ -42,7 +42,7 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 
 	lg := &Limiting{
 		id:   id,
-		name: Name,
+		name: name,
 	}
 	controller.Store(id)
 	return lg, nil

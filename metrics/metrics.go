@@ -8,10 +8,12 @@ type LabelReader interface {
 	GetLabel(name string) string
 }
 type metricsReader interface {
+	key() string
 	reader(labels LabelReader) string
 }
 type Metrics interface {
 	Metrics(ctx LabelReader) string
+	Key() string
 }
 
 func Parse(metrics []string) Metrics {
@@ -41,17 +43,33 @@ func Parse(metrics []string) Metrics {
 
 type metricsLabelReader string
 
+func (m metricsLabelReader) key() string {
+	return string(m)
+}
+
 func (m metricsLabelReader) reader(labels LabelReader) string {
 	return labels.GetLabel(string(m))
 }
 
 type metricsConst string
 
+func (m metricsConst) key() string {
+	return string(m)
+}
+
 func (m metricsConst) reader(labels LabelReader) string {
 	return string(m)
 }
 
 type metricsList []metricsReader
+
+func (ms metricsList) Key() string {
+	vs := make([]string, len(ms))
+	for i, r := range ms {
+		vs[i] = r.key()
+	}
+	return strings.Join(vs, "-")
+}
 
 func (ms metricsList) Metrics(ctx LabelReader) string {
 	vs := make([]string, len(ms))
