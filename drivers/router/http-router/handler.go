@@ -8,6 +8,8 @@ import (
 )
 
 type Handler struct {
+	routerName      string
+	serviceName     string
 	completeHandler HttpComplete
 	finisher        Finisher
 	service         service.IService
@@ -26,6 +28,10 @@ func (h *Handler) ServeHTTP(ctx eocontext.EoContext) {
 		httpContext.FastFinish()
 		return
 	}
+	//Set Label
+	ctx.SetLabel("api", h.routerName)
+	ctx.SetLabel("service", h.serviceName)
+
 	ctx.SetFinish(&h.finisher)
 	ctx.SetCompleteHandler(&h.completeHandler)
 	ctx.SetApp(h.service)

@@ -1,6 +1,7 @@
 package http_router
 
 import (
+	"strings"
 	"time"
 
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
@@ -49,6 +50,8 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		return eosc.ErrorConfigFieldUnknown
 	}
 	handler := &Handler{
+		routerName:  h.name,
+		serviceName: strings.TrimSuffix(string(cfg.Service), "@service"),
 		completeHandler: HttpComplete{
 			retry:   cfg.Retry,
 			timeOut: time.Duration(cfg.TimeOut) * time.Millisecond,
@@ -58,6 +61,7 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		filters:  nil,
 		disable:  cfg.Disable,
 	}
+
 	if !cfg.Disable {
 
 		serviceWorker, has := workers[cfg.Service]
