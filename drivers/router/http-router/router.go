@@ -50,6 +50,8 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		return eosc.ErrorConfigFieldUnknown
 	}
 	handler := &Handler{
+		routerName:  h.name,
+		serviceName: strings.TrimSuffix(string(cfg.Service), "@service"),
 		completeHandler: HttpComplete{
 			retry:   cfg.Retry,
 			timeOut: time.Duration(cfg.TimeOut) * time.Millisecond,
@@ -58,10 +60,6 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		service:  nil,
 		filters:  nil,
 		disable:  cfg.Disable,
-		labels: map[string]string{
-			"api":     h.name,
-			"service": strings.TrimSuffix(string(cfg.Service), "@service"),
-		},
 	}
 
 	if !cfg.Disable {
