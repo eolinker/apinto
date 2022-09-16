@@ -12,7 +12,7 @@ func init() {
 
 type ActuatorsHandler interface {
 	Assert(ctx eocontext.EoContext) bool
-	Check(ctx eocontext.EoContext, handlers []*LimitingHandler, queryScalar scalar.Manager, traffics scalar.Manager, name string) error
+	Check(ctx eocontext.EoContext, handlers []*LimitingHandler, queryScalar scalar.Manager, traffics scalar.Manager) error
 }
 
 var (

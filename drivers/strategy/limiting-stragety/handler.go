@@ -6,12 +6,17 @@ import (
 )
 
 type LimitingHandler struct {
+	name     string
 	filter   strategy.IFilter
 	metrics  metrics.Metrics
 	query    Threshold
 	traffic  Threshold
 	priority int
 	stop     bool
+}
+
+func (l *LimitingHandler) Name() string {
+	return l.name
 }
 
 func (l *LimitingHandler) Filter() strategy.IFilter {

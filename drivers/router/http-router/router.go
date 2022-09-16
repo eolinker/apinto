@@ -1,6 +1,7 @@
 package http_router
 
 import (
+	"github.com/eolinker/apinto/drivers/router"
 	"time"
 
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
@@ -49,14 +50,11 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		return eosc.ErrorConfigFieldUnknown
 	}
 	handler := &Handler{
-		completeHandler: HttpComplete{
-			retry:   cfg.Retry,
-			timeOut: time.Duration(cfg.TimeOut) * time.Millisecond,
-		},
-		finisher: Finisher{},
-		service:  nil,
-		filters:  nil,
-		disable:  cfg.Disable,
+		completeHandler: router.NewHttpComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
+		finisher:        Finisher{},
+		service:         nil,
+		filters:         nil,
+		disable:         cfg.Disable,
 	}
 	if !cfg.Disable {
 
@@ -68,7 +66,7 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		if cfg.Plugins == nil {
 			cfg.Plugins = map[string]*plugin.Config{}
 		}
-		var plugins eocontext.IChain
+		var plugins eocontext.IChainPro
 		if cfg.Template != "" {
 			templateWorker, has := workers[cfg.Template]
 			if !has || !templateWorker.CheckSkill(template.TemplateSkill) {

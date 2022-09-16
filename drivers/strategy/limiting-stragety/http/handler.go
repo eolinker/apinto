@@ -1,11 +1,17 @@
 package http
 
 import (
+	"errors"
 	limiting_stragety "github.com/eolinker/apinto/drivers/strategy/limiting-stragety"
 	"github.com/eolinker/apinto/drivers/strategy/limiting-stragety/scalar"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"net/http"
 	"strconv"
+)
+
+var (
+	ErrorLimitingRefuse = errors.New("refuse by limiting strategy")
 )
 
 type actuatorHttp struct {
@@ -23,7 +29,7 @@ func (hd *actuatorHttp) Assert(ctx eocontext.EoContext) bool {
 	return true
 }
 
-func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*limiting_stragety.LimitingHandler, queryScalars scalar.Manager, trafficScalars scalar.Manager, name string) error {
+func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*limiting_stragety.LimitingHandler, queryScalars scalar.Manager, trafficScalars scalar.Manager) error {
 	httpContext, err := http_service.Assert(ctx)
 	if err != nil {
 		return err
@@ -43,7 +49,9 @@ func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*limiting_stra
 			queryScalar := queryScalars.Get(metricsValue)
 			trafficScalar := trafficScalars.Get(metricsValue)
 			if !queryScalar.Second().CompareAndAdd(h.Query().Second, 1) {
-
+				httpContext.Response().SetStatus(http.StatusForbidden, http.StatusText(http.StatusForbidden))
+				httpContext.Response().SetHeader("strategy", h.Name())
+				return ErrorLimitingRefuse
 			}
 			if !queryScalar.Minute().CompareAndAdd(h.Query().Minute, 1) {
 

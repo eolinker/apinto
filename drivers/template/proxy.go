@@ -9,7 +9,7 @@ import (
 var _ iProxyDatas = (*ProxyDatas)(nil)
 
 type Proxy struct {
-	eoscContext.IChain
+	eoscContext.IChainPro
 	id  string
 	org map[string]*plugin.Config
 
@@ -22,11 +22,11 @@ func (p *Proxy) Destroy() {
 		p.parent = nil
 		parent.Del(p.id)
 	}
-	p.IChain.Destroy()
+	p.IChainPro.Destroy()
 }
 
 type iProxyDatas interface {
-	Set(id string, plugins map[string]*plugin.Config) eoscContext.IChain
+	Set(id string, plugins map[string]*plugin.Config) eoscContext.IChainPro
 	Del(id string)
 }
 
@@ -36,7 +36,7 @@ type ProxyDatas struct {
 	plugins map[string]*plugin.Config
 }
 
-func (p *ProxyDatas) Set(id string, conf map[string]*plugin.Config) eoscContext.IChain {
+func (p *ProxyDatas) Set(id string, conf map[string]*plugin.Config) eoscContext.IChainPro {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	cf := plugin.MergeConfig(conf, p.plugins)
@@ -44,14 +44,14 @@ func (p *ProxyDatas) Set(id string, conf map[string]*plugin.Config) eoscContext.
 	v, has := p.datas[id]
 	if !has {
 		v = &Proxy{
-			IChain: filters,
-			id:     id,
-			org:    conf,
-			parent: p,
+			IChainPro: filters,
+			id:        id,
+			org:       conf,
+			parent:    p,
 		}
 		p.datas[id] = v
 	} else {
-		v.IChain = filters
+		v.IChainPro = filters
 		v.org = conf
 	}
 
@@ -70,7 +70,7 @@ func (p *ProxyDatas) Reset(conf map[string]*plugin.Config) {
 	p.plugins = conf
 	for _, proxy := range p.datas {
 		cf := plugin.MergeConfig(proxy.org, conf)
-		proxy.IChain = pluginManger.CreateRequest(proxy.id, cf)
+		proxy.IChainPro = pluginManger.CreateRequest(proxy.id, cf)
 	}
 }
 func (p *ProxyDatas) Destroy() {
@@ -80,7 +80,7 @@ func (p *ProxyDatas) Destroy() {
 	p.lock.Unlock()
 	for _, proxy := range data {
 		proxy.parent = nil
-		proxy.IChain.Destroy()
+		proxy.IChainPro.Destroy()
 	}
 }
 func NewProxyDatas() *ProxyDatas {

@@ -1,4 +1,4 @@
-package http_router
+package router
 
 import (
 	"errors"
@@ -17,6 +17,10 @@ var (
 type HttpComplete struct {
 	retry   int
 	timeOut time.Duration
+}
+
+func NewHttpComplete(retry int, timeOut time.Duration) *HttpComplete {
+	return &HttpComplete{retry: retry, timeOut: timeOut}
 }
 
 func (h *HttpComplete) Complete(org eocontext.EoContext) error {
@@ -71,4 +75,19 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	}
 
 	return lastErr
+}
+
+type httpCompleteCaller struct {
+}
+
+func NewHttpCompleteCaller() *httpCompleteCaller {
+	return &httpCompleteCaller{}
+}
+
+func (h *httpCompleteCaller) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return ctx.GetComplete().Complete(ctx)
+}
+
+func (h *httpCompleteCaller) Destroy() {
+
 }

@@ -57,7 +57,7 @@ func (p *PluginManager) ConfigType() reflect.Type {
 	return reflect.TypeOf(new(PluginWorkerConfig))
 }
 
-func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config) eocontext.IChain {
+func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config) eocontext.IChainPro {
 
 	return p.createChain(id, conf)
 }
@@ -88,7 +88,7 @@ func (p *PluginManager) Reset(conf interface{}) error {
 
 			continue
 		}
-		v.Filters = p.createFilters(v.conf)
+		v.fs = p.createFilters(v.conf)
 	}
 
 	return nil
@@ -142,7 +142,7 @@ func (p *PluginManager) createChain(id string, conf map[string]*plugin.Config) *
 		obj = NewPluginObj(chain, id, conf)
 		p.pluginObjs.Set(id, obj)
 	} else {
-		obj.(*PluginObj).Filters = chain
+		obj.(*PluginObj).fs = chain
 	}
 	log.Debug("create chain len: ", len(chain))
 	return obj.(*PluginObj)

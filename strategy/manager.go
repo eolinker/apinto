@@ -1,16 +1,20 @@
 package strategy
 
-import eoscContext "github.com/eolinker/eosc/eocontext"
+import "github.com/eolinker/eosc/eocontext"
 
 type IStrategyManager interface {
-	AddStrategyHandler(handler IStrategyHandler)
+	AddStrategyHandler(handler eocontext.IFilter)
+	Strategy(ctx eocontext.EoContext, next eocontext.IChain) error
 }
 
-func AddStrategyHandler(handler IStrategyHandler) {
+var (
+	handlers eocontext.Filters
+)
 
+func AddStrategyHandler(handler eocontext.IFilter) {
+	handlers = append(handlers, handler)
 }
 
-func Strategy(ctx eoscContext.EoContext, next eoscContext.IChain) error {
-
-	return nil
+func Strategy(ctx eocontext.EoContext, next eocontext.IChain) error {
+	return eocontext.DoChain(ctx, handlers, eocontext.ToFilter(next))
 }

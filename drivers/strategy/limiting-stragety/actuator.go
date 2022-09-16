@@ -9,15 +9,13 @@ import (
 )
 
 var (
-	actuatorSet     ActuatorSet
-	actuatorHandler strategy.IStrategyHandler
+	actuatorSet ActuatorSet
 )
 
 func init() {
 	actuator := newActuator()
 	actuatorSet = actuator
-
-	strategy.AddStrategyHandler(actuatorHandler)
+	strategy.AddStrategyHandler(actuator)
 }
 
 type ActuatorSet interface {
@@ -31,6 +29,10 @@ type tActuator struct {
 	handlers    []*LimitingHandler
 	queryScalar scalar.Manager
 	traffics    scalar.Manager
+}
+
+func (a *tActuator) Destroy() {
+
 }
 
 func (a *tActuator) Set(id string, limiting *LimitingHandler) {
@@ -63,7 +65,7 @@ func newActuator() *tActuator {
 	return &tActuator{}
 }
 
-func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) error {
+func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) error {
 
 	a.lock.RLock()
 	handlers := a.handlers
