@@ -1,14 +1,9 @@
 package limiting_stragety
 
 import (
-	"github.com/eolinker/apinto/drivers/strategy/limiting-stragety/http"
 	"github.com/eolinker/apinto/drivers/strategy/limiting-stragety/scalar"
 	"github.com/eolinker/eosc/eocontext"
 )
-
-func init() {
-	registerActuator(http.NewActuator())
-}
 
 type ActuatorsHandler interface {
 	Assert(ctx eocontext.EoContext) bool
@@ -19,7 +14,7 @@ var (
 	actuatorsHandlers []ActuatorsHandler
 )
 
-func registerActuator(handler ActuatorsHandler) {
+func RegisterActuator(handler ActuatorsHandler) {
 
 	actuatorsHandlers = append(actuatorsHandlers, handler)
 }

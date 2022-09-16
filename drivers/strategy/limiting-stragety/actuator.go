@@ -62,7 +62,11 @@ func (a *tActuator) rebuild() {
 	a.handlers = handlers
 }
 func newActuator() *tActuator {
-	return &tActuator{}
+	return &tActuator{
+		queryScalar: scalar.NewManager(),
+		traffics:    scalar.NewManager(),
+		all:         make(map[string]*LimitingHandler),
+	}
 }
 
 func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) error {
