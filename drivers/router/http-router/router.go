@@ -1,14 +1,14 @@
 package http_router
 
 import (
-	"strings"
-	"time"
-
+	"github.com/eolinker/apinto/drivers/router"
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	http_router "github.com/eolinker/apinto/router/http-router"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/template"
+	"strings"
+	"time"
 
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
@@ -50,18 +50,14 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		return eosc.ErrorConfigFieldUnknown
 	}
 	handler := &Handler{
-		routerName:  h.name,
-		serviceName: strings.TrimSuffix(string(cfg.Service), "@service"),
-		completeHandler: HttpComplete{
-			retry:   cfg.Retry,
-			timeOut: time.Duration(cfg.TimeOut) * time.Millisecond,
-		},
-		finisher: Finisher{},
-		service:  nil,
-		filters:  nil,
-		disable:  cfg.Disable,
+		routerName:      h.name,
+		serviceName:     strings.TrimSuffix(string(cfg.Service), "@service"),
+		completeHandler: router.NewHttpComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
+		finisher:        Finisher{},
+		service:         nil,
+		filters:         nil,
+		disable:         cfg.Disable,
 	}
-
 	if !cfg.Disable {
 
 		serviceWorker, has := workers[cfg.Service]
@@ -72,7 +68,7 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		if cfg.Plugins == nil {
 			cfg.Plugins = map[string]*plugin.Config{}
 		}
-		var plugins eocontext.IChain
+		var plugins eocontext.IChainPro
 		if cfg.Template != "" {
 			templateWorker, has := workers[cfg.Template]
 			if !has || !templateWorker.CheckSkill(template.TemplateSkill) {

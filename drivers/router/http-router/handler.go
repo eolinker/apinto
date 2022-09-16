@@ -1,20 +1,25 @@
 package http_router
 
 import (
+	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"net/http"
 )
 
+var completeCaller = http_complete.NewHttpCompleteCaller()
+
 type Handler struct {
-	routerName      string
-	serviceName     string
-	completeHandler HttpComplete
-	finisher        Finisher
-	service         service.IService
-	filters         eocontext.IChain
-	disable         bool
+	completeHandler *http_complete.HttpComplete
+
+	routerName  string
+	serviceName string
+
+	finisher Finisher
+	service  service.IService
+	filters  eocontext.IChainPro
+	disable  bool
 }
 
 func (h *Handler) ServeHTTP(ctx eocontext.EoContext) {
@@ -33,8 +38,8 @@ func (h *Handler) ServeHTTP(ctx eocontext.EoContext) {
 	ctx.SetLabel("service", h.serviceName)
 
 	ctx.SetFinish(&h.finisher)
-	ctx.SetCompleteHandler(&h.completeHandler)
+	ctx.SetCompleteHandler(h.completeHandler)
 	ctx.SetApp(h.service)
 	ctx.SetBalance(h.service)
-	h.filters.DoChain(ctx)
+	h.filters.Chain(ctx, completeCaller)
 }

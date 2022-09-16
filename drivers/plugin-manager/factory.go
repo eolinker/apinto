@@ -9,6 +9,7 @@ import (
 
 var (
 	singleton *PluginManager
+	_         eosc.ISetting = singleton
 )
 
 func init() {

@@ -3,6 +3,7 @@ package manager
 import (
 	"crypto/tls"
 	"errors"
+	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
 	http_context "github.com/eolinker/apinto/node/http-context"
 	http_router "github.com/eolinker/apinto/router/http-router"
 	"github.com/eolinker/eosc/config"
@@ -17,6 +18,7 @@ import (
 
 var _ IManger = (*Manager)(nil)
 var notFound = new(NotFoundHandler)
+var completeCaller = http_complete.NewHttpCompleteCaller()
 
 type IManger interface {
 	Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router http_router.IRouterHandler) error
@@ -28,7 +30,7 @@ type Manager struct {
 	matcher http_router.IMatcher
 
 	routersData   IRouterData
-	globalFilters eoscContext.IChain
+	globalFilters eoscContext.IChainPro
 }
 
 func (m *Manager) Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router http_router.IRouterHandler) error {
@@ -61,7 +63,7 @@ func (m *Manager) Delete(id string) {
 var errNoCertificates = errors.New("tls: no certificates configured")
 
 //NewManager 创建路由管理器
-func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters eoscContext.IChain) *Manager {
+func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters eoscContext.IChainPro) *Manager {
 	log.Debug("new router manager")
 	m := &Manager{
 		globalFilters: globalFilters,
@@ -118,7 +120,7 @@ func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 	if !has {
 		httpContext.SetFinish(notFound)
 		httpContext.SetCompleteHandler(notFound)
-		m.globalFilters.DoChain(httpContext)
+		m.globalFilters.Chain(httpContext, completeCaller)
 	} else {
 		log.Debug("match has:", port)
 		r.ServeHTTP(httpContext)

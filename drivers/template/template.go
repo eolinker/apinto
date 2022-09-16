@@ -54,6 +54,6 @@ func (t *Template) CheckSkill(skill string) bool {
 	return template.CheckSkill(skill)
 }
 
-func (t *Template) Create(id string, conf map[string]*plugin.Config) eocontext.IChain {
+func (t *Template) Create(id string, conf map[string]*plugin.Config) eocontext.IChainPro {
 	return t.proxyDatas.Set(id, conf)
 }
