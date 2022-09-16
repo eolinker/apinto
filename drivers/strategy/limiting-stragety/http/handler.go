@@ -6,6 +6,7 @@ import (
 	"github.com/eolinker/apinto/drivers/strategy/limiting-stragety/scalar"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/eosc/log"
 	"net/http"
 	"strconv"
 )
@@ -49,31 +50,49 @@ func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*limiting_stra
 			queryScalar := queryScalars.Get(metricsValue)
 			trafficScalar := trafficScalars.Get(metricsValue)
 			if !queryScalar.Second().CompareAndAdd(h.Query().Second, 1) {
-				httpContext.Response().SetStatus(http.StatusForbidden, http.StatusText(http.StatusForbidden))
-				httpContext.Response().SetHeader("strategy", h.Name())
+				setLimitingStrategyContent(httpContext, h.Name())
+				log.DebugF("refuse by limiting strategy %s of second query ", h.Name())
+
 				return ErrorLimitingRefuse
 			}
 			if !queryScalar.Minute().CompareAndAdd(h.Query().Minute, 1) {
+				setLimitingStrategyContent(httpContext, h.Name())
+				log.DebugF("refuse by limiting strategy %s of minute query ", h.Name())
 
+				return ErrorLimitingRefuse
 			}
 			if !queryScalar.Hour().CompareAndAdd(h.Query().Hour, 1) {
+				setLimitingStrategyContent(httpContext, h.Name())
+				log.DebugF("refuse by limiting strategy %s of hour query ", h.Name())
 
+				return ErrorLimitingRefuse
 			}
 
 			if !trafficScalar.Second().CompareAndAdd(h.Traffic().Second, length) {
-
+				setLimitingStrategyContent(httpContext, h.Name())
+				log.DebugF("refuse by limiting strategy %s of second traffic ", h.Name())
+				return ErrorLimitingRefuse
 			}
 
 			if !trafficScalar.Minute().CompareAndAdd(h.Traffic().Minute, length) {
-
+				setLimitingStrategyContent(httpContext, h.Name())
+				log.DebugF("refuse by limiting strategy %s of minute traffic ", h.Name())
+				return ErrorLimitingRefuse
 			}
 
 			if !trafficScalar.Hour().CompareAndAdd(h.Traffic().Hour, length) {
+				setLimitingStrategyContent(httpContext, h.Name())
+				log.DebugF("refuse by limiting strategy %s of hour traffic ", h.Name())
 
+				return ErrorLimitingRefuse
 			}
 		}
 	}
 	return nil
+}
+func setLimitingStrategyContent(httpContext http_service.IHttpContext, name string) {
+	httpContext.Response().SetStatus(http.StatusForbidden, http.StatusText(http.StatusForbidden))
+	httpContext.Response().SetHeader("strategy", name)
 }
 
 type Set map[string]struct{}
