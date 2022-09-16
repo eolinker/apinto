@@ -3,7 +3,7 @@ package manager
 import (
 	"crypto/tls"
 	"errors"
-	"github.com/eolinker/apinto/drivers/router"
+	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
 	http_context "github.com/eolinker/apinto/node/http-context"
 	http_router "github.com/eolinker/apinto/router/http-router"
 	"github.com/eolinker/eosc/config"
@@ -18,7 +18,7 @@ import (
 
 var _ IManger = (*Manager)(nil)
 var notFound = new(NotFoundHandler)
-var completeCaller = router.NewHttpCompleteCaller()
+var completeCaller = http_complete.NewHttpCompleteCaller()
 
 type IManger interface {
 	Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router http_router.IRouterHandler) error

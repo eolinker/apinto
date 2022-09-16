@@ -1,17 +1,17 @@
 package http_router
 
 import (
-	"github.com/eolinker/apinto/drivers/router"
+	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"net/http"
 )
 
-var completeCaller = router.NewHttpCompleteCaller()
+var completeCaller = http_complete.NewHttpCompleteCaller()
 
 type Handler struct {
-	completeHandler *router.HttpComplete
+	completeHandler *http_complete.HttpComplete
 
 	routerName  string
 	serviceName string
