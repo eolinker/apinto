@@ -1,7 +1,7 @@
 package http_router
 
 import (
-	"github.com/eolinker/apinto/drivers/router"
+	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	http_router "github.com/eolinker/apinto/router/http-router"
@@ -52,7 +52,7 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	handler := &Handler{
 		routerName:      h.name,
 		serviceName:     strings.TrimSuffix(string(cfg.Service), "@service"),
-		completeHandler: router.NewHttpComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
+		completeHandler: http_complete.NewHttpComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
 		finisher:        Finisher{},
 		service:         nil,
 		filters:         nil,

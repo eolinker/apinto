@@ -1,8 +1,7 @@
-package http
+package limiting_stragety
 
 import (
 	"errors"
-	limiting_stragety "github.com/eolinker/apinto/drivers/strategy/limiting-stragety"
 	"github.com/eolinker/apinto/drivers/strategy/limiting-stragety/scalar"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -10,6 +9,10 @@ import (
 	"net/http"
 	"strconv"
 )
+
+func init() {
+	RegisterActuator(NewActuator())
+}
 
 var (
 	ErrorLimitingRefuse = errors.New("refuse by limiting strategy")
@@ -30,7 +33,7 @@ func (hd *actuatorHttp) Assert(ctx eocontext.EoContext) bool {
 	return true
 }
 
-func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*limiting_stragety.LimitingHandler, queryScalars scalar.Manager, trafficScalars scalar.Manager) error {
+func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*LimitingHandler, queryScalars scalar.Manager, trafficScalars scalar.Manager) error {
 	httpContext, err := http_service.Assert(ctx)
 	if err != nil {
 		return err
