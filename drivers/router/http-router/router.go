@@ -2,13 +2,13 @@ package http_router
 
 import (
 	"github.com/eolinker/apinto/drivers/router"
-	"time"
-
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	http_router "github.com/eolinker/apinto/router/http-router"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/template"
+	"strings"
+	"time"
 
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
@@ -50,6 +50,8 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		return eosc.ErrorConfigFieldUnknown
 	}
 	handler := &Handler{
+		routerName:      h.name,
+		serviceName:     strings.TrimSuffix(string(cfg.Service), "@service"),
 		completeHandler: router.NewHttpComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
 		finisher:        Finisher{},
 		service:         nil,

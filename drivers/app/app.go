@@ -5,6 +5,7 @@ import (
 	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/log"
+	"strings"
 )
 
 type app struct {
@@ -51,7 +52,8 @@ func set(id string, cfg *Config) error {
 	if cfg.Labels == nil {
 		cfg.Labels = make(map[string]string)
 	}
-	cfg.Labels["appID"] = id
+	cfg.Labels["application"] = strings.TrimSuffix(id, "@app")
+
 	appManager.Set(id, cfg.Labels, cfg.Disable, filters, users)
 	return nil
 }

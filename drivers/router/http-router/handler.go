@@ -12,10 +12,14 @@ var completeCaller = router.NewHttpCompleteCaller()
 
 type Handler struct {
 	completeHandler *router.HttpComplete
-	finisher        Finisher
-	service         service.IService
-	filters         eocontext.IChainPro
-	disable         bool
+
+	routerName  string
+	serviceName string
+
+	finisher Finisher
+	service  service.IService
+	filters  eocontext.IChainPro
+	disable  bool
 }
 
 func (h *Handler) ServeHTTP(ctx eocontext.EoContext) {
@@ -29,6 +33,10 @@ func (h *Handler) ServeHTTP(ctx eocontext.EoContext) {
 		httpContext.FastFinish()
 		return
 	}
+	//Set Label
+	ctx.SetLabel("api", h.routerName)
+	ctx.SetLabel("service", h.serviceName)
+
 	ctx.SetFinish(&h.finisher)
 	ctx.SetCompleteHandler(h.completeHandler)
 	ctx.SetApp(h.service)
