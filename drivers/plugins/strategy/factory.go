@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	Name = "strategy"
+	Name = "strategy-plugin"
 )
 
 func Register(register eosc.IExtenderDriverRegister) {
