@@ -16,7 +16,9 @@ type IController interface {
 	Del(id string)
 }
 type Controller struct {
-	all map[string]struct{}
+	profession string
+	driver     string
+	all        map[string]struct{}
 }
 
 func (c *Controller) Store(id string) {
@@ -49,7 +51,7 @@ func (c *Controller) Check(cfg interface{}) (profession, name, driver, desc stri
 		err = eosc.ErrorConfigIsNil
 		return
 	}
-	if empty(conf.Name, conf.Driver, conf.Profession) {
+	if empty(conf.Name) {
 		err = eosc.ErrorConfigFieldUnknown
 		return
 	}
@@ -57,16 +59,16 @@ func (c *Controller) Check(cfg interface{}) (profession, name, driver, desc stri
 	if err != nil {
 		return
 	}
-	return conf.Profession, conf.Name, conf.Driver, conf.Description, nil
+	return c.profession, conf.Name, c.driver, conf.Description, nil
 
 }
 func empty(vs ...string) bool {
 	for _, v := range vs {
 		if len(v) == 0 {
-			return false
+			return true
 		}
 	}
-	return true
+	return false
 }
 func (c *Controller) AllWorkers() []string {
 	ws := make([]string, 0, len(c.all))

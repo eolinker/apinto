@@ -5,12 +5,17 @@ import (
 	"github.com/eolinker/apinto/strategy"
 )
 
+type ThresholdUint struct {
+	Second uint64
+	Minute uint64
+	Hour   uint64
+}
 type LimitingHandler struct {
 	name     string
 	filter   strategy.IFilter
 	metrics  metrics.Metrics
-	query    Threshold
-	traffic  Threshold
+	query    ThresholdUint
+	traffic  ThresholdUint
 	priority int
 	stop     bool
 }
@@ -27,11 +32,11 @@ func (l *LimitingHandler) Metrics() metrics.Metrics {
 	return l.metrics
 }
 
-func (l *LimitingHandler) Query() Threshold {
+func (l *LimitingHandler) Query() ThresholdUint {
 	return l.query
 }
 
-func (l *LimitingHandler) Traffic() Threshold {
+func (l *LimitingHandler) Traffic() ThresholdUint {
 	return l.traffic
 }
 
@@ -43,7 +48,7 @@ func (l *LimitingHandler) Stop() bool {
 	return l.stop
 }
 
-func NewLimitingHandler(conf *ConfigCore) (*LimitingHandler, error) {
+func NewLimitingHandler(conf *Config) (*LimitingHandler, error) {
 	filter, err := strategy.ParseFilter(conf.Filters)
 	if err != nil {
 		return nil, err
@@ -55,8 +60,8 @@ func NewLimitingHandler(conf *ConfigCore) (*LimitingHandler, error) {
 		filter:   filter,
 		metrics:  mts,
 		stop:     conf.Stop,
-		query:    conf.Rule.Query,
-		traffic:  conf.Rule.Traffic,
+		query:    parseThreshold(conf.Rule.Query),
+		traffic:  parseThreshold(conf.Rule.Traffic),
 		priority: conf.Priority,
 	}, nil
 }

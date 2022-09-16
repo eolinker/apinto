@@ -15,7 +15,7 @@ type Limiting struct {
 	id        string
 	name      string
 	handler   *LimitingHandler
-	config    *ConfigCore
+	config    *Config
 	isRunning int
 }
 
@@ -45,7 +45,7 @@ func (l *Limiting) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker)
 	if conf.Priority > 999 || conf.Priority < 1 {
 		return fmt.Errorf("priority value %d not allow ", conf.Priority)
 	}
-	confCore := &conf.ConfigCore
+	confCore := conf
 	if reflect.DeepEqual(l.config, confCore) {
 		return nil
 	}

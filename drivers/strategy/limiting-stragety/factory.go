@@ -17,7 +17,7 @@ var (
 func Register(register eosc.IExtenderDriverRegister) {
 
 	register.RegisterExtenderDriver(Name, newFactory())
-	setting.RegisterSetting("strategies-limiting", NewController())
+	setting.RegisterSetting("strategies-limiting", controller)
 }
 
 type factory struct {
@@ -39,5 +39,7 @@ func (f *factory) Render() interface{} {
 }
 
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
+	controller.driver = name
+	controller.profession = profession
 	return &driver{}, nil
 }
