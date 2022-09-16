@@ -44,6 +44,12 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		id:   id,
 		name: name,
 	}
+
+	err := lg.Reset(v, workers)
+	if err != nil {
+		return nil, err
+	}
+
 	controller.Store(id)
 	return lg, nil
 }
