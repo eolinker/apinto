@@ -35,7 +35,7 @@ Apinto API gateway has the following advantages:
 
 In a word, Apinto API gateway enables the business development team to focus more on business implementation.
 
-## Star History
+### Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=eolinker/apinto&type=Date)](https://star-history.com/#eolinker/apinto&Date)
 
