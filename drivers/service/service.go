@@ -13,6 +13,12 @@ import (
 	"time"
 )
 
+var (
+	_ eocontext.BalanceHandler      = (*Service)(nil)
+	_ eocontext.EoApp               = (*Service)(nil)
+	_ eocontext.UpstreamHostHandler = (*Service)(nil)
+)
+
 type Service struct {
 	eocontext.BalanceHandler
 	app discovery.IApp
@@ -20,7 +26,13 @@ type Service struct {
 	scheme  string
 	timeout time.Duration
 
-	lastConfig *Config
+	lastConfig   *Config
+	passHost     eocontext.PassHostMod
+	upstreamHost string
+}
+
+func (s *Service) PassHost() (eocontext.PassHostMod, string) {
+	return s.passHost, s.upstreamHost
 }
 
 func (s *Service) Nodes() []eocontext.INode {
@@ -86,7 +98,20 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 
 	s.timeout = time.Duration(data.Timeout) * time.Millisecond
 	s.BalanceHandler = balanceHandler
-
+	s.passHost = parsePassHost(data.PassHost)
+	s.upstreamHost = data.UpstreamHost
 	return nil
 
+}
+
+func parsePassHost(passHost string) eocontext.PassHostMod {
+	switch strings.ToLower(passHost) {
+	case "pass":
+		return eocontext.PassHost
+	case "node":
+		return eocontext.NodeHost
+	case "rewrite":
+		return eocontext.ReWriteHost
+	}
+	return eocontext.PassHost
 }

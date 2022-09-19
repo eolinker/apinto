@@ -50,7 +50,7 @@ func (p *ProxyRewrite) rewrite(ctx http_service.IHttpContext) error {
 
 	//修改header中的host
 	if p.host != "" {
-		ctx.Proxy().URI().SetHost(p.host)
+		ctx.SetUpstreamHostHandler(upstreamHostRewrite(p.host))
 	}
 
 	//修改转发至上游的header，v可设置为空字符串，此时代表删掉header中对应的key. 若header某个key已存在则重写
