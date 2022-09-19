@@ -37,7 +37,10 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 总而言之，Apinto 能让业务开发团队更加专注地实现业务。
 
-[![Stargazers over time](https://starchart.cc/eolinker/apinto.svg)](#)
+### Star 历史
+
+[![Star History Chart](https://api.star-history.com/svg?repos=eolinker/apinto&type=Date)](https://star-history.com/#eolinker/apinto&Date)
+
 
 ### 产品特性
 
