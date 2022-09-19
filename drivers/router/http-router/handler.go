@@ -36,10 +36,11 @@ func (h *Handler) ServeHTTP(ctx eocontext.EoContext) {
 	//Set Label
 	ctx.SetLabel("api", h.routerName)
 	ctx.SetLabel("service", h.serviceName)
-
 	ctx.SetFinish(&h.finisher)
 	ctx.SetCompleteHandler(h.completeHandler)
 	ctx.SetApp(h.service)
 	ctx.SetBalance(h.service)
+	ctx.SetUpstreamHostHandler(h.service)
+
 	h.filters.Chain(ctx, completeCaller)
 }
