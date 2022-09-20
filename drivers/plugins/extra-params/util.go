@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	http_context "github.com/eolinker/apinto/node/http-context"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"mime"
 	"strings"
+
+	http_context "github.com/eolinker/apinto/node/http-context"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 const (
@@ -42,16 +43,15 @@ func encodeErr(ent string, origin string, statusCode int) error {
 }
 
 func parseBodyParams(ctx http_service.IHttpContext) (map[string]interface{}, map[string][]string, error) {
-	//formParams := make(map[string][]string)
-	//bodyParams := make(map[string]interface{})
 	contentType, _, _ := mime.ParseMediaType(ctx.Proxy().Body().ContentType())
 
 	switch contentType {
 	case http_context.FormData, http_context.MultipartForm:
 		formParams, err := ctx.Proxy().Body().BodyForm()
 		if err != nil {
-			return nil, formParams, err
+			return nil, nil, err
 		}
+		return nil, formParams, nil
 	case http_context.JSON:
 		body, err := ctx.Proxy().Body().RawBody()
 		if err != nil {
