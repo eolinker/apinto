@@ -20,19 +20,28 @@ var _ http_service.IHttpContext = (*Context)(nil)
 
 //Context fasthttpRequestCtx
 type Context struct {
-	fastHttpRequestCtx *fasthttp.RequestCtx
-	proxyRequest       *ProxyRequest
-	proxyRequests      []http_service.IRequest
-	requestID          string
-	response           *Response
-	requestReader      *RequestReader
-	ctx                context.Context
-	completeHandler    eoscContext.CompleteHandler
-	finishHandler      eoscContext.FinishHandler
-	app                eoscContext.EoApp
-	balance            eoscContext.BalanceHandler
-	labels             map[string]string
-	port               int
+	fastHttpRequestCtx  *fasthttp.RequestCtx
+	proxyRequest        *ProxyRequest
+	proxyRequests       []http_service.IRequest
+	requestID           string
+	response            *Response
+	requestReader       *RequestReader
+	ctx                 context.Context
+	completeHandler     eoscContext.CompleteHandler
+	finishHandler       eoscContext.FinishHandler
+	app                 eoscContext.EoApp
+	balance             eoscContext.BalanceHandler
+	upstreamHostHandler eoscContext.UpstreamHostHandler
+	labels              map[string]string
+	port                int
+}
+
+func (ctx *Context) GetUpstreamHostHandler() eoscContext.UpstreamHostHandler {
+	return ctx.upstreamHostHandler
+}
+
+func (ctx *Context) SetUpstreamHostHandler(handler eoscContext.UpstreamHostHandler) {
+	ctx.upstreamHostHandler = handler
 }
 
 func (ctx *Context) LocalIP() net.IP {
@@ -44,8 +53,7 @@ func (ctx *Context) LocalAddr() net.Addr {
 }
 
 func (ctx *Context) LocalPort() int {
-	//TODO implement me
-	panic("implement me")
+	return ctx.port
 }
 
 func (ctx *Context) GetApp() eoscContext.EoApp {
@@ -119,6 +127,15 @@ func (ctx *Context) SendTo(address string, timeout time.Duration) error {
 	clone.URI().SetHost(host)
 	ctx.proxyRequests = append(ctx.proxyRequests, clone)
 	request := ctx.proxyRequest.Request()
+
+	passHost, targethost := ctx.GetUpstreamHostHandler().PassHost()
+	switch passHost {
+	case eoscContext.PassHost:
+	case eoscContext.NodeHost:
+		request.URI().SetHost(host)
+	case eoscContext.ReWriteHost:
+		request.URI().SetHost(targethost)
+	}
 
 	ctx.response.responseError = fasthttp_client.ProxyTimeout(address, request, &ctx.fastHttpRequestCtx.Response, timeout)
 
