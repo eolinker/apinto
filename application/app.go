@@ -23,7 +23,15 @@ func init() {
 }
 
 type IApp interface {
-	IAuthUser
+	Id() string
+	Name() string
+	Labels() map[string]string
+	Disable() bool
+	IAppExecutor
+}
+
+type IAppExecutor interface {
+	Execute(ctx http_service.IHttpContext) error
 }
 
 func CheckSkill(skill string) bool {
@@ -33,7 +41,7 @@ func CheckSkill(skill string) bool {
 type IAuth interface {
 	ID() string
 	Check(appID string, users []*BaseConfig) error
-	Set(appID string, labels map[string]string, disable bool, users []*BaseConfig)
+	Set(app IApp, users []*BaseConfig)
 	Del(appID string)
 	UserCount() int
 	IAuthUser

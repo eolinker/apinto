@@ -10,9 +10,10 @@ import (
 var (
 	PositionHeader = "header"
 	PositionQuery  = "query"
+	PositionBody   = "body"
 )
 
-var validPosition = []string{PositionHeader, PositionQuery}
+var validPosition = []string{PositionHeader, PositionQuery, PositionBody}
 
 func GetToken(ctx http_service.IHttpContext, tokenName string, position string) (string, bool) {
 	switch position {

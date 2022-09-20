@@ -6,6 +6,8 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/ohler55/ojg/jp"
+	"mime"
+	"mime/multipart"
 	"strconv"
 	"strings"
 )
@@ -41,7 +43,7 @@ func (p *ParamsTransformer) DoHttpFilter(ctx http_service.IHttpContext, next eoc
 
 func (p *ParamsTransformer) access(ctx http_service.IHttpContext) (int, error) {
 
-	contentType := ctx.Proxy().Header().GetHeader("Content-Type")
+	contentType, _, _ := mime.ParseMediaType(ctx.Proxy().Body().ContentType())
 	var bh *bodyHandler = nil
 
 	for _, param := range p.params {
@@ -163,7 +165,7 @@ func (p *ParamsTransformer) access(ctx http_service.IHttpContext) (int, error) {
 						}
 					} else {
 						//ctx.Proxy().AddFile(param.ProxyName, bv.(*apinto_plugin.FileHeader))
-						bh.files[param.ProxyName] = bv.(*http_service.FileHeader)
+						bh.files[param.ProxyName] = bv.([]*multipart.FileHeader)
 					}
 				} else {
 					continue
@@ -194,16 +196,16 @@ func (p *ParamsTransformer) Start() error {
 }
 
 func (p *ParamsTransformer) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-confObj, err := p.check(conf)
-if err != nil {
-return err
-}
+	confObj, err := p.check(conf)
+	if err != nil {
+		return err
+	}
 
-p.params = confObj.Params
-p.remove = confObj.Remove
-p.errorType = confObj.ErrorType
+	p.params = confObj.Params
+	p.remove = confObj.Remove
+	p.errorType = confObj.ErrorType
 
-return nil
+	return nil
 }
 
 func (p *ParamsTransformer) Stop() error {

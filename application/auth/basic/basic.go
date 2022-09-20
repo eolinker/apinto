@@ -65,25 +65,23 @@ func (b *basic) Check(appID string, users []*application.BaseConfig) error {
 	return b.users.Check(appID, driverName, us)
 }
 
-func (b *basic) Set(appID string, labels map[string]string, disable bool, users []*application.BaseConfig) {
+func (b *basic) Set(app application.IApp, users []*application.BaseConfig) {
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, user := range users {
 		v, _ := user.Config().(*User)
 
 		infos = append(infos, &application.UserInfo{
-			AppID:          appID,
 			Name:           v.Username(),
 			Value:          v.Pattern.Password,
 			Expire:         v.Expire,
 			Labels:         v.Labels,
 			HideCredential: v.HideCredential,
-			AppLabels:      labels,
-			Disable:        disable,
 			TokenName:      b.tokenName,
 			Position:       b.position,
+			App:            app,
 		})
 	}
-	b.users.Set(appID, infos)
+	b.users.Set(app.Id(), infos)
 }
 
 func (b *basic) Del(appID string) {
@@ -113,18 +111,4 @@ func parseToken(token string) (username string, password string) {
 	} else {
 		return "", ""
 	}
-}
-
-func getUser(pattern map[string]string) (string, bool) {
-	if v, ok := pattern["username"]; ok {
-		return v, true
-	}
-	return "", false
-}
-
-func getPassword(pattern map[string]string) string {
-	if v, ok := pattern["password"]; ok {
-		return v
-	}
-	return ""
 }
