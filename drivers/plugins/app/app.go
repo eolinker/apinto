@@ -52,18 +52,19 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 			if user == nil {
 				return errors.New("invalid user")
 			}
-			if user.Disable {
-				return fmt.Errorf("the app(%s) is disabled", user.AppID)
+			if user.App.Disable() {
+				return fmt.Errorf("the app(%s) is disabled", user.App.Id())
 			}
 			if user.Expire <= time.Now().Unix() && user.Expire != 0 {
 				return fmt.Errorf("%s error: %s", filter.Driver(), application.ErrTokenExpired)
 			}
 			setLabels(ctx, user.Labels)
-			setLabels(ctx, user.AppLabels)
+			setLabels(ctx, user.App.Labels())
+			ctx.SetLabel("application", user.App.Id())
 			if user.HideCredential {
 				application.HideToken(ctx, user.TokenName, user.Position)
 			}
-			return nil
+			return user.App.Execute(ctx)
 		}
 	}
 	return errors.New("invalid user")

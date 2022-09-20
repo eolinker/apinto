@@ -17,16 +17,14 @@ type User struct {
 }
 
 type UserInfo struct {
-	AppID          string
 	Name           string
 	Value          string
 	Expire         int64
-	Labels         map[string]string
 	HideCredential bool
-	AppLabels      map[string]string
-	Disable        bool
+	Labels         map[string]string
 	TokenName      string
 	Position       string
+	App            IApp
 }
 
 var _ IUserManager = (*UserManager)(nil)
@@ -52,7 +50,7 @@ func (u *UserManager) Check(appID string, driver string, users []IUser) error {
 	for _, user := range users {
 		t, ok := u.get(user.Username())
 		if ok {
-			if t.AppID != appID {
+			if t.App.Id() != appID {
 				return fmt.Errorf("[%s] user(%s) is existed", driver, user.Username())
 			}
 		}

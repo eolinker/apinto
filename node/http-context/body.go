@@ -80,17 +80,16 @@ func (b *BodyRequestHandler) BodyForm() (url.Values, error) {
 //RawBody 获取raw数据
 func (b *BodyRequestHandler) RawBody() ([]byte, error) {
 
-	err := b.encode()
-	if err != nil {
-		return nil, err
-	}
+	//err := b.encode()
+	//if err != nil {
+	//	return nil, err
+	//}
 	return b.rawBody(), nil
 
 }
 
 //Files 获取文件参数
 func (b *BodyRequestHandler) Files() (map[string]*http_service.FileHeader, error) {
-
 	err := b.parse()
 
 	if err != nil {
