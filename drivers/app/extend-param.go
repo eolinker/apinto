@@ -8,18 +8,14 @@ import (
 	"net/textproto"
 	"strings"
 
+	"github.com/ohler55/ojg/oj"
+
+	"github.com/ohler55/ojg/jp"
+
 	http_context "github.com/eolinker/apinto/node/http-context"
 
 	"github.com/eolinker/apinto/application"
-	"github.com/ohler55/ojg/jp"
-	"github.com/ohler55/ojg/oj"
-
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-)
-
-var (
-	FormParamType = "application/x-www-form-urlencoded"
-	JsonType      = "application/json"
 )
 
 type additionalParam struct {
@@ -31,7 +27,7 @@ func newAdditionalParam(params []*Additional) *additionalParam {
 }
 
 func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
-	contentType := ctx.Proxy().Header().GetHeader("Content-Type")
+	contentType, _, _ := mime.ParseMediaType(ctx.Proxy().Body().ContentType())
 	bodyParams, formParams, err := parseBodyParams(ctx)
 	if err != nil {
 		return fmt.Errorf(`fail to parse body! [err]: %v`, err)
@@ -43,7 +39,8 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 		}
 		switch p.Position {
 		case application.PositionBody:
-			if strings.Contains(contentType, http_context.FormData) || strings.Contains(contentType, http_context.MultipartForm) {
+			switch contentType {
+			case http_context.FormData, http_context.MultipartForm:
 				switch p.Conflict {
 				case conflictConvert:
 					formParams[p.Key] = []string{p.Value}
@@ -57,32 +54,34 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 						formParams[p.Key] = []string{p.Value}
 					}
 				}
-			} else if strings.Contains(contentType, http_context.JSON) {
-				key := p.Key
-				if !strings.HasPrefix(p.Key, "$.") {
-					key = "$." + key
-				}
-				x, err := jp.ParseString(key)
-				if err != nil {
-					return fmt.Errorf("parse key error: %v", err)
-				}
-				switch conflict {
-				case conflictConvert:
-					err = x.Set(bodyParams, p.Value)
-					if err != nil {
-						return fmt.Errorf("set additional json param error: %v", err)
+			case http_context.JSON:
+				{
+					key := p.Key
+					if !strings.HasPrefix(p.Key, "$.") {
+						key = "$." + key
 					}
-				case conflictOrigin, conflictError:
-					{
-						result := x.Get(bodyParams)
-						if len(result) < 1 {
-							err = x.Set(bodyParams, p.Value)
-							if err != nil {
-								return fmt.Errorf("set additional json param error: %v", err)
-							}
+					x, err := jp.ParseString(key)
+					if err != nil {
+						return fmt.Errorf("parse key error: %v", err)
+					}
+					switch conflict {
+					case conflictConvert:
+						err = x.Set(bodyParams, p.Value)
+						if err != nil {
+							return fmt.Errorf("set additional json param error: %v", err)
 						}
-						if conflict == conflictError {
-							return fmt.Errorf(errorExist, p.Position, p.Key)
+					case conflictOrigin, conflictError:
+						{
+							result := x.Get(bodyParams)
+							if len(result) < 1 {
+								err = x.Set(bodyParams, p.Value)
+								if err != nil {
+									return fmt.Errorf("set additional json param error: %v", err)
+								}
+							}
+							if conflict == conflictError {
+								return fmt.Errorf(errorExist, p.Position, p.Key)
+							}
 						}
 					}
 				}
@@ -131,13 +130,14 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 
 func parseBodyParams(ctx http_service.IHttpContext) (interface{}, map[string][]string, error) {
 	contentType, _, _ := mime.ParseMediaType(ctx.Proxy().Body().ContentType())
-	if strings.Contains(contentType, http_context.FormData) || strings.Contains(contentType, http_context.MultipartForm) {
+	switch contentType {
+	case http_context.FormData, http_context.MultipartForm:
 		formParams, err := ctx.Proxy().Body().BodyForm()
 		if err != nil {
 			return nil, nil, err
 		}
 		return nil, formParams, nil
-	} else if strings.Contains(contentType, http_context.JSON) {
+	case http_context.JSON:
 		body, err := ctx.Proxy().Body().RawBody()
 		if err != nil {
 			return nil, nil, err
