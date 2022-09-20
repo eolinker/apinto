@@ -139,7 +139,7 @@ func (b *BodyRequestHandler) SetToForm(key, value string) error {
 	switch contentType {
 	case FormData:
 		b.request.PostArgs().Set(key, value)
-		b.request.SetBody(b.request.PostArgs().QueryString())
+		b.request.SetBodyRaw(b.request.PostArgs().QueryString())
 		return nil
 	case MultipartForm:
 		multipartForm, err := b.MultipartForm()
