@@ -105,15 +105,12 @@ func (b *BodyRequestHandler) BodyForm() (url.Values, error) {
 	contentType, _, _ := mime.ParseMediaType(string(b.request.Header.ContentType()))
 	switch contentType {
 	case FormData:
-		args := b.request.PostArgs()
-
-		return url.ParseQuery(args.String())
+		return url.ParseQuery(string(b.request.Body()))
 	case MultipartForm:
 		multipartForm, err := b.MultipartForm()
 		if err != nil {
 			return nil, err
 		}
-
 		return multipartForm.Value, nil
 	default:
 		return nil, ErrorNotForm
@@ -268,7 +265,7 @@ func (b *BodyRequestHandler) SetForm(values url.Values) error {
 	}
 	switch contentType {
 	case FormData:
-		b.request.PostArgs().Parse(values.Encode())
+		b.request.SetBodyString(values.Encode())
 	case MultipartForm:
 		multipartForm, err := b.MultipartForm()
 		if err != nil {
