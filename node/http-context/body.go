@@ -2,6 +2,7 @@ package http_context
 
 import (
 	"bytes"
+	"strings"
 
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/valyala/fasthttp"
@@ -40,6 +41,9 @@ func (b *BodyRequestHandler) MultipartForm() (*multipart.Form, error) {
 	if b.formdata != nil {
 		return b.formdata, nil
 	}
+	if !strings.Contains(b.ContentType(), MultipartForm) {
+		return nil, ErrorNotMultipart
+	}
 	form, err := b.request.MultipartForm()
 	if err != nil {
 		return nil, err
@@ -66,11 +70,28 @@ func NewBodyRequestHandler(request *fasthttp.Request) *BodyRequestHandler {
 
 //GetForm 获取表单参数
 func (b *BodyRequestHandler) GetForm(key string) string {
-	args := b.request.PostArgs()
-	if args == nil {
+	contentType, _, _ := mime.ParseMediaType(b.ContentType())
+
+	switch contentType {
+	case FormData:
+		args := b.request.PostArgs()
+		if args == nil {
+			return ""
+		}
+		return string(args.Peek(key))
+	case MultipartForm:
+		form, err := b.MultipartForm()
+		if err != nil {
+			return ""
+		}
+		vs := form.Value[key]
+		if len(vs) > 0 {
+			return vs[0]
+		}
 		return ""
+
 	}
-	return string(args.Peek(key))
+	return ""
 }
 
 //ContentType 获取contentType
