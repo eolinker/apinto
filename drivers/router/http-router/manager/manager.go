@@ -3,6 +3,9 @@ package manager
 import (
 	"crypto/tls"
 	"errors"
+	"net"
+	"sync"
+
 	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
 	http_context "github.com/eolinker/apinto/node/http-context"
 	http_router "github.com/eolinker/apinto/router/http-router"
@@ -12,8 +15,6 @@ import (
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/traffic"
 	"github.com/valyala/fasthttp"
-	"net"
-	"sync"
 )
 
 var _ IManger = (*Manager)(nil)
@@ -105,9 +106,10 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters
 		go func(ln net.Listener, port int) {
 			log.Debug("fast server:", port, ln.Addr())
 			wg.Done()
-			fasthttp.Serve(ln, func(ctx *fasthttp.RequestCtx) {
+			server := fasthttp.Server{DisablePreParseMultipartForm: true, Handler: func(ctx *fasthttp.RequestCtx) {
 				m.FastHandler(port, ctx)
-			})
+			}}
+			server.Serve(ln)
 		}(ln, port)
 	}
 	wg.Wait()

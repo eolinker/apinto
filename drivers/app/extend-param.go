@@ -6,6 +6,8 @@ import (
 	"net/textproto"
 	"strings"
 
+	http_context "github.com/eolinker/apinto/node/http-context"
+
 	"github.com/eolinker/apinto/application"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
@@ -62,7 +64,7 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 				continue
 			}
 			contentType := ctx.Proxy().Header().GetHeader("Content-Type")
-			if strings.Contains(contentType, FormParamType) {
+			if strings.Contains(contentType, http_context.FormData) || strings.Contains(contentType, http_context.MultipartForm) {
 				switch p.Conflict {
 				case conflictConvert:
 					ctx.Proxy().Body().SetToForm(p.Key, p.Value)
@@ -78,7 +80,7 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 						}
 					}
 				}
-			} else if strings.Contains(contentType, JsonType) {
+			} else if strings.Contains(contentType, http_context.JSON) {
 				obj, err := oj.ParseString(body)
 				if err != nil {
 					return fmt.Errorf("parse body error: %v", err)
