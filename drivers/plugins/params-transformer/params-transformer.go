@@ -6,6 +6,7 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/ohler55/ojg/jp"
+	"mime"
 	"mime/multipart"
 	"strconv"
 	"strings"
@@ -42,7 +43,7 @@ func (p *ParamsTransformer) DoHttpFilter(ctx http_service.IHttpContext, next eoc
 
 func (p *ParamsTransformer) access(ctx http_service.IHttpContext) (int, error) {
 
-	contentType := ctx.Proxy().Header().GetHeader("Content-Type")
+	contentType, _, _ := mime.ParseMediaType(ctx.Proxy().Body().ContentType())
 	var bh *bodyHandler = nil
 
 	for _, param := range p.params {
