@@ -22,8 +22,6 @@ var (
 )
 
 type PluginManager struct {
-	id              string
-	profession      string
 	name            string
 	extenderDrivers eosc.IExtenderDrivers
 	plugins         Plugins
@@ -31,11 +29,35 @@ type PluginManager struct {
 	workers         eosc.IWorkers
 }
 
+func (p *PluginManager) Check(cfg interface{}) (profession, name, driver, desc string, err error) {
+	err = eosc.ErrorUnsupportedKind
+	return
+}
+
+func (p *PluginManager) AllWorkers() []string {
+	return []string{"plugin@setting"}
+}
+
+func (p *PluginManager) Mode() eosc.SettingMode {
+	return eosc.SettingModeSingleton
+}
+
+func (p *PluginManager) Set(conf interface{}) (err error) {
+
+	err = p.Reset(conf)
+
+	return
+}
+
+func (p *PluginManager) Get() interface{} {
+	return p.plugins
+}
+
 func (p *PluginManager) ConfigType() reflect.Type {
 	return reflect.TypeOf(new(PluginWorkerConfig))
 }
 
-func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config) eocontext.IChain {
+func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config) eocontext.IChainPro {
 
 	return p.createChain(id, conf)
 }
@@ -50,15 +72,7 @@ func (p *PluginManager) GetConfigType(name string) (reflect.Type, bool) {
 	return nil, false
 }
 
-func (p *PluginManager) Id() string {
-	return p.id
-}
-
-func (p *PluginManager) Start() error {
-	return nil
-}
-
-func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+func (p *PluginManager) Reset(conf interface{}) error {
 
 	plugins, err := p.check(conf)
 	if err != nil {
@@ -71,20 +85,13 @@ func (p *PluginManager) Reset(conf interface{}, workers map[eosc.RequireId]eosc.
 	for _, obj := range list {
 		v, ok := obj.(*PluginObj)
 		if !ok {
+
 			continue
 		}
-		v.Filters = p.createFilters(v.conf)
+		v.fs = p.createFilters(v.conf)
 	}
 
 	return nil
-}
-
-func (p *PluginManager) Stop() error {
-	return nil
-}
-
-func (p *PluginManager) CheckSkill(skill string) bool {
-	return false
 }
 
 func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []eocontext.IFilter {
@@ -128,15 +135,16 @@ func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []eocontex
 }
 
 func (p *PluginManager) createChain(id string, conf map[string]*plugin.Config) *PluginObj {
+
 	chain := p.createFilters(conf)
 	obj, has := p.pluginObjs.Get(id)
 	if !has {
 		obj = NewPluginObj(chain, id, conf)
 		p.pluginObjs.Set(id, obj)
 	} else {
-		obj.(*PluginObj).Filters = chain
+		obj.(*PluginObj).fs = chain
 	}
-
+	log.Debug("create chain len: ", len(chain))
 	return obj.(*PluginObj)
 }
 
@@ -158,30 +166,31 @@ func (p *PluginManager) check(conf interface{}) (Plugins, error) {
 	return plugins, nil
 
 }
-func (p *PluginManager) Check(conf interface{}) error {
-	_, err := p.check(conf)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+
+//func (p *PluginManager) Check(conf interface{}) error {
+//	_, err := p.check(conf)
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 func (p *PluginManager) IsExists(id string) bool {
 	_, has := p.extenderDrivers.GetDriver(id)
 	return has
 }
 
-func NewPluginManager(profession, name string) *PluginManager {
+func NewPluginManager() *PluginManager {
 
 	pm := &PluginManager{
-		id:         fmt.Sprintf("%s@%s", name, profession),
-		profession: profession,
-		name:       name,
-		plugins:    nil,
+		name:       "plugin",
+		plugins:    make(Plugins, 0),
 		pluginObjs: eosc.NewUntyped(),
 	}
 	log.Debug("autowired extenderDrivers")
 	bean.Autowired(&pm.extenderDrivers)
+	bean.Autowired(&pm.workers)
+
 	log.DebugF("autowired extenderDrivers = %p", pm.extenderDrivers)
 
 	return pm

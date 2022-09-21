@@ -3,10 +3,10 @@ package basic
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/eolinker/apinto/application"
 	"strings"
-	"time"
-	
+
+	"github.com/eolinker/apinto/application"
+
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
@@ -19,6 +19,32 @@ type basic struct {
 	users     application.IUserManager
 }
 
+func (b *basic) Alias() []string {
+	return []string{
+		"basic",
+		"basic_auth",
+	}
+}
+
+func (b *basic) GetUser(ctx http_service.IHttpContext) (*application.UserInfo, bool) {
+	token, has := application.GetToken(ctx, b.tokenName, b.position)
+	if !has || token == "" {
+		return nil, false
+	}
+	username, password := parseToken(token)
+	if username == "" {
+		return nil, true
+	}
+	user, has := b.users.Get(username)
+	if has {
+		if password == user.Value {
+			return user, true
+		}
+		return nil, true
+	}
+	return nil, false
+}
+
 func (b *basic) ID() string {
 	return b.id
 }
@@ -27,26 +53,35 @@ func (b *basic) Driver() string {
 	return driverName
 }
 
-func (b *basic) Check(appID string, users []*application.User) error {
-	return b.users.Check(appID, driverName, users)
+func (b *basic) Check(appID string, users []*application.BaseConfig) error {
+	us := make([]application.IUser, 0, len(users))
+	for _, u := range users {
+		v, ok := u.Config().(*User)
+		if !ok {
+			return fmt.Errorf("%s check error: invalid config type", driverName)
+		}
+		us = append(us, v)
+	}
+	return b.users.Check(appID, driverName, us)
 }
 
-func (b *basic) Set(appID string, labels map[string]string, disable bool, users []*application.User) {
+func (b *basic) Set(app application.IApp, users []*application.BaseConfig) {
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, user := range users {
-		name, _ := getUser(user.Pattern)
+		v, _ := user.Config().(*User)
+
 		infos = append(infos, &application.UserInfo{
-			AppID:          appID,
-			Name:           name,
-			Value:          getPassword(user.Pattern),
-			Expire:         user.Expire,
-			Labels:         user.Labels,
-			HideCredential: user.HideCredential,
-			AppLabels:      labels,
-			Disable:        disable,
+			Name:           v.Username(),
+			Value:          v.Pattern.Password,
+			Expire:         v.Expire,
+			Labels:         v.Labels,
+			HideCredential: v.HideCredential,
+			TokenName:      b.tokenName,
+			Position:       b.position,
+			App:            app,
 		})
 	}
-	b.users.Set(appID, infos)
+	b.users.Set(app.Id(), infos)
 }
 
 func (b *basic) Del(appID string) {
@@ -57,41 +92,10 @@ func (b *basic) UserCount() int {
 	return b.users.Count()
 }
 
-func (b *basic) Auth(ctx http_service.IHttpContext) error {
-	token, has := application.GetToken(ctx, b.tokenName, b.position)
-	if !has || token == "" {
-		return fmt.Errorf("%s error: %s in %s:%s", driverName, application.ErrTokenNotFound, b.position, b.tokenName)
-	}
-	username, password := parseToken(token)
-	if username == "" {
-		return fmt.Errorf("%s error: %s %s", driverName, application.ErrInvalidToken, token)
-	}
-	user, has := b.users.Get(username)
-	if has {
-		if password == user.Value {
-			if user.Expire <= time.Now().Unix() && user.Expire != 0 {
-				return fmt.Errorf("%s error: %s", driverName, application.ErrTokenExpired)
-			}
-			for k, v := range user.Labels {
-				ctx.SetLabel(k, v)
-			}
-			for k, v := range user.AppLabels {
-				ctx.SetLabel(k, v)
-			}
-			if user.HideCredential {
-				application.HideToken(ctx, b.tokenName, b.position)
-			}
-			return nil
-		}
-	}
-	
-	return fmt.Errorf("%s error: %s %s", driverName, application.ErrInvalidToken, token)
-}
-
 func parseToken(token string) (username string, password string) {
 	const basic = "basic"
 	l := len(basic)
-	
+
 	if len(token) > l+1 && strings.ToLower(token[:l]) == basic {
 		b, err := base64.StdEncoding.DecodeString(token[l+1:])
 		if err != nil {
@@ -107,18 +111,4 @@ func parseToken(token string) (username string, password string) {
 	} else {
 		return "", ""
 	}
-}
-
-func getUser(pattern map[string]string) (string, bool) {
-	if v, ok := pattern["username"]; ok {
-		return v, true
-	}
-	return "", false
-}
-
-func getPassword(pattern map[string]string) string {
-	if v, ok := pattern["password"]; ok {
-		return v
-	}
-	return ""
 }

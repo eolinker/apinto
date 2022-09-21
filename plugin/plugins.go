@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/variable"
 	"reflect"
@@ -15,7 +16,7 @@ var (
 
 type Plugins map[string]*Config
 
-func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variables map[string]string) ([]string, error) {
+func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variables eosc.IVariable) ([]string, error) {
 	ones.Do(func() {
 		bean.Autowired(&pluginManger)
 	})
@@ -24,7 +25,7 @@ func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variabl
 	}
 	targetType := targetVal.Type()
 	newMap := reflect.MakeMap(targetType)
-	usedVariables := make([]string, 0, len(variables))
+	usedVariables := make([]string, 0, variables.Len())
 	for _, key := range originVal.MapKeys() {
 		// 判断是否存在对应的插件配
 		cfgType, ok := pluginManger.GetConfigType(key.String())
@@ -45,7 +46,7 @@ func (p Plugins) Reset(originVal reflect.Value, targetVal reflect.Value, variabl
 	return usedVariables, nil
 }
 
-func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, variables map[string]string, cfgType reflect.Type) ([]string, error) {
+func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, variables eosc.IVariable, cfgType reflect.Type) ([]string, error) {
 	if targetVal.Kind() == reflect.Ptr {
 		if !targetVal.Elem().IsValid() {
 			targetType := targetVal.Type()
@@ -54,7 +55,7 @@ func pluginConfigSet(originVal reflect.Value, targetVal reflect.Value, variables
 		}
 		targetVal = targetVal.Elem()
 	}
-	usedVariables := make([]string, 0, len(variables))
+	usedVariables := make([]string, 0, variables.Len())
 	switch targetVal.Kind() {
 	case reflect.Struct:
 		{

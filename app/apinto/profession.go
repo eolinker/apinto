@@ -6,7 +6,7 @@
  * Vestibulum commodo. Ut rhoncus gravida arcu.
  */
 
-package professions
+package main
 
 import (
 	"github.com/eolinker/eosc"
@@ -31,7 +31,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
-		
+
 		{
 			Name:         "service",
 			Label:        "服务",
@@ -110,6 +110,21 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
+		}, {
+			Name:         "strategy",
+			Label:        "策略",
+			Desc:         "策略",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:apinto:strategy-limiting",
+					Name:  "limiting",
+					Label: "限流策略",
+					Desc:  "限流策略",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
 		},
 		{
 			Name:         "output",
@@ -151,22 +166,22 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
-		{
-			Name:         "setting",
-			Label:        "setting",
-			Desc:         "系统设置",
-			Dependencies: nil,
-			AppendLabels: nil,
-			Drivers: []*eosc.DriverConfig{
-				{
-					Id:     "eolinker.com:apinto:plugin",
-					Name:   "plugin",
-					Label:  "plugin",
-					Desc:   "插件管理器",
-					Params: nil,
-				},
-			},
-			Mod: eosc.ProfessionConfig_Singleton,
-		},
+		//{
+		//	Name:         "setting",
+		//	Label:        "setting",
+		//	Desc:         "系统设置",
+		//	Dependencies: nil,
+		//	AppendLabels: nil,
+		//	Drivers: []*eosc.DriverConfig{
+		//		{
+		//			Id:     "eolinker.com:apinto:plugin",
+		//			Name:   "plugin",
+		//			Label:  "plugin",
+		//			Desc:   "插件管理器",
+		//			Params: nil,
+		//		},
+		//	},
+		//	Mod: eosc.ProfessionConfig_Singleton,
+		//},
 	}
 }

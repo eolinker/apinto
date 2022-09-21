@@ -9,8 +9,6 @@ import (
 	"strings"
 	
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	
-	"github.com/eolinker/apinto/auth"
 )
 
 const dateHeader = "x-gateway-date"
@@ -73,10 +71,9 @@ func hMaxBySHA256(secretKey, toSign string) string {
 	return hex.EncodeToString(hm.Sum(nil))
 }
 
-func parseAuthorization(ctx http_service.IHttpContext) (encType string, accessKey string, signHeaders []string, signature string, err error) {
-	authStr := ctx.Request().Header().GetHeader(auth.Authorization)
+func parseAuthorization(token string) (encType string, accessKey string, signHeaders []string, signature string, err error) {
 	
-	infos := strings.Split(authStr, ",")
+	infos := strings.Split(token, ",")
 	if len(infos) < 3 {
 		err = errors.New("invalid authorization")
 		return

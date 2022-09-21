@@ -12,7 +12,7 @@ type Config struct {
 }
 
 type IPluginManager interface {
-	CreateRequest(id string, conf map[string]*Config) eocontext.IChain
+	CreateRequest(id string, conf map[string]*Config) eocontext.IChainPro
 	GetConfigType(name string) (reflect.Type, bool)
 }
 

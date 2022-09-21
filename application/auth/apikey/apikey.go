@@ -2,10 +2,8 @@ package apikey
 
 import (
 	"fmt"
+
 	"github.com/eolinker/apinto/application"
-	"github.com/eolinker/eosc/log"
-	"time"
-	
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
@@ -22,59 +20,53 @@ func (a *apikey) ID() string {
 	return a.id
 }
 
-func (a *apikey) Check(appID string, users []*application.User) error {
-	log.Debug("check appID:", appID)
-	return a.users.Check(appID, driverName, users)
+func (a *apikey) Check(appID string, users []*application.BaseConfig) error {
+	us := make([]application.IUser, 0, len(users))
+	for _, u := range users {
+		v, ok := u.Config().(*User)
+		if !ok {
+			return fmt.Errorf("%s check error: invalid config type", driverName)
+		}
+		us = append(us, v)
+	}
+	return a.users.Check(appID, driverName, us)
 }
 
-func (a *apikey) Set(appID string, labels map[string]string, disable bool, users []*application.User) {
-	
+func (a *apikey) Set(app application.IApp, users []*application.BaseConfig) {
+
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, user := range users {
-		name, _ := getUser(user.Pattern)
+		v, _ := user.Config().(*User)
+
 		infos = append(infos, &application.UserInfo{
-			AppID:          appID,
-			Name:           name,
-			Value:          name,
-			Expire:         user.Expire,
-			Labels:         user.Labels,
-			HideCredential: user.HideCredential,
-			AppLabels:      labels,
-			Disable:        disable,
+			Name:           v.Username(),
+			Value:          v.Username(),
+			Expire:         v.Expire,
+			Labels:         v.Labels,
+			HideCredential: v.HideCredential,
+			TokenName:      a.tokenName,
+			Position:       a.position,
+			App:            app,
 		})
 	}
-	a.users.Set(appID, infos)
+	a.users.Set(app.Id(), infos)
 }
 
 func (a *apikey) Del(appID string) {
 	a.users.DelByAppID(appID)
 }
 
-//Auth 鉴权处理
-func (a *apikey) Auth(ctx http_service.IHttpContext) error {
+//GetUser 鉴权处理
+func (a *apikey) GetUser(ctx http_service.IHttpContext) (*application.UserInfo, bool) {
 	token, has := application.GetToken(ctx, a.tokenName, a.position)
-	if !has {
-		return fmt.Errorf("%s error: %s in %s:%s", driverName, application.ErrTokenNotFound, a.position, a.tokenName)
+	if !has || token == "" {
+		return nil, false
 	}
-	
 	user, has := a.users.Get(token)
 	if has {
-		if user.Expire <= time.Now().Unix() && user.Expire != 0 {
-			return fmt.Errorf("%s error: %s", driverName, application.ErrTokenExpired)
-		}
-		for k, v := range user.Labels {
-			ctx.SetLabel(k, v)
-		}
-		for k, v := range user.AppLabels {
-			ctx.SetLabel(k, v)
-		}
-		if user.HideCredential {
-			application.HideToken(ctx, a.tokenName, a.position)
-		}
-		return nil
+		return user, true
 	}
-	
-	return fmt.Errorf("%s error: %s %s", driverName, application.ErrInvalidToken, token)
+	return nil, false
 }
 
 func (a *apikey) Driver() string {
@@ -83,11 +75,4 @@ func (a *apikey) Driver() string {
 
 func (a *apikey) UserCount() int {
 	return a.users.Count()
-}
-
-func getUser(pattern map[string]string) (string, bool) {
-	if v, ok := pattern["apikey"]; ok {
-		return v, true
-	}
-	return "", false
 }

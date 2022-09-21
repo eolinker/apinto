@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/apinto/application/auth/aksk"
 	"github.com/eolinker/apinto/application/auth/apikey"
 	"github.com/eolinker/apinto/application/auth/basic"
@@ -10,7 +11,7 @@ import (
 	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 	"sync"
-	
+
 	"github.com/eolinker/eosc"
 )
 
@@ -44,7 +45,7 @@ func NewFactory() eosc.IExtenderDriverFactory {
 		basic.Register()
 		aksk.Register()
 		jwt.Register()
-		appManager = manager.NewManager()
+		appManager = manager.NewManager(auth.Alias(), auth.Keys())
 		bean.Injection(&appManager)
 	})
 	return &factory{}
@@ -52,7 +53,7 @@ func NewFactory() eosc.IExtenderDriverFactory {
 
 //Create 创建service_http驱动
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
-	
+
 	return &driver{
 		profession: profession,
 		label:      label,

@@ -12,7 +12,7 @@ const (
 
 type ITemplate interface {
 	eosc.IWorker
-	Create(id string, conf map[string]*plugin.Config) eoscContext.IChain
+	Create(id string, conf map[string]*plugin.Config) eoscContext.IChainPro
 }
 
 func CheckSkill(skill string) bool {

@@ -2,6 +2,10 @@ package app
 
 import (
 	"errors"
+	"fmt"
+	"time"
+
+	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -20,9 +24,11 @@ func (a *App) Destroy() {
 }
 
 func (a *App) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
+	log.Debug("auth beginning")
 	err := a.auth(ctx)
 	if err != nil {
 		ctx.Response().SetStatus(403, "403")
+		ctx.Response().SetBody([]byte(err.Error()))
 		return err
 	}
 	if next != nil {
@@ -41,13 +47,33 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 		filters = appManager.List()
 	}
 	for _, filter := range filters {
-		err := filter.Auth(ctx)
-		if err == nil {
-			return nil
+		user, ok := filter.GetUser(ctx)
+		if ok {
+			if user == nil {
+				return errors.New("invalid user")
+			}
+			if user.App.Disable() {
+				return fmt.Errorf("the app(%s) is disabled", user.App.Id())
+			}
+			if user.Expire <= time.Now().Unix() && user.Expire != 0 {
+				return fmt.Errorf("%s error: %s", filter.Driver(), application.ErrTokenExpired)
+			}
+			setLabels(ctx, user.Labels)
+			setLabels(ctx, user.App.Labels())
+			ctx.SetLabel("application", user.App.Id())
+			if user.HideCredential {
+				application.HideToken(ctx, user.TokenName, user.Position)
+			}
+			return user.App.Execute(ctx)
 		}
-		log.DebugF("auth error: %s", err.Error())
 	}
 	return errors.New("invalid user")
+}
+
+func setLabels(ctx http_service.IHttpContext, labels map[string]string) {
+	for k, v := range labels {
+		ctx.SetLabel(k, v)
+	}
 }
 
 func (a *App) Id() string {

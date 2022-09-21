@@ -2,7 +2,7 @@ package plugin_manager
 
 import (
 	"fmt"
-	"github.com/eolinker/eosc/log"
+	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/variable"
 	"reflect"
 )
@@ -49,7 +49,7 @@ func (p *PluginConfig) GetType(originVal reflect.Value) (reflect.Type, error) {
 			params = tmp
 		}
 	}
-	log.Debug("plugin reset id is: ", id)
+
 	factory, has := singleton.extenderDrivers.GetDriver(id)
 	if !has {
 		return nil, fmt.Errorf("driver(%s) not found", id)
@@ -61,19 +61,19 @@ func (p *PluginConfig) GetType(originVal reflect.Value) (reflect.Type, error) {
 	return driver.ConfigType(), nil
 }
 
-func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, variables map[string]string) ([]string, error) {
+func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, variables eosc.IVariable) ([]string, error) {
 	if originVal.Kind() == reflect.Ptr {
 		originVal = originVal.Elem()
 	}
 	if originVal.Kind() != reflect.Map {
-		return nil, fmt.Errorf("plugin map reset error:%w %s", variable.ErrorUnsupportedKind, originVal.Kind())
+		return nil, fmt.Errorf("plugin map reset error:%w %s", eosc.ErrorUnsupportedKind, originVal.Kind())
 	}
 
 	cfgType, err := p.GetType(originVal)
 	if err != nil {
 		return nil, err
 	}
-	usedVariables := make([]string, 0, len(variables))
+	usedVariables := make([]string, 0, variables.Len())
 	targetType := targetVal.Type()
 	for i := 0; i < targetType.NumField(); i++ {
 		field := targetType.Field(i)

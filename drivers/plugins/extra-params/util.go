@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	http_context "github.com/eolinker/apinto/node/http-context"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"mime"
 	"strings"
 )
 
@@ -39,25 +41,29 @@ func encodeErr(ent string, origin string, statusCode int) error {
 	return fmt.Errorf("%s statusCode: %d", origin, statusCode)
 }
 
-func parseBodyParams(ctx http_service.IHttpContext, body []byte, contentType string) (map[string]interface{}, map[string][]string, error) {
-	formParams := make(map[string][]string)
-	bodyParams := make(map[string]interface{})
-	var err error
-	if strings.Contains(contentType, FormParamType) {
-		formParams, err = ctx.Proxy().Body().BodyForm()
+func parseBodyParams(ctx http_service.IHttpContext) (map[string]interface{}, map[string][]string, error) {
+	//formParams := make(map[string][]string)
+	//bodyParams := make(map[string]interface{})
+	contentType, _, _ := mime.ParseMediaType(ctx.Proxy().Body().ContentType())
+
+	switch contentType {
+	case http_context.FormData, http_context.MultipartForm:
+		formParams, err := ctx.Proxy().Body().BodyForm()
 		if err != nil {
-			return bodyParams, formParams, err
+			return nil, formParams, err
 		}
-	} else if strings.Contains(contentType, JsonType) {
-		if string(body) != "" {
-			err = json.Unmarshal(body, &bodyParams)
-			if err != nil {
-				return bodyParams, formParams, err
-			}
+	case http_context.JSON:
+		body, err := ctx.Proxy().Body().RawBody()
+		if err != nil {
+			return nil, nil, err
+		}
+		var bodyParams map[string]interface{}
+		err = json.Unmarshal(body, &bodyParams)
+		if err != nil {
+			return bodyParams, nil, err
 		}
 	}
-
-	return bodyParams, formParams, nil
+	return nil, nil, errors.New("[params_transformer] unsupported content-type: " + contentType)
 }
 
 func getHeaderValue(headers map[string][]string, param *ExtraParam, value string) (string, error) {
@@ -132,25 +138,26 @@ func getQueryValue(ctx http_service.IHttpContext, param *ExtraParam, value strin
 
 func getBodyValue(bodyParams map[string]interface{}, formParams map[string][]string, param *ExtraParam, contentType string, value interface{}) (interface{}, error) {
 	var paramValue interface{} = nil
-	if param.Conflict == "" {
-		param.Conflict = paramConvert
+	Conflict := param.Conflict
+	if Conflict == "" {
+		Conflict = paramConvert
 	}
-	if strings.Contains(contentType, FormParamType) {
+	if strings.Contains(contentType, http_context.FormData) || strings.Contains(contentType, http_context.MultipartForm) {
 		if _, ok := formParams[param.Name]; !ok {
-			param.Conflict = paramConvert
+			Conflict = paramConvert
 		} else {
 			paramValue = formParams[param.Name][0]
 		}
-	} else if strings.Contains(contentType, JsonType) {
+	} else if strings.Contains(contentType, http_context.JSON) {
 		if _, ok := bodyParams[param.Name]; !ok {
 			param.Conflict = paramConvert
 		} else {
 			paramValue = bodyParams[param.Name]
 		}
 	}
-	if param.Conflict == paramConvert {
+	if Conflict == paramConvert {
 		paramValue = value
-	} else if param.Conflict == paramError {
+	} else if Conflict == paramError {
 		errInfo := `[extra_params] "` + param.Name + `" has a conflict.`
 		return "", errors.New(errInfo)
 	}

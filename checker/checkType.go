@@ -26,4 +26,6 @@ const (
 	CheckTypeRegularG
 	//CheckTypeAll 任意匹配Checker类型
 	CheckTypeAll
+	// CheckMultiple 复合匹配
+	CheckMultiple
 )

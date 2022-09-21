@@ -1,16 +1,44 @@
 package app
 
 import (
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
+
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/log"
 )
 
 type app struct {
 	id        string
+	name      string
 	driverIDs []string
 	config    *Config
+	executor  application.IAppExecutor
+}
+
+func (a *app) Execute(ctx http_service.IHttpContext) error {
+	if a.executor == nil {
+		return nil
+	}
+	return a.executor.Execute(ctx)
+}
+
+func (a *app) Name() string {
+	return a.name
+}
+
+func (a *app) Labels() map[string]string {
+	if a.config == nil {
+		return nil
+	}
+	return a.config.Labels
+}
+
+func (a *app) Disable() bool {
+	if a.config == nil {
+		return true
+	}
+	return a.config.Disable
 }
 
 func (a *app) Destroy() error {
@@ -26,8 +54,7 @@ func (a *app) Start() error {
 	if a.config == nil {
 		return nil
 	}
-	log.Debug("start app...")
-	return set(a.id, a.config)
+	return a.set(a.config)
 }
 
 func (a *app) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
@@ -35,21 +62,26 @@ func (a *app) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) e
 	if err != nil {
 		return err
 	}
-	err = set(a.id, cfg)
+	err = a.set(cfg)
 	if err != nil {
 		return err
 	}
-	a.config = cfg
 	return nil
 }
 
-func set(id string, cfg *Config) error {
-	filters, users, err := createFilters(id, cfg.Auth)
+func (a *app) set(cfg *Config) error {
+	filters, users, err := createFilters(a.id, cfg.Auth)
 	if err != nil {
 		return err
 	}
-	
-	appManager.Set(id, cfg.Labels, cfg.Disable, filters, users)
+
+	//cfg.Labels["application"] = strings.TrimSuffix(app., "@app")
+
+	appManager.Set(a, filters, users)
+	e := newExecutor()
+	e.append(newAdditionalParam(cfg.Additional))
+	a.executor = e
+	a.config = cfg
 	return nil
 }
 
@@ -58,13 +90,14 @@ func (a *app) Stop() error {
 }
 
 func (a *app) CheckSkill(skill string) bool {
-	return true
+	return false
 }
 
-func createFilters(id string, auths []*Auth) ([]application.IAuth, map[string][]*application.User, error) {
+func createFilters(id string, auths []*Auth) ([]application.IAuth, map[string][]*application.BaseConfig, error) {
 	filters := make([]application.IAuth, 0, len(auths))
-	userMap := make(map[string][]*application.User)
+	userMap := make(map[string][]*application.BaseConfig)
 	for _, v := range auths {
+
 		filter, err := createFilter(v.Type, v.TokenName, v.Position, v.Config)
 		if err != nil {
 			return nil, nil, err
@@ -79,7 +112,7 @@ func createFilters(id string, auths []*Auth) ([]application.IAuth, map[string][]
 	return filters, userMap, nil
 }
 
-func checkUsers(id string, filter application.IAuth, users []*application.User) error {
+func checkUsers(id string, filter application.IAuth, users []*application.BaseConfig) error {
 	return filter.Check(id, users)
 }
 
@@ -96,6 +129,6 @@ func createFilter(driver string, tokenName string, position string, rule interfa
 	if !has {
 		return filter, nil
 	}
-	
+
 	return old, nil
 }
