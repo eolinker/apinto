@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"mime"
+	"strconv"
+	"strings"
+
 	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"mime"
-	"strconv"
 )
 
 var _ http_service.HttpFilter = (*ExtraParams)(nil)
@@ -82,9 +84,7 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 			}
 		case "body":
 			{
-				switch contentType {
-				case http_context.FormData, http_context.MultipartForm:
-
+				if strings.Contains(contentType, http_context.FormData) || strings.Contains(contentType, http_context.MultipartForm) {
 					if _, has := formParams[param.Name]; has {
 						switch param.Conflict {
 						case paramConvert:
@@ -98,8 +98,7 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 					} else {
 						formParams[param.Name] = []string{paramValue.(string)}
 					}
-
-				case http_context.JSON:
+				} else if strings.Contains(contentType, http_context.JSON) {
 					if _, has := bodyParams[param.Name]; has {
 						switch param.Conflict {
 						case paramConvert:
@@ -118,10 +117,9 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 			}
 		}
 	}
-	switch contentType {
-	case http_context.FormData, http_context.MultipartForm:
+	if strings.Contains(contentType, http_context.FormData) || strings.Contains(contentType, http_context.MultipartForm) {
 		ctx.Proxy().Body().SetForm(formParams)
-	case http_context.JSON:
+	} else if strings.Contains(contentType, http_context.JSON) {
 		b, _ := json.Marshal(bodyParams)
 		ctx.Proxy().Body().SetRaw(contentType, b)
 	}
