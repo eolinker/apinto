@@ -7,6 +7,7 @@ import (
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
+	"mime/multipart"
 	"net/url"
 	"strings"
 )
@@ -43,16 +44,14 @@ func encodeErr(ent string, origin string, code int) error {
 	return fmt.Errorf("%s statusCode: %d", origin, code)
 }
 
-func parseBodyParams(ctx http_service.IHttpContext, contentType string) (interface{}, map[string][]string, map[string]*http_service.FileHeader, error) {
-	formParams := make(map[string][]string)
-	files := make(map[string]*http_service.FileHeader)
-	var err error
+func parseBodyParams(ctx http_service.IHttpContext, contentType string) (interface{}, map[string][]string, map[string][]*multipart.FileHeader, error) {
+
 	if strings.Contains(contentType, FormParamType) {
-		formParams, err = ctx.Proxy().Body().BodyForm()
+		formParams, err := ctx.Proxy().Body().BodyForm()
 		if err != nil {
 			return nil, nil, nil, fmt.Errorf("[params_transformer] parse body error: %w", err)
 		}
-		return nil, formParams, files, nil
+		return nil, formParams, nil, nil
 	} else if strings.Contains(contentType, JsonType) {
 		body, err := ctx.Proxy().Body().RawBody()
 		if err != nil {
@@ -65,7 +64,7 @@ func parseBodyParams(ctx http_service.IHttpContext, contentType string) (interfa
 		if err != nil {
 			return nil, nil, nil, fmt.Errorf("[params_transformer] parse body error: %w", err)
 		}
-		return obj, formParams, files, nil
+		return obj, nil, nil, nil
 	} else if strings.Contains(contentType, MultipartType) {
 		formParams, err := ctx.Proxy().Body().BodyForm()
 		if err != nil {
@@ -204,5 +203,5 @@ func getProxyValue(position, proxyPosition, contentType string, headerValue, que
 type bodyHandler struct {
 	formParams url.Values
 	body       interface{}
-	files      map[string]*http_service.FileHeader
+	files      map[string][]*multipart.FileHeader
 }

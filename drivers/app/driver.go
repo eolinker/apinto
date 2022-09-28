@@ -46,14 +46,12 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	if err != nil {
 		return nil, err
 	}
-	err = set(id, cfg)
-	if err != nil {
-		return nil, err
+	a := &app{
+		id: id,
 	}
-	return &app{
-		id:     id,
-		config: cfg,
-	}, nil
+	err = a.set(cfg)
+
+	return a, nil
 }
 
 func checkConfig(v interface{}) (*Config, error) {
@@ -66,7 +64,12 @@ func checkConfig(v interface{}) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
-
+	}
+	for _, a := range conf.Additional {
+		err := application.CheckPosition(a.Position)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return conf, nil
 }

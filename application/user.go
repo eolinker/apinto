@@ -11,22 +11,20 @@ type IUser interface {
 }
 
 type User struct {
-	Expire         int64             `json:"expire"`
-	Labels         map[string]string `json:"labels"`
-	HideCredential bool              `json:"hide_credential"`
+	Labels         map[string]string `json:"labels" label:"用户标签"`
+	Expire         int64             `json:"expire" label:"过期时间" format:"date-time"`
+	HideCredential bool              `json:"hide_credential" label:"是否隐藏证书"`
 }
 
 type UserInfo struct {
-	AppID          string
 	Name           string
 	Value          string
 	Expire         int64
-	Labels         map[string]string
 	HideCredential bool
-	AppLabels      map[string]string
-	Disable        bool
+	Labels         map[string]string
 	TokenName      string
 	Position       string
+	App            IApp
 }
 
 var _ IUserManager = (*UserManager)(nil)
@@ -52,7 +50,7 @@ func (u *UserManager) Check(appID string, driver string, users []IUser) error {
 	for _, user := range users {
 		t, ok := u.get(user.Username())
 		if ok {
-			if t.AppID != appID {
+			if t.App.Id() != appID {
 				return fmt.Errorf("[%s] user(%s) is existed", driver, user.Username())
 			}
 		}
@@ -148,7 +146,7 @@ func (u *UserManager) getByAppID(appID string) ([]string, bool) {
 }
 
 type Auth struct {
-	Type      string `json:"type"`
-	Position  string `json:"position"`
-	TokenName string `json:"token_name"`
+	Type      string `json:"type" label:"鉴权类型" skip:""`
+	Position  string `json:"position" label:"token位置" enum:"header,query,body"`
+	TokenName string `json:"token_name" label:"token名称"`
 }

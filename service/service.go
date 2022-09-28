@@ -13,6 +13,7 @@ type IService interface {
 	eosc.IWorker
 	eoscContext.EoApp
 	eoscContext.BalanceHandler
+	eoscContext.UpstreamHostHandler
 }
 
 //CheckSkill 检查目标技能是否符合

@@ -100,13 +100,28 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Label:        "应用",
 			Desc:         "应用",
 			Dependencies: nil,
-			AppendLabels: nil,
+			AppendLabels: []string{"disable"},
 			Drivers: []*eosc.DriverConfig{
 				{
 					Id:    "eolinker.com:apinto:app",
 					Name:  "app",
 					Label: "应用",
 					Desc:  "应用",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		}, {
+			Name:         "strategy",
+			Label:        "策略",
+			Desc:         "策略",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:apinto:strategy-limiting",
+					Name:  "limiting",
+					Label: "限流策略",
+					Desc:  "限流策略",
 				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,

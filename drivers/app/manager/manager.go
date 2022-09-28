@@ -16,7 +16,7 @@ type IManager interface {
 	Get(id string) (application.IAuth, bool)
 	List() []application.IAuthUser
 	ListByDriver(driver string) []application.IAuthUser
-	Set(appID string, labels map[string]string, disable bool, filters []application.IAuth, users map[string][]*application.BaseConfig)
+	Set(app application.IApp, filters []application.IAuth, users map[string][]application.ITransformConfig)
 	Del(appID string)
 	Count() int
 }
@@ -100,7 +100,7 @@ func (m *Manager) All() []application.IAuthUser {
 	return m.all()
 }
 
-func (m *Manager) Set(appID string, labels map[string]string, disable bool, filters []application.IAuth, users map[string][]*application.BaseConfig) {
+func (m *Manager) Set(app application.IApp, filters []application.IAuth, users map[string][]application.ITransformConfig) {
 	idMap := make(map[string][]string)
 	for _, filter := range filters {
 		f, has := m.get(filter.ID())
@@ -111,7 +111,7 @@ func (m *Manager) Set(appID string, labels map[string]string, disable bool, filt
 		if !ok {
 			continue
 		}
-		f.Set(appID, labels, disable, v)
+		f.Set(app, v)
 		m.filters.Set(filter.ID(), filter)
 		if _, ok := idMap[filter.Driver()]; !ok {
 			idMap[filter.Driver()] = make([]string, 0, len(filters))
@@ -119,7 +119,7 @@ func (m *Manager) Set(appID string, labels map[string]string, disable bool, filt
 		idMap[filter.Driver()] = append(idMap[filter.Driver()], filter.ID())
 	}
 	for driver, ids := range idMap {
-		m.appManager.Set(appID, driver, ids)
+		m.appManager.Set(app.Id(), driver, ids)
 	}
 
 	return

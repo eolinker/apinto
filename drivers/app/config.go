@@ -14,17 +14,26 @@ import (
 
 //Config App驱动配置
 type Config struct {
-	Auth    []*Auth           `json:"auth"`
-	Labels  map[string]string `json:"labels"`
-	Disable bool              `json:"disable"`
+	Labels     map[string]string `json:"labels" label:"应用标签"`
+	Disable    bool              `json:"disable" label:"是否禁用"`
+	Additional []*Additional     `json:"additional" label:"额外参数"`
+	Auth       []*Auth           `json:"auth" label:"鉴权列表" eotype:"interface"`
 }
 
 type Auth struct {
-	Type      string                    `json:"type"`
-	Users     []*application.BaseConfig `json:"users"`
-	Position  string                    `json:"position"`
-	TokenName string                    `json:"token_name"`
-	Config    *application.BaseConfig   `json:"config"`
+	Type      string                    `json:"type" label:"鉴权类型"`
+	TokenName string                    `json:"token_name" label:"token名称"`
+	Position  string                    `json:"position" label:"token位置" enum:"header,query,body"`
+	Config    *application.BaseConfig   `json:"config" label:"配置信息" eotype:"object"`
+	Users     []*application.BaseConfig `json:"users" label:"用户列表"`
+}
+
+type Additional struct {
+	Key      string            `json:"key" label:"参数名"`
+	Value    string            `json:"value" label:"参数值"`
+	Position string            `json:"position" label:"参数位置" enum:"header,query,body"`
+	Conflict string            `json:"conflict" label:"参数存在替换规则" enum:"convert,origin,error"`
+	Labels   map[string]string `json:"labels"`
 }
 
 func (a *Auth) Reset(originVal reflect.Value, targetVal reflect.Value, variables eosc.IVariable) ([]string, error) {

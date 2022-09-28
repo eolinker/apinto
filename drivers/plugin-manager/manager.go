@@ -29,24 +29,35 @@ type PluginManager struct {
 	workers         eosc.IWorkers
 }
 
-func (p *PluginManager) Set(conf interface{}) error {
-	log.Debug("plugin manager set")
-	return p.Reset(conf)
+func (p *PluginManager) Check(cfg interface{}) (profession, name, driver, desc string, err error) {
+	err = eosc.ErrorUnsupportedKind
+	return
+}
+
+func (p *PluginManager) AllWorkers() []string {
+	return []string{"plugin@setting"}
+}
+
+func (p *PluginManager) Mode() eosc.SettingMode {
+	return eosc.SettingModeSingleton
+}
+
+func (p *PluginManager) Set(conf interface{}) (err error) {
+
+	err = p.Reset(conf)
+
+	return
 }
 
 func (p *PluginManager) Get() interface{} {
 	return p.plugins
 }
 
-func (p *PluginManager) ReadOnly() bool {
-	return false
-}
-
 func (p *PluginManager) ConfigType() reflect.Type {
 	return reflect.TypeOf(new(PluginWorkerConfig))
 }
 
-func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config) eocontext.IChain {
+func (p *PluginManager) CreateRequest(id string, conf map[string]*plugin.Config) eocontext.IChainPro {
 
 	return p.createChain(id, conf)
 }
@@ -77,14 +88,13 @@ func (p *PluginManager) Reset(conf interface{}) error {
 
 			continue
 		}
-		v.Filters = p.createFilters(v.conf)
+		v.fs = p.createFilters(v.conf)
 	}
 
 	return nil
 }
 
 func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []eocontext.IFilter {
-	log.Debug("all plugins len: ", len(p.plugins))
 	filters := make([]eocontext.IFilter, 0, len(conf))
 	plugins := p.plugins
 	for _, plg := range plugins {
@@ -132,7 +142,7 @@ func (p *PluginManager) createChain(id string, conf map[string]*plugin.Config) *
 		obj = NewPluginObj(chain, id, conf)
 		p.pluginObjs.Set(id, obj)
 	} else {
-		obj.(*PluginObj).Filters = chain
+		obj.(*PluginObj).fs = chain
 	}
 	log.Debug("create chain len: ", len(chain))
 	return obj.(*PluginObj)
@@ -156,13 +166,14 @@ func (p *PluginManager) check(conf interface{}) (Plugins, error) {
 	return plugins, nil
 
 }
-func (p *PluginManager) Check(conf interface{}) error {
-	_, err := p.check(conf)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+
+//func (p *PluginManager) Check(conf interface{}) error {
+//	_, err := p.check(conf)
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}
 
 func (p *PluginManager) IsExists(id string) bool {
 	_, has := p.extenderDrivers.GetDriver(id)

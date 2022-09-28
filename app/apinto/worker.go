@@ -25,8 +25,10 @@ import (
 	proxy_rewriteV2 "github.com/eolinker/apinto/drivers/plugins/proxy_rewrite_v2"
 	rate_limiting "github.com/eolinker/apinto/drivers/plugins/rate-limiting"
 	response_rewrite "github.com/eolinker/apinto/drivers/plugins/response-rewrite"
+	"github.com/eolinker/apinto/drivers/plugins/strategy"
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
 	service "github.com/eolinker/apinto/drivers/service"
+	limiting_stragety "github.com/eolinker/apinto/drivers/strategy/limiting-stragety"
 	template "github.com/eolinker/apinto/drivers/template"
 
 	"github.com/eolinker/eosc"
@@ -85,4 +87,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 
 	access_log.Register(extenderRegister)
 	proxy_rewriteV2.Register(extenderRegister)
+
+	strategy.Register(extenderRegister)
+	limiting_stragety.Register(extenderRegister)
 }

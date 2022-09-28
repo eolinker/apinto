@@ -2,12 +2,16 @@ package extra_params
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"mime"
+	"strconv"
+	"strings"
+
+	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"strconv"
-	"strings"
 )
 
 var _ http_service.HttpFilter = (*ExtraParams)(nil)
@@ -40,10 +44,9 @@ func (e *ExtraParams) DoHttpFilter(ctx http_service.IHttpContext, next eocontext
 
 func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 	// 判断请求携带的content-type
-	contentType := ctx.Proxy().Header().GetHeader("Content-Type")
+	contentType, _, _ := mime.ParseMediaType(ctx.Proxy().Body().ContentType())
 
-	body, _ := ctx.Proxy().Body().RawBody()
-	bodyParams, formParams, err := parseBodyParams(ctx, body, contentType)
+	bodyParams, formParams, err := parseBodyParams(ctx)
 	if err != nil {
 		errInfo := fmt.Sprintf(parseBodyErrInfo, err.Error())
 		err = encodeErr(e.errorType, errInfo, serverErrStatusCode)
@@ -81,24 +84,42 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 			}
 		case "body":
 			{
-				value, err := getBodyValue(bodyParams, formParams, param, contentType, paramValue)
-				if err != nil {
-					err = encodeErr(e.errorType, err.Error(), clientErrStatusCode)
-					return clientErrStatusCode, err
-				}
-				if strings.Contains(contentType, FormParamType) {
-					err = ctx.Proxy().Body().SetToForm(param.Name, value.(string))
-					if err != nil {
-						err = encodeErr(e.errorType, err.Error(), clientErrStatusCode)
-						return clientErrStatusCode, err
+				if strings.Contains(contentType, http_context.FormData) || strings.Contains(contentType, http_context.MultipartForm) {
+					if _, has := formParams[param.Name]; has {
+						switch param.Conflict {
+						case paramConvert:
+							formParams[param.Name] = []string{paramValue.(string)}
+						case paramOrigin:
+						case paramError:
+							return clientErrStatusCode, errors.New(`[extra_params] "` + param.Name + `" has a conflict.`)
+						default:
+							formParams[param.Name] = []string{paramValue.(string)}
+						}
+					} else {
+						formParams[param.Name] = []string{paramValue.(string)}
 					}
-				} else if strings.Contains(contentType, JsonType) {
-					bodyParams[param.Name] = value
+				} else if strings.Contains(contentType, http_context.JSON) {
+					if _, has := bodyParams[param.Name]; has {
+						switch param.Conflict {
+						case paramConvert:
+							bodyParams[param.Name] = paramValue.(string)
+						case paramOrigin:
+						case paramError:
+							return clientErrStatusCode, errors.New(`[extra_params] "` + param.Name + `" has a conflict.`)
+						default:
+							bodyParams[param.Name] = paramValue
+						}
+					} else {
+						bodyParams[param.Name] = paramValue
+					}
 				}
+
 			}
 		}
 	}
-	if strings.Contains(contentType, JsonType) {
+	if strings.Contains(contentType, http_context.FormData) || strings.Contains(contentType, http_context.MultipartForm) {
+		ctx.Proxy().Body().SetForm(formParams)
+	} else if strings.Contains(contentType, http_context.JSON) {
 		b, _ := json.Marshal(bodyParams)
 		ctx.Proxy().Body().SetRaw(contentType, b)
 	}
@@ -115,15 +136,15 @@ func (e *ExtraParams) Start() error {
 }
 
 func (e *ExtraParams) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-confObj, err := e.check(conf)
-if err != nil {
-return err
-}
+	confObj, err := e.check(conf)
+	if err != nil {
+		return err
+	}
 
-e.params = confObj.Params
-e.errorType = confObj.ErrorType
+	e.params = confObj.Params
+	e.errorType = confObj.ErrorType
 
-return nil
+	return nil
 }
 
 func (e *ExtraParams) Stop() error {

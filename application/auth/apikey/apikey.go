@@ -20,7 +20,7 @@ func (a *apikey) ID() string {
 	return a.id
 }
 
-func (a *apikey) Check(appID string, users []*application.BaseConfig) error {
+func (a *apikey) Check(appID string, users []application.ITransformConfig) error {
 	us := make([]application.IUser, 0, len(users))
 	for _, u := range users {
 		v, ok := u.Config().(*User)
@@ -32,26 +32,24 @@ func (a *apikey) Check(appID string, users []*application.BaseConfig) error {
 	return a.users.Check(appID, driverName, us)
 }
 
-func (a *apikey) Set(appID string, labels map[string]string, disable bool, users []*application.BaseConfig) {
+func (a *apikey) Set(app application.IApp, users []application.ITransformConfig) {
 
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, user := range users {
 		v, _ := user.Config().(*User)
 
 		infos = append(infos, &application.UserInfo{
-			AppID:          appID,
 			Name:           v.Username(),
 			Value:          v.Username(),
 			Expire:         v.Expire,
 			Labels:         v.Labels,
 			HideCredential: v.HideCredential,
-			AppLabels:      labels,
-			Disable:        disable,
 			TokenName:      a.tokenName,
 			Position:       a.position,
+			App:            app,
 		})
 	}
-	a.users.Set(appID, infos)
+	a.users.Set(app.Id(), infos)
 }
 
 func (a *apikey) Del(appID string) {
@@ -77,11 +75,4 @@ func (a *apikey) Driver() string {
 
 func (a *apikey) UserCount() int {
 	return a.users.Count()
-}
-
-func getUser(pattern map[string]string) (string, bool) {
-	if v, ok := pattern["apikey"]; ok {
-		return v, true
-	}
-	return "", false
 }

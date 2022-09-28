@@ -40,7 +40,7 @@ func (j *jwt) Driver() string {
 	return driverName
 }
 
-func (j *jwt) Check(appID string, users []*application.BaseConfig) error {
+func (j *jwt) Check(appID string, users []application.ITransformConfig) error {
 	us := make([]application.IUser, 0, len(users))
 	for _, u := range users {
 		v, ok := u.Config().(*User)
@@ -52,23 +52,20 @@ func (j *jwt) Check(appID string, users []*application.BaseConfig) error {
 	return j.users.Check(appID, driverName, us)
 }
 
-func (j *jwt) Set(appID string, labels map[string]string, disable bool, users []*application.BaseConfig) {
+func (j *jwt) Set(app application.IApp, users []application.ITransformConfig) {
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, user := range users {
 		v, _ := user.Config().(*User)
 		infos = append(infos, &application.UserInfo{
-			AppID:          appID,
 			Name:           v.Username(),
 			Expire:         v.Expire,
 			Labels:         v.Labels,
 			HideCredential: v.HideCredential,
-			AppLabels:      labels,
-			Disable:        disable,
 			TokenName:      j.tokenName,
 			Position:       j.position,
 		})
 	}
-	j.users.Set(appID, infos)
+	j.users.Set(app.Id(), infos)
 }
 
 func (j *jwt) Del(appID string) {
@@ -77,11 +74,4 @@ func (j *jwt) Del(appID string) {
 
 func (j *jwt) UserCount() int {
 	return j.users.Count()
-}
-
-func getUser(pattern map[string]string) (string, bool) {
-	if v, ok := pattern["username"]; ok {
-		return v, true
-	}
-	return "", false
 }

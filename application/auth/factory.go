@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	ErrorInvalidAuth           = errors.New("invalid auth")
-	defaultAuthFactoryRegister = newAuthFactoryManager()
+	ErrorInvalidAuth                         = errors.New("invalid auth")
+	defaultAuthFactoryRegister               = newAuthFactoryManager()
+	_                          eosc.ISetting = defaultAuthFactoryRegister
 )
 
 //IAuthFactory 鉴权工厂方法
@@ -42,21 +43,35 @@ type driverRegister struct {
 	render      map[string]interface{}
 }
 
+func (dm *driverRegister) Check(cfg interface{}) (profession, name, driver, desc string, err error) {
+	return
+}
+
+func (dm *driverRegister) AllWorkers() []string {
+	return nil
+}
+
+func (dm *driverRegister) Mode() eosc.SettingMode {
+	return eosc.SettingModeReadonly
+}
+
 func (dm *driverRegister) ConfigType() reflect.Type {
 	return nil
 }
 
-func (dm *driverRegister) Set(conf interface{}) error {
-	return nil
+func (dm *driverRegister) Set(conf interface{}) (err error) {
+	return
 }
 
 func (dm *driverRegister) Get() interface{} {
-	rs := make([]interface{}, 0, len(dm.render))
-	for name, render := range dm.render {
-		rs = append(rs, map[string]interface{}{
-			"name":   name,
-			"render": render,
-		})
+	rs := make([]interface{}, 0, len(dm.keys))
+	for _, key := range dm.keys {
+		if v, ok := dm.render[key]; ok {
+			rs = append(rs, map[string]interface{}{
+				"name":   key,
+				"render": v,
+			})
+		}
 	}
 	return rs
 }
