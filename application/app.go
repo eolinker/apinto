@@ -40,8 +40,8 @@ func CheckSkill(skill string) bool {
 
 type IAuth interface {
 	ID() string
-	Check(appID string, users []*BaseConfig) error
-	Set(app IApp, users []*BaseConfig)
+	Check(appID string, users []ITransformConfig) error
+	Set(app IApp, users []ITransformConfig)
 	Del(appID string)
 	UserCount() int
 	IAuthUser

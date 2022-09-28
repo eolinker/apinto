@@ -53,7 +53,7 @@ func (b *basic) Driver() string {
 	return driverName
 }
 
-func (b *basic) Check(appID string, users []*application.BaseConfig) error {
+func (b *basic) Check(appID string, users []application.ITransformConfig) error {
 	us := make([]application.IUser, 0, len(users))
 	for _, u := range users {
 		v, ok := u.Config().(*User)
@@ -65,7 +65,7 @@ func (b *basic) Check(appID string, users []*application.BaseConfig) error {
 	return b.users.Check(appID, driverName, us)
 }
 
-func (b *basic) Set(app application.IApp, users []*application.BaseConfig) {
+func (b *basic) Set(app application.IApp, users []application.ITransformConfig) {
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, user := range users {
 		v, _ := user.Config().(*User)
