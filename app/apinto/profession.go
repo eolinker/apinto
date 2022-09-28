@@ -100,7 +100,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Label:        "应用",
 			Desc:         "应用",
 			Dependencies: nil,
-			AppendLabels: nil,
+			AppendLabels: []string{"disable"},
 			Drivers: []*eosc.DriverConfig{
 				{
 					Id:    "eolinker.com:apinto:app",
