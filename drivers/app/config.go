@@ -47,7 +47,6 @@ func (a *Auth) Reset(originVal reflect.Value, targetVal reflect.Value, variables
 	if err != nil {
 		return nil, err
 	}
-	log.Debug("set type: ", string(bytes))
 
 	f, err := auth.GetFactory(tmp.Type)
 	if err != nil {

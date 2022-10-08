@@ -4,8 +4,6 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/eolinker/eosc/log"
-
 	"github.com/eolinker/eosc/utils/schema"
 
 	"github.com/eolinker/apinto/application"
@@ -50,7 +48,6 @@ func (f *factory) Create(tokenName string, position string, rule interface{}) (a
 	if !ok {
 		return nil, errors.New("invalid jwt config")
 	}
-	log.Debug("config type: ", reflect.TypeOf(baseConfig.Config()))
 	cfg, ok := baseConfig.Config().(*Rule)
 	if !ok {
 		return nil, errors.New("invalid jwt config")
