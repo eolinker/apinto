@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"mime"
+	"net/http"
 	"net/textproto"
 	"strings"
 
@@ -39,6 +40,9 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 		}
 		switch p.Position {
 		case application.PositionBody:
+			if ctx.Proxy().Method() != http.MethodPost && ctx.Proxy().Method() != http.MethodPut && ctx.Proxy().Method() != http.MethodPatch {
+				continue
+			}
 			switch contentType {
 			case http_context.FormData, http_context.MultipartForm:
 				switch p.Conflict {
@@ -129,6 +133,9 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 }
 
 func parseBodyParams(ctx http_service.IHttpContext) (interface{}, map[string][]string, error) {
+	if ctx.Proxy().Method() != http.MethodPost && ctx.Proxy().Method() != http.MethodPut && ctx.Proxy().Method() != http.MethodPatch {
+		return nil, nil, nil
+	}
 	contentType, _, _ := mime.ParseMediaType(ctx.Proxy().Body().ContentType())
 	switch contentType {
 	case http_context.FormData, http_context.MultipartForm:
@@ -141,6 +148,9 @@ func parseBodyParams(ctx http_service.IHttpContext) (interface{}, map[string][]s
 		body, err := ctx.Proxy().Body().RawBody()
 		if err != nil {
 			return nil, nil, err
+		}
+		if string(body) == "" {
+			body = []byte("{}")
 		}
 		bodyParams, err := oj.Parse(body)
 		return bodyParams, nil, err

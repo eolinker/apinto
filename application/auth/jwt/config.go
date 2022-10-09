@@ -12,17 +12,17 @@ import (
 
 type Config struct {
 	application.Auth
-	Config *Rule   `json:"config"`
-	Users  []*User `json:"users"`
+	Config *Rule   `json:"config" label:"JWT配置"`
+	Users  []*User `json:"users" label:"用户列表"`
 }
 
 type User struct {
+	Pattern Pattern `json:"pattern" label:"用户信息"`
 	application.User
-	Pattern Pattern `json:"pattern"`
 }
 
 type Pattern struct {
-	Username string `json:"username"`
+	Username string `json:"username" label:"用户名"`
 }
 
 func (u *User) Username() string {
@@ -30,13 +30,13 @@ func (u *User) Username() string {
 }
 
 type Rule struct {
-	Iss               string   `json:"iss" `
-	Secret            string   `json:"secret"`
-	RsaPublicKey      string   `json:"rsa_public_key"`
-	Algorithm         string   `json:"algorithm"`
-	ClaimsToVerify    []string `json:"claims_to_verify"`
-	SignatureIsBase64 bool     `json:"signature_is_base_64"`
-	Path              string   `json:"path"`
+	Iss               string   `json:"iss" label:"签发机构"`
+	Algorithm         string   `json:"algorithm" label:"签名算法" enum:"HS256,HS384,HS512,RS256,RS384,RS512,ES256,ES384,ES512"`
+	Secret            string   `json:"secret" label:"密钥" switch:"algorithm==='HS256'||algorithm==='HS384'||algorithm==='HS512'"`
+	RsaPublicKey      string   `json:"rsa_public_key" label:"RSA公钥" switch:"algorithm!=='HS256'&&algorithm!=='HS384'&&algorithm!=='HS512'"`
+	Path              string   `json:"path" label:"用户名JsonPath"`
+	ClaimsToVerify    []string `json:"claims_to_verify" label:"检验字段"`
+	SignatureIsBase64 bool     `json:"signature_is_base_64" label:"签名是否base64加密" switch:"algorithm==='HS256'||algorithm==='HS384'||algorithm==='HS512'"`
 }
 
 func (c *Rule) ToID() (string, error) {

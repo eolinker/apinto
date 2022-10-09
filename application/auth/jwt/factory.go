@@ -1,13 +1,13 @@
 package jwt
 
 import (
+	"errors"
 	"reflect"
 
 	"github.com/eolinker/eosc/utils/schema"
 
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/apinto/application/auth"
-	"github.com/eolinker/eosc/variable"
 )
 
 var _ auth.IAuthFactory = (*factory)(nil)
@@ -44,10 +44,13 @@ func (f *factory) Alias() []string {
 }
 
 func (f *factory) Create(tokenName string, position string, rule interface{}) (application.IAuth, error) {
-	cfg := &Rule{}
-	_, err := variable.RecurseReflect(reflect.ValueOf(rule), reflect.ValueOf(cfg), nil)
-	if err != nil {
-		return nil, err
+	baseConfig, ok := rule.(*application.BaseConfig)
+	if !ok {
+		return nil, errors.New("invalid jwt config")
+	}
+	cfg, ok := baseConfig.Config().(*Rule)
+	if !ok {
+		return nil, errors.New("invalid jwt config")
 	}
 	id, err := cfg.ToID()
 	if err != nil {
@@ -68,7 +71,7 @@ func NewFactory() auth.IAuthFactory {
 	typ := reflect.TypeOf((*Config)(nil))
 	render, _ := schema.Generate(typ, nil)
 	return &factory{
-		configType: typ,
+		configType: reflect.TypeOf((*Rule)(nil)),
 		render:     render,
 		userType:   reflect.TypeOf((*User)(nil)),
 	}

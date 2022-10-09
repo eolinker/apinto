@@ -64,12 +64,14 @@ func (dm *driverRegister) Set(conf interface{}) (err error) {
 }
 
 func (dm *driverRegister) Get() interface{} {
-	rs := make([]interface{}, 0, len(dm.render))
-	for name, render := range dm.render {
-		rs = append(rs, map[string]interface{}{
-			"name":   name,
-			"render": render,
-		})
+	rs := make([]interface{}, 0, len(dm.keys))
+	for _, key := range dm.keys {
+		if v, ok := dm.render[key]; ok {
+			rs = append(rs, map[string]interface{}{
+				"name":   key,
+				"render": v,
+			})
+		}
 	}
 	return rs
 }

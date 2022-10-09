@@ -93,26 +93,30 @@ func (a *app) CheckSkill(skill string) bool {
 	return false
 }
 
-func createFilters(id string, auths []*Auth) ([]application.IAuth, map[string][]*application.BaseConfig, error) {
+func createFilters(id string, auths []*Auth) ([]application.IAuth, map[string][]application.ITransformConfig, error) {
 	filters := make([]application.IAuth, 0, len(auths))
-	userMap := make(map[string][]*application.BaseConfig)
+	userMap := make(map[string][]application.ITransformConfig)
 	for _, v := range auths {
 
 		filter, err := createFilter(v.Type, v.TokenName, v.Position, v.Config)
 		if err != nil {
 			return nil, nil, err
 		}
-		err = checkUsers(id, filter, v.Users)
+		users := make([]application.ITransformConfig, 0, len(v.Users))
+		for _, u := range v.Users {
+			users = append(users, u)
+		}
+		err = checkUsers(id, filter, users)
 		if err != nil {
 			return nil, nil, err
 		}
 		filters = append(filters, filter)
-		userMap[filter.ID()] = v.Users
+		userMap[filter.ID()] = users
 	}
 	return filters, userMap, nil
 }
 
-func checkUsers(id string, filter application.IAuth, users []*application.BaseConfig) error {
+func checkUsers(id string, filter application.IAuth, users []application.ITransformConfig) error {
 	return filter.Check(id, users)
 }
 

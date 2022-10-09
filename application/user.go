@@ -11,9 +11,9 @@ type IUser interface {
 }
 
 type User struct {
-	Expire         int64             `json:"expire"`
-	Labels         map[string]string `json:"labels"`
-	HideCredential bool              `json:"hide_credential"`
+	Labels         map[string]string `json:"labels" label:"用户标签"`
+	Expire         int64             `json:"expire" label:"过期时间" format:"date-time"`
+	HideCredential bool              `json:"hide_credential" label:"是否隐藏证书"`
 }
 
 type UserInfo struct {
@@ -146,7 +146,7 @@ func (u *UserManager) getByAppID(appID string) ([]string, bool) {
 }
 
 type Auth struct {
-	Type      string `json:"type"`
-	Position  string `json:"position"`
-	TokenName string `json:"token_name"`
+	Type      string `json:"type" label:"鉴权类型" skip:""`
+	Position  string `json:"position" label:"token位置" enum:"header,query,body"`
+	TokenName string `json:"token_name" label:"token名称"`
 }

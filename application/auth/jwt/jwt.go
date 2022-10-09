@@ -40,7 +40,7 @@ func (j *jwt) Driver() string {
 	return driverName
 }
 
-func (j *jwt) Check(appID string, users []*application.BaseConfig) error {
+func (j *jwt) Check(appID string, users []application.ITransformConfig) error {
 	us := make([]application.IUser, 0, len(users))
 	for _, u := range users {
 		v, ok := u.Config().(*User)
@@ -52,7 +52,7 @@ func (j *jwt) Check(appID string, users []*application.BaseConfig) error {
 	return j.users.Check(appID, driverName, us)
 }
 
-func (j *jwt) Set(app application.IApp, users []*application.BaseConfig) {
+func (j *jwt) Set(app application.IApp, users []application.ITransformConfig) {
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, user := range users {
 		v, _ := user.Config().(*User)
