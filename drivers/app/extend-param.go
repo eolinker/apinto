@@ -149,6 +149,9 @@ func parseBodyParams(ctx http_service.IHttpContext) (interface{}, map[string][]s
 		if err != nil {
 			return nil, nil, err
 		}
+		if string(body) == "" {
+			body = []byte("{}")
+		}
 		bodyParams, err := oj.Parse(body)
 		return bodyParams, nil, err
 	}

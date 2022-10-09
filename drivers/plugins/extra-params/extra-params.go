@@ -5,8 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"mime"
+	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/ohler55/ojg/jp"
 
 	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/eolinker/eosc"
@@ -16,6 +19,10 @@ import (
 
 var _ http_service.HttpFilter = (*ExtraParams)(nil)
 var _ eocontext.IFilter = (*ExtraParams)(nil)
+
+var (
+	errorExist = "%s: %s is already exists"
+)
 
 type ExtraParams struct {
 	*Driver
@@ -84,7 +91,11 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 			}
 		case "body":
 			{
-				if strings.Contains(contentType, http_context.FormData) || strings.Contains(contentType, http_context.MultipartForm) {
+				if ctx.Proxy().Method() != http.MethodPost && ctx.Proxy().Method() != http.MethodPut && ctx.Proxy().Method() != http.MethodPatch {
+					continue
+				}
+				switch contentType {
+				case http_context.FormData, http_context.MultipartForm:
 					if _, has := formParams[param.Name]; has {
 						switch param.Conflict {
 						case paramConvert:
@@ -98,23 +109,57 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 					} else {
 						formParams[param.Name] = []string{paramValue.(string)}
 					}
-				} else if strings.Contains(contentType, http_context.JSON) {
-					if _, has := bodyParams[param.Name]; has {
+				case http_context.JSON:
+					{
+						key := param.Name
+						if !strings.HasPrefix(param.Name, "$.") {
+							key = "$." + key
+						}
+						x, err := jp.ParseString(key)
+						if err != nil {
+							return 400, fmt.Errorf("parse key error: %v", err)
+						}
 						switch param.Conflict {
 						case paramConvert:
-							bodyParams[param.Name] = paramValue.(string)
-						case paramOrigin:
-						case paramError:
-							return clientErrStatusCode, errors.New(`[extra_params] "` + param.Name + `" has a conflict.`)
-						default:
-							bodyParams[param.Name] = paramValue
+							err = x.Set(bodyParams, param.Value)
+							if err != nil {
+								return 400, fmt.Errorf("set additional json param error: %v", err)
+							}
+						case paramOrigin, paramError:
+							{
+								result := x.Get(bodyParams)
+								if len(result) < 1 {
+									err = x.Set(bodyParams, param.Value)
+									if err != nil {
+										return 400, fmt.Errorf("set additional json param error: %v", err)
+									}
+								}
+								if param.Conflict == paramError {
+									return 400, fmt.Errorf(errorExist, param.Position, param.Name)
+								}
+							}
 						}
-					} else {
-						bodyParams[param.Name] = paramValue
 					}
 				}
-
 			}
+			//if strings.Contains(contentType, http_context.FormData) || strings.Contains(contentType, http_context.MultipartForm) {
+			//
+			//} else if strings.Contains(contentType, ) {
+			//	if _, has := bodyParams[param.Name]; has {
+			//		switch param.Conflict {
+			//		case paramConvert:
+			//			bodyParams[param.Name] = paramValue.(string)
+			//		case paramOrigin:
+			//		case paramError:
+			//			return clientErrStatusCode, errors.New(`[extra_params] "` + param.Name + `" has a conflict.`)
+			//		default:
+			//			bodyParams[param.Name] = paramValue
+			//		}
+			//	} else {
+			//		bodyParams[param.Name] = paramValue
+			//	}
+			//}
+
 		}
 	}
 	if strings.Contains(contentType, http_context.FormData) || strings.Contains(contentType, http_context.MultipartForm) {
