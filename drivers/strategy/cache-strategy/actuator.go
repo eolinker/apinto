@@ -79,9 +79,8 @@ func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) err
 	uri := httpCtx.Request().URI().RequestURI()
 
 	isCache := false
-	controlMap := parseCacheControl(httpCtx)
-	if !controlMap.NoCache() && controlMap.IsPublic() && httpCtx.Request().Method() == http.MethodGet {
-		isCache = true
+	if httpCtx.Request().Method() == http.MethodGet {
+		isCache = parseCacheControl(httpCtx).IsCache()
 	}
 
 	if isCache {
@@ -94,11 +93,6 @@ func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) err
 				continue
 			}
 			if handler.filter.Check(ctx) {
-
-				maxAge := controlMap.MaxAge()
-				if maxAge > 0 { //todo 已经设置过缓存时间
-
-				}
 
 				localCache := cache.GetCache(uri)
 				if localCache != nil {
@@ -177,7 +171,30 @@ func (c cacheControlMap) MaxAge() int {
 	return 0
 }
 
+func (c cacheControlMap) IsCache() bool {
+	if c.MaxAge() == 0 {
+		return false
+	}
+	if c.NoCache() {
+		return false
+	}
+	if !c.IsPublic() {
+		return false
+	}
+	if _, ok := c["no-store"]; ok {
+		return false
+	}
+	return true
+}
+
 func (c cacheControlMap) IsPublic() bool {
+	if _, ok := c["Authorization"]; ok {
+		if _, pOk := c["public"]; pOk {
+			return true
+		} else {
+			return false
+		}
+	}
 	//只要不是私有的 都算公有
 	if _, ok := c["private"]; ok {
 		return false
