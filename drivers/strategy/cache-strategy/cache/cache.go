@@ -16,12 +16,12 @@ type ResponseData struct {
 	Body   []byte
 }
 
-func SetCache(uri string, data *ResponseData, validTime int) {
+func SetResponseData(uri string, data *ResponseData, validTime int) {
 	bytes, _ := json.Marshal(data)
 	_ = freeCache.Set([]byte(uri), bytes, validTime)
 }
 
-func GetCache(uri string) *ResponseData {
+func GetResponseData(uri string) *ResponseData {
 	bytes, _ := freeCache.Get([]byte(uri))
 	data := new(ResponseData)
 	if err := json.Unmarshal(bytes, data); err != nil {

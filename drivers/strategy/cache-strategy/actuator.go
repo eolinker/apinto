@@ -77,14 +77,7 @@ func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) err
 		return err
 	}
 
-	uri := httpCtx.Request().URI().RequestURI()
-
-	isCache := false
 	if httpCtx.Request().Method() == http.MethodGet {
-		isCache = parseCacheControl(httpCtx).IsCache()
-	}
-
-	if isCache {
 		a.lock.RLock()
 		handlers := a.handlers
 		a.lock.RUnlock()
@@ -95,10 +88,12 @@ func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) err
 			}
 			if handler.filter.Check(ctx) {
 
-				localCache := cache.GetCache(uri)
-				if localCache != nil {
-					httpCtx.Response().SetBody(localCache.Body)
-					for key, val := range localCache.Header {
+				uri := httpCtx.Request().URI().RequestURI()
+				responseData := cache.GetResponseData(uri)
+
+				if responseData != nil {
+					httpCtx.Response().SetBody(responseData.Body)
+					for key, val := range responseData.Header {
 						httpCtx.Response().SetHeader(key, val)
 					}
 					return nil
@@ -109,23 +104,28 @@ func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) err
 							return err
 						}
 					}
+
 					httpCtx, err = http_service.Assert(ctx)
 					if err != nil {
 						return err
 					}
 
-					header := make(map[string]string)
-					for key, values := range httpCtx.Response().Headers() {
-						if len(values) > 0 {
-							header[key] = values[0]
+					//从cache-control中判断是否需要缓存
+					if parseCacheControl(httpCtx).IsCache() {
+						header := make(map[string]string)
+						for key, values := range httpCtx.Response().Headers() {
+							if len(values) > 0 {
+								header[key] = values[0]
+							}
 						}
+
+						responseData = &cache.ResponseData{
+							Header: header,
+							Body:   httpCtx.Response().GetBody(),
+						}
+						cache.SetResponseData(uri, responseData, handler.validTime)
 					}
 
-					localCache = &cache.ResponseData{
-						Header: header,
-						Body:   httpCtx.Response().GetBody(),
-					}
-					cache.SetCache(uri, localCache, handler.validTime)
 					return nil
 				}
 
@@ -206,7 +206,7 @@ func (c cacheControlMap) IsPublic() bool {
 func parseCacheControl(httpCtx http_service.IHttpContext) cacheControlMap {
 	cc := cacheControlMap{}
 
-	header := httpCtx.Request().Header().GetHeader("Cache-Control")
+	header := httpCtx.Response().GetHeader("Cache-Control")
 	for _, part := range strings.Split(header, ",") {
 		part = strings.Trim(part, " ")
 		if part == "" {
