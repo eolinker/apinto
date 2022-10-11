@@ -1,4 +1,4 @@
-package limiting_stragety
+package limiting_strategy
 
 import (
 	"github.com/eolinker/eosc"

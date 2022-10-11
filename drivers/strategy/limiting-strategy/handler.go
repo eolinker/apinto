@@ -1,4 +1,4 @@
-package limiting_stragety
+package limiting_strategy
 
 import (
 	"github.com/eolinker/apinto/metrics"
@@ -57,11 +57,12 @@ func NewLimitingHandler(conf *Config) (*LimitingHandler, error) {
 	mts := metrics.Parse(conf.Rule.Metrics)
 
 	return &LimitingHandler{
+		name:     conf.Name,
 		filter:   filter,
 		metrics:  mts,
-		stop:     conf.Stop,
 		query:    parseThreshold(conf.Rule.Query),
 		traffic:  parseThreshold(conf.Rule.Traffic),
 		priority: conf.Priority,
+		stop:     conf.Stop,
 	}, nil
 }
