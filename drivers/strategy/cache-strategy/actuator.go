@@ -20,6 +20,7 @@ func init() {
 	actuator := newtActuator()
 	actuatorSet = actuator
 	strategy.AddStrategyHandler(actuator)
+	cache.NewCache()
 }
 
 type ActuatorSet interface {
@@ -120,7 +121,7 @@ func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) err
 						}
 					}
 
-					localCache = &cache.Cache{
+					localCache = &cache.ResponseData{
 						Header: header,
 						Body:   httpCtx.Response().GetBody(),
 					}
