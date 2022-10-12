@@ -2,9 +2,12 @@ package cache
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/coocood/freecache"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"net/http"
+	"time"
 )
 
 var freeCache *freecache.Cache
@@ -14,8 +17,10 @@ func NewCache() {
 }
 
 type ResponseData struct {
-	Header map[string]string
-	Body   []byte
+	Header    http.Header
+	Body      []byte
+	ValidTime int
+	Now       time.Time // 缓存存放的时间
 }
 
 func (r *ResponseData) Complete(ctx eocontext.EoContext) error {
@@ -25,8 +30,18 @@ func (r *ResponseData) Complete(ctx eocontext.EoContext) error {
 	}
 	httpCtx.Response().SetBody(r.Body)
 	for key, val := range r.Header {
-		httpCtx.Response().SetHeader(key, val)
+		if len(val) > 0 {
+			httpCtx.Response().SetHeader(key, val[0])
+		}
 	}
+	httpCtx.Response().SetHeader("Date", time.Now().Format(time.RFC822))
+
+	//计算Age  Age 的值通常接近于 0。表示此对象刚刚从原始服务器获取不久；其他的值则是表示代理服务器当前的系统时间与此应答中的通用头 Date 的值之差
+	age := int(time.Now().Sub(r.Now).Seconds())
+
+	httpCtx.Response().Headers().Set("Age", fmt.Sprintf("%d", age))
+	httpCtx.Response().Headers().Set("Cache-Control", fmt.Sprintf("%s=%d", "max-age", r.ValidTime))
+
 	return nil
 }
 
