@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	ErrorNoCache         = errors.New("no cache")
-	_            ICaches = (*_Proxy)(nil)
+	ErrorNoCache        = errors.New("no cache")
+	_            ICache = (*_Proxy)(nil)
 )
 var (
 	singCacheProxy *_Proxy
@@ -17,15 +17,15 @@ var (
 func init() {
 	singCacheProxy = newProxy(new(NoCache))
 }
-func Replace(caches ...ICache) {
+func ReplaceCacher(caches ...ICache) {
 	if len(caches) < 1 || caches[0] == nil {
-		singCacheProxy.ICache, singCacheProxy.had = new(NoCache), false
+		singCacheProxy.ICache = new(NoCache)
 		return
 	}
-	singCacheProxy.ICache, singCacheProxy.had = caches[0], false
+	singCacheProxy.ICache = caches[0]
 }
 
-func Cacher() ICaches {
+func Cacher() ICache {
 	return singCacheProxy
 }
 
@@ -38,17 +38,9 @@ type ICache interface {
 	GetDel(ctx context.Context, key string) ([]byte, error)
 	Del(ctx context.Context, keys ...string) (int64, error)
 }
-type ICaches interface {
-	ICache
-	HasCache() bool
-}
-type _Proxy struct {
-	had bool
-	ICache
-}
 
-func (p *_Proxy) HasCache() bool {
-	return p.had
+type _Proxy struct {
+	ICache
 }
 
 func newProxy(target ICache) *_Proxy {

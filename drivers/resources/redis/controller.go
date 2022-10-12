@@ -22,7 +22,7 @@ func (m *Controller) shutdown() {
 	oldClient := m.current
 	if oldClient != nil {
 		m.current = nil
-		resources.Replace()
+		resources.ReplaceCacher()
 		oldClient.client.Close()
 	}
 }
@@ -39,7 +39,7 @@ func (m *Controller) Set(conf interface{}) (err error) {
 		if len(m.config.Addrs) == 0 {
 			oldClient := m.current
 			if oldClient != nil {
-				resources.Replace()
+				resources.ReplaceCacher()
 				m.current = nil
 				oldClient.client.Close()
 			}
@@ -61,7 +61,7 @@ func (m *Controller) Set(conf interface{}) (err error) {
 		if env.Process() == eosc.ProcessWorker {
 			if m.current == nil {
 				m.current = newCacher(client)
-				resources.Replace(m.current)
+				resources.ReplaceCacher(m.current)
 			} else {
 				m.current.client = client
 			}
@@ -71,7 +71,7 @@ func (m *Controller) Set(conf interface{}) (err error) {
 	} else {
 		oldClient := m.current
 		if oldClient != nil {
-			resources.Replace()
+			resources.ReplaceCacher()
 			m.current = nil
 			oldClient.client.Close()
 		}
