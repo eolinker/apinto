@@ -77,65 +77,71 @@ func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) err
 		return err
 	}
 
-	if httpCtx.Request().Method() == http.MethodGet {
-		a.lock.RLock()
-		handlers := a.handlers
-		a.lock.RUnlock()
+	if httpCtx.Request().Method() != http.MethodGet {
+		return next.DoChain(ctx)
+	}
+	a.lock.RLock()
+	handlers := a.handlers
+	a.lock.RUnlock()
 
-		for _, handler := range handlers {
-			if handler.stop {
-				continue
+	for _, handler := range handlers {
+		if handler.stop {
+			continue
+		}
+		if handler.filter.Check(httpCtx) {
+
+			uri := httpCtx.Request().URI().RequestURI()
+			responseData := cache.GetResponseData(uri)
+
+			if responseData != nil {
+				httpCtx.SetCompleteHandler(responseData)
+			} else {
+				httpCtx.SetCompleteHandler(NewCacheGetCompleteHandler(httpCtx.GetComplete(), handler.validTime))
 			}
-			if handler.filter.Check(ctx) {
-
-				uri := httpCtx.Request().URI().RequestURI()
-				responseData := cache.GetResponseData(uri)
-
-				if responseData != nil {
-					httpCtx.Response().SetBody(responseData.Body)
-					for key, val := range responseData.Header {
-						httpCtx.Response().SetHeader(key, val)
-					}
-					return nil
-				} else {
-					//拿不到说明已经过期了
-					if next != nil {
-						if err = next.DoChain(ctx); err != nil {
-							return err
-						}
-					}
-
-					httpCtx, err = http_service.Assert(ctx)
-					if err != nil {
-						return err
-					}
-
-					//从cache-control中判断是否需要缓存
-					if parseCacheControl(httpCtx).IsCache() {
-						header := make(map[string]string)
-						for key, values := range httpCtx.Response().Headers() {
-							if len(values) > 0 {
-								header[key] = values[0]
-							}
-						}
-
-						responseData = &cache.ResponseData{
-							Header: header,
-							Body:   httpCtx.Response().GetBody(),
-						}
-						cache.SetResponseData(uri, responseData, handler.validTime)
-					}
-
-					return nil
-				}
-
-			}
-
+			break
 		}
 	}
 
 	if next != nil {
 		return next.DoChain(ctx)
+	}
+	return nil
+}
+
+type CacheGetCompleteHandler struct {
+	orgHandler eocontext.CompleteHandler
+	validTime  int
+}
+
+func NewCacheGetCompleteHandler(orgHandler eocontext.CompleteHandler, validTime int) *CacheGetCompleteHandler {
+	return &CacheGetCompleteHandler{orgHandler: orgHandler, validTime: validTime}
+}
+
+func (c *CacheGetCompleteHandler) Complete(ctx eocontext.EoContext) error {
+
+	err := c.orgHandler.Complete(ctx)
+	if err != nil {
+		return err
+	}
+	httpCtx, err2 := http_service.Assert(ctx)
+	if err2 != nil {
+		return nil
+	}
+
+	//从cache-control中判断是否需要缓存
+	if parseCacheControl(httpCtx).IsCache() {
+		header := make(map[string]string)
+		for key, values := range httpCtx.Response().Headers() {
+			if len(values) > 0 {
+				header[key] = values[0]
+			}
+		}
+
+		responseData := &cache.ResponseData{
+			Header: header,
+			Body:   httpCtx.Response().GetBody(),
+		}
+		cache.SetResponseData(httpCtx.Request().URI().RequestURI(), responseData, c.validTime)
 	}
 	return nil
 }
