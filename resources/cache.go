@@ -19,7 +19,10 @@ func init() {
 }
 func ReplaceCacher(caches ...ICache) {
 	if len(caches) < 1 || caches[0] == nil {
-		singCacheProxy.ICache = new(NoCache)
+		if singCacheProxy.ICache != nil {
+			singCacheProxy.ICache.Close()
+		}
+		singCacheProxy.ICache = NewCacher()
 		return
 	}
 	singCacheProxy.ICache = caches[0]
@@ -37,6 +40,7 @@ type ICache interface {
 	Get(ctx context.Context, key string) ([]byte, error)
 	GetDel(ctx context.Context, key string) ([]byte, error)
 	Del(ctx context.Context, keys ...string) (int64, error)
+	Close() error
 }
 
 type _Proxy struct {

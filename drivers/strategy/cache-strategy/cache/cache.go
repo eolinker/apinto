@@ -11,12 +11,6 @@ import (
 	"time"
 )
 
-var iCache resources.ICache
-
-func init() {
-	iCache = resources.NewCacher()
-}
-
 type ResponseData struct {
 	Header    http.Header
 	Body      []byte
@@ -48,11 +42,11 @@ func (r *ResponseData) Complete(ctx eocontext.EoContext) error {
 
 func SetResponseData(uri string, data *ResponseData, validTime int) {
 	bytes, _ := json.Marshal(data)
-	_ = iCache.Set(context.TODO(), uri, bytes, time.Second*time.Duration(validTime))
+	_ = resources.Cacher().Set(context.TODO(), uri, bytes, time.Second*time.Duration(validTime))
 }
 
 func GetResponseData(uri string) *ResponseData {
-	bytes, _ := iCache.Get(context.TODO(), uri)
+	bytes, _ := resources.Cacher().Get(context.TODO(), uri)
 	data := new(ResponseData)
 	if err := json.Unmarshal(bytes, data); err != nil {
 		return nil

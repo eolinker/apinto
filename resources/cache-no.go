@@ -6,8 +6,17 @@ import (
 	"time"
 )
 
+var (
+	_ ICache = (*NoCache)(nil)
+)
+
 type NoCache struct {
 	client *freecache.Cache
+}
+
+func (n *NoCache) Close() error {
+	n.client.Clear()
+	return nil
 }
 
 func (n *NoCache) Set(ctx context.Context, key string, value []byte, expiration time.Duration) error {
