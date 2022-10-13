@@ -36,46 +36,40 @@ func (m *Controller) Set(conf interface{}) (err error) {
 			return nil
 		}
 
-		if len(m.config.Addrs) == 0 {
-			oldClient := m.current
-			if oldClient != nil {
-				resources.ReplaceCacher()
-				m.current = nil
-				oldClient.client.Close()
+		if m.config.Enable && len(m.config.Addrs) > 0 {
+
+			client := redis.NewClusterClient(&redis.ClusterOptions{
+				Addrs:    m.config.Addrs,
+				Username: m.config.Username,
+				Password: m.config.Password,
+			})
+
+			if res, errPing := client.Ping(context.Background()).Result(); errPing != nil {
+				log.Info("ping redis:", res, " error:", err)
+				client.Close()
+				return errPing
+			}
+
+			if env.Process() == eosc.ProcessWorker {
+				if m.current == nil {
+					m.current = newCacher(client)
+					resources.ReplaceCacher(m.current)
+				} else {
+					m.current.client = client
+				}
+			} else {
+				client.Close()
 			}
 			return nil
 		}
-
-		client := redis.NewClusterClient(&redis.ClusterOptions{
-			Addrs:    m.config.Addrs,
-			Username: m.config.Username,
-			Password: m.config.Password,
-		})
-
-		if res, errPing := client.Ping(context.Background()).Result(); errPing != nil {
-			log.Info("ping redis:", res, " error:", err)
-			client.Close()
-			return errPing
-		}
-
-		if env.Process() == eosc.ProcessWorker {
-			if m.current == nil {
-				m.current = newCacher(client)
-				resources.ReplaceCacher(m.current)
-			} else {
-				m.current.client = client
-			}
-		} else {
-			client.Close()
-		}
-	} else {
-		oldClient := m.current
-		if oldClient != nil {
-			resources.ReplaceCacher()
-			m.current = nil
-			oldClient.client.Close()
-		}
 	}
+	oldClient := m.current
+	if oldClient != nil {
+		resources.ReplaceCacher()
+		m.current = nil
+		oldClient.client.Close()
+	}
+
 	return nil
 }
 
