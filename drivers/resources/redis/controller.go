@@ -51,7 +51,6 @@ func (m *Controller) Set(conf interface{}) (err error) {
 			Username: m.config.Username,
 			Password: m.config.Password,
 		})
-
 		if res, errPing := client.Ping(context.Background()).Result(); errPing != nil {
 			log.Info("ping redis:", res, " error:", err)
 			client.Close()

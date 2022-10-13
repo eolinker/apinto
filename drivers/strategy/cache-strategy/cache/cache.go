@@ -1,19 +1,20 @@
 package cache
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/coocood/freecache"
+	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"net/http"
 	"time"
 )
 
-var freeCache *freecache.Cache
+var iCache resources.ICache
 
-func NewCache() {
-	freeCache = freecache.NewCache(0)
+func init() {
+	iCache = resources.NewCacher()
 }
 
 type ResponseData struct {
@@ -47,11 +48,11 @@ func (r *ResponseData) Complete(ctx eocontext.EoContext) error {
 
 func SetResponseData(uri string, data *ResponseData, validTime int) {
 	bytes, _ := json.Marshal(data)
-	_ = freeCache.Set([]byte(uri), bytes, validTime)
+	_ = iCache.Set(context.TODO(), uri, bytes, time.Second*time.Duration(validTime))
 }
 
 func GetResponseData(uri string) *ResponseData {
-	bytes, _ := freeCache.Get([]byte(uri))
+	bytes, _ := iCache.Get(context.TODO(), uri)
 	data := new(ResponseData)
 	if err := json.Unmarshal(bytes, data); err != nil {
 		return nil

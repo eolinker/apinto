@@ -21,7 +21,6 @@ func init() {
 	actuator := newtActuator()
 	actuatorSet = actuator
 	strategy.AddStrategyHandler(actuator)
-	cache.NewCache()
 }
 
 type ActuatorSet interface {
@@ -90,9 +89,6 @@ func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) err
 	a.lock.RUnlock()
 
 	for _, handler := range handlers {
-		if handler.stop {
-			continue
-		}
 		if handler.filter.Check(httpCtx) {
 
 			uri := httpCtx.Request().URI().RequestURI()
