@@ -29,6 +29,7 @@ import (
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
 	service "github.com/eolinker/apinto/drivers/service"
 	cache_strategy "github.com/eolinker/apinto/drivers/strategy/cache-strategy"
+	grey_strategy "github.com/eolinker/apinto/drivers/strategy/grey-strategy"
 	limiting_strategy "github.com/eolinker/apinto/drivers/strategy/limiting-strategy"
 	template "github.com/eolinker/apinto/drivers/template"
 
@@ -92,4 +93,5 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	strategy.Register(extenderRegister)
 	limiting_strategy.Register(extenderRegister)
 	cache_strategy.Register(extenderRegister)
+	grey_strategy.Register(extenderRegister)
 }
