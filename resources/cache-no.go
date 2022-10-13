@@ -26,12 +26,11 @@ func (n *NoCache) Set(ctx context.Context, key string, value []byte, expiration 
 
 func (n *NoCache) SetNX(ctx context.Context, key string, value []byte, expiration time.Duration) (bool, error) {
 
-	_, err := n.client.GetOrSet([]byte(key), value, int(expiration.Seconds()))
+	old, err := n.client.GetOrSet([]byte(key), value, int(expiration.Seconds()))
 	if err != nil {
 		return false, err
 	}
-
-	return true, nil
+	return old == nil, nil
 }
 
 func (n *NoCache) DecrBy(ctx context.Context, key string, decrement int64) (int64, error) {
