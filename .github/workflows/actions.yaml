@@ -21,9 +21,6 @@ jobs:
         uses: actions/checkout@v3
       - name: GoTidy
         run: go mod tidy
-      - name: Pack  #运行打包脚本
-        run: |
-          ./build/cmd/package.sh ${{ steps.vars.outputs.tag }}
       - name: Create archives on Release   #创建各种系统架构下的二进制包并上传至release assets
         uses: goreleaser/goreleaser-action@v3.1.0
         with:
