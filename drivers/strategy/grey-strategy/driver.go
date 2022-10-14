@@ -15,8 +15,13 @@ func checkConfig(conf *Config) error {
 
 	if conf.Rule.Distribution == percent && (conf.Rule.Percent < 0 || conf.Rule.Percent > 10000) {
 		return fmt.Errorf("percent value %d not allow ", conf.Rule.Percent)
+	} else if conf.Rule.Distribution == match && len(conf.Rule.Matching) == 0 {
+		return fmt.Errorf("matching rule len is 0 ")
 	}
 
+	if len(conf.Rule.Nodes) == 0 {
+		return fmt.Errorf("nodes len is 0 ")
+	}
 	//检查灰度节点是否正确
 	for _, node := range conf.Rule.Nodes {
 		if strings.Count(node, "http") > 0 || strings.Count(node, "https") > 0 {

@@ -9,12 +9,15 @@ import (
 )
 
 type GreyHandler struct {
-	name       string
-	filter     strategy.IFilter
-	priority   int
-	stop       bool
-	rule       *ruleHandler
-	ruleFilter strategy.IFilter
+	name     string
+	filter   strategy.IFilter
+	priority int
+	stop     bool
+	rule     *ruleHandler
+}
+
+type greyMatch interface {
+	Match(ctx eocontext.EoContext) bool
 }
 
 type ruleHandler struct {
@@ -23,8 +26,24 @@ type ruleHandler struct {
 	keepSession    bool
 	nodes          []eocontext.INode
 	distribution   string
-	flowRobin      *Robin
-	matching       []*matchingHandler
+	greyMatch      greyMatch
+}
+
+type ruleGreyFlow struct {
+	flowRobin *Robin
+}
+
+type ruleGreyMatch struct {
+	ruleFilter strategy.IFilter
+}
+
+func (r *ruleGreyFlow) Match(ctx eocontext.EoContext) bool {
+	flow := r.flowRobin.Select()
+	return flow.GetId() == 1
+}
+
+func (r *ruleGreyMatch) Match(ctx eocontext.EoContext) bool {
+	return r.ruleFilter.Check(ctx)
 }
 
 type matchingHandler struct {
@@ -113,30 +132,7 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 		distribution:   conf.Rule.Distribution,
 	}
 
-	matchHandlers := make([]*matchingHandler, 0)
-	ruleFilter := make(matchingHandlerFilters, 0)
-	for _, matching := range conf.Rule.Matching {
-
-		check, err := checker.Parse(matching.Value)
-		if err != nil {
-			return nil, err
-		}
-
-		matchingHandlerVal := &matchingHandler{
-			Type:    matching.Type,
-			name:    matching.Name,
-			value:   matching.Value,
-			checker: check,
-		}
-
-		matchHandlers = append(matchHandlers, matchingHandlerVal)
-		ruleFilter = append(ruleFilter, matchingHandlerVal)
-	}
-	rule.matching = matchHandlers
-
-	//robin算法所需要的数据
 	if conf.Rule.Distribution == percent {
-
 		greyFlow := &flowHandler{
 			id:     1,
 			weight: conf.Rule.Percent,
@@ -145,17 +141,35 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 			id:     2,
 			weight: 10000 - greyFlow.weight,
 		}
-
 		//总权重10000
-		rule.flowRobin = NewRobin(greyFlow, normalFlow)
+		rule.greyMatch = &ruleGreyFlow{flowRobin: NewRobin(greyFlow, normalFlow)}
+	} else {
+		ruleFilter := make(matchingHandlerFilters, 0)
+		for _, matching := range conf.Rule.Matching {
+
+			check, err := checker.Parse(matching.Value)
+			if err != nil {
+				return nil, err
+			}
+
+			matchingHandlerVal := &matchingHandler{
+				Type:    matching.Type,
+				name:    matching.Name,
+				value:   matching.Value,
+				checker: check,
+			}
+
+			ruleFilter = append(ruleFilter, matchingHandlerVal)
+		}
+
+		rule.greyMatch = &ruleGreyMatch{ruleFilter: ruleFilter}
 	}
 
 	return &GreyHandler{
-		name:       conf.Name,
-		filter:     filter,
-		priority:   conf.Priority,
-		stop:       conf.Stop,
-		rule:       rule,
-		ruleFilter: ruleFilter,
+		name:     conf.Name,
+		filter:   filter,
+		priority: conf.Priority,
+		stop:     conf.Stop,
+		rule:     rule,
 	}, nil
 }

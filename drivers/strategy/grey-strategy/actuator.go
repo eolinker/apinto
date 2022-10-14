@@ -13,7 +13,7 @@ var (
 	actuatorSet ActuatorSet
 )
 
-const cookieName = "grey-cookie"
+const cookieName = "grey-cookie-%s"
 
 func init() {
 	actuator := newtActuator()
@@ -123,41 +123,22 @@ func (g *GreyBalanceHandler) Select(ctx eocontext.EoContext) (eocontext.INode, e
 		return nil, err
 	}
 
+	cookieKey := fmt.Sprintf(cookieName, g.greyHandler.name)
+
 	if g.greyHandler.rule.keepSession {
-		cookie := httpCtx.Request().Header().GetCookie(cookieName)
-		if cookie != "" {
+		cookie := httpCtx.Request().Header().GetCookie(cookieKey)
+		if cookie == grey {
 			return g.greyHandler.selectNodes(), nil
-		}
-	}
-
-	if g.greyHandler.rule.distribution == percent {
-
-		//round-robin算法判断是走灰度流量还是正常流量
-		flow := g.greyHandler.rule.flowRobin.Select()
-
-		if flow.GetId() == 1 { //灰度流量
-			if g.greyHandler.rule.keepSession {
-				httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%s", cookieName, cookieName))
-			}
-			return g.greyHandler.selectNodes(), nil
-		}
-
-	} else {
-
-		//按匹配规则
-		if !g.greyHandler.ruleFilter.Check(ctx) {
-			//匹配失败走正常节点
+		} else if cookie == normal {
 			return g.orgHandler.Select(ctx)
 		}
-
-		//匹配成功
-		if g.greyHandler.rule.keepSession {
-			httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%s", cookieName, cookieName))
-		}
-
-		return g.greyHandler.selectNodes(), nil
 	}
 
-	//走正常节点
-	return g.orgHandler.Select(ctx)
+	if g.greyHandler.rule.greyMatch.Match(ctx) { //灰度
+		httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%v", cookieKey, grey))
+		return g.greyHandler.selectNodes(), nil
+	} else {
+		httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%v", cookieKey, normal))
+		return g.orgHandler.Select(ctx)
+	}
 }

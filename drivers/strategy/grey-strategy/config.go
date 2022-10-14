@@ -11,6 +11,8 @@ import (
 const (
 	percent = "percent"
 	match   = "match"
+	grey    = "grey"
+	normal  = "normal"
 )
 
 type Config struct {
