@@ -123,6 +123,18 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "限流策略",
 					Desc:  "限流策略",
 				},
+				{
+					Id:    "eolinker.com:apinto:strategy-cache",
+					Name:  "cache",
+					Label: "缓存策略",
+					Desc:  "缓存策略",
+				},
+				{
+					Id:    "eolinker.com:apinto:strategy-grey",
+					Name:  "grey",
+					Label: "灰度策略",
+					Desc:  "灰度策略",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},

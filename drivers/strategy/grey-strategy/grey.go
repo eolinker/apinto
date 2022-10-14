@@ -1,4 +1,4 @@
-package limiting_stragety
+package grey_strategy
 
 import (
 	"fmt"
@@ -7,28 +7,28 @@ import (
 )
 
 var (
-	_ eosc.IWorker        = (*Limiting)(nil)
-	_ eosc.IWorkerDestroy = (*Limiting)(nil)
+	_ eosc.IWorker        = (*Grey)(nil)
+	_ eosc.IWorkerDestroy = (*Grey)(nil)
 )
 
-type Limiting struct {
+type Grey struct {
 	id        string
 	name      string
-	handler   *LimitingHandler
+	handler   *GreyHandler
 	config    *Config
 	isRunning int
 }
 
-func (l *Limiting) Destroy() error {
+func (l *Grey) Destroy() error {
 	controller.Del(l.id)
 	return nil
 }
 
-func (l *Limiting) Id() string {
+func (l *Grey) Id() string {
 	return l.id
 }
 
-func (l *Limiting) Start() error {
+func (l *Grey) Start() error {
 	if l.isRunning == 0 {
 		l.isRunning = 1
 		actuatorSet.Set(l.id, l.handler)
@@ -37,7 +37,7 @@ func (l *Limiting) Start() error {
 	return nil
 }
 
-func (l *Limiting) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+func (l *Grey) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	conf, ok := v.(*Config)
 	if !ok {
 		return eosc.ErrorConfigIsNil
@@ -45,11 +45,12 @@ func (l *Limiting) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker)
 	if conf.Priority > 999 || conf.Priority < 1 {
 		return fmt.Errorf("priority value %d not allow ", conf.Priority)
 	}
+
 	confCore := conf
 	if reflect.DeepEqual(l.config, confCore) {
 		return nil
 	}
-	handler, err := NewLimitingHandler(confCore)
+	handler, err := NewGreyHandler(confCore)
 	if err != nil {
 		return err
 	}
@@ -61,7 +62,7 @@ func (l *Limiting) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker)
 	return nil
 }
 
-func (l *Limiting) Stop() error {
+func (l *Grey) Stop() error {
 	if l.isRunning != 0 {
 		l.isRunning = 0
 		actuatorSet.Del(l.id)
@@ -70,6 +71,6 @@ func (l *Limiting) Stop() error {
 	return nil
 }
 
-func (l *Limiting) CheckSkill(skill string) bool {
+func (l *Grey) CheckSkill(skill string) bool {
 	return false
 }

@@ -2,12 +2,26 @@ package redis
 
 import (
 	"context"
+	"github.com/eolinker/apinto/resources"
 	"github.com/go-redis/redis/v8"
 	"time"
 )
 
+var (
+	_ resources.ICache = (*_Cacher)(nil)
+)
+
 type _Cacher struct {
 	client *redis.ClusterClient
+}
+
+func (r *_Cacher) Close() error {
+	if r.client == nil {
+		e := r.client.Close()
+		r.client = nil
+		return e
+	}
+	return nil
 }
 
 func (r *_Cacher) Set(ctx context.Context, key string, value []byte, expiration time.Duration) error {

@@ -41,12 +41,12 @@ func (I *IPHandler) Start() error {
 }
 
 func (I *IPHandler) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-confObj, err := I.check(conf)
-if err != nil {
-return err
-}
-I.filter = confObj.genFilter()
-return nil
+	confObj, err := I.check(conf)
+	if err != nil {
+		return err
+	}
+	I.filter = confObj.genFilter()
+	return nil
 }
 
 func (I *IPHandler) Stop() error {

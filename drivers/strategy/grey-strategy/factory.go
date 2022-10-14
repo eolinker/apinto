@@ -1,4 +1,4 @@
-package limiting_stragety
+package grey_strategy
 
 import (
 	"github.com/eolinker/eosc"
@@ -7,7 +7,7 @@ import (
 	"reflect"
 )
 
-const Name = "strategy-limiting"
+const Name = "strategy-grey"
 
 var (
 	configType = reflect.TypeOf((*Config)(nil))
@@ -17,7 +17,7 @@ var (
 func Register(register eosc.IExtenderDriverRegister) {
 
 	register.RegisterExtenderDriver(Name, newFactory())
-	setting.RegisterSetting("strategies-limiting", controller)
+	setting.RegisterSetting("strategies-grey", controller)
 }
 
 type factory struct {
