@@ -28,8 +28,6 @@ jobs:
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: List files
-        run: ls -a dist/ && echo ${{ secrets.GITHUB_TOKEN }}
   dockerImage:
     needs: [releasePackage]
     name: buildDockerImage
