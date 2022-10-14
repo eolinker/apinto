@@ -1,7 +1,6 @@
 package consul
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/eolinker/apinto/discovery"
@@ -75,19 +74,7 @@ func getNodesFromClient(client *api.Client, service string) []discovery.INode {
 
 	nodes := make([]discovery.INode, 0, len(serviceEntryArr))
 	for _, serviceEntry := range serviceEntryArr {
-		nodeAddr := serviceEntry.Node.Address
-		addrSlide := append(strings.Split(nodeAddr, ":"))
-		ip := addrSlide[0]
-		var port int
-		if len(addrSlide) > 1 {
-			port, err = strconv.Atoi(addrSlide[1])
-			if err != nil {
-				log.Error(err)
-				continue
-			}
-		}
-
-		newNode := discovery.NewNode(serviceEntry.Service.Meta, serviceEntry.Node.ID, ip, port)
+		newNode := discovery.NewNode(serviceEntry.Service.Meta, serviceEntry.Node.ID, serviceEntry.Service.Address, serviceEntry.Service.Port)
 		nodes = append(nodes, newNode)
 	}
 
