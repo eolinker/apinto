@@ -16,8 +16,10 @@ builds:
       - v1
     targets:
       - linux_arm64
+      - linux_amd64
       - linux_386
       - darwin_arm64
+      - darwin_amd64
     dir: ./app/apinto
     main: .
     binary: apinto
