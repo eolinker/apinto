@@ -59,7 +59,7 @@ func NewFactory() auth.IAuthFactory {
 	typ := reflect.TypeOf((*Config)(nil))
 	render, _ := schema.Generate(typ, nil)
 
-	return &factory{configType: typ, render: render}
+	return &factory{configType: typ, render: render, userType: reflect.TypeOf((*User)(nil))}
 }
 
 func toId(tokenName, position string) string {

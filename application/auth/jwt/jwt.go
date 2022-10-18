@@ -63,6 +63,7 @@ func (j *jwt) Set(app application.IApp, users []application.ITransformConfig) {
 			HideCredential: v.HideCredential,
 			TokenName:      j.tokenName,
 			Position:       j.position,
+			App:            app,
 		})
 	}
 	j.users.Set(app.Id(), infos)

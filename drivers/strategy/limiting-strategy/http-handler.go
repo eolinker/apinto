@@ -1,8 +1,8 @@
-package limiting_stragety
+package limiting_strategy
 
 import (
 	"errors"
-	"github.com/eolinker/apinto/drivers/strategy/limiting-stragety/scalar"
+	"github.com/eolinker/apinto/drivers/strategy/limiting-strategy/scalar"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"

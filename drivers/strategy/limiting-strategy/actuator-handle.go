@@ -1,7 +1,7 @@
-package limiting_stragety
+package limiting_strategy
 
 import (
-	"github.com/eolinker/apinto/drivers/strategy/limiting-stragety/scalar"
+	"github.com/eolinker/apinto/drivers/strategy/limiting-strategy/scalar"
 	"github.com/eolinker/eosc/eocontext"
 )
 
