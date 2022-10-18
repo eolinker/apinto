@@ -3,6 +3,8 @@ package resources
 import (
 	"context"
 	"github.com/coocood/freecache"
+	"github.com/patrickmn/go-cache"
+	"sync"
 	"time"
 )
 
@@ -11,7 +13,16 @@ var (
 )
 
 type NoCache struct {
-	client *freecache.Cache
+	tx              sync.Mutex
+	client          *freecache.Cache
+	comparableCache *cache.Cache
+}
+
+func (n *NoCache) Tx(ctx context.Context, f func(c ICache) error) error {
+	n.tx.Lock()
+	defer n.tx.Unlock()
+	return f(n)
+
 }
 
 func (n *NoCache) Close() error {
@@ -34,6 +45,7 @@ func (n *NoCache) SetNX(ctx context.Context, key string, value []byte, expiratio
 }
 
 func (n *NoCache) DecrBy(ctx context.Context, key string, decrement int64) (int64, error) {
+
 	return 0, ErrorNoCache
 }
 
