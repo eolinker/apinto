@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/Shopify/sarama v1.32.0
+	github.com/coocood/freecache v1.2.2
 	github.com/eolinker/eosc v0.7.1
 	github.com/go-basic/uuid v1.0.0
 	github.com/go-redis/redis/v8 v8.11.5
