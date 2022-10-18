@@ -14,6 +14,7 @@ type visitHandler struct {
 
 type ruleHandler struct {
 	visitRule    VisitRule
+	visit        bool
 	isContinue   bool
 	effectFilter strategy.IFilter
 }
@@ -31,6 +32,7 @@ func newVisitHandler(conf *Config) (*visitHandler, error) {
 
 	rule := ruleHandler{
 		visitRule:    conf.Rule.VisitRule,
+		visit:        conf.Rule.VisitRule == VisitRuleAllow,
 		isContinue:   conf.Rule.Continue,
 		effectFilter: effectFilter,
 	}

@@ -83,26 +83,18 @@ func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) err
 		if !handler.filter.Check(httpCtx) {
 			continue
 		}
-		//允许规则为访问
-		if handler.rule.visitRule == VisitRuleAllow {
-			if !handler.rule.effectFilter.Check(ctx) {
-				httpCtx.Response().SetStatus(403, "")
-				return nil
-			}
-			if handler.rule.isContinue {
-				continue
-			}
-			break
-		}
-		//访问规则为拒绝
-		if handler.rule.effectFilter.Check(ctx) {
+
+		//第一个判断条件为访问规则必须是允许,并且生效范围检测出是黑名单                 第二个判断条件为访问规则必须是拒绝,并且生效返回检测出是黑名单
+		if (handler.rule.visit && !handler.rule.effectFilter.Check(ctx)) || (!handler.rule.visit && handler.rule.effectFilter.Check(ctx)) {
 			httpCtx.Response().SetStatus(403, "")
 			return nil
 		}
+
 		if handler.rule.isContinue {
 			continue
 		}
 		break
+
 	}
 
 	if next != nil {
