@@ -14,9 +14,9 @@ type Config struct {
 	Service  eosc.RequireId `json:"service" yaml:"service" skill:"github.com/eolinker/apinto/service.service.IService" required:"true" label:"目标服务"`
 	Template eosc.RequireId `json:"template" yaml:"template" skill:"github.com/eolinker/apinto/template.template.ITemplate" required:"false" label:"插件模版"`
 	Disable  bool           `json:"disable" yaml:"disable" label:"禁用路由"`
-	Plugins  plugin.Plugins `json:"plugins" yaml:"plugins" label:"插件配置"`
 	Retry    int            `json:"retry" label:"重试次数" yaml:"retry"`
-	TimeOut  int            `json:"time_out" label:"超时时间"`
+	TimeOut  int            `json:"time_out" label:"超时时间" minimum:"1" description:"单位：s" default:"2000"`
+	Plugins  plugin.Plugins `json:"plugins" yaml:"plugins" label:"插件列表"`
 }
 
 //Rule 规则
