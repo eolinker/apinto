@@ -22,8 +22,6 @@ type ICache interface {
 	GetDel(ctx context.Context, key string) StringResult
 	Del(ctx context.Context, keys ...string) IntResult
 	Tx() TX
-
-	//Close() error
 }
 type TX interface {
 	ICache

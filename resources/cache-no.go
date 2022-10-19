@@ -9,8 +9,25 @@ import (
 )
 
 var (
-	_ ICache = (*NoCache)(nil)
+	lock       sync.RWMutex
+	localCache ICache = (*NoCache)(nil)
 )
+
+func LocalCache() ICache {
+	lock.RLock()
+	cache := localCache
+	lock.RUnlock()
+	if cache != nil {
+		return cache
+	}
+	lock.Lock()
+	defer lock.Unlock()
+	if localCache != nil {
+		return localCache
+	}
+	localCache = newCacher()
+	return localCache
+}
 
 type NoCache struct {
 	txLock sync.Mutex
@@ -138,6 +155,6 @@ func (n *NoCache) Del(ctx context.Context, keys ...string) IntResult {
 	return NewIntResult(count, nil)
 }
 
-func NewCacher() *NoCache {
+func newCacher() *NoCache {
 	return &NoCache{client: freecache.NewCache(0), keyLocks: make(map[string]*sync.Mutex)}
 }
