@@ -2,16 +2,11 @@ package resources
 
 import (
 	"context"
-	"errors"
-	"github.com/eolinker/eosc/utils/config"
 	"time"
 	"unsafe"
 )
 
-var CacheSkill = config.TypeNameOf(ICache(nil))
-var (
-	ErrorNoCache = errors.New("no cache")
-)
+var CacheSkill = "github.com/eolinker/apinto/resources.resources.ICache"
 
 type ICache interface {
 	Set(ctx context.Context, key string, value []byte, expiration time.Duration) StatusResult

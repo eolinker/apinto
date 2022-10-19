@@ -9,24 +9,25 @@ import (
 )
 
 var (
-	lock       sync.RWMutex
 	localCache ICache = (*NoCache)(nil)
 )
+var (
+	once       sync.Once
+	LocalCache func() ICache
+)
 
-func LocalCache() ICache {
-	lock.RLock()
-	cache := localCache
-	lock.RUnlock()
-	if cache != nil {
-		return cache
-	}
-	lock.Lock()
-	defer lock.Unlock()
-	if localCache != nil {
+func init() {
+	LocalCache = func() ICache {
+
+		once.Do(func() {
+			localCache = newCacher()
+			LocalCache = func() ICache {
+				return localCache
+			}
+		})
 		return localCache
 	}
-	localCache = newCacher()
-	return localCache
+
 }
 
 type NoCache struct {

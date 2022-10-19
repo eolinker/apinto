@@ -10,31 +10,26 @@ const (
 	Name = "strategy-plugin-cache"
 )
 
+var (
+	configType = reflect.TypeOf((*Config)(nil))
+	render, _  = schema.Generate(configType, nil)
+)
+
 func Register(register eosc.IExtenderDriverRegister) {
 	register.RegisterExtenderDriver(Name, NewFactory())
 }
 func NewFactory() *factory {
-	return &factory{
-		configType: reflect.TypeOf((*Config)(nil)),
-	}
+	return &factory{}
 }
 
 type factory struct {
-	configType reflect.Type
 }
 
 func (f *factory) Render() interface{} {
-	render, err := schema.Generate(f.configType, nil)
-	if err != nil {
-		return nil
-	}
 	return render
-
 }
 
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 
-	return &driver{
-		configType: f.configType,
-	}, nil
+	return &driver{}, nil
 }

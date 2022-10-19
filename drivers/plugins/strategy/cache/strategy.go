@@ -10,11 +10,12 @@ import (
 type Strategy struct {
 	id    string
 	name  string
-	cache resources.ICache
+	cache *resources.CacheBuilder
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
-	return cache_strategy.DoStrategy(ctx, next, s.cache)
+
+	return cache_strategy.DoStrategy(ctx, next, s.cache.GET())
 }
 
 func (s *Strategy) Destroy() {
