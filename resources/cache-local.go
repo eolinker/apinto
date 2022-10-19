@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	localCache ICache = (*NoCache)(nil)
+	localCache ICache = (*cacheLocal)(nil)
 )
 var (
 	once       sync.Once
@@ -30,42 +30,42 @@ func init() {
 
 }
 
-type NoCache struct {
+type cacheLocal struct {
 	txLock sync.Mutex
 
 	keyLock  sync.Mutex
 	keyLocks map[string]*sync.Mutex
 	client   *freecache.Cache
 }
-type NoCacheTX struct {
-	*NoCache
+type cacheLocalTX struct {
+	*cacheLocal
 }
 
-func (n *NoCacheTX) Tx() TX {
+func (n *cacheLocalTX) Tx() TX {
 	return n
 }
-func (n *NoCache) Tx() TX {
+func (n *cacheLocal) Tx() TX {
 	n.txLock.Lock()
-	return &NoCacheTX{NoCache: n}
+	return &cacheLocalTX{cacheLocal: n}
 }
 
-func (n *NoCache) Exec(ctx context.Context) error {
+func (n *cacheLocal) Exec(ctx context.Context) error {
 	n.txLock.Unlock()
 	return nil
 }
 
-func (n *NoCache) Close() error {
+func (n *cacheLocal) Close() error {
 	n.client.Clear()
 	return nil
 }
 
-func (n *NoCache) Set(ctx context.Context, key string, value []byte, expiration time.Duration) StatusResult {
+func (n *cacheLocal) Set(ctx context.Context, key string, value []byte, expiration time.Duration) StatusResult {
 
 	err := n.client.Set([]byte(key), value, int(expiration.Seconds()))
 	return NewStatusResult(err)
 }
 
-func (n *NoCache) SetNX(ctx context.Context, key string, value []byte, expiration time.Duration) BoolResult {
+func (n *cacheLocal) SetNX(ctx context.Context, key string, value []byte, expiration time.Duration) BoolResult {
 
 	old, err := n.client.GetOrSet([]byte(key), value, int(expiration.Seconds()))
 	if err != nil {
@@ -74,11 +74,11 @@ func (n *NoCache) SetNX(ctx context.Context, key string, value []byte, expiratio
 	return NewBoolResult(old == nil, nil)
 }
 
-func (n *NoCache) DecrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) IntResult {
+func (n *cacheLocal) DecrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) IntResult {
 	return n.IncrBy(ctx, key, -decrement, expiration)
 }
 
-func (n *NoCache) IncrBy(ctx context.Context, key string, incr int64, expiration time.Duration) IntResult {
+func (n *cacheLocal) IncrBy(ctx context.Context, key string, incr int64, expiration time.Duration) IntResult {
 	n.keyLock.Lock()
 	lock, has := n.keyLocks[key]
 	if !has {
@@ -127,7 +127,7 @@ func ToBytes(v int64) []byte {
 	binary.LittleEndian.PutUint64(b[:], uint64(v))
 	return b[:]
 }
-func (n *NoCache) Get(ctx context.Context, key string) StringResult {
+func (n *cacheLocal) Get(ctx context.Context, key string) StringResult {
 	data, err := n.client.Get([]byte(key))
 	if err != nil {
 		return nil
@@ -136,7 +136,7 @@ func (n *NoCache) Get(ctx context.Context, key string) StringResult {
 
 }
 
-func (n *NoCache) GetDel(ctx context.Context, key string) StringResult {
+func (n *cacheLocal) GetDel(ctx context.Context, key string) StringResult {
 	bytes, err := n.client.Get([]byte(key))
 	if err != nil {
 		return NewStringResult("", err)
@@ -145,7 +145,7 @@ func (n *NoCache) GetDel(ctx context.Context, key string) StringResult {
 	return NewStringResultBytes(bytes, nil)
 }
 
-func (n *NoCache) Del(ctx context.Context, keys ...string) IntResult {
+func (n *cacheLocal) Del(ctx context.Context, keys ...string) IntResult {
 	var count int64 = 0
 	for _, key := range keys {
 		if n.client.Del([]byte(key)) {
@@ -156,6 +156,6 @@ func (n *NoCache) Del(ctx context.Context, keys ...string) IntResult {
 	return NewIntResult(count, nil)
 }
 
-func newCacher() *NoCache {
-	return &NoCache{client: freecache.NewCache(0), keyLocks: make(map[string]*sync.Mutex)}
+func newCacher() *cacheLocal {
+	return &cacheLocal{client: freecache.NewCache(0), keyLocks: make(map[string]*sync.Mutex)}
 }
