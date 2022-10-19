@@ -1,17 +1,20 @@
-package strategy
+package limiting
 
 import (
+	limiting_strategy "github.com/eolinker/apinto/drivers/strategy/limiting-strategy"
+	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 )
 
 type Strategy struct {
-	id   string
-	name string
+	id    string
+	name  string
+	cache resources.ICache
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
-	return nil
+	return limiting_strategy.DoStrategy(ctx, next, s.cache)
 }
 
 func (s *Strategy) Destroy() {

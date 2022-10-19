@@ -2,6 +2,7 @@ package limiting_strategy
 
 import (
 	"github.com/eolinker/apinto/drivers/strategy/limiting-strategy/scalar"
+	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/eocontext"
 	"sort"
 	"sync"
@@ -18,7 +19,7 @@ func init() {
 }
 
 type ActuatorSet interface {
-	eocontext.IFilter
+	Strategy(ctx eocontext.EoContext, next eocontext.IChain, cache resources.ICache) error
 	Set(id string, limiting *LimitingHandler)
 	Del(id string)
 }
@@ -69,7 +70,7 @@ func newActuator() *tActuatorSet {
 	}
 }
 
-func (a *tActuatorSet) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) error {
+func (a *tActuatorSet) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cache resources.ICache) error {
 
 	a.lock.RLock()
 	handlers := a.handlers
@@ -104,4 +105,8 @@ func (hs handlerListSort) Less(i, j int) bool {
 
 func (hs handlerListSort) Swap(i, j int) {
 	hs[i], hs[j] = hs[j], hs[i]
+}
+
+func DoStrategy(ctx eocontext.EoContext, next eocontext.IChain, cache resources.ICache) error {
+	return actuatorSet.Strategy(ctx, next, cache)
 }

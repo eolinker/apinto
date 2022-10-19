@@ -1,4 +1,4 @@
-package strategy
+package grey
 
 import (
 	"github.com/eolinker/eosc"
