@@ -1,4 +1,4 @@
-package grey
+package visit
 
 import (
 	"github.com/eolinker/eosc"
@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	Name = "strategy-plugin-grey"
+	Name = "strategy-plugin-visit"
 )
 
 func Register(register eosc.IExtenderDriverRegister) {

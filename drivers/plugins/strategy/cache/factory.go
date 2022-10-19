@@ -1,4 +1,4 @@
-package grey
+package cache
 
 import (
 	"github.com/eolinker/eosc"
@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	Name = "strategy-plugin-grey"
+	Name = "strategy-plugin-cache"
 )
 
 func Register(register eosc.IExtenderDriverRegister) {

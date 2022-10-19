@@ -32,6 +32,7 @@ import (
 	cache_strategy "github.com/eolinker/apinto/drivers/strategy/cache-strategy"
 	grey_strategy "github.com/eolinker/apinto/drivers/strategy/grey-strategy"
 	limiting_strategy "github.com/eolinker/apinto/drivers/strategy/limiting-strategy"
+	visit_strategy "github.com/eolinker/apinto/drivers/strategy/visit-strategy"
 	template "github.com/eolinker/apinto/drivers/template"
 
 	"github.com/eolinker/eosc"
@@ -96,4 +97,5 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	limiting_strategy.Register(extenderRegister)
 	cache_strategy.Register(extenderRegister)
 	grey_strategy.Register(extenderRegister)
+	visit_strategy.Register(extenderRegister)
 }

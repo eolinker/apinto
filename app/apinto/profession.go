@@ -135,6 +135,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "灰度策略",
 					Desc:  "灰度策略",
 				},
+				{
+					Id:    "eolinker.com:apinto:strategy-visit",
+					Name:  "visit",
+					Label: "访问策略",
+					Desc:  "访问策略",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},

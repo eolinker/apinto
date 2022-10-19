@@ -1,7 +1,7 @@
-package grey
+package visit
 
 import (
-	grey_strategy "github.com/eolinker/apinto/drivers/strategy/grey-strategy"
+	visit_strategy "github.com/eolinker/apinto/drivers/strategy/visit-strategy"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 )
@@ -12,7 +12,7 @@ type Strategy struct {
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
-	return grey_strategy.DoStrategy(ctx, next)
+	return visit_strategy.DoStrategy(ctx, next)
 }
 
 func (s *Strategy) Destroy() {
