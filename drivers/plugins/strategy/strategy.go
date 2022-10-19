@@ -1,7 +1,6 @@
 package strategy
 
 import (
-	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 )
@@ -12,7 +11,7 @@ type Strategy struct {
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
-	return strategy.Strategy(ctx, next)
+	return nil
 }
 
 func (s *Strategy) Destroy() {

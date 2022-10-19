@@ -39,13 +39,27 @@ func (r *Cmdable) SetNX(ctx context.Context, key string, value []byte, expiratio
 	return r.cmdable.SetNX(ctx, key, value, expiration)
 }
 
-func (r *Cmdable) DecrBy(ctx context.Context, key string, decrement int64) resources.IntResult {
+func (r *Cmdable) DecrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
+	pipeline := r.cmdable.Pipeline()
+	result := pipeline.DecrBy(ctx, key, decrement)
+	pipeline.Expire(ctx, key, expiration)
+	_, err := pipeline.Exec(ctx)
+	if err != nil {
+		return nil
+	}
+	return result
 
-	return r.cmdable.DecrBy(ctx, key, decrement)
 }
 
-func (r *Cmdable) IncrBy(ctx context.Context, key string, decrement int64) resources.IntResult {
-	return r.cmdable.IncrBy(ctx, key, decrement)
+func (r *Cmdable) IncrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
+	pipeline := r.cmdable.Pipeline()
+	result := pipeline.IncrBy(ctx, key, decrement)
+	pipeline.Expire(ctx, key, expiration)
+	_, err := pipeline.Exec(ctx)
+	if err != nil {
+		return nil
+	}
+	return result
 }
 
 func (r *Cmdable) Get(ctx context.Context, key string) resources.StringResult {

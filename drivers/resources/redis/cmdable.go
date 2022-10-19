@@ -31,11 +31,11 @@ func (e *Empty) SetNX(ctx context.Context, key string, value []byte, expiration 
 	return boolError
 }
 
-func (e *Empty) DecrBy(ctx context.Context, key string, decrement int64) resources.IntResult {
+func (e *Empty) DecrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
 	return intError
 }
 
-func (e *Empty) IncrBy(ctx context.Context, key string, decrement int64) resources.IntResult {
+func (e *Empty) IncrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
 	return intError
 }
 
@@ -44,8 +44,7 @@ func (e *Empty) Get(ctx context.Context, key string) resources.StringResult {
 }
 
 func (e *Empty) GetDel(ctx context.Context, key string) resources.StringResult {
-	//TODO implement me
-	panic("implement me")
+	return stringError
 }
 
 func (e *Empty) Del(ctx context.Context, keys ...string) resources.IntResult {

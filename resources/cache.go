@@ -16,8 +16,8 @@ var (
 type ICache interface {
 	Set(ctx context.Context, key string, value []byte, expiration time.Duration) StatusResult
 	SetNX(ctx context.Context, key string, value []byte, expiration time.Duration) BoolResult
-	DecrBy(ctx context.Context, key string, decrement int64) IntResult
-	IncrBy(ctx context.Context, key string, decrement int64) IntResult
+	DecrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) IntResult
+	IncrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) IntResult
 	Get(ctx context.Context, key string) StringResult
 	GetDel(ctx context.Context, key string) StringResult
 	Del(ctx context.Context, keys ...string) IntResult
@@ -63,7 +63,9 @@ type stringResult struct {
 func NewStringResult(val string, err error) *stringResult {
 	return &stringResult{err: err, val: val}
 }
-
+func NewStringResultBytes(value []byte, err error) *stringResult {
+	return &stringResult{val: *(*string)(unsafe.Pointer(&value)), err: err}
+}
 func (s *stringResult) Result() (string, error) {
 	return s.val, s.err
 }
