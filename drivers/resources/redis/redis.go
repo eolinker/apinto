@@ -7,59 +7,86 @@ import (
 	"time"
 )
 
-var (
-	_ resources.ICache = (*_Cacher)(nil)
-)
-
-type _Cacher struct {
-	client *redis.ClusterClient
+type statusResult struct {
+	statusCmd *redis.StatusCmd
 }
 
-func (r *_Cacher) Close() error {
-	if r.client == nil {
-		e := r.client.Close()
-		r.client = nil
-		return e
+func (s *statusResult) Result() error {
+	return s.statusCmd.Err()
+}
+
+type Cmdable struct {
+	cmdable redis.Cmdable
+}
+
+func (r *Cmdable) Tx() resources.TX {
+	tx := r.cmdable.TxPipeline()
+	return &TxPipeline{
+		Cmdable: Cmdable{
+			cmdable: tx,
+		},
+		p: tx,
 	}
-	return nil
 }
 
-func (r *_Cacher) Set(ctx context.Context, key string, value []byte, expiration time.Duration) error {
+func (r *Cmdable) Set(ctx context.Context, key string, value []byte, expiration time.Duration) resources.StatusResult {
 
-	return r.client.Set(ctx, key, value, expiration).Err()
+	return &statusResult{statusCmd: r.cmdable.Set(ctx, key, value, expiration)}
 }
 
-func (r *_Cacher) SetNX(ctx context.Context, key string, value []byte, expiration time.Duration) (bool, error) {
+func (r *Cmdable) SetNX(ctx context.Context, key string, value []byte, expiration time.Duration) resources.BoolResult {
 
-	return r.client.SetNX(ctx, key, value, expiration).Result()
+	return r.cmdable.SetNX(ctx, key, value, expiration)
 }
 
-func (r *_Cacher) DecrBy(ctx context.Context, key string, decrement int64) (int64, error) {
-
-	return r.client.DecrBy(ctx, key, decrement).Result()
-}
-
-func (r *_Cacher) IncrBy(ctx context.Context, key string, decrement int64) (int64, error) {
-	return r.client.IncrBy(ctx, key, decrement).Result()
-}
-
-func (r *_Cacher) Get(ctx context.Context, key string) ([]byte, error) {
-	return r.client.Get(ctx, key).Bytes()
-
-}
-
-func (r *_Cacher) GetDel(ctx context.Context, key string) ([]byte, error) {
-	return r.client.GetDel(ctx, key).Bytes()
-
-}
-
-func (r *_Cacher) Del(ctx context.Context, keys ...string) (int64, error) {
-	return r.client.Del(ctx, keys...).Result()
-}
-
-func newCacher(client *redis.ClusterClient) *_Cacher {
-	if client == nil {
+func (r *Cmdable) DecrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
+	pipeline := r.cmdable.Pipeline()
+	result := pipeline.DecrBy(ctx, key, decrement)
+	pipeline.Expire(ctx, key, expiration)
+	_, err := pipeline.Exec(ctx)
+	if err != nil {
 		return nil
 	}
-	return &_Cacher{client: client}
+	return result
+
+}
+
+func (r *Cmdable) IncrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
+	pipeline := r.cmdable.Pipeline()
+	result := pipeline.IncrBy(ctx, key, decrement)
+	pipeline.Expire(ctx, key, expiration)
+	_, err := pipeline.Exec(ctx)
+	if err != nil {
+		return nil
+	}
+	return result
+}
+
+func (r *Cmdable) Get(ctx context.Context, key string) resources.StringResult {
+	return r.cmdable.Get(ctx, key)
+
+}
+
+func (r *Cmdable) GetDel(ctx context.Context, key string) resources.StringResult {
+	return r.cmdable.GetDel(ctx, key)
+
+}
+
+func (r *Cmdable) Del(ctx context.Context, keys ...string) resources.IntResult {
+	return r.cmdable.Del(ctx, keys...)
+}
+
+type TxPipeline struct {
+	Cmdable
+	p redis.Pipeliner
+}
+
+func (tx *TxPipeline) Tx() resources.TX {
+	return tx
+}
+func (tx *TxPipeline) Exec(ctx context.Context) error {
+	_, err := tx.p.Exec(ctx)
+
+	return err
+
 }

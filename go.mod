@@ -11,6 +11,7 @@ require (
 	github.com/hashicorp/consul/api v1.9.1
 	github.com/nsqio/go-nsq v1.1.0
 	github.com/ohler55/ojg v1.12.9
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/sftp v1.13.4
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
 	github.com/satori/go.uuid v1.2.0
