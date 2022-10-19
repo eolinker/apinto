@@ -2,7 +2,7 @@ package limiting_strategy
 
 import (
 	"github.com/eolinker/apinto/drivers/strategy/limiting-strategy/scalar"
-	"github.com/eolinker/apinto/strategy"
+	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/eocontext"
 	"sort"
 	"sync"
@@ -15,15 +15,16 @@ var (
 func init() {
 	actuator := newActuator()
 	actuatorSet = actuator
-	strategy.AddStrategyHandler(actuator)
+
 }
 
 type ActuatorSet interface {
+	Strategy(ctx eocontext.EoContext, next eocontext.IChain, cache resources.ICache) error
 	Set(id string, limiting *LimitingHandler)
 	Del(id string)
 }
 
-type tActuator struct {
+type tActuatorSet struct {
 	lock        sync.RWMutex
 	all         map[string]*LimitingHandler
 	handlers    []*LimitingHandler
@@ -31,24 +32,24 @@ type tActuator struct {
 	traffics    scalar.Manager
 }
 
-func (a *tActuator) Destroy() {
+func (a *tActuatorSet) Destroy() {
 
 }
 
-func (a *tActuator) Set(id string, limiting *LimitingHandler) {
+func (a *tActuatorSet) Set(id string, limiting *LimitingHandler) {
 	// 调用来源有锁
 	a.all[id] = limiting
 	a.rebuild()
 
 }
 
-func (a *tActuator) Del(id string) {
+func (a *tActuatorSet) Del(id string) {
 	// 调用来源有锁
 	delete(a.all, id)
 	a.rebuild()
 }
 
-func (a *tActuator) rebuild() {
+func (a *tActuatorSet) rebuild() {
 
 	handlers := make([]*LimitingHandler, 0, len(a.all))
 	for _, h := range a.all {
@@ -61,15 +62,15 @@ func (a *tActuator) rebuild() {
 	defer a.lock.Unlock()
 	a.handlers = handlers
 }
-func newActuator() *tActuator {
-	return &tActuator{
+func newActuator() *tActuatorSet {
+	return &tActuatorSet{
 		queryScalar: scalar.NewManager(),
 		traffics:    scalar.NewManager(),
 		all:         make(map[string]*LimitingHandler),
 	}
 }
 
-func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) error {
+func (a *tActuatorSet) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cache resources.ICache) error {
 
 	a.lock.RLock()
 	handlers := a.handlers
@@ -104,4 +105,8 @@ func (hs handlerListSort) Less(i, j int) bool {
 
 func (hs handlerListSort) Swap(i, j int) {
 	hs[i], hs[j] = hs[j], hs[i]
+}
+
+func DoStrategy(ctx eocontext.EoContext, next eocontext.IChain, cache resources.ICache) error {
+	return actuatorSet.Strategy(ctx, next, cache)
 }
