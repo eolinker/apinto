@@ -15,10 +15,10 @@ var (
 func init() {
 	actuator := newtActuator()
 	actuatorSet = actuator
-	strategy.AddStrategyHandler(actuator)
 }
 
 type ActuatorSet interface {
+	strategy.IStrategyHandler
 	Set(string, *visitHandler)
 	Del(id string)
 }
@@ -67,7 +67,7 @@ func newtActuator() *tActuator {
 	}
 }
 
-func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) error {
+func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) error {
 
 	httpCtx, err := http_service.Assert(ctx)
 	if err != nil {
@@ -101,4 +101,8 @@ func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) err
 		return next.DoChain(ctx)
 	}
 	return nil
+}
+
+func DoStrategy(ctx eocontext.EoContext, next eocontext.IChain) error {
+	return actuatorSet.Strategy(ctx, next)
 }
