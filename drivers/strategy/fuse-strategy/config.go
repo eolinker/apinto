@@ -14,6 +14,7 @@ type Config struct {
 }
 
 type Rule struct {
+	Metric           string               `json:"metric"`                      //熔断维度
 	FuseCondition    StatusConditionConf  `json:"fuse_condition" label:"熔断条件"` //熔断条件
 	FuseTime         FuseTimeConf         `json:"fuse_time" label:"熔断时间"`
 	RecoverCondition StatusConditionConf  `json:"recover_condition" label:"恢复条件"` //恢复条件
