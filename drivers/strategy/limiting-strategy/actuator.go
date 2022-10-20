@@ -1,7 +1,6 @@
 package limiting_strategy
 
 import (
-	"github.com/eolinker/apinto/drivers/strategy/limiting-strategy/scalar"
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/eocontext"
 	"sort"
@@ -19,17 +18,15 @@ func init() {
 }
 
 type ActuatorSet interface {
-	Strategy(ctx eocontext.EoContext, next eocontext.IChain, cache resources.ICache) error
+	Strategy(ctx eocontext.EoContext, next eocontext.IChain, scalars *Scalars) error
 	Set(id string, limiting *LimitingHandler)
 	Del(id string)
 }
 
 type tActuatorSet struct {
-	lock        sync.RWMutex
-	all         map[string]*LimitingHandler
-	handlers    []*LimitingHandler
-	queryScalar scalar.Manager
-	traffics    scalar.Manager
+	lock     sync.RWMutex
+	all      map[string]*LimitingHandler
+	handlers []*LimitingHandler
 }
 
 func (a *tActuatorSet) Destroy() {
@@ -64,13 +61,12 @@ func (a *tActuatorSet) rebuild() {
 }
 func newActuator() *tActuatorSet {
 	return &tActuatorSet{
-		queryScalar: scalar.NewManager(),
-		traffics:    scalar.NewManager(),
-		all:         make(map[string]*LimitingHandler),
+
+		all: make(map[string]*LimitingHandler),
 	}
 }
 
-func (a *tActuatorSet) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cache resources.ICache) error {
+func (a *tActuatorSet) Strategy(ctx eocontext.EoContext, next eocontext.IChain, scalars *Scalars) error {
 
 	a.lock.RLock()
 	handlers := a.handlers
@@ -78,7 +74,7 @@ func (a *tActuatorSet) Strategy(ctx eocontext.EoContext, next eocontext.IChain, 
 	acs := getActuatorsHandlers()
 	for _, ach := range acs {
 		if ach.Assert(ctx) {
-			err := ach.Check(ctx, handlers, a.queryScalar, a.traffics)
+			err := ach.Check(ctx, handlers, scalars)
 			if err != nil {
 				return err
 			}
@@ -107,6 +103,16 @@ func (hs handlerListSort) Swap(i, j int) {
 	hs[i], hs[j] = hs[j], hs[i]
 }
 
-func DoStrategy(ctx eocontext.EoContext, next eocontext.IChain, cache resources.ICache) error {
-	return actuatorSet.Strategy(ctx, next, cache)
+type Scalars struct {
+	QuerySecond resources.Vector
+	QueryMinute resources.Vector
+	QueryHour   resources.Vector
+
+	TrafficsSecond resources.Vector
+	TrafficsMinute resources.Vector
+	TrafficsHour   resources.Vector
+}
+
+func DoStrategy(ctx eocontext.EoContext, next eocontext.IChain, scalars *Scalars) error {
+	return actuatorSet.Strategy(ctx, next, scalars)
 }

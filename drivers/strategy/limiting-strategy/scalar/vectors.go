@@ -51,7 +51,7 @@ func (s *_Vectors) CompareAndAdd(threshold, delta uint64) bool {
 }
 
 func (s *_Vectors) refresh() uint64 {
-	seconds := uint64(time.Now().Unix())
+	seconds := uint64(time.Now().UnixMilli())
 	index := seconds / s.step
 	last := atomic.SwapUint64(&s.lastIndex, index)
 
