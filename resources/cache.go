@@ -6,7 +6,7 @@ import (
 	"unsafe"
 )
 
-var CacheSkill = "github.com/eolinker/apinto/resources.resources.ICache"
+const CacheSkill = "github.com/eolinker/apinto/resources.resources.ICache"
 
 type ICache interface {
 	Set(ctx context.Context, key string, value []byte, expiration time.Duration) StatusResult

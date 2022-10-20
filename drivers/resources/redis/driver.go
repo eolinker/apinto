@@ -29,11 +29,12 @@ func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		return nil, err
 	}
 	w := &Worker{
-		ICache: &Empty{},
-		config: nil,
-		client: nil,
-		id:     id,
-		name:   name,
+		ICache:   &Empty{},
+		IVectors: &Empty{},
+		config:   nil,
+		client:   nil,
+		id:       id,
+		name:     name,
 	}
 	err := w.Reset(v, workers)
 	if err != nil {

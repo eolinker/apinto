@@ -24,8 +24,8 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		return nil, fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(v))
 	}
 	return &Strategy{
-		id:    id,
-		name:  name,
-		cache: resources.NewCacheBuilder(string(cfg.Cache)),
+		id:         id,
+		name:       name,
+		buildProxy: resources.NewVectorBuilder(string(cfg.Cache)),
 	}, nil
 }

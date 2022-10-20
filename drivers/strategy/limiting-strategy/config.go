@@ -24,8 +24,8 @@ type Config struct {
 
 func parseThreshold(t Threshold) ThresholdUint {
 	return ThresholdUint{
-		Second: uint64(t.Second),
-		Minute: uint64(t.Minute),
-		Hour:   uint64(t.Hour),
+		Second: t.Second,
+		Minute: t.Minute,
+		Hour:   t.Hour,
 	}
 }

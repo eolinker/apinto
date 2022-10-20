@@ -7,8 +7,14 @@ import (
 	"reflect"
 )
 
+var (
+	_ resources.ICache   = (*Worker)(nil)
+	_ resources.IVectors = (*Worker)(nil)
+)
+
 type Worker struct {
 	resources.ICache
+	resources.IVectors
 	config    *Config
 	client    *redis.ClusterClient
 	id        string
@@ -31,7 +37,8 @@ func (w *Worker) Start() error {
 	if err != nil {
 		return err
 	}
-	w.client, w.ICache = client, &Cmdable{cmdable: client}
+	h := &Cmdable{cmdable: client}
+	w.client, w.ICache, w.IVectors = client, h, h
 	w.isRunning = true
 	return nil
 }
@@ -77,5 +84,5 @@ func (w *Worker) Stop() error {
 }
 
 func (w *Worker) CheckSkill(skill string) bool {
-	return skill == resources.CacheSkill
+	return skill == resources.CacheSkill || skill == resources.VectorsSkill
 }
