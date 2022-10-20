@@ -82,7 +82,7 @@ type vectorLocal struct {
 func (v *vectorLocal) CompareAndAdd(key string, threshold, delta int64) bool {
 	index, vector := v.refresh(key)
 	value := v.read(vector)
-	if value < threshold {
+	if value <= threshold {
 		atomic.AddInt64(&vector.vectors[index%v.size], delta)
 		return true
 	}

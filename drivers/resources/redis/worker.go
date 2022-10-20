@@ -84,5 +84,5 @@ func (w *Worker) Stop() error {
 }
 
 func (w *Worker) CheckSkill(skill string) bool {
-	return skill == resources.CacheSkill
+	return skill == resources.CacheSkill || skill == resources.VectorsSkill
 }

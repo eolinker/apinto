@@ -16,6 +16,18 @@ type Vector struct {
 	redisCmdable redis.Cmdable
 }
 
+func (v *Vector) CompareAndAdd(key string, threshold, delta int64) bool {
+	token := fmt.Sprint(v.name, ":", key)
+	index := time.Now().UnixNano() / v.step
+	ctx := context.Background()
+
+	if v.get(ctx, token, index/v.size*v.size) <= threshold {
+		v.redisCmdable.HIncrBy(ctx, token, fmt.Sprint(index), delta)
+		return true
+	}
+	return false
+}
+
 func (v *Vector) Add(key string, delta int64) int64 {
 	token := fmt.Sprint(v.name, ":", key)
 	index := time.Now().UnixNano() / v.step
