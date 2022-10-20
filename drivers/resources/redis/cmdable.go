@@ -18,6 +18,10 @@ var (
 type Empty struct {
 }
 
+func (e *Empty) BuildVector(name string, uni, step time.Duration) (resources.Vector, error) {
+	return nil, ErrorNotInitRedis
+}
+
 func (e *Empty) Exec(ctx context.Context) error {
 	return ErrorNotInitRedis
 }

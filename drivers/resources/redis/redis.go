@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"fmt"
 	"github.com/eolinker/apinto/resources"
 	"github.com/go-redis/redis/v8"
 	"time"
@@ -17,6 +18,26 @@ func (s *statusResult) Result() error {
 
 type Cmdable struct {
 	cmdable redis.Cmdable
+}
+
+func (r *Cmdable) BuildVector(name string, uni, step time.Duration) (resources.Vector, error) {
+
+	if uni < time.Second {
+		uni = time.Second
+	}
+	if step < 500*time.Millisecond {
+		step = 500 * time.Millisecond
+	}
+
+	size := uni / step
+	if size > 20 {
+		size = 20
+	}
+	step = uni / size
+
+	key := fmt.Sprintf("%s:%d:%d", name, uni, step)
+
+	return newVector(key, int64(uni), int64(step), r.cmdable), nil
 }
 
 func (r *Cmdable) Tx() resources.TX {
