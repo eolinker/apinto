@@ -7,10 +7,38 @@ import (
 	"time"
 )
 
+var (
+	localVector IVectors = (*VectorsLocalBuild)(nil)
+)
+var (
+	onceVector  sync.Once
+	LocalVector func() IVectors
+)
+
+func init() {
+	LocalVector = func() IVectors {
+
+		onceVector.Do(func() {
+			localVector = NewVectorsLocalBuild()
+			LocalVector = func() IVectors {
+				return localVector
+			}
+		})
+		return localVector
+	}
+
+}
+
 type VectorsLocalBuild struct {
 	lock sync.Mutex
 
 	vectors map[string]Vector
+}
+
+func NewVectorsLocalBuild() *VectorsLocalBuild {
+	return &VectorsLocalBuild{
+		vectors: make(map[string]Vector),
+	}
 }
 
 func (v *VectorsLocalBuild) BuildVector(name string, uni, step time.Duration) (Vector, error) {

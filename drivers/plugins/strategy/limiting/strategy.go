@@ -5,16 +5,32 @@ import (
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
+	"sync"
+	"time"
 )
 
 type Strategy struct {
-	id    string
-	name  string
-	cache *resources.CacheBuilder
+	id         string
+	name       string
+	buildProxy *resources.VectorBuilder
+	scalars    limiting_strategy.Scalars
+	once       sync.Once
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
-	return limiting_strategy.DoStrategy(ctx, next, s.cache.GET())
+	s.once.Do(func() {
+		iVectors := s.buildProxy.GET()
+		s.scalars = limiting_strategy.Scalars{}
+
+		s.scalars.QuerySecond, _ = iVectors.BuildVector("query", time.Second, time.Second/2)
+		s.scalars.QueryMinute, _ = iVectors.BuildVector("query", time.Minute, time.Second*10)
+		s.scalars.QueryHour, _ = iVectors.BuildVector("query", time.Hour, time.Minute*10)
+		s.scalars.TrafficsSecond, _ = iVectors.BuildVector("query", time.Second, time.Second/2)
+		s.scalars.TrafficsMinute, _ = iVectors.BuildVector("query", time.Minute, time.Second*10)
+		s.scalars.TrafficsHour, _ = iVectors.BuildVector("query", time.Hour, time.Minute*10)
+	})
+
+	return limiting_strategy.DoStrategy(ctx, next, &s.scalars)
 }
 
 func (s *Strategy) Destroy() {
