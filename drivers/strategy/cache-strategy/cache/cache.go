@@ -40,13 +40,14 @@ func (r *ResponseData) Complete(ctx eocontext.EoContext) error {
 	return nil
 }
 
-func SetResponseData(uri string, data *ResponseData, validTime int) {
+func SetResponseData(cache resources.ICache, uri string, data *ResponseData, validTime int) {
 	bytes, _ := json.Marshal(data)
-	_ = resources.Cacher().Set(context.TODO(), uri, bytes, time.Second*time.Duration(validTime))
+	cache.Set(context.TODO(), uri, bytes, time.Second*time.Duration(validTime))
 }
 
-func GetResponseData(uri string) *ResponseData {
-	bytes, _ := resources.Cacher().Get(context.TODO(), uri)
+func GetResponseData(cache resources.ICache, uri string) *ResponseData {
+	result := cache.Get(context.TODO(), uri)
+	bytes, _ := result.Bytes()
 	data := new(ResponseData)
 	if err := json.Unmarshal(bytes, data); err != nil {
 		return nil

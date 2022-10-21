@@ -1,18 +1,21 @@
-package strategy
+package cache
 
 import (
-	"github.com/eolinker/apinto/strategy"
+	cache_strategy "github.com/eolinker/apinto/drivers/strategy/cache-strategy"
+	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 )
 
 type Strategy struct {
-	id   string
-	name string
+	id    string
+	name  string
+	cache *resources.CacheBuilder
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
-	return strategy.Strategy(ctx, next)
+
+	return cache_strategy.DoStrategy(ctx, next, s.cache.GET())
 }
 
 func (s *Strategy) Destroy() {

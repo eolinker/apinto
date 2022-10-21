@@ -2,20 +2,31 @@ package redis
 
 import (
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/setting"
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 )
 
 var (
-	singleton  *Controller
-	_          eosc.ISetting = singleton
-	configType               = reflect.TypeOf(new(Config))
+	configType = reflect.TypeOf(new(Config))
+	render     interface{}
 )
 
 func init() {
-	singleton = NewController()
+	render, _ = schema.Generate(configType, nil)
+
 }
 
 func Register(register eosc.IExtenderDriverRegister) {
-	setting.RegisterSetting("redis", singleton)
+	register.RegisterExtenderDriver("redis", new(Factory))
+}
+
+type Factory struct {
+}
+
+func (f *Factory) Render() interface{} {
+	return render
+}
+
+func (f *Factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
+	return new(Driver), nil
 }

@@ -6,9 +6,9 @@ import (
 )
 
 type ThresholdUint struct {
-	Second uint64
-	Minute uint64
-	Hour   uint64
+	Second int64
+	Minute int64
+	Hour   int64
 }
 type LimitingHandler struct {
 	name     string
@@ -30,14 +30,6 @@ func (l *LimitingHandler) Filter() strategy.IFilter {
 
 func (l *LimitingHandler) Metrics() metrics.Metrics {
 	return l.metrics
-}
-
-func (l *LimitingHandler) Query() ThresholdUint {
-	return l.query
-}
-
-func (l *LimitingHandler) Traffic() ThresholdUint {
-	return l.traffic
 }
 
 func (l *LimitingHandler) Priority() int {

@@ -1,4 +1,4 @@
-package strategy
+package visit
 
 import (
 	"github.com/eolinker/eosc"
