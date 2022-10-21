@@ -6,7 +6,6 @@ import (
 )
 
 type Config struct {
-	Cache eosc.RequireId `json:"cache" skill:"github.com/eolinker/apinto/resources.resources.ICache" required:"false" label:"缓存位置"`
 }
 type driver struct {
 }

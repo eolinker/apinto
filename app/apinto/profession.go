@@ -187,6 +187,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "kafka输出",
 					Desc:  "kafka输出",
 				},
+				{
+					Id:    "eolinker.com:apinto:redis",
+					Name:  "redis",
+					Label: "redis 集群",
+					Desc:  "redis 集群",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
