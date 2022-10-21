@@ -93,31 +93,6 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 	return nil
 }
 
-func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) error {
-
-	httpCtx, err := http_service.Assert(ctx)
-	if err != nil {
-		return err
-	}
-
-	a.lock.RLock()
-	handlers := a.handlers
-	a.lock.RUnlock()
-
-	for _, handler := range handlers {
-		//check筛选条件
-		if handler.filter.Check(httpCtx) {
-			ctx.SetBalance(newGreyBalanceHandler(ctx.GetBalance(), handler))
-			break
-		}
-	}
-
-	if next != nil {
-		return next.DoChain(ctx)
-	}
-	return nil
-}
-
 type handlerListSort []*GreyHandler
 
 func (hs handlerListSort) Len() int {
