@@ -141,6 +141,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "访问策略",
 					Desc:  "访问策略",
 				},
+				{
+					Id:    "eolinker.com:apinto:strategy-fuse",
+					Name:  "fuse",
+					Label: "熔断策略",
+					Desc:  "熔断策略",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
