@@ -93,10 +93,9 @@ type vectorValues struct {
 	vectors []int64
 }
 
-func (v *vectorLocal) Add(key string, delta int64) int64 {
+func (v *vectorLocal) Add(key string, delta int64) {
 	index, vector := v.refresh(key)
 	atomic.AddInt64(&vector.vectors[index%v.size], delta)
-	return v.read(vector)
 }
 
 func (v *vectorLocal) Get(key string) int64 {
