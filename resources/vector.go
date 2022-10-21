@@ -10,7 +10,7 @@ type IVectors interface {
 }
 
 type Vector interface {
-	Add(key string, delta int64) int64
+	Add(key string, delta int64)
 	CompareAndAdd(key string, threshold, delta int64) bool
 	Get(key string) int64
 }
