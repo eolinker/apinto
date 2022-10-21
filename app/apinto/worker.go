@@ -26,6 +26,7 @@ import (
 	rate_limiting "github.com/eolinker/apinto/drivers/plugins/rate-limiting"
 	response_rewrite "github.com/eolinker/apinto/drivers/plugins/response-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/cache"
+	"github.com/eolinker/apinto/drivers/plugins/strategy/fuse"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/grey"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/limiting"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/visit"
@@ -33,6 +34,7 @@ import (
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
 	service "github.com/eolinker/apinto/drivers/service"
 	cache_strategy "github.com/eolinker/apinto/drivers/strategy/cache-strategy"
+	fuse_strategy "github.com/eolinker/apinto/drivers/strategy/fuse-strategy"
 	grey_strategy "github.com/eolinker/apinto/drivers/strategy/grey-strategy"
 	limiting_strategy "github.com/eolinker/apinto/drivers/strategy/limiting-strategy"
 	visit_strategy "github.com/eolinker/apinto/drivers/strategy/visit-strategy"
@@ -107,4 +109,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 
 	visit.Register(extenderRegister)
 	visit_strategy.Register(extenderRegister)
+
+	fuse.Register(extenderRegister)
+	fuse_strategy.Register(extenderRegister)
 }
