@@ -16,8 +16,10 @@ ENV APP=apinto
 COPY ./apinto.linux.x64.tar.gz /
 RUN tar -zxvf apinto.linux.x64.tar.gz && rm -rf apinto.linux.x64.tar.gz
 
-#修改脚本权限以及复制程序默认配置文件
-RUN chmod 777 /apinto/start.sh && chmod 777 /apinto/join.sh && chmod 777 /apinto/leave.sh && cp /apinto/config.yml.tmp /apinto/config.yml
+#复制程序默认配置文件以及修改脚本权限
+RUN mkdir /etc/apinto
+RUN cp /apinto/apinto.yml.tpl /etc/apinto/apinto.yml && cp /apinto/config.yml.tpl /etc/apinto/config.yml
+RUN chmod 777 /apinto/start.sh && chmod 777 /apinto/join.sh && chmod 777 /apinto/leave.sh
 
 WORKDIR /apinto
 
