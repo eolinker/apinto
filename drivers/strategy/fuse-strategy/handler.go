@@ -72,12 +72,12 @@ func getFuseStatus(ctx context.Context, metrics string, cache resources.ICache) 
 }
 
 type ruleHandler struct {
-	metric           metrics.Metrics //熔断维度
-	fuseCondition    statusConditionConf
-	fuseTime         fuseTimeConf
-	recoverCondition statusConditionConf
-	response         strategyResponseConf
-	codeStatusMap    map[int]codeStatus
+	metric                metrics.Metrics //熔断维度
+	fuseConditionCount    int64
+	fuseTime              fuseTimeConf
+	recoverConditionCount int64
+	response              strategyResponseConf
+	codeStatusMap         map[int]codeStatus
 }
 
 type statusConditionConf struct {
@@ -125,19 +125,15 @@ func NewFuseHandler(conf *Config) (*FuseHandler, error) {
 		codeStatusMap[code] = codeStatusError
 	}
 	rule := &ruleHandler{
-		metric: metrics.Parse([]string{conf.Rule.Metric}),
-		fuseCondition: statusConditionConf{
-			statusCodes: conf.Rule.FuseCondition.StatusCodes,
-			count:       conf.Rule.FuseCondition.Count,
-		},
+		metric:             metrics.Parse([]string{conf.Rule.Metric}),
+		fuseConditionCount: conf.Rule.FuseCondition.Count,
+
 		fuseTime: fuseTimeConf{
 			time:    time.Duration(conf.Rule.FuseTime.Time) * time.Second,
 			maxTime: time.Duration(conf.Rule.FuseTime.MaxTime) * time.Second,
 		},
-		recoverCondition: statusConditionConf{
-			statusCodes: conf.Rule.RecoverCondition.StatusCodes,
-			count:       conf.Rule.RecoverCondition.Count,
-		},
+		recoverConditionCount: conf.Rule.RecoverCondition.Count,
+
 		response: strategyResponseConf{
 			statusCode:  conf.Rule.Response.StatusCode,
 			contentType: conf.Rule.Response.ContentType,

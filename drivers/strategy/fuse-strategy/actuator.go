@@ -142,8 +142,6 @@ func (f *fuseFinishHandler) Finish(eoCtx eocontext.EoContext) error {
 
 	httpCtx, _ := http_service.Assert(eoCtx)
 
-	fuseCondition := f.fuseHandler.rule.fuseCondition
-	recoverCondition := f.fuseHandler.rule.recoverCondition
 	fuseTime := f.fuseHandler.rule.fuseTime
 
 	ctx := eoCtx.Context()
@@ -162,7 +160,7 @@ func (f *fuseFinishHandler) Finish(eoCtx eocontext.EoContext) error {
 		tx.Del(ctx, getSuccessCountKey(f.metrics))
 		tx.Exec(ctx)
 
-		if errCount == fuseCondition.count {
+		if errCount == f.fuseHandler.rule.fuseConditionCount {
 
 			lockerKey := fmt.Sprintf("fuse_locker_%s", f.metrics)
 			ok, err := f.cache.SetNX(ctx, lockerKey, []byte(fuseStatusObserve), time.Second).Result()
@@ -201,7 +199,7 @@ func (f *fuseFinishHandler) Finish(eoCtx eocontext.EoContext) error {
 			successCount, _ := f.cache.IncrBy(ctx, getSuccessCountKey(f.metrics), 1, time.Second).Result()
 
 			//恢复正常期
-			if successCount == recoverCondition.count {
+			if successCount == f.fuseHandler.rule.recoverConditionCount {
 				lockerKey := fmt.Sprintf("fuse_locker_%s", f.metrics)
 				ok, err := f.cache.SetNX(ctx, lockerKey, []byte(fuseStatusObserve), time.Second).Result()
 				if err != nil {
