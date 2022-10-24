@@ -6,6 +6,7 @@ import (
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"net/http"
 	"strconv"
 	"strings"
 )
@@ -30,7 +31,7 @@ func (c *CorsFilter) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (e
 }
 
 func (c *CorsFilter) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
-	if ctx.Request().Method() == "OPTION" {
+	if ctx.Request().Method() == http.MethodOptions {
 		return c.doOption(ctx)
 	}
 	err = c.doFilter(ctx)
@@ -125,17 +126,17 @@ func (c *CorsFilter) Start() error {
 }
 
 func (c *CorsFilter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-cfg, err := c.check(conf)
-if err != nil {
-return err
-}
-c.option = cfg.genOptionHandler()
-c.originChecker = NewChecker(cfg.AllowOrigins, "Access-Control-Allow-Origin")
-c.methodChecker = NewChecker(cfg.AllowMethods, "Access-Control-Allow-Methods")
-c.headerChecker = NewChecker(cfg.AllowHeaders, "Access-Control-Allow-Headers")
-c.exposeChecker = NewChecker(cfg.ExposeHeaders, "Access-Control-Expose-Headers")
-c.allowCredentials = cfg.AllowCredentials
-return nil
+	cfg, err := c.check(conf)
+	if err != nil {
+		return err
+	}
+	c.option = cfg.genOptionHandler()
+	c.originChecker = NewChecker(cfg.AllowOrigins, "Access-Control-Allow-Origin")
+	c.methodChecker = NewChecker(cfg.AllowMethods, "Access-Control-Allow-Methods")
+	c.headerChecker = NewChecker(cfg.AllowHeaders, "Access-Control-Allow-Headers")
+	c.exposeChecker = NewChecker(cfg.ExposeHeaders, "Access-Control-Expose-Headers")
+	c.allowCredentials = cfg.AllowCredentials
+	return nil
 }
 
 func (c *CorsFilter) Stop() error {
