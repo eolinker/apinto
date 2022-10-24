@@ -109,15 +109,15 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, iCa
 	return nil
 }
 
-type CacheGetCompleteHandler struct {
+type CacheCompleteHandler struct {
 	orgHandler eocontext.CompleteHandler
 	validTime  int
 	uri        string
 	cache      resources.ICache
 }
 
-func NewCacheGetCompleteHandler(orgHandler eocontext.CompleteHandler, validTime int, uri string, cache resources.ICache) *CacheGetCompleteHandler {
-	return &CacheGetCompleteHandler{
+func NewCacheGetCompleteHandler(orgHandler eocontext.CompleteHandler, validTime int, uri string, cache resources.ICache) *CacheCompleteHandler {
+	return &CacheCompleteHandler{
 		orgHandler: orgHandler,
 		validTime:  validTime,
 		uri:        uri,
@@ -125,7 +125,7 @@ func NewCacheGetCompleteHandler(orgHandler eocontext.CompleteHandler, validTime 
 	}
 }
 
-func (c *CacheGetCompleteHandler) Complete(ctx eocontext.EoContext) error {
+func (c *CacheCompleteHandler) Complete(ctx eocontext.EoContext) error {
 
 	if c.orgHandler != nil {
 		if err := c.orgHandler.Complete(ctx); err != nil {

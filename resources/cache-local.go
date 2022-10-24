@@ -2,8 +2,8 @@ package resources
 
 import (
 	"context"
-	"encoding/binary"
 	"github.com/coocood/freecache"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -120,12 +120,15 @@ func (n *cacheLocal) IncrBy(ctx context.Context, key string, incr int64, expirat
 	return NewIntResult(value, nil)
 }
 func ToInt(b []byte) int64 {
-	return int64(binary.LittleEndian.Uint64(b))
+	v, err := strconv.ParseInt(string(b), 10, 64)
+	if err != nil {
+		return 0
+	}
+	return v
 }
 func ToBytes(v int64) []byte {
-	var b [8]byte
-	binary.LittleEndian.PutUint64(b[:], uint64(v))
-	return b[:]
+
+	return []byte(strconv.FormatInt(v, 10))
 }
 func (n *cacheLocal) Get(ctx context.Context, key string) StringResult {
 	data, err := n.client.Get([]byte(key))
