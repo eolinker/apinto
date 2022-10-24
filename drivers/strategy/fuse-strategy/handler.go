@@ -34,56 +34,41 @@ type FuseHandler struct {
 }
 
 func (f *FuseHandler) IsFuse(ctx context.Context, metrics string, cache resources.ICache) bool {
-	return f.getFuseStatus(ctx, metrics, cache) == fuseStatusFusing
+	return getFuseStatus(ctx, metrics, cache) == fuseStatusFusing
 }
 
 //熔断次数的key
-func (f *FuseHandler) getFuseCountKey(metrics string) string {
-	return fmt.Sprintf("fuse_count_%s_%d", metrics, time.Now().Second())
+func getFuseCountKey(metrics string) string {
+	return fmt.Sprintf("fuse_count_%s_%d", metrics, time.Now().Unix())
 }
 
 //失败次数的key
-func (f *FuseHandler) getErrorCountKey(metrics string) string {
-	return fmt.Sprintf("fuse_error_count_%s_%d", metrics, time.Now().Second())
+func getErrorCountKey(metrics string) string {
+	return fmt.Sprintf("fuse_error_count_%s_%d", metrics, time.Now().Unix())
 }
 
-func (f *FuseHandler) getSuccessCountKey(metrics string) string {
-	return fmt.Sprintf("fuse_success_count_%s_%d", metrics, time.Now().Second())
+func getSuccessCountKey(metrics string) string {
+	return fmt.Sprintf("fuse_success_count_%s_%d", metrics, time.Now().Unix())
+}
+func getFuseStatusKey(metrics string) string {
+	return fmt.Sprintf("fuse_status_%s", metrics)
 }
 
-func (f *FuseHandler) getFuseTimeKey(metrics string) string {
-	return fmt.Sprintf("fuse_time_%s", metrics)
-}
+func getFuseStatus(ctx context.Context, metrics string, cache resources.ICache) fuseStatus {
 
-func (f *FuseHandler) getFuseStatus(ctx context.Context, metrics string, cache resources.ICache) fuseStatus {
-
-	key := f.getFuseStatusKey(metrics)
+	key := getFuseStatusKey(metrics)
 	expUnixStr, err := cache.Get(ctx, key).Result()
 	if err != nil { //拿不到默认健康期
 		return fuseStatusHealthy
 	}
 
-	expUnix, _ := strconv.Atoi(expUnixStr)
+	expUnix, _ := strconv.ParseInt(expUnixStr, 16, 64)
 
 	//过了熔断期是观察期
-	if time.Now().Unix() > int64(expUnix) {
+	if time.Now().UnixNano() > expUnix {
 		return fuseStatusObserve
 	}
 	return fuseStatusFusing
-}
-
-func (f *FuseHandler) getFuseStatusKey(metrics string) string {
-	return fmt.Sprintf("fuse_status_%s", metrics)
-}
-
-func (f *FuseHandler) setFuseStatus(ctx context.Context, metrics string, cache resources.ICache, exp string, expiration time.Duration) {
-	key := f.getFuseStatusKey(metrics)
-	cache.Set(ctx, key, []byte(exp), expiration)
-}
-
-func (f *FuseHandler) delFuseStatus(ctx context.Context, metrics string, cache resources.ICache) {
-	key := f.getFuseStatusKey(metrics)
-	cache.Del(ctx, key)
 }
 
 type ruleHandler struct {
@@ -101,8 +86,8 @@ type statusConditionConf struct {
 }
 
 type fuseTimeConf struct {
-	time    int64
-	maxTime int64
+	time    time.Duration
+	maxTime time.Duration
 }
 
 type strategyResponseConf struct {
@@ -146,8 +131,8 @@ func NewFuseHandler(conf *Config) (*FuseHandler, error) {
 			count:       conf.Rule.FuseCondition.Count,
 		},
 		fuseTime: fuseTimeConf{
-			time:    conf.Rule.FuseTime.Time,
-			maxTime: conf.Rule.FuseTime.MaxTime,
+			time:    time.Duration(conf.Rule.FuseTime.Time) * time.Second,
+			maxTime: time.Duration(conf.Rule.FuseTime.MaxTime) * time.Second,
 		},
 		recoverCondition: statusConditionConf{
 			statusCodes: conf.Rule.RecoverCondition.StatusCodes,

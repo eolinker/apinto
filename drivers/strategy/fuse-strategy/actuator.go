@@ -5,6 +5,7 @@ import (
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/eosc/log"
 	"sort"
 	"strconv"
 	"sync"
@@ -149,55 +150,74 @@ func (f *fuseFinishHandler) Finish(eoCtx eocontext.EoContext) error {
 	statusCode := httpCtx.Response().StatusCode()
 
 	//熔断状态
-	status := f.fuseHandler.getFuseStatus(ctx, f.metrics, f.cache)
+	status := getFuseStatus(ctx, f.metrics, f.cache)
 
 	switch f.fuseHandler.rule.codeStatusMap[statusCode] {
 	case codeStatusError:
 		//记录失败count
-		countKey := f.fuseHandler.getErrorCountKey(f.metrics)
-		errCount, _ := f.cache.IncrBy(ctx, countKey, 1, time.Second).Result()
+
+		tx := f.cache.Tx()
+		errCount, _ := tx.IncrBy(ctx, getErrorCountKey(f.metrics), 1, time.Second).Result()
 		//清除恢复的计数器
-		f.cache.Del(ctx, f.fuseHandler.getSuccessCountKey(f.metrics))
+		tx.Del(ctx, getSuccessCountKey(f.metrics))
+		tx.Exec(ctx)
 
 		if errCount == fuseCondition.count {
 
-			expUnix := int64(0)
-			if status == fuseStatusObserve {
-				//观察期内再次熔断,持续时间=配置的时间*连续熔断次数
-				fuseCountKey := f.fuseHandler.getFuseCountKey(f.metrics)
-				fuseCount, _ := f.cache.IncrBy(ctx, fuseCountKey, 1, time.Minute*30).Result()
-
-				exp := time.Second * time.Duration((fuseCount)*fuseTime.time)
-
-				maxExp := time.Duration(fuseTime.maxTime) * time.Second
-				if exp >= maxExp {
-					exp = maxExp
-				}
-
-				expUnix = time.Now().Add(exp).Unix()
-
-			} else if status == fuseStatusHealthy {
-				fuseCountKey := f.fuseHandler.getFuseCountKey(f.metrics)
-				f.cache.IncrBy(ctx, fuseCountKey, 1, time.Minute*30)
-
-				expUnix = time.Now().Add(time.Second * time.Duration(fuseTime.time)).Unix()
-
+			lockerKey := fmt.Sprintf("fuse_locker_%s", f.metrics)
+			ok, err := f.cache.SetNX(ctx, lockerKey, []byte(fuseStatusObserve), time.Second).Result()
+			if err != nil {
+				log.Infof("fuse strategy locker  %s to %s fail:%s", status, fuseStatusFusing, err.Error())
+				return err
+			}
+			if !ok {
+				return nil
 			}
 
-			f.fuseHandler.setFuseStatus(ctx, f.metrics, f.cache, strconv.Itoa(int(expUnix)), fuseStatusTime)
+			fuseCountKey := getFuseCountKey(f.metrics)
+			expUnix := int64(0)
+
+			fuseCount, _ := f.cache.IncrBy(ctx, fuseCountKey, 1, time.Hour).Result()
+			txDone := f.cache.Tx()
+			if status == fuseStatusHealthy {
+				fuseCount = 1
+				txDone.Set(ctx, fuseCountKey, []byte("1"), time.Hour)
+			}
+
+			exp := time.Duration(fuseCount) * fuseTime.time
+			if exp >= fuseTime.maxTime {
+				exp = fuseTime.maxTime
+			}
+
+			expUnix = time.Now().Add(exp).UnixNano()
+
+			txDone.Set(ctx, getFuseStatusKey(f.metrics), []byte(strconv.FormatInt(expUnix, 16)), fuseStatusTime)
+			txDone.Del(ctx, lockerKey)
+			txDone.Exec(ctx)
 		}
 
 	case codeStatusSuccess:
 		if status == fuseStatusObserve {
-			successCount, _ := f.cache.IncrBy(ctx, f.fuseHandler.getSuccessCountKey(f.metrics), 1, time.Second).Result()
+			successCount, _ := f.cache.IncrBy(ctx, getSuccessCountKey(f.metrics), 1, time.Second).Result()
 
 			//恢复正常期
 			if successCount == recoverCondition.count {
-				//删除熔断状态的key就是恢复正常期
-				f.cache.Del(ctx, f.fuseHandler.getFuseStatusKey(f.metrics))
-				//删除已记录的熔断次数
-				fuseCountKey := f.fuseHandler.getFuseCountKey(f.metrics)
-				f.cache.Del(ctx, fuseCountKey)
+				lockerKey := fmt.Sprintf("fuse_locker_%s", f.metrics)
+				ok, err := f.cache.SetNX(ctx, lockerKey, []byte(fuseStatusObserve), time.Second).Result()
+				if err != nil {
+					log.Infof("fuse strategy locker  %s to %s fail:%s", fuseStatusObserve, fuseStatusHealthy, err.Error())
+					return err
+				}
+				if ok {
+
+					tx := f.cache.Tx()
+					//删除熔断状态的key就是恢复正常期
+					tx.Del(ctx, getFuseStatusKey(f.metrics))
+					//删除已记录的熔断次数
+					tx.Del(ctx, getFuseCountKey(f.metrics))
+					tx.Del(ctx, lockerKey)
+					tx.Exec(ctx)
+				}
 			}
 
 		}
