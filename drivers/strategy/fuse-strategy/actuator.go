@@ -6,12 +6,17 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 )
 
 var (
 	actuatorSet ActuatorSet
+)
+
+const (
+	fuseStatusTime = time.Minute * 30
 )
 
 func init() {
@@ -77,13 +82,15 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cac
 	handlers := a.handlers
 	a.lock.RUnlock()
 
-	var fuseHandler *FuseHandler
 	for _, handler := range handlers {
 		//check筛选条件
 		if !handler.filter.Check(httpCtx) {
 			continue
 		}
-		if handler.IsFuse(ctx, cache) {
+
+		metrics := handler.rule.metric.Metrics(ctx)
+
+		if handler.IsFuse(ctx.Context(), metrics, cache) {
 			res := handler.rule.response
 			httpCtx.Response().SetStatus(res.statusCode, "")
 			for _, h := range res.headers {
@@ -93,7 +100,7 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cac
 			httpCtx.Response().SetBody([]byte(res.body))
 			return nil
 		} else {
-			fuseHandler = handler
+			ctx.SetFinish(newFuseFinishHandler(ctx.GetFinish(), cache, handler, metrics))
 			break
 		}
 
@@ -105,10 +112,6 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cac
 		}
 	}
 
-	if fuseHandler != nil {
-		ctx.SetFinish(newFuseFinishHandler(ctx.GetFinish(), cache, fuseHandler))
-	}
-
 	return nil
 }
 
@@ -116,18 +119,25 @@ type fuseFinishHandler struct {
 	orgHandler  eocontext.FinishHandler
 	cache       resources.ICache
 	fuseHandler *FuseHandler
+	metrics     string
 }
 
-func newFuseFinishHandler(orgHandler eocontext.FinishHandler, cache resources.ICache, fuseHandler *FuseHandler) *fuseFinishHandler {
-	return &fuseFinishHandler{orgHandler: orgHandler, cache: cache, fuseHandler: fuseHandler}
+func newFuseFinishHandler(orgHandler eocontext.FinishHandler, cache resources.ICache, fuseHandler *FuseHandler, metrics string) *fuseFinishHandler {
+	return &fuseFinishHandler{
+		orgHandler:  orgHandler,
+		cache:       cache,
+		fuseHandler: fuseHandler,
+		metrics:     metrics,
+	}
 }
 
 func (f *fuseFinishHandler) Finish(eoCtx eocontext.EoContext) error {
-	if f.orgHandler != nil {
-		if err := f.orgHandler.Finish(eoCtx); err != nil {
-			return err
+
+	defer func() {
+		if f.orgHandler != nil {
+			f.orgHandler.Finish(eoCtx)
 		}
-	}
+	}()
 
 	httpCtx, _ := http_service.Assert(eoCtx)
 
@@ -139,56 +149,58 @@ func (f *fuseFinishHandler) Finish(eoCtx eocontext.EoContext) error {
 	statusCode := httpCtx.Response().StatusCode()
 
 	//熔断状态
-	status := f.fuseHandler.getFuseStatus(eoCtx, f.cache)
+	status := f.fuseHandler.getFuseStatus(ctx, f.metrics, f.cache)
 
-	for _, code := range fuseCondition.statusCodes {
-		if statusCode != code {
-			continue
-		}
-
+	switch f.fuseHandler.rule.codeStatusMap[statusCode] {
+	case codeStatusError:
 		//记录失败count
-		countKey := f.fuseHandler.getFuseCountKey(eoCtx)
-
+		countKey := f.fuseHandler.getErrorCountKey(f.metrics)
 		errCount, _ := f.cache.IncrBy(ctx, countKey, 1, time.Second).Result()
-
 		//清除恢复的计数器
-		f.cache.Del(ctx, f.fuseHandler.getRecoverCountKey(eoCtx))
+		f.cache.Del(ctx, f.fuseHandler.getSuccessCountKey(f.metrics))
 
-		if errCount >= fuseCondition.count {
-			surplus := errCount % fuseCondition.count
-			if surplus == 0 {
-				//熔断持续时间=连续熔断次数*持续时间
-				exp := time.Second * time.Duration((errCount/fuseCondition.count)*fuseTime.time)
+		if errCount == fuseCondition.count {
+
+			expUnix := int64(0)
+			if status == fuseStatusObserve {
+				//观察期内再次熔断,持续时间=配置的时间*连续熔断次数
+				fuseCountKey := f.fuseHandler.getFuseCountKey(f.metrics)
+				fuseCount, _ := f.cache.IncrBy(ctx, fuseCountKey, 1, time.Minute*30).Result()
+
+				exp := time.Second * time.Duration((fuseCount)*fuseTime.time)
+
 				maxExp := time.Duration(fuseTime.maxTime) * time.Second
 				if exp >= maxExp {
 					exp = maxExp
 				}
 
-				f.fuseHandler.setFuseStatus(eoCtx, f.cache, fuseStatusFusing, exp+time.Minute)
+				expUnix = time.Now().Add(exp).Unix()
 
-				//因为观察期是熔断时间结束后的一秒内才算观察期，所以多设置个key用来做观察期状态的判断  判断逻辑在getFuseStatus中
-				f.cache.Set(ctx, f.fuseHandler.getFuseTimeKey(eoCtx), []byte(fuseStatusFusing), exp)
+			} else if status == fuseStatusHealthy {
+				fuseCountKey := f.fuseHandler.getFuseCountKey(f.metrics)
+				f.cache.IncrBy(ctx, fuseCountKey, 1, time.Minute*30)
+
+				expUnix = time.Now().Add(time.Second * time.Duration(fuseTime.time)).Unix()
 
 			}
-		}
-		break
-	}
 
-	for _, code := range recoverCondition.statusCodes {
-		if code != statusCode {
-			continue
+			f.fuseHandler.setFuseStatus(ctx, f.metrics, f.cache, strconv.Itoa(int(expUnix)), fuseStatusTime)
 		}
+
+	case codeStatusSuccess:
 		if status == fuseStatusObserve {
-			successCount, _ := f.cache.IncrBy(ctx, f.fuseHandler.getRecoverCountKey(eoCtx), 1, time.Second).Result()
+			successCount, _ := f.cache.IncrBy(ctx, f.fuseHandler.getSuccessCountKey(f.metrics), 1, time.Second).Result()
 
 			//恢复正常期
 			if successCount == recoverCondition.count {
-				exp := time.Duration(fuseTime.maxTime) * time.Second
-				f.fuseHandler.setFuseStatus(eoCtx, f.cache, fuseStatusHealthy, exp+time.Minute)
+				//删除熔断状态的key就是恢复正常期
+				f.cache.Del(ctx, f.fuseHandler.getFuseStatusKey(f.metrics))
+				//删除已记录的熔断次数
+				fuseCountKey := f.fuseHandler.getFuseCountKey(f.metrics)
+				f.cache.Del(ctx, fuseCountKey)
 			}
 
 		}
-		break
 	}
 
 	return nil

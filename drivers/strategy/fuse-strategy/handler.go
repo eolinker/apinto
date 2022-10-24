@@ -2,12 +2,11 @@ package fuse_strategy
 
 import (
 	"fmt"
-	"github.com/coocood/freecache"
 	"github.com/eolinker/apinto/metrics"
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/apinto/strategy"
-	"github.com/eolinker/eosc/eocontext"
-	"github.com/go-redis/redis/v8"
+	"golang.org/x/net/context"
+	"strconv"
 	"time"
 )
 
@@ -19,52 +18,72 @@ const (
 	fuseStatusObserve fuseStatus = "observe" //观察期
 )
 
+type codeStatus int
+
+const (
+	codeStatusSuccess codeStatus = 1
+	codeStatusError   codeStatus = 2
+)
+
 type FuseHandler struct {
 	name     string
 	filter   strategy.IFilter
 	priority int
 	stop     bool
 	rule     *ruleHandler
-	status   fuseStatus //状态
 }
 
-func (f *FuseHandler) IsFuse(eoCtx eocontext.EoContext, cache resources.ICache) bool {
-	return f.getFuseStatus(eoCtx, cache) == fuseStatusFusing
+func (f *FuseHandler) IsFuse(ctx context.Context, metrics string, cache resources.ICache) bool {
+	return f.getFuseStatus(ctx, metrics, cache) == fuseStatusFusing
 }
 
-func (f *FuseHandler) getFuseCountKey(eoCtx eocontext.EoContext) string {
-	return fmt.Sprintf("fuse_%s_%d", f.rule.metric.Metrics(eoCtx), time.Now().Second())
+//熔断次数的key
+func (f *FuseHandler) getFuseCountKey(metrics string) string {
+	return fmt.Sprintf("fuse_count_%s_%d", metrics, time.Now().Second())
 }
 
-func (f *FuseHandler) getRecoverCountKey(eoCtx eocontext.EoContext) string {
-	return fmt.Sprintf("fuse_recover_%s_%d", f.rule.metric.Metrics(eoCtx), time.Now().Second())
+//失败次数的key
+func (f *FuseHandler) getErrorCountKey(metrics string) string {
+	return fmt.Sprintf("fuse_error_count_%s_%d", metrics, time.Now().Second())
 }
 
-func (f *FuseHandler) getFuseTimeKey(eoCtx eocontext.EoContext) string {
-	return fmt.Sprintf("fuse_time_%s", f.rule.metric.Metrics(eoCtx))
+func (f *FuseHandler) getSuccessCountKey(metrics string) string {
+	return fmt.Sprintf("fuse_success_count_%s_%d", metrics, time.Now().Second())
 }
 
-func (f *FuseHandler) getFuseStatus(eoCtx eocontext.EoContext, cache resources.ICache) fuseStatus {
+func (f *FuseHandler) getFuseTimeKey(metrics string) string {
+	return fmt.Sprintf("fuse_time_%s", metrics)
+}
 
-	ctx := eoCtx.Context()
+func (f *FuseHandler) getFuseStatus(ctx context.Context, metrics string, cache resources.ICache) fuseStatus {
 
-	key := fmt.Sprintf("fuse_status_%s", f.rule.metric.Metrics(eoCtx))
-	status, err := cache.Get(ctx, key).Result()
+	key := f.getFuseStatusKey(metrics)
+	expUnixStr, err := cache.Get(ctx, key).Result()
 	if err != nil { //拿不到默认健康期
 		return fuseStatusHealthy
 	}
 
-	_, err = cache.Get(ctx, f.getFuseTimeKey(eoCtx)).Result()
-	if err != nil && (err == freecache.ErrNotFound || err == redis.Nil) && fuseStatus(status) == fuseStatusFusing { //记录的状态如果是熔断期，此时熔断时间又过期了，则返回观察期
+	expUnix, _ := strconv.Atoi(expUnixStr)
+
+	//过了熔断期是观察期
+	if time.Now().Unix() > int64(expUnix) {
 		return fuseStatusObserve
 	}
-
-	return fuseStatus(status)
+	return fuseStatusFusing
 }
 
-func (f *FuseHandler) setFuseStatus(eoCtx eocontext.EoContext, cache resources.ICache, status fuseStatus, expiration time.Duration) {
-	key := fmt.Sprintf("fuse_status_%s", f.rule.metric.Metrics(eoCtx))
-	cache.Set(eoCtx.Context(), key, []byte(status), expiration)
+func (f *FuseHandler) getFuseStatusKey(metrics string) string {
+	return fmt.Sprintf("fuse_status_%s", metrics)
+}
+
+func (f *FuseHandler) setFuseStatus(ctx context.Context, metrics string, cache resources.ICache, exp string, expiration time.Duration) {
+	key := f.getFuseStatusKey(metrics)
+	cache.Set(ctx, key, []byte(exp), expiration)
+}
+
+func (f *FuseHandler) delFuseStatus(ctx context.Context, metrics string, cache resources.ICache) {
+	key := f.getFuseStatusKey(metrics)
+	cache.Del(ctx, key)
 }
 
 type ruleHandler struct {
@@ -73,6 +92,7 @@ type ruleHandler struct {
 	fuseTime         fuseTimeConf
 	recoverCondition statusConditionConf
 	response         strategyResponseConf
+	codeStatusMap    map[int]codeStatus
 }
 
 type statusConditionConf struct {
@@ -111,6 +131,14 @@ func NewFuseHandler(conf *Config) (*FuseHandler, error) {
 		})
 	}
 
+	codeStatusMap := make(map[int]codeStatus)
+	for _, code := range conf.Rule.RecoverCondition.StatusCodes {
+		codeStatusMap[code] = codeStatusSuccess
+	}
+
+	for _, code := range conf.Rule.FuseCondition.StatusCodes {
+		codeStatusMap[code] = codeStatusError
+	}
 	rule := &ruleHandler{
 		metric: metrics.Parse([]string{conf.Rule.Metric}),
 		fuseCondition: statusConditionConf{
@@ -132,6 +160,7 @@ func NewFuseHandler(conf *Config) (*FuseHandler, error) {
 			headers:     headers,
 			body:        conf.Rule.Response.Body,
 		},
+		codeStatusMap: codeStatusMap,
 	}
 	return &FuseHandler{
 		name:     conf.Name,
