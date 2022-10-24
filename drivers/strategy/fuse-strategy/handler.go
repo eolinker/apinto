@@ -1,15 +1,12 @@
 package fuse_strategy
 
 import (
-	"context"
 	"fmt"
 	"github.com/coocood/freecache"
 	"github.com/eolinker/apinto/metrics"
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"github.com/eolinker/eosc/log"
 	"github.com/go-redis/redis/v8"
 	"time"
 )
@@ -17,7 +14,6 @@ import (
 type fuseStatus string
 
 const (
-	fuseStatusNone    fuseStatus = "none"    //默认状态
 	fuseStatusHealthy fuseStatus = "healthy" //健康期间
 	fuseStatusFusing  fuseStatus = "fusing"  //熔断期间
 	fuseStatusObserve fuseStatus = "observe" //观察期
@@ -32,99 +28,43 @@ type FuseHandler struct {
 	status   fuseStatus //状态
 }
 
-func (f *FuseHandler) Fusing(eoCtx eocontext.EoContext, cache resources.ICache) bool {
-	httpCtx, _ := http_service.Assert(eoCtx)
-
-	fuseCondition := f.rule.fuseCondition
-	recoverCondition := f.rule.recoverCondition
-
-	ctx := context.Background()
-	statusCode := httpCtx.Response().StatusCode()
-
-	for _, code := range fuseCondition.statusCodes {
-		if statusCode != code {
-			continue
-		}
-		tx := cache.Tx()
-		//记录失败count
-		countKey := f.getFuseCountKey(eoCtx)
-
-		if f.status == fuseStatusFusing {
-			//缓存中拿不到数据 表示key过期 也就是熔断期已过 变成观察期
-			if _, err := tx.Get(ctx, f.getFuseTimeKey(eoCtx)).Bytes(); err != nil && (err == freecache.ErrNotFound || err == redis.Nil) {
-				f.status = fuseStatusObserve
-				_ = tx.Exec(ctx)
-				return false
-			}
-		}
-
-		result, err := tx.IncrBy(ctx, countKey, 1, time.Second).Result()
-		if err != nil {
-			log.Errorf("FuseHandler Fusing %v", err)
-			_ = tx.Exec(ctx)
-			return true
-		}
-
-		//清除恢复的计数器
-		tx.Del(ctx, f.getRecoverCountKey(eoCtx))
-
-		if result >= fuseCondition.count {
-			surplus := result % fuseCondition.count
-			if surplus == 0 {
-				//熔断持续时间=连续熔断次数*持续时间
-				exp := time.Second * time.Duration((result/fuseCondition.count)*f.rule.fuseTime.time)
-				maxExp := time.Duration(f.rule.fuseTime.maxTime) * time.Second
-				if exp >= maxExp {
-					exp = maxExp
-				}
-				tx.Set(ctx, f.getFuseTimeKey(eoCtx), []byte(""), exp)
-				f.status = fuseStatusFusing
-			}
-			_ = tx.Exec(ctx)
-			return true
-		}
-		break
-	}
-
-	for _, code := range recoverCondition.statusCodes {
-		if code != statusCode {
-			continue
-		}
-		if f.status == fuseStatusObserve || f.status == fuseStatusFusing {
-			tx := cache.Tx()
-			result, err := tx.IncrBy(ctx, f.getRecoverCountKey(eoCtx), 1, time.Second).Result()
-			if err != nil {
-				_ = tx.Exec(ctx)
-				log.Errorf("FuseHandler Fusing %v", err)
-				return true
-			}
-
-			//恢复正常期
-			if result == recoverCondition.count {
-				f.status = fuseStatusHealthy
-			}
-			_ = tx.Exec(ctx)
-		}
-		break
-	}
-
-	if f.status == fuseStatusHealthy || f.status == fuseStatusNone || f.status == fuseStatusObserve {
-		return false
-	}
-
-	return true
+func (f *FuseHandler) IsFuse(eoCtx eocontext.EoContext, cache resources.ICache) bool {
+	return f.getFuseStatus(eoCtx, cache) == fuseStatusFusing
 }
 
-func (f *FuseHandler) getFuseCountKey(label metrics.LabelReader) string {
-	return fmt.Sprintf("fuse_%s_%s_%d", f.name, f.rule.metric.Metrics(label), time.Now().Second())
+func (f *FuseHandler) getFuseCountKey(eoCtx eocontext.EoContext) string {
+	return fmt.Sprintf("fuse_%s_%d", f.rule.metric.Metrics(eoCtx), time.Now().Second())
 }
 
-func (f *FuseHandler) getFuseTimeKey(label metrics.LabelReader) string {
-	return fmt.Sprintf("fuse_time_%s_%s", f.name, f.rule.metric.Metrics(label))
+func (f *FuseHandler) getRecoverCountKey(eoCtx eocontext.EoContext) string {
+	return fmt.Sprintf("fuse_recover_%s_%d", f.rule.metric.Metrics(eoCtx), time.Now().Second())
 }
 
-func (f *FuseHandler) getRecoverCountKey(label metrics.LabelReader) string {
-	return fmt.Sprintf("fuse_recover_%s_%s_%d", f.name, f.rule.metric.Metrics(label), time.Now().Second())
+func (f *FuseHandler) getFuseTimeKey(eoCtx eocontext.EoContext) string {
+	return fmt.Sprintf("fuse_time_%s", f.rule.metric.Metrics(eoCtx))
+}
+
+func (f *FuseHandler) getFuseStatus(eoCtx eocontext.EoContext, cache resources.ICache) fuseStatus {
+
+	ctx := eoCtx.Context()
+
+	key := fmt.Sprintf("fuse_status_%s", f.rule.metric.Metrics(eoCtx))
+	status, err := cache.Get(ctx, key).Result()
+	if err != nil { //拿不到默认健康期
+		return fuseStatusHealthy
+	}
+
+	_, err = cache.Get(ctx, f.getFuseTimeKey(eoCtx)).Result()
+	if err != nil && (err == freecache.ErrNotFound || err == redis.Nil) && fuseStatus(status) == fuseStatusFusing { //记录的状态如果是熔断期，此时熔断时间又过期了，则返回观察期
+		return fuseStatusObserve
+	}
+
+	return fuseStatus(status)
+}
+
+func (f *FuseHandler) setFuseStatus(eoCtx eocontext.EoContext, cache resources.ICache, status fuseStatus, expiration time.Duration) {
+	key := fmt.Sprintf("fuse_status_%s", f.rule.metric.Metrics(eoCtx))
+	cache.Set(eoCtx.Context(), key, []byte(status), expiration)
 }
 
 type ruleHandler struct {
