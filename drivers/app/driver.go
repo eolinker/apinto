@@ -51,7 +51,7 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	}
 	err = a.set(cfg)
 
-	return a, nil
+	return a, err
 }
 
 func checkConfig(v interface{}) (*Config, error) {
@@ -74,5 +74,6 @@ func checkConfig(v interface{}) (*Config, error) {
 			return nil, err
 		}
 	}
+
 	return conf, nil
 }
