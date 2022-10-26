@@ -19,6 +19,8 @@ type IManager interface {
 	Set(app application.IApp, filters []application.IAuth, users map[string][]application.ITransformConfig)
 	Del(appID string)
 	Count() int
+	AnonymousApp() application.IApp
+	SetAnonymousApp(app application.IApp)
 }
 
 type Manager struct {
@@ -28,6 +30,20 @@ type Manager struct {
 	driverAlias map[string]string
 	drivers     []string
 	locker      sync.RWMutex
+	app         application.IApp
+}
+
+func (m *Manager) AnonymousApp() application.IApp {
+	m.locker.RLock()
+	app := m.app
+	m.locker.RUnlock()
+	return app
+}
+
+func (m *Manager) SetAnonymousApp(app application.IApp) {
+	m.locker.Lock()
+	m.app = app
+	m.locker.Unlock()
 }
 
 func (m *Manager) Count() int {
