@@ -3,11 +3,10 @@ package app
 import (
 	"errors"
 
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
-
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/eosc"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 type app struct {
@@ -68,8 +67,6 @@ func (a *app) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) e
 }
 
 func (a *app) set(cfg *Config) error {
-	e := newExecutor()
-	e.append(newAdditionalParam(cfg.Additional))
 
 	if cfg.Anonymous {
 		anonymousApp := appManager.AnonymousApp()
@@ -77,16 +74,15 @@ func (a *app) set(cfg *Config) error {
 			return errors.New("anonymous app is already exists")
 		}
 		appManager.SetAnonymousApp(a)
-		a.executor = e
-		a.config = cfg
-		return nil
+	} else {
+		filters, users, err := createFilters(a.id, cfg.Auth)
+		if err != nil {
+			return err
+		}
+		appManager.Set(a, filters, users)
 	}
-	filters, users, err := createFilters(a.id, cfg.Auth)
-	if err != nil {
-		return err
-	}
-
-	appManager.Set(a, filters, users)
+	e := newExecutor()
+	e.append(newAdditionalParam(cfg.Additional))
 	a.executor = e
 	a.config = cfg
 	return nil
