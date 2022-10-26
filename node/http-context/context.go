@@ -3,10 +3,11 @@ package http_context
 import (
 	"context"
 	"fmt"
-	"github.com/eolinker/eosc/utils/config"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/eolinker/eosc/utils/config"
 
 	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
 
@@ -101,7 +102,6 @@ func (ctx *Context) SetFinish(handler eoscContext.FinishHandler) {
 }
 
 func (ctx *Context) Scheme() string {
-
 	return string(ctx.fastHttpRequestCtx.Request.URI().Scheme())
 }
 
@@ -169,6 +169,7 @@ func (ctx *Context) Request() http_service.IRequestReader {
 
 //NewContext 创建Context
 func NewContext(ctx *fasthttp.RequestCtx, port int) *Context {
+
 	id := uuid.NewV4()
 	requestID := id.String()
 	newCtx := &Context{

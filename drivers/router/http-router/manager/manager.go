@@ -116,7 +116,6 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters
 	return m
 }
 func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
-	log.Debug("fastHandler:", port)
 	httpContext := http_context.NewContext(ctx, port)
 	r, has := m.matcher.Match(port, httpContext.Request())
 	if !has {
@@ -124,6 +123,7 @@ func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 		httpContext.SetCompleteHandler(notFound)
 		m.globalFilters.Chain(httpContext, completeCaller)
 	} else {
+
 		log.Debug("match has:", port)
 		r.ServeHTTP(httpContext)
 	}

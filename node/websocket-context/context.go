@@ -149,6 +149,7 @@ func (ctx *Context) WithValue(key, val interface{}) {
 var upgrader = websocket.FastHTTPUpgrader{}
 
 func (ctx *Context) Upgrade() {
+
 	err := upgrader.Upgrade(ctx.fastHttpRequestCtx, func(serverConn *websocket.Conn) {
 		defer serverConn.Close()
 		clientConn, ok := <-ctx.connChan
