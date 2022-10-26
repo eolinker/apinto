@@ -67,6 +67,11 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 			return user.App.Execute(ctx)
 		}
 	}
+	if app := appManager.AnonymousApp(); app != nil && !app.Disable() {
+		setLabels(ctx, app.Labels())
+		ctx.SetLabel("application", app.Id())
+		return app.Execute(ctx)
+	}
 	return errors.New("invalid user")
 }
 

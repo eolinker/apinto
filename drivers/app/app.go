@@ -1,6 +1,8 @@
 package app
 
 import (
+	"errors"
+
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
 	"github.com/eolinker/apinto/application"
@@ -9,8 +11,8 @@ import (
 )
 
 type app struct {
-	id        string
-	name      string
+	id string
+	//name      string
 	driverIDs []string
 	config    *Config
 	executor  application.IAppExecutor
@@ -21,10 +23,6 @@ func (a *app) Execute(ctx http_service.IHttpContext) error {
 		return nil
 	}
 	return a.executor.Execute(ctx)
-}
-
-func (a *app) Name() string {
-	return a.name
 }
 
 func (a *app) Labels() map[string]string {
@@ -70,16 +68,25 @@ func (a *app) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) e
 }
 
 func (a *app) set(cfg *Config) error {
+	e := newExecutor()
+	e.append(newAdditionalParam(cfg.Additional))
+
+	if cfg.Anonymous {
+		anonymousApp := appManager.AnonymousApp()
+		if anonymousApp != nil && anonymousApp.Id() != a.id {
+			return errors.New("anonymous app is already exists")
+		}
+		appManager.SetAnonymousApp(a)
+		a.executor = e
+		a.config = cfg
+		return nil
+	}
 	filters, users, err := createFilters(a.id, cfg.Auth)
 	if err != nil {
 		return err
 	}
 
-	//cfg.Labels["application"] = strings.TrimSuffix(app., "@app")
-
 	appManager.Set(a, filters, users)
-	e := newExecutor()
-	e.append(newAdditionalParam(cfg.Additional))
 	a.executor = e
 	a.config = cfg
 	return nil

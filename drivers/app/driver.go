@@ -59,6 +59,9 @@ func checkConfig(v interface{}) (*Config, error) {
 	if !ok {
 		return nil, errorConfigType
 	}
+	if conf.Anonymous && len(conf.Auth) > 0 {
+		return nil, errors.New("it is anonymous app,auths should be empty")
+	}
 	for _, a := range conf.Auth {
 		err := application.CheckPosition(a.Position)
 		if err != nil {
