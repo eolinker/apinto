@@ -122,11 +122,10 @@ func (ctx *Context) Response() http_service.IResponse {
 }
 
 func (ctx *Context) SendTo(address string, timeout time.Duration) error {
-	clone := ctx.proxyRequest.clone()
+
 	_, host := readAddress(address)
-	clone.URI().SetHost(host)
-	ctx.proxyRequests = append(ctx.proxyRequests, clone)
 	request := ctx.proxyRequest.Request()
+	ctx.proxyRequests = append(ctx.proxyRequests, newRequestAgent(ctx.proxyRequest, host))
 
 	passHost, targethost := ctx.GetUpstreamHostHandler().PassHost()
 	switch passHost {
@@ -201,12 +200,7 @@ func (ctx *Context) FastFinish() {
 
 	ctx.requestReader.Finish()
 	ctx.proxyRequest.Finish()
-	for _, request := range ctx.proxyRequests {
-		r, ok := request.(*ProxyRequest)
-		if ok {
-			r.Finish()
-		}
-	}
+
 	return
 }
 
