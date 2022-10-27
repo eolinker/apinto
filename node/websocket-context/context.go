@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"strings"
-	"sync"
 	"time"
 
-	"github.com/eolinker/eosc/log"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
 	"github.com/fasthttp/websocket"
 
@@ -28,8 +26,8 @@ var _ websocket_context.IWebsocketContext = (*Context)(nil)
 type Context struct {
 	fastHttpRequestCtx  *fasthttp.RequestCtx
 	requestID           string
-	header              http.Header
 	ctx                 context.Context
+	requestReader       http_service.IRequestReader
 	completeHandler     eoscContext.CompleteHandler
 	finishHandler       eoscContext.FinishHandler
 	app                 eoscContext.EoApp
@@ -37,7 +35,19 @@ type Context struct {
 	upstreamHostHandler eoscContext.UpstreamHostHandler
 	labels              map[string]string
 	port                int
-	connChan            chan *websocket.Conn
+	response            *Response
+	clientConn          *websocket.Conn
+	upstreamConn        *websocket.Conn
+	finishChan          chan struct{}
+}
+
+func (ctx *Context) Response() http_service.IResponse {
+	return ctx.response
+}
+
+func (ctx *Context) Request() http_service.IRequestReader {
+
+	return ctx.requestReader
 }
 
 func (ctx *Context) Dial(address string, timeout time.Duration) error {
@@ -46,11 +56,11 @@ func (ctx *Context) Dial(address string, timeout time.Duration) error {
 		HandshakeTimeout: timeout,
 	}
 
-	conn, _, err := dialer.Dial(address, ctx.header)
+	conn, _, err := dialer.Dial(address, ctx.requestReader.Header().Headers())
 	if err != nil {
 		return err
 	}
-	ctx.connChan <- conn
+	ctx.upstreamConn = conn
 	return nil
 }
 
@@ -148,75 +158,40 @@ func (ctx *Context) WithValue(key, val interface{}) {
 
 var upgrader = websocket.FastHTTPUpgrader{}
 
-func (ctx *Context) Upgrade() {
+//Upgrade Upgrade
+func Upgrade(ctx *fasthttp.RequestCtx, port int) (*Context, error) {
 
-	err := upgrader.Upgrade(ctx.fastHttpRequestCtx, func(serverConn *websocket.Conn) {
-		defer serverConn.Close()
-		clientConn, ok := <-ctx.connChan
-		if !ok || clientConn == nil {
-			return
+	ch := make(chan error)
+	finishChan := make(chan struct{})
+	var clientConn *websocket.Conn
+	go func() {
+		err := upgrader.Upgrade(ctx, func(conn *websocket.Conn) {
+			clientConn = conn
+			close(ch)
+			<-finishChan
+
+		})
+		if err != nil {
+			ch <- err
+			close(ch)
 		}
-		defer clientConn.Close()
-
-		wg := &sync.WaitGroup{}
-		go func() {
-			wg.Add(1)
-			for {
-				msgType, msg, err := serverConn.ReadMessage()
-				if err != nil {
-					log.Error("read:", err)
-					break
-				}
-				err = clientConn.WriteMessage(msgType, msg)
-				if err != nil {
-					log.Error("write message error: ", err)
-					break
-				}
-			}
-			wg.Done()
-		}()
-		go func() {
-			wg.Add(1)
-			for {
-				msgType, msg, err := clientConn.ReadMessage()
-				if err != nil {
-					log.Error("read upstream message err: ", err)
-					return
-				}
-				err = serverConn.WriteMessage(msgType, msg)
-				if err != nil {
-					log.Error("write client message err: ", err)
-					return
-				}
-			}
-			wg.Done()
-		}()
-
-		wg.Wait()
-	})
-	if err != nil {
-		log.Error("upgrade error: ", err)
-		return
+	}()
+	err, ok := <-ch
+	if ok {
+		return nil, err
 	}
-}
-
-//NewContext 创建Context
-func NewContext(ctx *fasthttp.RequestCtx, port int) *Context {
-	id := uuid.NewV4()
-	requestID := id.String()
-
 	newCtx := &Context{
 		fastHttpRequestCtx: ctx,
-		header:             readHeader(ctx.Request),
-		requestID:          requestID,
+		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteAddr().String()),
+		requestID:          uuid.NewV4().String(),
 		port:               port,
-		connChan:           make(chan *websocket.Conn),
+		response:           NewResponse(ctx),
+		clientConn:         clientConn,
+		finishChan:         finishChan,
 	}
-
 	//记录请求时间
 	newCtx.WithValue("request_time", ctx.Time())
-	go newCtx.Upgrade()
-	return newCtx
+	return newCtx, nil
 }
 
 //RequestId 请求ID
@@ -224,23 +199,16 @@ func (ctx *Context) RequestId() string {
 	return ctx.requestID
 }
 
-func (ctx *Context) FastFinish() {
-	close(ctx.connChan)
+func (ctx *Context) ClientConn() *websocket.Conn {
+	return ctx.clientConn
 }
 
-func readHeader(request fasthttp.Request) http.Header {
-	header := make(http.Header)
-	hs := strings.Split(request.Header.String(), "\r\n")
-	for _, t := range hs {
-		vs := strings.SplitN(t, ":", 2)
-		if len(vs) < 2 {
-			if vs[0] == "" {
-				continue
-			}
-			header.Set(vs[0], "")
-			continue
-		}
-		header.Set(vs[0], strings.TrimSpace(vs[1]))
-	}
-	return header
+func (ctx *Context) UpstreamConn() *websocket.Conn {
+	return ctx.upstreamConn
+}
+
+func (ctx *Context) WebsocketFinish() {
+	close(ctx.finishChan)
+	ctx.upstreamConn.Close()
+	ctx.clientConn.Close()
 }

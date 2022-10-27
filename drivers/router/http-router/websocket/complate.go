@@ -1,17 +1,14 @@
-package http_complete
+package websocket
 
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
-	websocket_context "github.com/eolinker/eosc/eocontext/websocket-context"
-
 	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
-	"github.com/gorilla/websocket"
+	"github.com/fasthttp/websocket"
 )
 
 var (
@@ -20,11 +17,7 @@ var (
 
 //设置websocket
 //CheckOrigin防止跨站点的请求伪造
-var upGrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
+var upgrader = websocket.FastHTTPUpgrader{}
 
 type Complete struct {
 	retry   int
@@ -36,11 +29,14 @@ func NewComplete(retry int, timeOut time.Duration) *Complete {
 }
 
 func (h *Complete) Complete(org eocontext.EoContext) error {
-	ctx, err := websocket_context.Assert(org)
+	ctx, err := websocket_context.
 	if err != nil {
 		return err
 	}
-
+	conn, err := ctx.Upgrade()
+	if err != nil {
+		return err
+	}
 	balance := ctx.GetBalance()
 	app := ctx.GetApp()
 	var lastErr error

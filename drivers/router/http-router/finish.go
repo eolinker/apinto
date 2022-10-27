@@ -14,5 +14,6 @@ func (f *Finisher) Finish(org eocontext.EoContext) error {
 		return err
 	}
 	ctx.FastFinish()
+
 	return nil
 }

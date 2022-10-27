@@ -1,14 +1,18 @@
 package http_router
 
 import (
+	"strings"
+	"time"
+
+	"github.com/eolinker/apinto/drivers/router/http-router/websocket"
+
 	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
+
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	http_router "github.com/eolinker/apinto/router/http-router"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/template"
-	"strings"
-	"time"
 
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
@@ -19,7 +23,6 @@ type HttpRouter struct {
 	name          string
 	routerManager manager.IManger
 	pluginManager plugin.IPluginManager
-	handler       *Handler
 }
 
 func (h *HttpRouter) Destroy() error {
@@ -49,11 +52,11 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	if !ok {
 		return eosc.ErrorConfigFieldUnknown
 	}
-	handler := &Handler{
+	handler := &httpHandler{
 		routerName:      h.name,
 		serviceName:     strings.TrimSuffix(string(cfg.Service), "@service"),
 		completeHandler: http_complete.NewHttpComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
-		finisher:        Finisher{},
+		finisher:        &Finisher{},
 		service:         nil,
 		filters:         nil,
 		disable:         cfg.Disable,
@@ -84,6 +87,11 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 
 		handler.service = serviceHandler
 		handler.filters = plugins
+
+		if cfg.Websocket {
+			handler.completeHandler = websocket.NewComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond)
+			handler.finisher = &websocket.Finisher{}
+		}
 	}
 
 	appendRule := make([]http_router.AppendRule, 0, len(cfg.Rules))
@@ -98,7 +106,6 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	if err != nil {
 		return err
 	}
-	h.handler = handler
 	return nil
 }
 func (h *HttpRouter) Stop() error {

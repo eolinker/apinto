@@ -18,7 +18,7 @@ import (
 )
 
 var _ IManger = (*Manager)(nil)
-var notFound = new(NotFoundHandler)
+var notFound = new(HttpNotFoundHandler)
 var completeCaller = http_complete.NewHttpCompleteCaller()
 
 type IManger interface {
@@ -123,16 +123,17 @@ func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 		httpContext.SetCompleteHandler(notFound)
 		m.globalFilters.Chain(httpContext, completeCaller)
 	} else {
-
 		log.Debug("match has:", port)
 		r.ServeHTTP(httpContext)
 	}
+	//}
+
 }
 
-type NotFoundHandler struct {
+type HttpNotFoundHandler struct {
 }
 
-func (m *NotFoundHandler) Complete(ctx eoscContext.EoContext) error {
+func (m *HttpNotFoundHandler) Complete(ctx eoscContext.EoContext) error {
 
 	httpContext, err := http_service.Assert(ctx)
 	if err != nil {
@@ -143,7 +144,7 @@ func (m *NotFoundHandler) Complete(ctx eoscContext.EoContext) error {
 	return nil
 }
 
-func (m *NotFoundHandler) Finish(ctx eoscContext.EoContext) error {
+func (m *HttpNotFoundHandler) Finish(ctx eoscContext.EoContext) error {
 	httpContext, err := http_service.Assert(ctx)
 	if err != nil {
 		return err
