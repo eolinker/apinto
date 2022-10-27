@@ -1,6 +1,7 @@
 package httpoutput
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
 )
@@ -9,7 +10,7 @@ var _ output.IEntryOutput = (*HttpOutput)(nil)
 var _ eosc.IWorker = (*HttpOutput)(nil)
 
 type HttpOutput struct {
-	id      string
+	drivers.WorkerBase
 	config  *Config
 	handler *Handler
 	running bool
@@ -22,10 +23,6 @@ func (h *HttpOutput) Output(entry eosc.IEntry) error {
 	}
 
 	return eosc.ErrorWorkerNotRunning
-}
-
-func (h *HttpOutput) Id() string {
-	return h.id
 }
 
 func (h *HttpOutput) Start() error {
@@ -45,7 +42,7 @@ func (h *HttpOutput) Start() error {
 
 func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
 
-	config, err := Check(conf)
+	config, err := check(conf)
 
 	if err != nil {
 		return err

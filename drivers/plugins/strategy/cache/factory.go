@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
@@ -18,18 +19,6 @@ var (
 func Register(register eosc.IExtenderDriverRegister) {
 	register.RegisterExtenderDriver(Name, NewFactory())
 }
-func NewFactory() *factory {
-	return &factory{}
-}
-
-type factory struct {
-}
-
-func (f *factory) Render() interface{} {
-	return render
-}
-
-func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
-
-	return &driver{}, nil
+func NewFactory() eosc.IExtenderDriverFactory {
+	return drivers.NewFactory[Config](Create)
 }

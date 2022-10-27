@@ -1,6 +1,7 @@
 package limiting
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	limiting_strategy "github.com/eolinker/apinto/drivers/strategy/limiting-strategy"
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc"
@@ -10,8 +11,7 @@ import (
 )
 
 type Strategy struct {
-	id         string
-	name       string
+	drivers.WorkerBase
 	buildProxy *resources.VectorBuilder
 	scalars    limiting_strategy.Scalars
 	once       sync.Once
@@ -35,10 +35,6 @@ func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) 
 
 func (s *Strategy) Destroy() {
 	return
-}
-
-func (s *Strategy) Id() string {
-	return s.id
 }
 
 func (s *Strategy) Start() error {

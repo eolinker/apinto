@@ -48,7 +48,7 @@ func (c *Controller) Mode() eosc.SettingMode {
 func (c *Controller) Check(cfg interface{}) (profession, name, driver, desc string, err error) {
 	conf, ok := cfg.(*Config)
 	if !ok {
-		err = eosc.ErrorConfigIsNil
+		err = eosc.ErrorConfigType
 		return
 	}
 	if empty(conf.Name) {

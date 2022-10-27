@@ -2,6 +2,7 @@ package proxy_rewrite_v2
 
 import (
 	"fmt"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -27,8 +28,7 @@ var (
 )
 
 type ProxyRewrite struct {
-	*Driver
-	id          string
+	drivers.WorkerBase
 	pathType    string
 	staticPath  string
 	prefixPath  []*SPrefixPath
@@ -109,16 +109,12 @@ func (p *ProxyRewrite) rewrite(ctx http_service.IHttpContext) bool {
 	return pathMatch
 }
 
-func (p *ProxyRewrite) Id() string {
-	return p.id
-}
-
 func (p *ProxyRewrite) Start() error {
 	return nil
 }
 
 func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	conf, err := p.check(v)
+	conf, err := check(v)
 	if err != nil {
 		return err
 	}

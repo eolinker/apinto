@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
 func checkConfig(conf *Config) error {
@@ -25,24 +24,13 @@ func checkConfig(conf *Config) error {
 	return nil
 }
 
-type driver struct {
-}
-
-func (d *driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	cfg, ok := v.(*Config)
-	if !ok {
-		return eosc.ErrorConfigIsNil
-	}
+func Check(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 
 	return checkConfig(cfg)
 }
 
-func (d *driver) ConfigType() reflect.Type {
-	return configType
-}
-
-func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	if err := d.Check(v, workers); err != nil {
+func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+	if err := Check(v, workers); err != nil {
 		return nil, err
 	}
 
@@ -51,7 +39,7 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 		name: name,
 	}
 
-	err := lg.Reset(v, workers)
+	err := lg.reset(v, workers)
 	if err != nil {
 		return nil, err
 	}

@@ -2,6 +2,7 @@ package proxy_rewrite
 
 import (
 	"fmt"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc/eocontext"
 	"regexp"
 
@@ -13,8 +14,7 @@ var _ http_service.HttpFilter = (*ProxyRewrite)(nil)
 var _ eocontext.IFilter = (*ProxyRewrite)(nil)
 
 type ProxyRewrite struct {
-	*Driver
-	id         string
+	drivers.WorkerBase
 	uri        string
 	regexURI   []string
 	regexMatch *regexp.Regexp
@@ -65,16 +65,12 @@ func (p *ProxyRewrite) rewrite(ctx http_service.IHttpContext) error {
 	return nil
 }
 
-func (p *ProxyRewrite) Id() string {
-	return p.id
-}
-
 func (p *ProxyRewrite) Start() error {
 	return nil
 }
 
 func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	conf, err := p.check(v)
+	conf, err := check(v)
 	if err != nil {
 		return err
 	}

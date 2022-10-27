@@ -2,9 +2,9 @@ package cache_strategy
 
 import (
 	"fmt"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
 func checkConfig(conf *Config) error {
@@ -24,30 +24,18 @@ func checkConfig(conf *Config) error {
 	return nil
 }
 
-type driver struct {
+func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+
+	return checkConfig(v)
 }
 
-func (d *driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	cfg, ok := v.(*Config)
-	if !ok {
-		return eosc.ErrorConfigIsNil
-	}
-
-	return checkConfig(cfg)
-}
-
-func (d *driver) ConfigType() reflect.Type {
-	return configType
-}
-
-func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	if err := d.Check(v, workers); err != nil {
+func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+	if err := Check(v, workers); err != nil {
 		return nil, err
 	}
 
 	lg := &CacheValidTime{
-		id:   id,
-		name: name,
+		WorkerBase: drivers.Worker(id, name),
 	}
 
 	err := lg.Reset(v, workers)

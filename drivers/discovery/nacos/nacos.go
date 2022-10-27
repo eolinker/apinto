@@ -3,6 +3,7 @@ package nacos
 import (
 	"context"
 	"fmt"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc/utils/config"
 	"sync"
 	"time"
@@ -18,8 +19,7 @@ const (
 )
 
 type nacos struct {
-	id         string
-	name       string
+	drivers.WorkerBase
 	client     *client
 	nodes      discovery.INodesData
 	services   discovery.IServices
@@ -38,11 +38,6 @@ type Instance struct {
 		IP         string  `json:"ip"`
 		Weight     float64 `json:"weight"`
 	}
-}
-
-//Id 返回 worker id
-func (n *nacos) Id() string {
-	return n.id
 }
 
 //CheckSkill 检查目标能力是否存在
@@ -70,7 +65,7 @@ func (n *nacos) Start() error {
 					for _, serviceName := range keys {
 						res, err := n.client.GetNodeList(serviceName)
 						if err != nil {
-							log.Warnf("nacos %s:%w for service %s", n.name, discovery.ErrDiscoveryDown, serviceName)
+							log.Warnf("nacos %s:%w for service %s", n.Name(), discovery.ErrDiscoveryDown, serviceName)
 							continue
 						}
 						//更新目标服务的节点列表

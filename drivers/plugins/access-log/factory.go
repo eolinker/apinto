@@ -1,14 +1,19 @@
 package access_log
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
-	"github.com/eolinker/eosc/utils/schema"
-	"reflect"
+	"sync"
 )
 
 const (
 	Name = "access_log"
+)
+
+var (
+	workers eosc.IWorkers
+	once    sync.Once
 )
 
 func Register(register eosc.IExtenderDriverRegister) {
@@ -16,28 +21,19 @@ func Register(register eosc.IExtenderDriverRegister) {
 }
 
 type Factory struct {
-}
-
-func (f *Factory) Render() interface{} {
-	render, err := schema.Generate(reflect.TypeOf((*Config)(nil)), nil)
-	if err != nil {
-		return nil
-	}
-	return render
+	eosc.IExtenderDriverFactory
 }
 
 func NewFactory() *Factory {
-	return &Factory{}
+	return &Factory{
+		IExtenderDriverFactory: drivers.NewFactory[Config](Create),
+	}
 }
 
 func (f *Factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
-	d := &Driver{
-		profession: profession,
-		name:       name,
-		label:      label,
-		desc:       desc,
-		configType: reflect.TypeOf((*Config)(nil)),
-	}
-	bean.Autowired(&d.workers)
-	return d, nil
+	once.Do(func() {
+		bean.Autowired(&workers)
+	})
+
+	return f.IExtenderDriverFactory.Create(profession, name, label, desc, params)
 }

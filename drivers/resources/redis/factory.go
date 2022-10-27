@@ -1,6 +1,8 @@
 package redis
 
 import (
+	"github.com/eolinker/apinto/drivers"
+	round_robin "github.com/eolinker/apinto/upstream/round-robin"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
@@ -17,16 +19,11 @@ func init() {
 }
 
 func Register(register eosc.IExtenderDriverRegister) {
-	register.RegisterExtenderDriver("redis", new(Factory))
+	register.RegisterExtenderDriver("redis", NewFactory())
 }
 
-type Factory struct {
-}
-
-func (f *Factory) Render() interface{} {
-	return render
-}
-
-func (f *Factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
-	return new(Driver), nil
+//NewFactory 创建service_http驱动工厂
+func NewFactory() eosc.IExtenderDriverFactory {
+	round_robin.Register()
+	return drivers.NewFactory[Config](Create)
 }

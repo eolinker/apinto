@@ -1,37 +1,27 @@
 package httpoutput
 
 import (
-	"reflect"
-
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 )
 
-type Driver struct {
-	configType reflect.Type
+func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+	return doCheck(v)
 }
+func doCheck(v *Config) error {
 
-func (d *Driver) ConfigType() reflect.Type {
-	return d.configType
-}
-
-func Check(v interface{}) (*Config, error) {
-	conf, ok := v.(*Config)
-	if !ok {
-		return nil, errConfigType
-	}
-
-	httpConf := conf
+	httpConf := v
 	if httpConf.Method == "" {
-		return nil, errMethod
+		return errMethod
 	}
 	switch httpConf.Method {
 	case "GET", "POST", "HEAD", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE":
 	default:
-		return nil, errMethod
+		return errMethod
 	}
 
 	if httpConf.Url == "" {
-		return nil, errUrlNull
+		return errUrlNull
 	}
 
 	if httpConf.Type == "" {
@@ -41,24 +31,35 @@ func Check(v interface{}) (*Config, error) {
 	switch httpConf.Type {
 	case "line", "json":
 	default:
-		return nil, errFormatterType
+		return errFormatterType
 	}
 
 	if len(httpConf.Formatter) == 0 {
-		return nil, errFormatterConf
+		return errFormatterConf
 	}
 
-	return httpConf, nil
+	return nil
 }
+func check(v interface{}) (*Config, error) {
+	conf, err := drivers.Assert[Config](v)
+	if err != nil {
+		return nil, err
+	}
+	err = doCheck(conf)
+	if err != nil {
+		return nil, err
+	}
+	return conf, nil
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	conf, err := Check(v)
+}
+func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+	err := doCheck(conf)
 	if err != nil {
 		return nil, err
 	}
 	worker := &HttpOutput{
-		id:     id,
-		config: conf,
+		WorkerBase: drivers.Worker(id, name),
+		config:     conf,
 	}
 
 	return worker, nil
