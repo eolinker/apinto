@@ -3,10 +3,11 @@ package http_context
 import (
 	"context"
 	"fmt"
-	"github.com/eolinker/eosc/utils/config"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/eolinker/eosc/utils/config"
 
 	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
 
@@ -16,10 +17,10 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-var _ http_service.IHttpContext = (*Context)(nil)
+var _ http_service.IHttpContext = (*HttpContext)(nil)
 
-//Context fasthttpRequestCtx
-type Context struct {
+// HttpContext fasthttpRequestCtx
+type HttpContext struct {
 	fastHttpRequestCtx  *fasthttp.RequestCtx
 	proxyRequest        *ProxyRequest
 	proxyRequests       []http_service.IRequest
@@ -36,76 +37,75 @@ type Context struct {
 	port                int
 }
 
-func (ctx *Context) GetUpstreamHostHandler() eoscContext.UpstreamHostHandler {
+func (ctx *HttpContext) GetUpstreamHostHandler() eoscContext.UpstreamHostHandler {
 	return ctx.upstreamHostHandler
 }
 
-func (ctx *Context) SetUpstreamHostHandler(handler eoscContext.UpstreamHostHandler) {
+func (ctx *HttpContext) SetUpstreamHostHandler(handler eoscContext.UpstreamHostHandler) {
 	ctx.upstreamHostHandler = handler
 }
 
-func (ctx *Context) LocalIP() net.IP {
+func (ctx *HttpContext) LocalIP() net.IP {
 	return ctx.fastHttpRequestCtx.LocalIP()
 }
 
-func (ctx *Context) LocalAddr() net.Addr {
+func (ctx *HttpContext) LocalAddr() net.Addr {
 	return ctx.fastHttpRequestCtx.LocalAddr()
 }
 
-func (ctx *Context) LocalPort() int {
+func (ctx *HttpContext) LocalPort() int {
 	return ctx.port
 }
 
-func (ctx *Context) GetApp() eoscContext.EoApp {
+func (ctx *HttpContext) GetApp() eoscContext.EoApp {
 	return ctx.app
 }
 
-func (ctx *Context) SetApp(app eoscContext.EoApp) {
+func (ctx *HttpContext) SetApp(app eoscContext.EoApp) {
 	ctx.app = app
 }
 
-func (ctx *Context) GetBalance() eoscContext.BalanceHandler {
+func (ctx *HttpContext) GetBalance() eoscContext.BalanceHandler {
 	return ctx.balance
 }
 
-func (ctx *Context) SetBalance(handler eoscContext.BalanceHandler) {
+func (ctx *HttpContext) SetBalance(handler eoscContext.BalanceHandler) {
 	ctx.balance = handler
 }
 
-func (ctx *Context) SetLabel(name, value string) {
+func (ctx *HttpContext) SetLabel(name, value string) {
 	ctx.labels[name] = value
 }
 
-func (ctx *Context) GetLabel(name string) string {
+func (ctx *HttpContext) GetLabel(name string) string {
 	return ctx.labels[name]
 }
 
-func (ctx *Context) Labels() map[string]string {
+func (ctx *HttpContext) Labels() map[string]string {
 	return ctx.labels
 }
 
-func (ctx *Context) GetComplete() eoscContext.CompleteHandler {
+func (ctx *HttpContext) GetComplete() eoscContext.CompleteHandler {
 	return ctx.completeHandler
 }
 
-func (ctx *Context) SetCompleteHandler(handler eoscContext.CompleteHandler) {
+func (ctx *HttpContext) SetCompleteHandler(handler eoscContext.CompleteHandler) {
 	ctx.completeHandler = handler
 }
 
-func (ctx *Context) GetFinish() eoscContext.FinishHandler {
+func (ctx *HttpContext) GetFinish() eoscContext.FinishHandler {
 	return ctx.finishHandler
 }
 
-func (ctx *Context) SetFinish(handler eoscContext.FinishHandler) {
+func (ctx *HttpContext) SetFinish(handler eoscContext.FinishHandler) {
 	ctx.finishHandler = handler
 }
 
-func (ctx *Context) Scheme() string {
-
+func (ctx *HttpContext) Scheme() string {
 	return string(ctx.fastHttpRequestCtx.Request.URI().Scheme())
 }
 
-func (ctx *Context) Assert(i interface{}) error {
+func (ctx *HttpContext) Assert(i interface{}) error {
 	if v, ok := i.(*http_service.IHttpContext); ok {
 		*v = ctx
 		return nil
@@ -113,15 +113,15 @@ func (ctx *Context) Assert(i interface{}) error {
 	return fmt.Errorf("not suport:%s", config.TypeNameOf(i))
 }
 
-func (ctx *Context) Proxies() []http_service.IRequest {
+func (ctx *HttpContext) Proxies() []http_service.IRequest {
 	return ctx.proxyRequests
 }
 
-func (ctx *Context) Response() http_service.IResponse {
+func (ctx *HttpContext) Response() http_service.IResponse {
 	return ctx.response
 }
 
-func (ctx *Context) SendTo(address string, timeout time.Duration) error {
+func (ctx *HttpContext) SendTo(address string, timeout time.Duration) error {
 
 	_, host := readAddress(address)
 	request := ctx.proxyRequest.Request()
@@ -142,35 +142,36 @@ func (ctx *Context) SendTo(address string, timeout time.Duration) error {
 
 }
 
-func (ctx *Context) Context() context.Context {
+func (ctx *HttpContext) Context() context.Context {
 	if ctx.ctx == nil {
 		ctx.ctx = context.Background()
 	}
 	return ctx.ctx
 }
 
-func (ctx *Context) Value(key interface{}) interface{} {
+func (ctx *HttpContext) Value(key interface{}) interface{} {
 	return ctx.Context().Value(key)
 }
 
-func (ctx *Context) WithValue(key, val interface{}) {
+func (ctx *HttpContext) WithValue(key, val interface{}) {
 	ctx.ctx = context.WithValue(ctx.Context(), key, val)
 }
 
-func (ctx *Context) Proxy() http_service.IRequest {
+func (ctx *HttpContext) Proxy() http_service.IRequest {
 	return ctx.proxyRequest
 }
 
-func (ctx *Context) Request() http_service.IRequestReader {
+func (ctx *HttpContext) Request() http_service.IRequestReader {
 
 	return ctx.requestReader
 }
 
-//NewContext 创建Context
-func NewContext(ctx *fasthttp.RequestCtx, port int) *Context {
+// NewContext 创建Context
+func NewContext(ctx *fasthttp.RequestCtx, port int) *HttpContext {
+
 	id := uuid.NewV4()
 	requestID := id.String()
-	newCtx := &Context{
+	newCtx := &HttpContext{
 		fastHttpRequestCtx: ctx,
 		requestID:          requestID,
 		requestReader:      NewRequestReader(&ctx.Request, ctx.RemoteAddr().String()),
@@ -185,13 +186,13 @@ func NewContext(ctx *fasthttp.RequestCtx, port int) *Context {
 	return newCtx
 }
 
-//RequestId 请求ID
-func (ctx *Context) RequestId() string {
+// RequestId 请求ID
+func (ctx *HttpContext) RequestId() string {
 	return ctx.requestID
 }
 
-//Finish finish
-func (ctx *Context) FastFinish() {
+// Finish finish
+func (ctx *HttpContext) FastFinish() {
 	if ctx.response.responseError != nil {
 		ctx.fastHttpRequestCtx.SetStatusCode(504)
 		ctx.fastHttpRequestCtx.SetBodyString(ctx.response.responseError.Error())
@@ -204,7 +205,7 @@ func (ctx *Context) FastFinish() {
 	return
 }
 
-func NotFound(ctx *Context) {
+func NotFound(ctx *HttpContext) {
 	ctx.fastHttpRequestCtx.SetStatusCode(404)
 	ctx.fastHttpRequestCtx.SetBody([]byte("404 Not Found"))
 }
