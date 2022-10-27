@@ -8,7 +8,7 @@ import (
 type FilterConfig map[string][]string
 
 func ParseFilter(config FilterConfig) (IFilter, error) {
-	fs := make(Filters, len(config))
+	fs := make(Filters, 0, len(config))
 	for name, patterns := range config {
 
 		if len(patterns) == 0 {
