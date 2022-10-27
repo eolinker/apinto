@@ -25,7 +25,7 @@ type IManager interface {
 
 type Manager struct {
 	// filters map[string]application.IAuthUser
-	filters     eosc.IUntyped
+	eosc.Untyped[string, application.IAuth]
 	appManager  *AppManager
 	driverAlias map[string]string
 	drivers     []string
@@ -46,25 +46,8 @@ func (m *Manager) SetAnonymousApp(app application.IApp) {
 	m.locker.Unlock()
 }
 
-func (m *Manager) Count() int {
-	return m.filters.Count()
-}
-
-func NewManager(driverAlias map[string]string, drivers []string) *Manager {
-	return &Manager{filters: eosc.NewUntyped(), appManager: NewAppManager(), driverAlias: driverAlias, drivers: drivers}
-}
-
-func (m *Manager) Get(id string) (application.IAuth, bool) {
-	return m.get(id)
-}
-
-func (m *Manager) get(id string) (application.IAuth, bool) {
-	filter, has := m.filters.Get(id)
-	if !has {
-		return nil, false
-	}
-	f, ok := filter.(application.IAuth)
-	return f, ok
+func NewManager(driverAlias map[string]string, drivers []string) IManager {
+	return &Manager{Untyped: eosc.BuildUntyped[string, application.IAuth](), appManager: NewAppManager(), driverAlias: driverAlias, drivers: drivers}
 }
 
 func (m *Manager) List() []application.IAuthUser {
@@ -87,7 +70,7 @@ func (m *Manager) getByDriver(driver string) []application.IAuthUser {
 	ids := m.appManager.GetByDriver(driver)
 	filters := make([]application.IAuthUser, 0, len(ids))
 	for _, id := range ids {
-		filter, has := m.get(id)
+		filter, has := m.Get(id)
 		if has {
 			filters = append(filters, filter)
 		}
@@ -96,30 +79,18 @@ func (m *Manager) getByDriver(driver string) []application.IAuthUser {
 }
 
 func (m *Manager) all() []application.IAuthUser {
-	keys := m.filters.Keys()
-	filters := make([]application.IAuthUser, 0, 10*len(keys))
-	for _, key := range keys {
-		filter, has := m.filters.Get(key)
-		if !has {
-			continue
-		}
-		f, ok := filter.(application.IAuthUser)
-		if !ok {
-			continue
-		}
-		filters = append(filters, f)
+	list := m.List()
+	filters := make([]application.IAuthUser, 0, len(list))
+	for _, filter := range list {
+		filters = append(filters, filter)
 	}
 	return filters
-}
-
-func (m *Manager) All() []application.IAuthUser {
-	return m.all()
 }
 
 func (m *Manager) Set(app application.IApp, filters []application.IAuth, users map[string][]application.ITransformConfig) {
 	idMap := make(map[string][]string)
 	for _, filter := range filters {
-		f, has := m.get(filter.ID())
+		f, has := m.Untyped.Get(filter.ID())
 		if !has {
 			f = filter
 		}
@@ -128,7 +99,7 @@ func (m *Manager) Set(app application.IApp, filters []application.IAuth, users m
 			continue
 		}
 		f.Set(app, v)
-		m.filters.Set(filter.ID(), filter)
+		m.Untyped.Set(filter.ID(), filter)
 		if _, ok := idMap[filter.Driver()]; !ok {
 			idMap[filter.Driver()] = make([]string, 0, len(filters))
 		}
@@ -144,11 +115,11 @@ func (m *Manager) Set(app application.IApp, filters []application.IAuth, users m
 func (m *Manager) Del(appID string) {
 	ids := m.appManager.GetByAppID(appID)
 	for _, id := range ids {
-		filter, has := m.get(id)
+		filter, has := m.Untyped.Get(id)
 		if has {
 			filter.Del(appID)
 			if filter.UserCount() == 0 {
-				m.filters.Del(id)
+				m.Untyped.Del(id)
 			}
 		}
 	}

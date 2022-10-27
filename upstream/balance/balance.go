@@ -30,14 +30,14 @@ type IBalanceFactoryRegister interface {
 
 //driverRegister 实现了IBalanceFactoryRegister接口
 type driverRegister struct {
-	register eosc.IRegister
+	register eosc.IRegister[IBalanceFactory]
 	keys     []string
 }
 
 //newBalanceFactoryManager 创建负载均衡算法工厂管理器
 func newBalanceFactoryManager() IBalanceFactoryRegister {
 	return &driverRegister{
-		register: eosc.NewRegister(),
+		register: eosc.NewRegister[IBalanceFactory](),
 		keys:     make([]string, 0, 10),
 	}
 }
@@ -47,10 +47,8 @@ func (dm *driverRegister) GetFactoryByKey(key string) (IBalanceFactory, bool) {
 	o, has := dm.register.Get(key)
 	if has {
 		log.Debug("GetFactoryByKey:", key, ":has")
-		f, ok := o.(IBalanceFactory)
-		return f, ok
 	}
-	return nil, false
+	return o, has
 }
 
 //RegisterFactoryByKey 注册balance工厂
