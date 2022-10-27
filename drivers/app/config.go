@@ -14,10 +14,11 @@ import (
 
 //Config App驱动配置
 type Config struct {
-	Labels     map[string]string `json:"labels" label:"应用标签"`
+	Anonymous  bool              `json:"anonymous" label:"匿名" `
 	Disable    bool              `json:"disable" label:"是否禁用"`
 	Additional []*Additional     `json:"additional" label:"额外参数"`
-	Auth       []*Auth           `json:"auth" label:"鉴权列表" eotype:"interface"`
+	Auth       []*Auth           `json:"auth" label:"鉴权列表" eotype:"interface" switch:"anonymous===false"`
+	Labels     map[string]string `json:"labels" label:"应用标签"`
 }
 
 type Auth struct {

@@ -21,7 +21,7 @@ type Config struct {
 	Stop        bool                  `json:"stop"`
 	Priority    int                   `json:"priority" label:"优先级" description:"1-999"`
 	Filters     strategy.FilterConfig `json:"filters" label:"过滤规则"`
-	Rule        *Rule                 `json:"rule" label:"灰度规则"`
+	Rule        Rule                  `json:"grey" label:"灰度规则"`
 }
 
 type Rule struct {

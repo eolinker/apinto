@@ -25,7 +25,7 @@ type PluginManager struct {
 	name            string
 	extenderDrivers eosc.IExtenderDrivers
 	plugins         Plugins
-	pluginObjs      eosc.IUntyped
+	pluginObjs      eosc.Untyped[string, *PluginObj]
 	workers         eosc.IWorkers
 }
 
@@ -82,12 +82,7 @@ func (p *PluginManager) Reset(conf interface{}) error {
 	p.plugins = plugins
 	list := p.pluginObjs.List()
 	// 遍历，全量更新
-	for _, obj := range list {
-		v, ok := obj.(*PluginObj)
-		if !ok {
-
-			continue
-		}
+	for _, v := range list {
 		v.fs = p.createFilters(v.conf)
 	}
 
@@ -142,10 +137,10 @@ func (p *PluginManager) createChain(id string, conf map[string]*plugin.Config) *
 		obj = NewPluginObj(chain, id, conf)
 		p.pluginObjs.Set(id, obj)
 	} else {
-		obj.(*PluginObj).fs = chain
+		obj.fs = chain
 	}
 	log.Debug("create chain len: ", len(chain))
-	return obj.(*PluginObj)
+	return obj
 }
 
 func (p *PluginManager) check(conf interface{}) (Plugins, error) {
@@ -185,7 +180,7 @@ func NewPluginManager() *PluginManager {
 	pm := &PluginManager{
 		name:       "plugin",
 		plugins:    make(Plugins, 0),
-		pluginObjs: eosc.NewUntyped(),
+		pluginObjs: eosc.BuildUntyped[string, *PluginObj](),
 	}
 	log.Debug("autowired extenderDrivers")
 	bean.Autowired(&pm.extenderDrivers)

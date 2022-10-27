@@ -14,18 +14,15 @@ type Driver struct {
 	configType reflect.Type
 }
 
-func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	_, err := d.check(v)
-	if err != nil {
-		return err
-	}
-	return nil
+func Check(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+
+	return conf.doCheck()
 }
 
-func (d *Driver) check(v interface{}) (*Config, error) {
+func check(v interface{}) (*Config, error) {
 	conf, ok := v.(*Config)
 	if !ok {
-		return nil, eosc.ErrorConfigFieldUnknown
+		return nil, eosc.ErrorConfigType
 	}
 	err := conf.doCheck()
 	if err != nil {
@@ -35,20 +32,15 @@ func (d *Driver) check(v interface{}) (*Config, error) {
 	return conf, nil
 }
 
-func (d *Driver) ConfigType() reflect.Type {
-	return d.configType
-}
+func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-
-	conf, err := d.check(v)
+	err := Check(conf, workers)
 	if err != nil {
 		return nil, err
 	}
 
 	ep := &ExtraParams{
-		Driver:    d,
-		id:        id,
+
 		params:    conf.Params,
 		errorType: conf.ErrorType,
 	}

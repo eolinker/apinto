@@ -1,38 +1,27 @@
 package fileoutput
 
 import (
-	"reflect"
-
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 )
 
-type Driver struct {
-	configType reflect.Type
+func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+	return doCheck(v)
 }
-
-func (d *Driver) ConfigType() reflect.Type {
-	return d.configType
-}
-
-func Check(v interface{}) (*Config, error) {
-	conf, ok := v.(*Config)
-	if !ok {
-		return nil, errorConfigType
-	}
-
-	fileConf := conf
+func doCheck(v *Config) error {
+	fileConf := v
 	if fileConf == nil {
-		return nil, errorNilConfig
+		return errorNilConfig
 	}
 
 	if fileConf.Dir == "" {
-		return nil, errorConfDir
+		return errorConfDir
 	}
 	if fileConf.File == "" {
-		return nil, errorConfFile
+		return errorConfFile
 	}
 	if fileConf.Period != "day" && fileConf.Period != "hour" {
-		return nil, errorConfPeriod
+		return errorConfPeriod
 	}
 
 	if fileConf.Expire == 0 {
@@ -43,22 +32,33 @@ func Check(v interface{}) (*Config, error) {
 	}
 
 	if len(fileConf.Formatter) == 0 {
-		return nil, errFormatterConf
+		return errFormatterConf
+	}
+	return nil
+}
+func check(v interface{}) (*Config, error) {
+	conf, ok := v.(*Config)
+	if !ok {
+		return nil, errorConfigType
+	}
+	err := doCheck(conf)
+	if err != nil {
+		return nil, err
 	}
 	return conf, nil
+
 }
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
-	cfg, err := Check(v)
+	err := doCheck(cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	worker := &FileOutput{
-		id:     id,
-		name:   name,
-		config: cfg,
+		WorkerBase: drivers.Worker(id, name),
+		config:     cfg,
 	}
 	return worker, err
 }

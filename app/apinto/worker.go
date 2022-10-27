@@ -25,12 +25,19 @@ import (
 	proxy_rewriteV2 "github.com/eolinker/apinto/drivers/plugins/proxy_rewrite_v2"
 	rate_limiting "github.com/eolinker/apinto/drivers/plugins/rate-limiting"
 	response_rewrite "github.com/eolinker/apinto/drivers/plugins/response-rewrite"
-	"github.com/eolinker/apinto/drivers/plugins/strategy"
+	"github.com/eolinker/apinto/drivers/plugins/strategy/cache"
+	"github.com/eolinker/apinto/drivers/plugins/strategy/fuse"
+	"github.com/eolinker/apinto/drivers/plugins/strategy/grey"
+	"github.com/eolinker/apinto/drivers/plugins/strategy/limiting"
+	"github.com/eolinker/apinto/drivers/plugins/strategy/visit"
+	"github.com/eolinker/apinto/drivers/resources/redis"
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
 	service "github.com/eolinker/apinto/drivers/service"
 	cache_strategy "github.com/eolinker/apinto/drivers/strategy/cache-strategy"
+	fuse_strategy "github.com/eolinker/apinto/drivers/strategy/fuse-strategy"
 	grey_strategy "github.com/eolinker/apinto/drivers/strategy/grey-strategy"
 	limiting_strategy "github.com/eolinker/apinto/drivers/strategy/limiting-strategy"
+	visit_strategy "github.com/eolinker/apinto/drivers/strategy/visit-strategy"
 	template "github.com/eolinker/apinto/drivers/template"
 
 	"github.com/eolinker/eosc"
@@ -73,6 +80,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	app.Register(extenderRegister)
 	auth.Register(extenderRegister)
 
+	redis.Register(extenderRegister)
 	//plugin
 	plugin_manager.Register(extenderRegister)
 
@@ -90,8 +98,18 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	access_log.Register(extenderRegister)
 	proxy_rewriteV2.Register(extenderRegister)
 
-	strategy.Register(extenderRegister)
+	limiting.Register(extenderRegister)
 	limiting_strategy.Register(extenderRegister)
+
+	cache.Register(extenderRegister)
 	cache_strategy.Register(extenderRegister)
+
+	grey.Register(extenderRegister)
 	grey_strategy.Register(extenderRegister)
+
+	visit.Register(extenderRegister)
+	visit_strategy.Register(extenderRegister)
+
+	fuse.Register(extenderRegister)
+	fuse_strategy.Register(extenderRegister)
 }

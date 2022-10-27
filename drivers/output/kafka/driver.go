@@ -1,6 +1,7 @@
 package kafka
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"reflect"
 )
@@ -9,20 +10,18 @@ type Driver struct {
 	configType reflect.Type
 }
 
-func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]interface{}) error {
-	_, err := check(v)
+func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+	_, err := v.doCheck()
+
 	return err
 }
 
-func (d *Driver) ConfigType() reflect.Type {
-	return d.configType
-}
-
 func check(v interface{}) (*ProducerConfig, error) {
-	conf, ok := v.(*Config)
-	if !ok {
-		return nil, eosc.ErrorConfigFieldUnknown
+	conf, err := drivers.Assert[*Config](v)
+	if err != nil {
+		return nil, err
 	}
+
 	pConf, err := conf.doCheck()
 	if err != nil {
 		return nil, err
@@ -31,8 +30,8 @@ func check(v interface{}) (*ProducerConfig, error) {
 
 }
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	cfg, err := check(v)
+func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+	cfg, err := conf.doCheck()
 	if err != nil {
 		return nil, err
 	}

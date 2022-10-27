@@ -1,9 +1,7 @@
 package consul
 
 import (
-	"fmt"
-	"github.com/eolinker/eosc/utils/config"
-	"reflect"
+	"github.com/eolinker/apinto/drivers"
 	"sync"
 
 	"github.com/eolinker/apinto/discovery"
@@ -15,37 +13,17 @@ const (
 	driverName = "consul"
 )
 
-//driver 实现github.com/eolinker/eosc.eosc.IProfessionDriver接口
-type driver struct {
-	profession string
-	name       string
-	driver     string
-	label      string
-	desc       string
-	configType reflect.Type
-}
-
-//ConfigType 返回consul驱动配置的反射类型
-func (d *driver) ConfigType() reflect.Type {
-	return d.configType
-}
-
 //Create 创建consul驱动实例
-func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	workerConfig, ok := v.(*Config)
-	if !ok {
-		return nil, fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(v))
-	}
+func Create(id, name string, workerConfig *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
 	clients := newClients(workerConfig.Config.Address, workerConfig.Config.Params)
 
 	c := &consul{
-		id:       id,
-		name:     name,
-		clients:  clients,
-		nodes:    discovery.NewNodesData(),
-		services: discovery.NewServices(),
-		locker:   sync.RWMutex{},
+		WorkerBase: drivers.Worker(id, name),
+		clients:    clients,
+		nodes:      discovery.NewNodesData(),
+		services:   discovery.NewServices(),
+		locker:     sync.RWMutex{},
 	}
 	return c, nil
 }

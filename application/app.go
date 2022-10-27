@@ -24,7 +24,6 @@ func init() {
 
 type IApp interface {
 	Id() string
-	Name() string
 	Labels() map[string]string
 	Disable() bool
 	IAppExecutor

@@ -2,7 +2,7 @@ package cache_strategy
 
 import (
 	"github.com/eolinker/apinto/drivers/strategy/cache-strategy/cache"
-	"github.com/eolinker/apinto/strategy"
+	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"net/http"
@@ -20,10 +20,10 @@ var (
 func init() {
 	actuator := newtActuator()
 	actuatorSet = actuator
-	strategy.AddStrategyHandler(actuator)
 }
 
 type ActuatorSet interface {
+	Strategy(ctx eocontext.EoContext, next eocontext.IChain, cache resources.ICache) error
 	Set(string, *CacheValidTimeHandler)
 	Del(id string)
 }
@@ -70,7 +70,7 @@ func newtActuator() *tActuator {
 	}
 }
 
-func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) error {
+func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, iCache resources.ICache) error {
 
 	httpCtx, err := http_service.Assert(ctx)
 	if err != nil {
@@ -92,12 +92,12 @@ func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) err
 		if handler.filter.Check(httpCtx) {
 
 			uri := httpCtx.Request().URI().RequestURI()
-			responseData := cache.GetResponseData(uri)
+			responseData := cache.GetResponseData(iCache, uri)
 
 			if responseData != nil {
 				httpCtx.SetCompleteHandler(responseData)
 			} else {
-				httpCtx.SetCompleteHandler(NewCacheGetCompleteHandler(httpCtx.GetComplete(), handler.validTime, uri))
+				httpCtx.SetCompleteHandler(NewCacheGetCompleteHandler(httpCtx.GetComplete(), handler.validTime, uri, iCache))
 			}
 			break
 		}
@@ -109,21 +109,23 @@ func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) err
 	return nil
 }
 
-type CacheGetCompleteHandler struct {
+type CacheCompleteHandler struct {
 	orgHandler eocontext.CompleteHandler
 	validTime  int
 	uri        string
+	cache      resources.ICache
 }
 
-func NewCacheGetCompleteHandler(orgHandler eocontext.CompleteHandler, validTime int, uri string) *CacheGetCompleteHandler {
-	return &CacheGetCompleteHandler{
+func NewCacheGetCompleteHandler(orgHandler eocontext.CompleteHandler, validTime int, uri string, cache resources.ICache) *CacheCompleteHandler {
+	return &CacheCompleteHandler{
 		orgHandler: orgHandler,
 		validTime:  validTime,
 		uri:        uri,
+		cache:      cache,
 	}
 }
 
-func (c *CacheGetCompleteHandler) Complete(ctx eocontext.EoContext) error {
+func (c *CacheCompleteHandler) Complete(ctx eocontext.EoContext) error {
 
 	if c.orgHandler != nil {
 		if err := c.orgHandler.Complete(ctx); err != nil {
@@ -144,7 +146,7 @@ func (c *CacheGetCompleteHandler) Complete(ctx eocontext.EoContext) error {
 			ValidTime: c.validTime,
 			Now:       time.Now(),
 		}
-		cache.SetResponseData(httpCtx.Request().URI().RequestURI(), responseData, c.validTime)
+		cache.SetResponseData(c.cache, httpCtx.Request().URI().RequestURI(), responseData, c.validTime)
 	}
 	return nil
 }
@@ -238,4 +240,8 @@ func parseHttpContext(httpCtx http_service.IHttpContext) httpContext {
 		}
 	}
 	return hc
+}
+
+func DoStrategy(ctx eocontext.EoContext, next eocontext.IChain, cache resources.ICache) error {
+	return actuatorSet.Strategy(ctx, next, cache)
 }

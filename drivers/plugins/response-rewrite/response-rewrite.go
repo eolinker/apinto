@@ -1,6 +1,7 @@
 package response_rewrite
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc/eocontext"
 	"strconv"
@@ -13,8 +14,7 @@ var _ http_service.HttpFilter = (*ResponseRewrite)(nil)
 var _ eocontext.IFilter = (*ResponseRewrite)(nil)
 
 type ResponseRewrite struct {
-	*Driver
-	id         string
+	drivers.WorkerBase
 	statusCode int
 	body       string
 	headers    map[string]string
@@ -25,16 +25,12 @@ func (r *ResponseRewrite) DoFilter(ctx eocontext.EoContext, next eocontext.IChai
 	return http_service.DoHttpFilter(r, ctx, next)
 }
 
-func (r *ResponseRewrite) Id() string {
-	return r.id
-}
-
 func (r *ResponseRewrite) Start() error {
 	return nil
 }
 
 func (r *ResponseRewrite) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	conf, err := r.check(v)
+	conf, err := check(v)
 	if err != nil {
 		return err
 	}
