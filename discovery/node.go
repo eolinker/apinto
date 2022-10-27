@@ -85,39 +85,11 @@ type INodesData interface {
 }
 
 type NodesData struct {
-	data eosc.IUntyped
+	eosc.Untyped[string, map[string]INode]
 }
 
-func NewNodesData() *NodesData {
-	return &NodesData{data: eosc.NewUntyped()}
-}
-
-func (n *NodesData) Get(name string) (map[string]INode, bool) {
-	nodes, has := n.data.Get(name)
-	if !has {
-		return nil, false
-	}
-	ns, ok := nodes.(map[string]INode)
-	if !ok {
-		return nil, false
-	}
-	return ns, true
-}
-
-func (n *NodesData) Set(name string, nodes map[string]INode) {
-	n.data.Set(name, nodes)
-}
-
-func (n *NodesData) Del(name string) (map[string]INode, bool) {
-	nodes, has := n.data.Del(name)
-	if !has {
-		return nil, false
-	}
-	ns, ok := nodes.(map[string]INode)
-	if !ok {
-		return nil, false
-	}
-	return ns, true
+func NewNodesData() INodesData {
+	return &NodesData{Untyped: eosc.BuildUntyped[string, map[string]INode]()}
 }
 
 type Nodes map[string]INode

@@ -88,9 +88,9 @@ func (c *consul) Stop() error {
 func (c *consul) Remove(id string) error {
 	c.locker.Lock()
 	defer c.locker.Unlock()
-	name, count := c.services.Remove(id)
+	n, count := c.services.Remove(id)
 	if count == 0 {
-		c.nodes.Del(name)
+		c.nodes.Del(n)
 	}
 	return nil
 }
