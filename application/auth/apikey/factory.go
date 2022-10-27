@@ -13,7 +13,7 @@ var _ auth.IAuthFactory = (*factory)(nil)
 
 var driverName = "apikey"
 
-//Register 注册auth驱动工厂
+// Register 注册auth驱动工厂
 func Register() {
 	auth.FactoryRegister(driverName, NewFactory())
 }
@@ -53,7 +53,7 @@ func (f *factory) Create(tokenName string, position string, rule interface{}) (a
 	return a, nil
 }
 
-//NewFactory 生成一个 auth_apiKey工厂
+// NewFactory 生成一个 auth_apiKey工厂
 func NewFactory() auth.IAuthFactory {
 	typ := reflect.TypeOf((*Config)(nil))
 	render, _ := schema.Generate(typ, nil)
@@ -65,5 +65,5 @@ func NewFactory() auth.IAuthFactory {
 }
 
 func toId(tokenName, position string) string {
-	return fmt.Sprintf("%s@%s", tokenName, position)
+	return fmt.Sprintf("%s@%s@%s", tokenName, position, driverName)
 }
