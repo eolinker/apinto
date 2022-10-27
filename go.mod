@@ -9,7 +9,6 @@ require (
 	github.com/fasthttp/websocket v1.5.0
 	github.com/go-basic/uuid v1.0.0
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/consul/api v1.9.1
 	github.com/nsqio/go-nsq v1.1.0
 	github.com/ohler55/ojg v1.12.9

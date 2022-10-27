@@ -3,7 +3,7 @@ package http_router
 import (
 	"net/http"
 
-	http_context2 "github.com/eolinker/apinto/node/http-context"
+	http_service "github.com/eolinker/apinto/node/http-context"
 
 	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
 	"github.com/eolinker/apinto/service"
@@ -39,7 +39,7 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 		return
 	}
 	if h.websocket {
-		wsCtx, err := http_context2.NewWebsocketContext(httpContext)
+		wsCtx, err := http_service.NewWebsocketContext(httpContext)
 		if err != nil {
 			httpContext.Response().SetStatus(http.StatusInternalServerError, "")
 			httpContext.Response().SetBody([]byte(err.Error()))
