@@ -1,6 +1,7 @@
 package access_log
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	http_entry "github.com/eolinker/apinto/http-entry"
 	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
@@ -13,8 +14,7 @@ var _ eocontext.IFilter = (*accessLog)(nil)
 var _ http_service.HttpFilter = (*accessLog)(nil)
 
 type accessLog struct {
-	*Driver
-	id     string
+	drivers.WorkerBase
 	output []output.IEntryOutput
 }
 
@@ -42,20 +42,16 @@ func (l *accessLog) Destroy() {
 	l.output = nil
 }
 
-func (l *accessLog) Id() string {
-	return l.id
-}
-
 func (l *accessLog) Start() error {
 	return nil
 }
 
 func (l *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	c, err := l.check(conf)
+	c, err := check(conf)
 	if err != nil {
 		return err
 	}
-	list, err := l.getList(c.Output)
+	list, err := getList(c.Output)
 	if err != nil {
 		return err
 	}

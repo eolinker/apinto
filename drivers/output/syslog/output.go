@@ -1,6 +1,7 @@
 package syslog
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
 	"reflect"
@@ -10,8 +11,7 @@ var _ output.IEntryOutput = (*Output)(nil)
 var _ eosc.IWorker = (*Output)(nil)
 
 type Output struct {
-	id   string
-	name string
+	drivers.WorkerBase
 
 	config  *Config
 	writer  *SysWriter
@@ -24,10 +24,6 @@ func (s *Output) Output(entry eosc.IEntry) error {
 		return w.output(entry)
 	}
 	return eosc.ErrorWorkerNotRunning
-}
-
-func (s *Output) Id() string {
-	return s.id
 }
 
 func (s *Output) Start() error {

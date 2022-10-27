@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"github.com/eolinker/apinto/drivers"
 
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/apinto/application/auth"
@@ -10,8 +11,7 @@ import (
 )
 
 type app struct {
-	id string
-	//name      string
+	drivers.WorkerBase
 	driverIDs []string
 	config    *Config
 	executor  application.IAppExecutor
@@ -39,12 +39,8 @@ func (a *app) Disable() bool {
 }
 
 func (a *app) Destroy() error {
-	appManager.Del(a.id)
+	appManager.Del(a.Id())
 	return nil
-}
-
-func (a *app) Id() string {
-	return a.id
 }
 
 func (a *app) Start() error {
@@ -70,12 +66,12 @@ func (a *app) set(cfg *Config) error {
 
 	if cfg.Anonymous {
 		anonymousApp := appManager.AnonymousApp()
-		if anonymousApp != nil && anonymousApp.Id() != a.id {
+		if anonymousApp != nil && anonymousApp.Id() != a.Id() {
 			return errors.New("anonymous app is already exists")
 		}
 		appManager.SetAnonymousApp(a)
 	} else {
-		filters, users, err := createFilters(a.id, cfg.Auth)
+		filters, users, err := createFilters(a.Id(), cfg.Auth)
 		if err != nil {
 			return err
 		}

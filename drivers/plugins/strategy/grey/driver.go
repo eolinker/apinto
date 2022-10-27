@@ -1,23 +1,16 @@
 package grey
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
 type Config struct {
 }
-type driver struct {
-}
 
-func (d *driver) ConfigType() reflect.Type {
-	return configType
-}
-
-func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
 	return &Strategy{
-		id:   id,
-		name: name,
+		WorkerBase: drivers.Worker(id, name),
 	}, nil
 }

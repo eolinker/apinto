@@ -1,40 +1,18 @@
 package redis
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
-type Driver struct {
-}
+func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
-func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-
-	_, err := checkConfig(v)
-	return err
-}
-func checkConfig(v interface{}) (*Config, error) {
-	cfg, ok := v.(*Config)
-	if !ok {
-		return nil, eosc.ErrorConfigIsNil
-	}
-	return cfg, nil
-}
-func (d *Driver) ConfigType() reflect.Type {
-	return configType
-}
-
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	if err := d.Check(v, workers); err != nil {
-		return nil, err
-	}
 	w := &Worker{
-		ICache:   &Empty{},
-		IVectors: &Empty{},
-		config:   nil,
-		client:   nil,
-		id:       id,
-		name:     name,
+		WorkerBase: drivers.Worker(id, name),
+		ICache:     &Empty{},
+		IVectors:   &Empty{},
+		config:     nil,
+		client:     nil,
 	}
 	err := w.Reset(v, workers)
 	if err != nil {

@@ -1,17 +1,9 @@
 package syslog
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
-
-type Driver struct {
-	configType reflect.Type
-}
-
-func (d *Driver) ConfigType() reflect.Type {
-	return d.configType
-}
 
 func check(v interface{}) (*Config, error) {
 	conf, ok := v.(*Config)
@@ -26,18 +18,17 @@ func check(v interface{}) (*Config, error) {
 
 }
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	cfg, err := check(v)
+func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+	err := cfg.doCheck()
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &Output{
-		id:     id,
-		name:   name,
-		config: cfg,
-		writer: nil,
+		WorkerBase: drivers.Worker(id, name),
+		config:     cfg,
+		writer:     nil,
 	}, nil
 
 }

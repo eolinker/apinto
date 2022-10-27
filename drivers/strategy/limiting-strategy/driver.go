@@ -2,20 +2,13 @@ package limiting_strategy
 
 import (
 	"fmt"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
-type driver struct {
-}
-
-func (d *driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	cfg, ok := v.(*Config)
-	if !ok {
-		return eosc.ErrorConfigIsNil
-	}
-
+func Check(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+ 
 	return checkConfig(cfg)
 }
 
@@ -31,18 +24,13 @@ func checkConfig(conf *Config) error {
 	return nil
 }
 
-func (d *driver) ConfigType() reflect.Type {
-	return configType
-}
-
-func (d *driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	if err := d.Check(v, workers); err != nil {
+func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+	if err := Check(v, workers); err != nil {
 		return nil, err
 	}
 
 	lg := &Limiting{
-		id:   id,
-		name: name,
+		WorkerBase: drivers.Worker(id, name),
 	}
 
 	err := lg.Reset(v, workers)

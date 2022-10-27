@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/eolinker/apinto/drivers"
 	"mime"
 	"net/http"
 	"strconv"
@@ -25,8 +26,7 @@ var (
 )
 
 type ExtraParams struct {
-	*Driver
-	id        string
+	drivers.WorkerBase
 	params    []*ExtraParam
 	errorType string
 }
@@ -172,16 +172,12 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 	return successStatusCode, nil
 }
 
-func (e *ExtraParams) Id() string {
-	return e.id
-}
-
 func (e *ExtraParams) Start() error {
 	return nil
 }
 
 func (e *ExtraParams) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	confObj, err := e.check(conf)
+	confObj, err := check(conf)
 	if err != nil {
 		return err
 	}

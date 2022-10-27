@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"github.com/eolinker/apinto/drivers"
 	"time"
 
 	"github.com/eolinker/apinto/application"
@@ -13,7 +14,7 @@ import (
 )
 
 type App struct {
-	id string
+	drivers.WorkerBase
 }
 
 func (a *App) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
@@ -101,10 +102,6 @@ func setLabels(ctx http_service.IHttpContext, labels map[string]string) {
 	for k, v := range labels {
 		ctx.SetLabel(k, v)
 	}
-}
-
-func (a *App) Id() string {
-	return a.id
 }
 
 func (a *App) Start() error {

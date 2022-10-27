@@ -3,6 +3,7 @@ package rate_limiting
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -20,8 +21,7 @@ var _ http_service.HttpFilter = (*RateLimiting)(nil)
 var _ eocontext.IFilter = (*RateLimiting)(nil)
 
 type RateLimiting struct {
-	*Driver
-	id               string
+	drivers.WorkerBase
 	rateInfo         *rateInfo
 	hideClientHeader bool
 	responseType     string
@@ -93,23 +93,19 @@ func (r *RateLimiting) DoHttpFilter(ctx http_service.IHttpContext, next eocontex
 	return err
 }
 
-func (r *RateLimiting) Id() string {
-	return r.id
-}
-
 func (r *RateLimiting) Start() error {
 	return nil
 }
 
 func (r *RateLimiting) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-confObj, err := r.check(conf)
-if err != nil {
-return err
-}
-r.rateInfo = CreateRateInfo(confObj)
-r.hideClientHeader = confObj.HideClientHeader
-r.responseType = confObj.ResponseType
-return nil
+	confObj, err := drivers.Assert[Config](conf)
+	if err != nil {
+		return err
+	}
+	r.rateInfo = CreateRateInfo(confObj)
+	r.hideClientHeader = confObj.HideClientHeader
+	r.responseType = confObj.ResponseType
+	return nil
 }
 
 func (r *RateLimiting) Stop() error {

@@ -3,6 +3,7 @@ package gzip
 import (
 	"bytes"
 	"compress/gzip"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -13,8 +14,7 @@ var _ http_service.HttpFilter = (*Gzip)(nil)
 var _ eocontext.IFilter = (*Gzip)(nil)
 
 type Gzip struct {
-	*Driver
-	id   string
+	drivers.WorkerBase
 	conf *Config
 }
 
@@ -87,21 +87,17 @@ func (g *Gzip) Destroy() {
 	g.conf = nil
 }
 
-func (g *Gzip) Id() string {
-	return g.id
-}
-
 func (g *Gzip) Start() error {
 	return nil
 }
 
 func (g *Gzip) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-cfg, err := g.check(conf)
-if err != nil {
-return err
-}
-g.conf = cfg
-return nil
+	cfg, err := check(conf)
+	if err != nil {
+		return err
+	}
+	g.conf = cfg
+	return nil
 }
 
 func (g *Gzip) Stop() error {

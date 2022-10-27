@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/utils/config"
 	"reflect"
@@ -16,15 +17,10 @@ var (
 )
 
 type static struct {
-	id        string
+	drivers.WorkerBase
 	handler   *HeathCheckHandler
 	isRunning bool
 	cfg       *Config
-}
-
-//Id 返回 worker id
-func (s *static) Id() string {
-	return s.id
 }
 
 //Start 开始服务发现

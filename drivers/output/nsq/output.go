@@ -1,6 +1,7 @@
 package nsq
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
 	"reflect"
@@ -10,7 +11,7 @@ var _ output.IEntryOutput = (*NsqOutput)(nil)
 var _ eosc.IWorker = (*NsqOutput)(nil)
 
 type NsqOutput struct {
-	id        string
+	drivers.WorkerBase
 	write     *Writer
 	config    *Config
 	isRunning bool
@@ -25,7 +26,7 @@ func (n *NsqOutput) Output(entry eosc.IEntry) error {
 }
 
 func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	cfg, err := Check(conf)
+	cfg, err := check(conf)
 	if err != nil {
 		return err
 	}
@@ -55,10 +56,6 @@ func (n *NsqOutput) Stop() error {
 		return w.stop()
 	}
 	return nil
-}
-
-func (n *NsqOutput) Id() string {
-	return n.id
 }
 
 func (n *NsqOutput) Start() error {

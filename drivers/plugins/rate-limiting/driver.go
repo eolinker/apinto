@@ -1,6 +1,7 @@
 package rate_limiting
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"reflect"
 )
@@ -13,34 +14,10 @@ type Driver struct {
 	configType reflect.Type
 }
 
-func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	_, err := d.check(v)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
-func (d *Driver) ConfigType() reflect.Type {
-	return d.configType
-}
-
-func (d *Driver) check(v interface{}) (*Config, error) {
-	conf, ok := v.(*Config)
-	if !ok {
-		return nil, eosc.ErrorConfigFieldUnknown
-	}
-	return conf, nil
-}
-
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	conf, err := d.check(v)
-	if err != nil {
-		return nil, err
-	}
 	l := &RateLimiting{
-		Driver:           d,
-		id:               id,
+		WorkerBase:       drivers.Worker(id, name),
 		rateInfo:         CreateRateInfo(conf),
 		hideClientHeader: conf.HideClientHeader,
 		responseType:     conf.ResponseType,

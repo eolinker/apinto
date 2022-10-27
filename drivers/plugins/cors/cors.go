@@ -3,6 +3,7 @@ package cors
 import (
 	"encoding/json"
 	"errors"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -15,8 +16,7 @@ var _ http_service.HttpFilter = (*CorsFilter)(nil)
 var _ eocontext.IFilter = (*CorsFilter)(nil)
 
 type CorsFilter struct {
-	*Driver
-	id               string
+	drivers.WorkerBase
 	responseType     string
 	allowCredentials bool
 	option           optionHandler
@@ -117,16 +117,12 @@ func (c *CorsFilter) checkAllMatch(name string) bool {
 	return strings.EqualFold(name, "*") || strings.EqualFold(name, "**")
 }
 
-func (c *CorsFilter) Id() string {
-	return c.id
-}
-
 func (c *CorsFilter) Start() error {
 	return nil
 }
 
 func (c *CorsFilter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	cfg, err := c.check(conf)
+	cfg, err := check(conf)
 	if err != nil {
 		return err
 	}
