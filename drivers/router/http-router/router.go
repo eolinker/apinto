@@ -1,6 +1,7 @@
 package http_router
 
 import (
+	"net/http"
 	"strings"
 	"time"
 
@@ -52,15 +53,18 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	if !ok {
 		return eosc.ErrorConfigFieldUnknown
 	}
+	methods := cfg.Method
 	handler := &httpHandler{
 		routerName:      h.name,
 		serviceName:     strings.TrimSuffix(string(cfg.Service), "@service"),
 		completeHandler: http_complete.NewHttpComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
-		finisher:        &Finisher{},
+		finisher:        defaultFinisher,
 		service:         nil,
 		filters:         nil,
 		disable:         cfg.Disable,
+		websocket:       cfg.Websocket,
 	}
+
 	if !cfg.Disable {
 
 		serviceWorker, has := workers[cfg.Service]
@@ -90,7 +94,8 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 
 		if cfg.Websocket {
 			handler.completeHandler = websocket.NewComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond)
-			handler.finisher = &websocket.Finisher{}
+			methods = []string{http.MethodGet}
+			//handler.finisher = &websocket.Finisher{}
 		}
 	}
 
@@ -102,7 +107,7 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 			Pattern: r.Value,
 		})
 	}
-	err := h.routerManager.Set(h.id, cfg.Listen, cfg.Host, cfg.Method, cfg.Path, appendRule, handler)
+	err := h.routerManager.Set(h.id, cfg.Listen, cfg.Host, methods, cfg.Path, appendRule, handler)
 	if err != nil {
 		return err
 	}

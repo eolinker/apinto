@@ -46,9 +46,7 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 			httpContext.FastFinish()
 			return
 		}
-		if wsCtx.IsWebsocket() {
-
-		}
+		ctx = wsCtx
 	}
 
 	//Set Label
@@ -62,4 +60,5 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 	ctx.SetUpstreamHostHandler(h.service)
 
 	h.filters.Chain(ctx, completeCaller)
+	ctx.GetFinish().Finish(ctx)
 }

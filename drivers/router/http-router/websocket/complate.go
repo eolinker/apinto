@@ -2,9 +2,12 @@ package websocket
 
 import (
 	"errors"
-	"fmt"
+	"net/http"
+	"net/url"
 	"strings"
 	"time"
+
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
 	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
@@ -14,10 +17,6 @@ import (
 var (
 	ErrorTimeoutComplete = errors.New("complete timeout")
 )
-
-//设置websocket
-//CheckOrigin防止跨站点的请求伪造
-var upgrader = websocket.FastHTTPUpgrader{}
 
 type Complete struct {
 	retry   int
@@ -29,17 +28,17 @@ func NewComplete(retry int, timeOut time.Duration) *Complete {
 }
 
 func (h *Complete) Complete(org eocontext.EoContext) error {
-	ctx, err := websocket_context.
+	ctx, err := http_service.WebsocketAssert(org)
 	if err != nil {
 		return err
 	}
-	conn, err := ctx.Upgrade()
+	err = ctx.Upgrade()
 	if err != nil {
 		return err
 	}
 	balance := ctx.GetBalance()
 	app := ctx.GetApp()
-	var lastErr error
+
 	scheme := app.Scheme()
 	switch strings.ToLower(scheme) {
 	case "http":
@@ -53,6 +52,10 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 
 	proxyTime := time.Now()
 	timeOut := app.TimeOut()
+	var lastErr error
+	var conn *websocket.Conn
+	var resp *http.Response
+
 	for index := 0; index <= h.retry; index++ {
 
 		if h.timeOut > 0 && time.Now().Sub(proxyTime) > h.timeOut {
@@ -61,33 +64,19 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 		node, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select error: ", lastErr)
-
 			return err
 		}
 
 		log.Debug("node: ", node.Addr())
-		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
-		lastErr = ctx.Dial(addr, timeOut)
+		u := url.URL{Scheme: "ws", Host: node.Addr(), Path: ctx.Proxy().URI().Path(), RawQuery: ctx.Proxy().URI().RawQuery()}
+		conn, resp, lastErr = DialWithTimeout(u.String(), ctx.Proxy().Header().Headers(), timeOut)
 		if lastErr == nil {
+			resp.Body.Close()
+			ctx.SetUpstreamConn(conn)
 			return nil
 		}
-		log.Error("http upstream send error: ", lastErr)
+		log.Error("websocket upstream send error: ", lastErr)
 	}
 
 	return lastErr
-}
-
-type httpCompleteCaller struct {
-}
-
-func NewHttpCompleteCaller() *httpCompleteCaller {
-	return &httpCompleteCaller{}
-}
-
-func (h *httpCompleteCaller) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
-	return ctx.GetComplete().Complete(ctx)
-}
-
-func (h *httpCompleteCaller) Destroy() {
-
 }

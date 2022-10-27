@@ -17,6 +17,7 @@ type App struct {
 }
 
 func (a *App) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	// 判断是否是websocket
 	return http_service.DoHttpFilter(a, ctx, next)
 }
 
@@ -40,11 +41,32 @@ func (a *App) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain)
 	return nil
 }
 
+func (a *App) DoWebsocketFilter(ctx http_service.IWebsocketContext, next eocontext.IChain) error {
+	log.Debug("auth beginning")
+	err := a.auth(ctx)
+	if err != nil {
+		ctx.Response().SetStatus(403, "403")
+		ctx.Response().SetBody([]byte(err.Error()))
+		return err
+	}
+	if next != nil {
+		err = next.DoChain(ctx)
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (a *App) auth(ctx http_service.IHttpContext) error {
 	driver := ctx.Request().Header().GetHeader("Authorization-Type")
 	filters := appManager.ListByDriver(driver)
-	if len(filters) < 1 && appManager.Count() > 0 {
-		filters = appManager.List()
+	if len(filters) < 1 {
+		if appManager.Count() > 0 {
+			filters = appManager.List()
+		} else {
+			return nil
+		}
 	}
 	for _, filter := range filters {
 		user, ok := filter.GetUser(ctx)

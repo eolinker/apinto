@@ -5,6 +5,8 @@ import (
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
+var defaultFinisher = &Finisher{}
+
 type Finisher struct {
 }
 
