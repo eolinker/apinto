@@ -3,6 +3,7 @@ package consul
 import (
 	"context"
 	"fmt"
+	"github.com/eolinker/apinto/drivers"
 	"sync"
 	"time"
 
@@ -15,8 +16,7 @@ import (
 )
 
 type consul struct {
-	id         string
-	name       string
+	drivers.WorkerBase
 	clients    *consulClients
 	nodes      discovery.INodesData
 	services   discovery.IServices
@@ -46,7 +46,7 @@ func (c *consul) Start() error {
 					for _, serviceName := range keys {
 						nodeSet, err := c.clients.getNodes(serviceName)
 						if err != nil {
-							log.Warnf("consul %s:%s for service %s", c.name, discovery.ErrDiscoveryDown, serviceName)
+							log.Warnf("consul %s:%s for service %s", c.Name(), discovery.ErrDiscoveryDown, serviceName)
 							continue
 						}
 						//更新目标服务的节点列表
@@ -129,11 +129,6 @@ func (c *consul) GetApp(serviceName string) (discovery.IApp, error) {
 //Create 创建目标服务的app
 func (c *consul) Create(serviceName string, attrs map[string]string, nodes map[string]discovery.INode) (discovery.IApp, error) {
 	return discovery.NewApp(nil, c, attrs, nodes), nil
-}
-
-//Id 返回 worker id
-func (c *consul) Id() string {
-	return c.id
 }
 
 //CheckSkill 检查目标能力是否存在

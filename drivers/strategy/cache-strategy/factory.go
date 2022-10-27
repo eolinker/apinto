@@ -1,9 +1,9 @@
 package cache_strategy
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/setting"
-	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 )
 
@@ -21,25 +21,17 @@ func Register(register eosc.IExtenderDriverRegister) {
 }
 
 type factory struct {
-	render interface{}
+	eosc.IExtenderDriverFactory
 }
 
-func newFactory() *factory {
-	render, err := schema.Generate(configType, nil)
-	if err != nil {
-		panic(err)
-	}
+func newFactory() eosc.IExtenderDriverFactory {
 	return &factory{
-		render: render,
+		IExtenderDriverFactory: drivers.NewFactory[Config](Create, Check),
 	}
-}
-
-func (f *factory) Render() interface{} {
-	return f.render
 }
 
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 	controller.driver = name
 	controller.profession = profession
-	return &driver{}, nil
+	return f.IExtenderDriverFactory.Create(profession, name, label, desc, params)
 }

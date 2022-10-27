@@ -40,8 +40,12 @@ func (l *Visit) Start() error {
 func (l *Visit) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	conf, ok := v.(*Config)
 	if !ok {
-		return eosc.ErrorConfigIsNil
+		return eosc.ErrorConfigType
 	}
+	return l.reset(conf, workers)
+}
+func (l *Visit) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+
 	if conf.Priority > 999 || conf.Priority < 1 {
 		return fmt.Errorf("priority value %d not allow ", conf.Priority)
 	}

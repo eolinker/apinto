@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc"
 	"github.com/go-redis/redis/v8"
@@ -13,17 +14,13 @@ var (
 )
 
 type Worker struct {
+	drivers.WorkerBase
 	resources.ICache
 	resources.IVectors
-	config    *Config
-	client    *redis.ClusterClient
-	id        string
-	name      string
-	isRunning bool
-}
+	config *Config
+	client *redis.ClusterClient
 
-func (w *Worker) Id() string {
-	return w.id
+	isRunning bool
 }
 
 func (w *Worker) Start() error {
@@ -44,7 +41,7 @@ func (w *Worker) Start() error {
 }
 
 func (w *Worker) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	cfg, err := checkConfig(conf)
+	cfg, err := drivers.Assert[Config](conf)
 	if err != nil {
 		return err
 	}

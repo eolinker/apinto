@@ -1,14 +1,14 @@
 package visit
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	visit_strategy "github.com/eolinker/apinto/drivers/strategy/visit-strategy"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 )
 
 type Strategy struct {
-	id   string
-	name string
+	drivers.WorkerBase
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
@@ -17,10 +17,6 @@ func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) 
 
 func (s *Strategy) Destroy() {
 	return
-}
-
-func (s *Strategy) Id() string {
-	return s.id
 }
 
 func (s *Strategy) Start() error {
