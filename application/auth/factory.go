@@ -37,7 +37,7 @@ type IAuthFactoryRegister interface {
 
 //driverRegister 驱动注册器
 type driverRegister struct {
-	register    eosc.IRegister
+	register    eosc.IRegister[IAuthFactory]
 	keys        []string
 	driverAlias map[string]string
 	render      map[string]interface{}
@@ -83,7 +83,7 @@ func (dm *driverRegister) ReadOnly() bool {
 //newAuthFactoryManager 创建auth工厂管理器
 func newAuthFactoryManager() *driverRegister {
 	return &driverRegister{
-		register:    eosc.NewRegister(),
+		register:    eosc.NewRegister[IAuthFactory](),
 		keys:        make([]string, 0, 10),
 		driverAlias: make(map[string]string),
 		render:      map[string]interface{}{},
@@ -92,12 +92,7 @@ func newAuthFactoryManager() *driverRegister {
 
 //GetFactoryByKey 获取指定auth工厂
 func (dm *driverRegister) GetFactoryByKey(key string) (IAuthFactory, bool) {
-	o, has := dm.register.Get(key)
-	if has {
-		f, ok := o.(IAuthFactory)
-		return f, ok
-	}
-	return nil, false
+	return dm.register.Get(key)
 }
 
 //RegisterFactoryByKey 注册auth工厂

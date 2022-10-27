@@ -1,26 +1,28 @@
 package fuse_strategy
 
 import (
-	"context"
 	"fmt"
-	"github.com/coocood/freecache"
 	"github.com/eolinker/apinto/metrics"
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/apinto/strategy"
-	"github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"github.com/eolinker/eosc/log"
-	"github.com/go-redis/redis/v8"
+	"golang.org/x/net/context"
+	"strconv"
 	"time"
 )
 
 type fuseStatus string
 
 const (
-	fuseStatusNone    fuseStatus = "none"    //默认状态
 	fuseStatusHealthy fuseStatus = "healthy" //健康期间
 	fuseStatusFusing  fuseStatus = "fusing"  //熔断期间
 	fuseStatusObserve fuseStatus = "observe" //观察期
+)
+
+type codeStatus int
+
+const (
+	codeStatusSuccess codeStatus = 1
+	codeStatusError   codeStatus = 2
 )
 
 type FuseHandler struct {
@@ -29,110 +31,53 @@ type FuseHandler struct {
 	priority int
 	stop     bool
 	rule     *ruleHandler
-	status   fuseStatus //状态
 }
 
-func (f *FuseHandler) Fusing(eoCtx eocontext.EoContext, cache resources.ICache) bool {
-	httpCtx, _ := http_service.Assert(eoCtx)
+func (f *FuseHandler) IsFuse(ctx context.Context, metrics string, cache resources.ICache) bool {
+	return getFuseStatus(ctx, metrics, cache) == fuseStatusFusing
+}
 
-	fuseCondition := f.rule.fuseCondition
-	recoverCondition := f.rule.recoverCondition
+//熔断次数的key
+func getFuseCountKey(metrics string) string {
+	return fmt.Sprintf("fuse_count_%s_%d", metrics, time.Now().Unix())
+}
 
-	ctx := context.Background()
-	statusCode := httpCtx.Response().StatusCode()
+//失败次数的key
+func getErrorCountKey(metrics string) string {
+	return fmt.Sprintf("fuse_error_count_%s_%d", metrics, time.Now().Unix())
+}
 
-	for _, code := range fuseCondition.statusCodes {
-		if statusCode != code {
-			continue
-		}
-		tx := cache.Tx()
-		//记录失败count
-		countKey := f.getFuseCountKey(eoCtx)
+func getSuccessCountKey(metrics string) string {
+	return fmt.Sprintf("fuse_success_count_%s_%d", metrics, time.Now().Unix())
+}
+func getFuseStatusKey(metrics string) string {
+	return fmt.Sprintf("fuse_status_%s", metrics)
+}
 
-		if f.status == fuseStatusFusing {
-			//缓存中拿不到数据 表示key过期 也就是熔断期已过 变成观察期
-			if _, err := tx.Get(ctx, f.getFuseTimeKey(eoCtx)).Bytes(); err != nil && (err == freecache.ErrNotFound || err == redis.Nil) {
-				f.status = fuseStatusObserve
-				_ = tx.Exec(ctx)
-				return false
-			}
-		}
+func getFuseStatus(ctx context.Context, metrics string, cache resources.ICache) fuseStatus {
 
-		result, err := tx.IncrBy(ctx, countKey, 1, time.Second).Result()
-		if err != nil {
-			log.Errorf("FuseHandler Fusing %v", err)
-			_ = tx.Exec(ctx)
-			return true
-		}
-
-		//清除恢复的计数器
-		tx.Del(ctx, f.getRecoverCountKey(eoCtx))
-
-		if result >= fuseCondition.count {
-			surplus := result % fuseCondition.count
-			if surplus == 0 {
-				//熔断持续时间=连续熔断次数*持续时间
-				exp := time.Second * time.Duration((result/fuseCondition.count)*f.rule.fuseTime.time)
-				maxExp := time.Duration(f.rule.fuseTime.maxTime) * time.Second
-				if exp >= maxExp {
-					exp = maxExp
-				}
-				tx.Set(ctx, f.getFuseTimeKey(eoCtx), []byte(""), exp)
-				f.status = fuseStatusFusing
-			}
-			_ = tx.Exec(ctx)
-			return true
-		}
-		break
+	key := getFuseStatusKey(metrics)
+	expUnixStr, err := cache.Get(ctx, key).Result()
+	if err != nil { //拿不到默认健康期
+		return fuseStatusHealthy
 	}
 
-	for _, code := range recoverCondition.statusCodes {
-		if code != statusCode {
-			continue
-		}
-		if f.status == fuseStatusObserve || f.status == fuseStatusFusing {
-			tx := cache.Tx()
-			result, err := tx.IncrBy(ctx, f.getRecoverCountKey(eoCtx), 1, time.Second).Result()
-			if err != nil {
-				_ = tx.Exec(ctx)
-				log.Errorf("FuseHandler Fusing %v", err)
-				return true
-			}
+	expUnix, _ := strconv.ParseInt(expUnixStr, 16, 64)
 
-			//恢复正常期
-			if result == recoverCondition.count {
-				f.status = fuseStatusHealthy
-			}
-			_ = tx.Exec(ctx)
-		}
-		break
+	//过了熔断期是观察期
+	if time.Now().UnixNano() > expUnix {
+		return fuseStatusObserve
 	}
-
-	if f.status == fuseStatusHealthy || f.status == fuseStatusNone || f.status == fuseStatusObserve {
-		return false
-	}
-
-	return true
-}
-
-func (f *FuseHandler) getFuseCountKey(label metrics.LabelReader) string {
-	return fmt.Sprintf("fuse_%s_%s_%d", f.name, f.rule.metric.Metrics(label), time.Now().Second())
-}
-
-func (f *FuseHandler) getFuseTimeKey(label metrics.LabelReader) string {
-	return fmt.Sprintf("fuse_time_%s_%s", f.name, f.rule.metric.Metrics(label))
-}
-
-func (f *FuseHandler) getRecoverCountKey(label metrics.LabelReader) string {
-	return fmt.Sprintf("fuse_recover_%s_%s_%d", f.name, f.rule.metric.Metrics(label), time.Now().Second())
+	return fuseStatusFusing
 }
 
 type ruleHandler struct {
-	metric           metrics.Metrics //熔断维度
-	fuseCondition    statusConditionConf
-	fuseTime         fuseTimeConf
-	recoverCondition statusConditionConf
-	response         strategyResponseConf
+	metric                metrics.Metrics //熔断维度
+	fuseConditionCount    int64
+	fuseTime              fuseTimeConf
+	recoverConditionCount int64
+	response              strategyResponseConf
+	codeStatusMap         map[int]codeStatus
 }
 
 type statusConditionConf struct {
@@ -141,8 +86,8 @@ type statusConditionConf struct {
 }
 
 type fuseTimeConf struct {
-	time    int64
-	maxTime int64
+	time    time.Duration
+	maxTime time.Duration
 }
 
 type strategyResponseConf struct {
@@ -171,20 +116,24 @@ func NewFuseHandler(conf *Config) (*FuseHandler, error) {
 		})
 	}
 
+	codeStatusMap := make(map[int]codeStatus)
+	for _, code := range conf.Rule.RecoverCondition.StatusCodes {
+		codeStatusMap[code] = codeStatusSuccess
+	}
+
+	for _, code := range conf.Rule.FuseCondition.StatusCodes {
+		codeStatusMap[code] = codeStatusError
+	}
 	rule := &ruleHandler{
-		metric: metrics.Parse([]string{conf.Rule.Metric}),
-		fuseCondition: statusConditionConf{
-			statusCodes: conf.Rule.FuseCondition.StatusCodes,
-			count:       conf.Rule.FuseCondition.Count,
-		},
+		metric:             metrics.Parse([]string{conf.Rule.Metric}),
+		fuseConditionCount: conf.Rule.FuseCondition.Count,
+
 		fuseTime: fuseTimeConf{
-			time:    conf.Rule.FuseTime.Time,
-			maxTime: conf.Rule.FuseTime.MaxTime,
+			time:    time.Duration(conf.Rule.FuseTime.Time) * time.Second,
+			maxTime: time.Duration(conf.Rule.FuseTime.MaxTime) * time.Second,
 		},
-		recoverCondition: statusConditionConf{
-			statusCodes: conf.Rule.RecoverCondition.StatusCodes,
-			count:       conf.Rule.RecoverCondition.Count,
-		},
+		recoverConditionCount: conf.Rule.RecoverCondition.Count,
+
 		response: strategyResponseConf{
 			statusCode:  conf.Rule.Response.StatusCode,
 			contentType: conf.Rule.Response.ContentType,
@@ -192,6 +141,7 @@ func NewFuseHandler(conf *Config) (*FuseHandler, error) {
 			headers:     headers,
 			body:        conf.Rule.Response.Body,
 		},
+		codeStatusMap: codeStatusMap,
 	}
 	return &FuseHandler{
 		name:     conf.Name,

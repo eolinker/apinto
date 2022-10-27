@@ -1,16 +1,17 @@
 package app
 
 import (
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"errors"
 
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/eosc"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 type app struct {
-	id        string
-	name      string
+	id string
+	//name      string
 	driverIDs []string
 	config    *Config
 	executor  application.IAppExecutor
@@ -21,10 +22,6 @@ func (a *app) Execute(ctx http_service.IHttpContext) error {
 		return nil
 	}
 	return a.executor.Execute(ctx)
-}
-
-func (a *app) Name() string {
-	return a.name
 }
 
 func (a *app) Labels() map[string]string {
@@ -70,14 +67,20 @@ func (a *app) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) e
 }
 
 func (a *app) set(cfg *Config) error {
-	filters, users, err := createFilters(a.id, cfg.Auth)
-	if err != nil {
-		return err
+
+	if cfg.Anonymous {
+		anonymousApp := appManager.AnonymousApp()
+		if anonymousApp != nil && anonymousApp.Id() != a.id {
+			return errors.New("anonymous app is already exists")
+		}
+		appManager.SetAnonymousApp(a)
+	} else {
+		filters, users, err := createFilters(a.id, cfg.Auth)
+		if err != nil {
+			return err
+		}
+		appManager.Set(a, filters, users)
 	}
-
-	//cfg.Labels["application"] = strings.TrimSuffix(app., "@app")
-
-	appManager.Set(a, filters, users)
 	e := newExecutor()
 	e.append(newAdditionalParam(cfg.Additional))
 	a.executor = e

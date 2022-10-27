@@ -51,13 +51,16 @@ func (d *driver) Create(id, name string, v interface{}, workers map[eosc.Require
 	}
 	err = a.set(cfg)
 
-	return a, nil
+	return a, err
 }
 
 func checkConfig(v interface{}) (*Config, error) {
 	conf, ok := v.(*Config)
 	if !ok {
 		return nil, errorConfigType
+	}
+	if conf.Anonymous && len(conf.Auth) > 0 {
+		return nil, errors.New("it is anonymous app,auths should be empty")
 	}
 	for _, a := range conf.Auth {
 		err := application.CheckPosition(a.Position)
@@ -71,5 +74,6 @@ func checkConfig(v interface{}) (*Config, error) {
 			return nil, err
 		}
 	}
+
 	return conf, nil
 }
