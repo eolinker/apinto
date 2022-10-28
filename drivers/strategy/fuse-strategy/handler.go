@@ -7,6 +7,7 @@ import (
 	"github.com/eolinker/apinto/strategy"
 	"golang.org/x/net/context"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -37,12 +38,12 @@ func (f *FuseHandler) IsFuse(ctx context.Context, metrics string, cache resource
 	return getFuseStatus(ctx, metrics, cache) == fuseStatusFusing
 }
 
-//熔断次数的key
+// 熔断次数的key
 func getFuseCountKey(metrics string) string {
 	return fmt.Sprintf("fuse_count_%s_%d", metrics, time.Now().Unix())
 }
 
-//失败次数的key
+// 失败次数的key
 func getErrorCountKey(metrics string) string {
 	return fmt.Sprintf("fuse_error_count_%s_%d", metrics, time.Now().Unix())
 }
@@ -97,6 +98,24 @@ type strategyResponseConf struct {
 	headers     []header
 	body        string
 }
+
+func (s *strategyResponseConf) Body(labels map[string]string) string {
+	s.body = strings.ReplaceAll(s.body, "$api", fmt.Sprintf("%s(%s)", labels["api"], labels["api_id"]))
+	s.body = strings.ReplaceAll(s.body, "$api_id", labels["api_id"])
+	s.body = strings.ReplaceAll(s.body, "$api_name", labels["api"])
+
+	s.body = strings.ReplaceAll(s.body, "$application", fmt.Sprintf("%s(%s)", labels["application_name"], labels["application"]))
+	s.body = strings.ReplaceAll(s.body, "$application_id", labels["application"])
+	s.body = strings.ReplaceAll(s.body, "$application_name", labels["application_name"])
+
+	s.body = strings.ReplaceAll(s.body, "$service", labels["service"])
+	s.body = strings.ReplaceAll(s.body, "$service_id", labels["service"])
+	s.body = strings.ReplaceAll(s.body, "$service_name", labels["service"])
+	s.body = strings.ReplaceAll(s.body, "ip", labels["ip"])
+
+	return s.body
+}
+
 type header struct {
 	key   string
 	value string

@@ -2,68 +2,39 @@ package http_router
 
 import (
 	"fmt"
-	"reflect"
-
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/template"
-	"github.com/eolinker/eosc/common/bean"
-	trafficConfig "github.com/eolinker/eosc/config"
 	"github.com/eolinker/eosc/log"
-	"github.com/eolinker/eosc/traffic"
 	"github.com/eolinker/eosc/utils/config"
+	"sync"
 
 	"github.com/eolinker/eosc"
 )
 
-//HTTPRouterDriver 实现github.com/eolinker/eosc.eosc.IProfessionDriver接口
-type HTTPRouterDriver struct {
-	configType    reflect.Type
+var (
 	routerManager manager.IManger
 	pluginManager plugin.IPluginManager
-}
+	once          sync.Once
+)
 
-func (h *HTTPRouterDriver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	_, _, _, err := h.check(v, workers)
+func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+	_, _, _, err := check(v, workers)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-//NewHTTPRouter 创建一个http路由驱动
-func NewHTTPRouterDriver() *HTTPRouterDriver {
-
-	h := &HTTPRouterDriver{
-		configType: reflect.TypeOf(new(Config)),
-	}
-	var tf traffic.ITraffic
-	var cfg *trafficConfig.ListensMsg
-	var pluginManager plugin.IPluginManager
-	bean.Autowired(&tf)
-	bean.Autowired(&cfg)
-	bean.Autowired(&pluginManager)
-	log.Debug("new router driver: ")
-	bean.AddInitializingBeanFunc(func() {
-		log.Debug("init router manager")
-
-		h.pluginManager = pluginManager
-
-		h.routerManager = manager.NewManager(tf, cfg, pluginManager.CreateRequest("global", map[string]*plugin.Config{}))
-
-	})
-	return h
-}
-
-//Create 创建一个http路由驱动实例
-func (h *HTTPRouterDriver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	log.Debug("create http router worker: ", h.pluginManager)
+// Create 创建一个http路由驱动实例
+func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+	log.Debug("create http router worker: ", pluginManager)
 	r := &HttpRouter{
 		id:            id,
 		name:          name,
-		routerManager: h.routerManager,
-		pluginManager: h.pluginManager,
+		routerManager: routerManager,
+		pluginManager: pluginManager,
 	}
 
 	err := r.reset(v, workers)
@@ -73,8 +44,8 @@ func (h *HTTPRouterDriver) Create(id, name string, v interface{}, workers map[eo
 	return r, err
 }
 
-//check 检查http路由驱动配置
-func (h *HTTPRouterDriver) check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) (*Config, service.IService, template.ITemplate, error) {
+// check 检查http路由驱动配置
+func check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) (*Config, service.IService, template.ITemplate, error) {
 	conf, ok := v.(*Config)
 	if !ok {
 		return nil, nil, nil, fmt.Errorf("get %s but %s %w", config.TypeNameOf(v), config.TypeNameOf(new(Config)), eosc.ErrorRequire)
@@ -100,9 +71,4 @@ func (h *HTTPRouterDriver) check(v interface{}, workers map[eosc.RequireId]eosc.
 	}
 	return conf, target, tmp, nil
 
-}
-
-//ConfigType 返回http路由驱动配置的反射类型
-func (h *HTTPRouterDriver) ConfigType() reflect.Type {
-	return h.configType
 }

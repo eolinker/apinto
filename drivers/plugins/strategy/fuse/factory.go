@@ -3,17 +3,10 @@ package fuse
 import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/utils/schema"
-	"reflect"
 )
 
 const (
 	Name = "strategy-plugin-fuse"
-)
-
-var (
-	configType = reflect.TypeOf((*Config)(nil))
-	render, _  = schema.Generate(configType, nil)
 )
 
 func Register(register eosc.IExtenderDriverRegister) {

@@ -98,7 +98,8 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cac
 				httpCtx.Response().SetHeader(h.key, h.value)
 			}
 			httpCtx.Response().SetHeader("Content-Type", fmt.Sprintf("%s; charset=%s", res.contentType, res.charset))
-			httpCtx.Response().SetBody([]byte(res.body))
+
+			httpCtx.Response().SetBody([]byte(res.Body(httpCtx.Labels())))
 			return nil
 		} else {
 			ctx.SetFinish(newFuseFinishHandler(ctx.GetFinish(), cache, handler, metrics))
