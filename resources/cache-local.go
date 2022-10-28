@@ -133,7 +133,7 @@ func ToBytes(v int64) []byte {
 func (n *cacheLocal) Get(ctx context.Context, key string) StringResult {
 	data, err := n.client.Get([]byte(key))
 	if err != nil {
-		return nil
+		return NewStringResult("", err)
 	}
 	return NewStringResultBytes(data, err)
 
