@@ -118,6 +118,7 @@ func (v *vectorLocal) vector(key string) *vectorValues {
 		return values
 	}
 	values = &vectorValues{vectors: make([]int64, v.size)}
+	v.vm[token] = values
 	return values
 }
 func (v *vectorLocal) read(vectors *vectorValues) int64 {

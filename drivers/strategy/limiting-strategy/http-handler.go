@@ -63,7 +63,7 @@ func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*LimitingHandl
 				return ErrorLimitingRefuse
 			}
 
-			if scalars.QueryMinute.Get(metricsValue) > h.query.Hour {
+			if scalars.QueryHour.Get(metricsValue) > h.query.Hour {
 				setLimitingStrategyContent(httpContext, h.Name())
 				log.DebugF("refuse by limiting strategy %s of hour query ", h.Name())
 
