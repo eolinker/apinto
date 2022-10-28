@@ -17,7 +17,7 @@ func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 }
 
 func check(v interface{}) (*ProducerConfig, error) {
-	conf, err := drivers.Assert[*Config](v)
+	conf, err := drivers.Assert[Config](v)
 	if err != nil {
 		return nil, err
 	}
