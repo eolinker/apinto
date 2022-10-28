@@ -100,20 +100,22 @@ type strategyResponseConf struct {
 }
 
 func (s *strategyResponseConf) Body(labels map[string]string) string {
-	s.body = strings.ReplaceAll(s.body, "$api", fmt.Sprintf("%s(%s)", labels["api"], labels["api_id"]))
-	s.body = strings.ReplaceAll(s.body, "$api_id", labels["api_id"])
-	s.body = strings.ReplaceAll(s.body, "$api_name", labels["api"])
+	tempBody := s.body
 
-	s.body = strings.ReplaceAll(s.body, "$application", fmt.Sprintf("%s(%s)", labels["application_name"], labels["application"]))
-	s.body = strings.ReplaceAll(s.body, "$application_id", labels["application"])
-	s.body = strings.ReplaceAll(s.body, "$application_name", labels["application_name"])
+	tempBody = strings.ReplaceAll(tempBody, "$api", fmt.Sprintf("%s(%s)", labels["api"], labels["api_id"]))
+	tempBody = strings.ReplaceAll(tempBody, "$api_id", labels["api_id"])
+	tempBody = strings.ReplaceAll(tempBody, "$api_name", labels["api"])
 
-	s.body = strings.ReplaceAll(s.body, "$service", labels["service"])
-	s.body = strings.ReplaceAll(s.body, "$service_id", labels["service"])
-	s.body = strings.ReplaceAll(s.body, "$service_name", labels["service"])
-	s.body = strings.ReplaceAll(s.body, "ip", labels["ip"])
+	tempBody = strings.ReplaceAll(tempBody, "$application", fmt.Sprintf("%s(%s)", labels["application_name"], labels["application"]))
+	tempBody = strings.ReplaceAll(tempBody, "$application_id", labels["application"])
+	tempBody = strings.ReplaceAll(tempBody, "$application_name", labels["application_name"])
 
-	return s.body
+	tempBody = strings.ReplaceAll(tempBody, "$service", labels["service"])
+	tempBody = strings.ReplaceAll(tempBody, "$service_id", labels["service"])
+	tempBody = strings.ReplaceAll(tempBody, "$service_name", labels["service"])
+	tempBody = strings.ReplaceAll(tempBody, "ip", labels["ip"])
+
+	return tempBody
 }
 
 type header struct {
