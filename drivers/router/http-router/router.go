@@ -1,6 +1,7 @@
 package http_router
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"net/http"
 	"strings"
 	"time"
@@ -41,18 +42,15 @@ func (h *HttpRouter) Start() error {
 }
 
 func (h *HttpRouter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	err := h.reset(conf, workers)
+	cfg, err := drivers.Assert[Config](conf)
 	if err != nil {
 		return err
 	}
+	return h.reset(cfg, workers)
 
-	return nil
 }
-func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	cfg, ok := conf.(*Config)
-	if !ok {
-		return eosc.ErrorConfigFieldUnknown
-	}
+func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+
 	methods := cfg.Method
 	handler := &httpHandler{
 		routerName:      h.name,
