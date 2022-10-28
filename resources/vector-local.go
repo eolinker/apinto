@@ -118,6 +118,7 @@ func (v *vectorLocal) vector(key string) *vectorValues {
 		return values
 	}
 	values = &vectorValues{vectors: make([]int64, v.size)}
+	v.vm[token] = values
 	return values
 }
 func (v *vectorLocal) read(vectors *vectorValues) int64 {
@@ -135,14 +136,14 @@ func (v *vectorLocal) refresh(key string) (int64, *vectorValues) {
 	last := atomic.SwapInt64(&v.lastIndex, index)
 
 	if index > last {
-		if index-last > v.step {
+		if index-last > v.size {
 
 			for i := int64(0); i < v.size; i++ {
 				atomic.StoreInt64(&vectors.vectors[i], 0)
 			}
 
 		} else {
-			for i := last; i < index; i++ {
+			for i := last + 1; i <= index; i++ {
 				atomic.StoreInt64(&vectors.vectors[i%v.size], 0)
 			}
 		}
