@@ -32,7 +32,7 @@ type Rule struct {
 type Config struct {
 	Name        string                `json:"name" skip:"skip"`
 	Description string                `json:"description" skip:"skip"`
-	Stop        bool                  `json:"stop"`
+	Stop        bool                  `json:"stop" label:"禁用"`
 	Priority    int                   `json:"priority" label:"优先级" description:"1-999"`
 	Filters     strategy.FilterConfig `json:"filters" label:"过滤规则"`
 	Rule        Rule                  `json:"limiting" label:"限流规则" description:"限流规则"`
