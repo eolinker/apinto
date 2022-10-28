@@ -1,6 +1,10 @@
 package limiting_strategy
 
-import "github.com/eolinker/apinto/strategy"
+import (
+	"fmt"
+	"github.com/eolinker/apinto/strategy"
+	"strings"
+)
 
 type Threshold struct {
 	Second int64 `json:"second" label:"每秒限制"`
@@ -20,6 +24,24 @@ type StrategyResponseConf struct {
 	Charset     string    `json:"charset"`
 	Headers     []*Header `json:"header,omitempty"`
 	Body        string    `json:"body"`
+}
+
+func (s *StrategyResponseConf) SetBodyLabel(labels map[string]string) string {
+	body := s.Body
+	body = strings.ReplaceAll(body, "$api", fmt.Sprintf("%s(%s)", labels["api"], labels["api_id"]))
+	body = strings.ReplaceAll(body, "$api_id", labels["api_id"])
+	body = strings.ReplaceAll(body, "$api_name", labels["api"])
+
+	body = strings.ReplaceAll(body, "$application", fmt.Sprintf("%s(%s)", labels["application_name"], labels["application"]))
+	body = strings.ReplaceAll(body, "$application_id", labels["application"])
+	body = strings.ReplaceAll(body, "$application_name", labels["application_name"])
+
+	body = strings.ReplaceAll(body, "$service", labels["service"])
+	body = strings.ReplaceAll(body, "$service_id", labels["service"])
+	body = strings.ReplaceAll(body, "$service_name", labels["service"])
+	body = strings.ReplaceAll(body, "ip", labels["ip"])
+
+	return body
 }
 
 type Rule struct {

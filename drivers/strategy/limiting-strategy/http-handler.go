@@ -103,7 +103,11 @@ func setLimitingStrategyContent(httpContext http_service.IHttpContext, name stri
 	httpContext.Response().SetStatus(response.StatusCode, http.StatusText(response.StatusCode))
 	httpContext.Response().SetHeader("Content-Type", fmt.Sprintf("%s; charset=%s", response.ContentType, response.Charset))
 
-	httpContext.Response().SetBody([]byte(response.Body))
+	for _, h := range response.Headers {
+		httpContext.Response().SetHeader(h.Key, h.Value)
+	}
+
+	httpContext.Response().SetBody([]byte(response.SetBodyLabel(httpContext.Labels())))
 	httpContext.Response().SetHeader("strategy", name)
 }
 
