@@ -2,6 +2,7 @@ package limiting_strategy
 
 import (
 	"errors"
+	"fmt"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
@@ -51,38 +52,38 @@ func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*LimitingHandl
 
 			if scalars.QuerySecond.Get(metricsValue) > h.query.Second {
 
-				setLimitingStrategyContent(httpContext, h.Name())
+				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of second query ", h.Name())
 
 				return ErrorLimitingRefuse
 			}
 			if scalars.QueryMinute.Get(metricsValue) > h.query.Minute {
 
-				setLimitingStrategyContent(httpContext, h.Name())
+				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of minute query ", h.Name())
 				return ErrorLimitingRefuse
 			}
 
 			if scalars.QueryHour.Get(metricsValue) > h.query.Hour {
-				setLimitingStrategyContent(httpContext, h.Name())
+				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of hour query ", h.Name())
 
 				return ErrorLimitingRefuse
 			}
 			if scalars.TrafficsSecond.Get(metricsValue) > h.traffic.Second {
 
-				setLimitingStrategyContent(httpContext, h.Name())
+				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of second traffic ", h.Name())
 				return ErrorLimitingRefuse
 			}
 			if scalars.TrafficsMinute.Get(metricsValue) > h.traffic.Minute {
-				setLimitingStrategyContent(httpContext, h.Name())
+				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of minute traffic ", h.Name())
 				return ErrorLimitingRefuse
 			}
 
 			if scalars.TrafficsHour.Get(metricsValue) > h.traffic.Hour {
-				setLimitingStrategyContent(httpContext, h.Name())
+				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of hour traffic ", h.Name())
 
 				return ErrorLimitingRefuse
@@ -98,8 +99,11 @@ func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*LimitingHandl
 	}
 	return nil
 }
-func setLimitingStrategyContent(httpContext http_service.IHttpContext, name string) {
-	httpContext.Response().SetStatus(http.StatusForbidden, http.StatusText(http.StatusForbidden))
+func setLimitingStrategyContent(httpContext http_service.IHttpContext, name string, response StrategyResponseConf) {
+	httpContext.Response().SetStatus(response.StatusCode, http.StatusText(response.StatusCode))
+	httpContext.Response().SetHeader("Content-Type", fmt.Sprintf("%s; charset=%s", response.ContentType, response.Charset))
+
+	httpContext.Response().SetBody([]byte(response.Body))
 	httpContext.Response().SetHeader("strategy", name)
 }
 

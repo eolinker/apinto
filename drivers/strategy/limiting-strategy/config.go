@@ -7,10 +7,26 @@ type Threshold struct {
 	Minute int64 `json:"minute" label:"每分钟限制"`
 	Hour   int64 `json:"hour" label:"每小时限制"`
 }
+
+type Header struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+// StrategyResponseConf 策略返回内容配置
+type StrategyResponseConf struct {
+	StatusCode  int       `json:"status_code"`
+	ContentType string    `json:"content_type"`
+	Charset     string    `json:"charset"`
+	Headers     []*Header `json:"header,omitempty"`
+	Body        string    `json:"body"`
+}
+
 type Rule struct {
-	Metrics []string  `json:"metrics" label:"限流计数器名"`
-	Query   Threshold `json:"query" label:"请求限制" description:"按请求次数"`
-	Traffic Threshold `json:"traffic" label:"流量限制" description:"按请求内容大小"`
+	Metrics  []string             `json:"metrics" label:"限流计数器名"`
+	Query    Threshold            `json:"query" label:"请求限制" description:"按请求次数"`
+	Traffic  Threshold            `json:"traffic" label:"流量限制" description:"按请求内容大小"`
+	Response StrategyResponseConf `json:"response" label:"响应内容"`
 }
 
 type Config struct {

@@ -16,6 +16,7 @@ type LimitingHandler struct {
 	metrics  metrics.Metrics
 	query    ThresholdUint
 	traffic  ThresholdUint
+	response StrategyResponseConf
 	priority int
 	stop     bool
 }
@@ -36,6 +37,10 @@ func (l *LimitingHandler) Priority() int {
 	return l.priority
 }
 
+func (l *LimitingHandler) Response() StrategyResponseConf {
+	return l.response
+}
+
 func (l *LimitingHandler) Stop() bool {
 	return l.stop
 }
@@ -54,6 +59,7 @@ func NewLimitingHandler(conf *Config) (*LimitingHandler, error) {
 		metrics:  mts,
 		query:    parseThreshold(conf.Rule.Query),
 		traffic:  parseThreshold(conf.Rule.Traffic),
+		response: conf.Rule.Response,
 		priority: conf.Priority,
 		stop:     conf.Stop,
 	}, nil
