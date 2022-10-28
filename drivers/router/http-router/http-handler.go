@@ -18,6 +18,7 @@ type httpHandler struct {
 	completeHandler eocontext.CompleteHandler
 
 	routerName  string
+	routerId    string
 	serviceName string
 
 	finisher  eocontext.FinishHandler
@@ -51,6 +52,7 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 
 	//Set Label
 	ctx.SetLabel("api", h.routerName)
+	ctx.SetLabel("api_id", h.routerId)
 	ctx.SetLabel("service", h.serviceName)
 	ctx.SetLabel("ip", httpContext.Request().ReadIP())
 	ctx.SetFinish(h.finisher)

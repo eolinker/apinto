@@ -52,8 +52,10 @@ func (h *HttpRouter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 
 	methods := cfg.Method
+
 	handler := &httpHandler{
 		routerName:      h.name,
+		routerId:        h.id,
 		serviceName:     strings.TrimSuffix(string(cfg.Service), "@service"),
 		completeHandler: http_complete.NewHttpComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
 		finisher:        defaultFinisher,
