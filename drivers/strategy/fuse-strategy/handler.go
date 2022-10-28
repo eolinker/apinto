@@ -130,8 +130,8 @@ func NewFuseHandler(conf *Config) (*FuseHandler, error) {
 	headers := make([]header, 0)
 	for _, v := range conf.Rule.Response.Header {
 		headers = append(headers, header{
-			key:   v.key,
-			value: v.value,
+			key:   v.Key,
+			value: v.Value,
 		})
 	}
 
