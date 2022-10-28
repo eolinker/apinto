@@ -22,7 +22,7 @@ type StrategyResponseConf struct {
 	StatusCode  int       `json:"status_code"`
 	ContentType string    `json:"content_type"`
 	Charset     string    `json:"charset"`
-	Headers     []*Header `json:"header,omitempty"`
+	Headers     []*Header `json:"header"`
 	Body        string    `json:"body"`
 }
 
