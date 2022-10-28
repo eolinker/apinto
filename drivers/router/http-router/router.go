@@ -54,8 +54,10 @@ func (h *HttpRouter) reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		return eosc.ErrorConfigFieldUnknown
 	}
 	methods := cfg.Method
+
 	handler := &httpHandler{
 		routerName:      h.name,
+		routerId:        h.id,
 		serviceName:     strings.TrimSuffix(string(cfg.Service), "@service"),
 		completeHandler: http_complete.NewHttpComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
 		finisher:        defaultFinisher,

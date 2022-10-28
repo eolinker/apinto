@@ -160,5 +160,5 @@ func (n *cacheLocal) Del(ctx context.Context, keys ...string) IntResult {
 }
 
 func newCacher() *cacheLocal {
-	return &cacheLocal{client: freecache.NewCache(0), keyLocks: make(map[string]*sync.Mutex)}
+	return &cacheLocal{client: freecache.NewCache(2048 * 1024), keyLocks: make(map[string]*sync.Mutex)}
 }
