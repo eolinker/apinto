@@ -36,7 +36,7 @@ type StrategyResponseConf struct {
 	StatusCode  int      `json:"status_code" label:"HTTP状态码"`
 	ContentType string   `json:"content_type" label:"Content-Type"`
 	Charset     string   `json:"charset" label:"Charset"`
-	Header      []Header `json:"header,omitempty" label:"Header参数"` //key:value
+	Header      []Header `json:"header" label:"Header参数"` //key:value
 	Body        string   `json:"body" label:"Body"`
 }
 

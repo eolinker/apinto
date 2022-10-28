@@ -19,11 +19,11 @@ type Header struct {
 
 // StrategyResponseConf 策略返回内容配置
 type StrategyResponseConf struct {
-	StatusCode  int       `json:"status_code"`
-	ContentType string    `json:"content_type"`
-	Charset     string    `json:"charset"`
-	Headers     []*Header `json:"header"`
-	Body        string    `json:"body"`
+	StatusCode  int       `json:"status_code" label:"HTTP状态码"`
+	ContentType string    `json:"content_type" label:"Content-Type"`
+	Charset     string    `json:"charset" label:"Charset"`
+	Headers     []*Header `json:"header" label:"Header参数"`
+	Body        string    `json:"body" label:"Body"`
 }
 
 func (s *StrategyResponseConf) SetBodyLabel(labels map[string]string) string {
