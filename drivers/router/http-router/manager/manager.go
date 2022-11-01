@@ -3,7 +3,7 @@ package manager
 import (
 	"crypto/tls"
 	"errors"
-	"github.com/eolinker/apinto/drivers/certs"
+	"github.com/eolinker/apinto/certs"
 	"net"
 	"sync"
 
@@ -87,18 +87,22 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters
 			if ln == nil {
 				continue
 			}
-			cert, err := config.NewCert(cfg.Certificate, listenCfg.Dir)
-			if err == nil {
-				ln = tls.NewListener(ln, &tls.Config{GetCertificate: cert.GetCertificate})
-			} else {
 
-				ln = tls.NewListener(ln, &tls.Config{GetCertificate: certs.GetCertificate})
+			iCert := certs.NewCert(cfg.Certificate, listenCfg.Dir)
+			ln = tls.NewListener(ln, &tls.Config{GetCertificate: iCert.GetCertificate})
 
-				//ln = tls.NewListener(ln, &tls.Config{GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-				//	return nil, errNoCertificates
-				//}})
-				log.Warn("worker create certificate error:", err)
-			}
+			//cert, err := config.NewCert(cfg.Certificate, listenCfg.Dir)
+			//if err == nil {
+			//	ln = tls.NewListener(ln, &tls.Config{GetCertificate: cert.GetCertificate})
+			//} else {
+			//
+			//	//ln = tls.NewListener(ln, &tls.Config{GetCertificate: certs.GetCertificate})
+			//
+			//	//ln = tls.NewListener(ln, &tls.Config{GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			//	//	return nil, errNoCertificates
+			//	//}})
+			//	log.Warn("worker create certificate error:", err)
+			//}
 		} else {
 			ln = tf.ListenTcp(port, traffic.Http1)
 			if ln == nil {

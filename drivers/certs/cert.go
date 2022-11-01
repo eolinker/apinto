@@ -13,7 +13,7 @@ func GetCertificate(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
 	if controller.certs == nil {
 		return nil, errorCertificateNotExit
 	}
-	certificate, has := controller.getCert(strings.ToLower(info.ServerName))
+	certificate, has := controller.GetCert(strings.ToLower(info.ServerName))
 	if !has {
 		return nil, errorCertificateNotExit
 	}
