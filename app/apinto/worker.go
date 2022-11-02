@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/apinto/drivers/app"
+	"github.com/eolinker/apinto/drivers/certs"
 	"github.com/eolinker/apinto/drivers/discovery/consul"
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
@@ -83,6 +84,8 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	redis.Register(extenderRegister)
 	//plugin
 	plugin_manager.Register(extenderRegister)
+
+	certs.Register(extenderRegister)
 
 	plugin_app.Register(extenderRegister)
 	extra_params.Register(extenderRegister)

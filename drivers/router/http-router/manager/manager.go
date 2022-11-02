@@ -3,6 +3,8 @@ package manager
 import (
 	"crypto/tls"
 	"errors"
+	"github.com/eolinker/apinto/certs"
+	"github.com/eolinker/eosc/common/bean"
 	"net"
 	"sync"
 
@@ -63,7 +65,15 @@ func (m *Manager) Delete(id string) {
 
 var errNoCertificates = errors.New("tls: no certificates configured")
 
-//NewManager 创建路由管理器
+var (
+	iCert certs.ICert
+)
+
+func init() {
+	bean.Autowired(&iCert)
+}
+
+// NewManager 创建路由管理器
 func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters eoscContext.IChainPro) *Manager {
 	log.Debug("new router manager")
 	m := &Manager{
@@ -86,15 +96,10 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters
 			if ln == nil {
 				continue
 			}
-			cert, err := config.NewCert(cfg.Certificate, listenCfg.Dir)
-			if err == nil {
-				ln = tls.NewListener(ln, &tls.Config{GetCertificate: cert.GetCertificate})
-			} else {
-				ln = tls.NewListener(ln, &tls.Config{GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-					return nil, errNoCertificates
-				}})
-				log.Warn("worker create certificate error:", err)
-			}
+			cert, _ := config.LoadCert(cfg.Certificate, listenCfg.Dir)
+
+			ln = tls.NewListener(ln, &tls.Config{GetCertificate: certs.GetCertificateFunc(cert)})
+
 		} else {
 			ln = tf.ListenTcp(port, traffic.Http1)
 			if ln == nil {

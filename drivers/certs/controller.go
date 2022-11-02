@@ -1,4 +1,4 @@
-package visit_strategy
+package certs
 
 import (
 	"github.com/eolinker/eosc"
@@ -8,6 +8,7 @@ import (
 var (
 	controller               = NewController()
 	_          eosc.ISetting = controller
+	configType               = reflect.TypeOf((*Config)(nil))
 )
 
 type Controller struct {
@@ -43,20 +44,24 @@ func (c *Controller) Mode() eosc.SettingMode {
 func (c *Controller) Check(cfg interface{}) (profession, name, driver, desc string, err error) {
 	conf, ok := cfg.(*Config)
 	if !ok {
-		err = eosc.ErrorConfigIsNil
+		err = eosc.ErrorConfigType
 		return
 	}
+
 	if empty(conf.Name) {
 		err = eosc.ErrorConfigFieldUnknown
 		return
 	}
-	err = checkConfig(conf)
+
+	_, _, err = parseCert(conf.Key, conf.Pem)
 	if err != nil {
-		return
+		return "", "", "", "", err
 	}
-	return c.profession, conf.Name, c.driver, conf.Description, nil
+
+	return c.profession, conf.Name, c.driver, "", nil
 
 }
+
 func empty(vs ...string) bool {
 	for _, v := range vs {
 		if len(v) == 0 {
@@ -74,7 +79,10 @@ func (c *Controller) AllWorkers() []string {
 }
 
 func NewController() *Controller {
-	return &Controller{
+
+	c := &Controller{
 		all: map[string]struct{}{},
 	}
+
+	return c
 }
