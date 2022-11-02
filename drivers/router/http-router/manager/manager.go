@@ -96,8 +96,9 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters
 			if ln == nil {
 				continue
 			}
+			cert, _ := config.LoadCert(cfg.Certificate, listenCfg.Dir)
 
-			ln = tls.NewListener(ln, &tls.Config{GetCertificate: iCert.GetCertificateFunc(cfg.Certificate, listenCfg.Dir)})
+			ln = tls.NewListener(ln, &tls.Config{GetCertificate: certs.GetCertificateFunc(cert)})
 
 		} else {
 			ln = tf.ListenTcp(port, traffic.Http1)

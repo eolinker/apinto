@@ -1,37 +1,20 @@
 package certs
 
 import (
-	"crypto/tls"
-	"crypto/x509"
-	"errors"
-	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/common/bean"
 	"reflect"
 )
 
 var (
-	controller                            = NewController()
-	_                       eosc.ISetting = controller
-	_                       IController   = controller
-	configType                            = reflect.TypeOf((*Config)(nil))
-	errorCertificateNotExit               = errors.New("not exist cert")
+	controller               = NewController()
+	_          eosc.ISetting = controller
+	configType               = reflect.TypeOf((*Config)(nil))
 )
 
-func init() {
-	bean.Injection(&controller)
-}
-
-type IController interface {
-	Store(id string)
-	Del(id string)
-	Save(id string, cert *tls.Certificate, certificate *x509.Certificate)
-}
 type Controller struct {
 	profession string
 	driver     string
 	all        map[string]struct{}
-	iCerts     certs.ICert
 }
 
 func (c *Controller) Store(id string) {
@@ -39,14 +22,7 @@ func (c *Controller) Store(id string) {
 }
 
 func (c *Controller) Del(id string) {
-
 	delete(c.all, id)
-
-	c.iCerts.DelCert(id)
-}
-
-func (c *Controller) Save(id string, cert *tls.Certificate, certificate *x509.Certificate) {
-	c.iCerts.SaveCert(id, cert, certificate)
 }
 
 func (c *Controller) ConfigType() reflect.Type {
@@ -108,6 +84,5 @@ func NewController() *Controller {
 		all: map[string]struct{}{},
 	}
 
-	bean.Autowired(&c.iCerts)
 	return c
 }

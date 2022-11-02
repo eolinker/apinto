@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
@@ -17,24 +18,17 @@ var (
 
 type Worker struct {
 	drivers.WorkerBase
-	config    *Config
-	isRunning bool
+	config *Config
 }
 
 func (w *Worker) Destroy() error {
+
 	controller.Del(w.Id())
+	certs.DelCert(w.Id())
 	return nil
 }
 
 func (w *Worker) Start() error {
-	w.isRunning = true
-
-	cert, certificate, err := parseCert(w.config.Key, w.config.Pem)
-	if err != nil {
-		return err
-	}
-
-	controller.Save(w.Id(), cert, certificate)
 
 	return nil
 }
@@ -49,16 +43,12 @@ func (w *Worker) Reset(conf interface{}, _ map[eosc.RequireId]eosc.IWorker) erro
 	}
 
 	w.config = config
-
-	if w.isRunning {
-		controller.Save(w.Id(), cert, certificate)
-	}
+	certs.SaveCert(w.Id(), cert, certificate)
 
 	return nil
 }
 
 func (w *Worker) Stop() error {
-	w.isRunning = false
 	return nil
 }
 

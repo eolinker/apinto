@@ -8,13 +8,8 @@ import (
 var (
 	controller               = NewController()
 	_          eosc.ISetting = controller
-	_          IController   = controller
 )
 
-type IController interface {
-	Store(id string)
-	Del(id string)
-}
 type Controller struct {
 	profession string
 	driver     string
