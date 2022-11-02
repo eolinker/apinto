@@ -37,7 +37,7 @@ func (w *Worker) Start() error {
 
 	w.cert = cert
 
-	controller.Save(w.cert.Leaf.Subject.CommonName, w.cert)
+	controller.Save(w.cert)
 
 	return nil
 }
@@ -51,8 +51,10 @@ func (w *Worker) Reset(conf interface{}, _ map[eosc.RequireId]eosc.IWorker) erro
 		return err
 	}
 
+	w.config = config
+
 	if w.isRunning {
-		controller.Save(cert.Leaf.Subject.CommonName, cert)
+		controller.Save(cert)
 	}
 
 	return nil

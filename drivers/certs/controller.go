@@ -3,12 +3,10 @@ package certs
 import (
 	"crypto/tls"
 	"errors"
-	"fmt"
+	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
 	"reflect"
-	"strings"
-	"sync"
 )
 
 var (
@@ -26,14 +24,13 @@ func init() {
 type IController interface {
 	Store(id string)
 	Del(id string, cert *tls.Certificate)
-	Save(name string, cert *tls.Certificate)
+	Save(cert *tls.Certificate)
 }
 type Controller struct {
 	profession string
 	driver     string
 	all        map[string]struct{}
-	certs      map[string]*tls.Certificate
-	lock       *sync.RWMutex
+	iCerts     certs.ICert
 }
 
 func (c *Controller) Store(id string) {
@@ -41,29 +38,14 @@ func (c *Controller) Store(id string) {
 }
 
 func (c *Controller) Del(id string, cert *tls.Certificate) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
 
 	delete(c.all, id)
 
-	if cert != nil {
-		delete(c.certs, cert.Leaf.Subject.CommonName)
-		for _, name := range cert.Leaf.DNSNames {
-			delete(c.certs, name)
-		}
-	}
-
+	c.iCerts.DelCert(cert)
 }
 
-func (c *Controller) Save(name string, cert *tls.Certificate) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	c.certs[name] = cert
-
-	for _, dnsName := range cert.Leaf.DNSNames {
-		c.certs[dnsName] = cert
-	}
-
+func (c *Controller) Save(cert *tls.Certificate) {
+	c.iCerts.SaveCert(cert)
 }
 
 func (c *Controller) ConfigType() reflect.Type {
@@ -103,10 +85,6 @@ func (c *Controller) Check(cfg interface{}) (profession, name, driver, desc stri
 
 }
 
-func (c *Controller) Certs() map[string]*tls.Certificate {
-	return c.certs
-}
-
 func empty(vs ...string) bool {
 	for _, v := range vs {
 		if len(v) == 0 {
@@ -123,32 +101,12 @@ func (c *Controller) AllWorkers() []string {
 	return ws
 }
 
-// GetCert 获取证书
-func (c *Controller) GetCert(hostName string) (*tls.Certificate, bool) {
-	if c == nil || len(c.certs) == 0 {
-		return nil, true
-	}
-
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-
-	cert, has := c.certs[hostName]
-	if has {
-		return cert, true
-	}
-	hs := strings.Split(hostName, ".")
-	if len(hs) < 1 {
-		return nil, false
-	}
-
-	cert, has = c.certs[fmt.Sprintf("*.%s", strings.Join(hs[1:], "."))]
-	return cert, has
-}
-
 func NewController() *Controller {
-	return &Controller{
-		all:   map[string]struct{}{},
-		certs: map[string]*tls.Certificate{},
-		lock:  &sync.RWMutex{},
+
+	c := &Controller{
+		all: map[string]struct{}{},
 	}
+
+	bean.Autowired(&c.iCerts)
+	return c
 }
