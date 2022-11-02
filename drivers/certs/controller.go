@@ -2,6 +2,7 @@ package certs
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/eosc"
@@ -23,8 +24,8 @@ func init() {
 
 type IController interface {
 	Store(id string)
-	Del(id string, cert *tls.Certificate)
-	Save(cert *tls.Certificate)
+	Del(id string)
+	Save(id string, cert *tls.Certificate, certificate *x509.Certificate)
 }
 type Controller struct {
 	profession string
@@ -37,15 +38,15 @@ func (c *Controller) Store(id string) {
 	c.all[id] = struct{}{}
 }
 
-func (c *Controller) Del(id string, cert *tls.Certificate) {
+func (c *Controller) Del(id string) {
 
 	delete(c.all, id)
 
-	c.iCerts.DelCert(cert)
+	c.iCerts.DelCert(id)
 }
 
-func (c *Controller) Save(cert *tls.Certificate) {
-	c.iCerts.SaveCert(cert)
+func (c *Controller) Save(id string, cert *tls.Certificate, certificate *x509.Certificate) {
+	c.iCerts.SaveCert(id, cert, certificate)
 }
 
 func (c *Controller) ConfigType() reflect.Type {
@@ -76,7 +77,7 @@ func (c *Controller) Check(cfg interface{}) (profession, name, driver, desc stri
 		return
 	}
 
-	_, err = parseCert(conf.Key, conf.Pem)
+	_, _, err = parseCert(conf.Key, conf.Pem)
 	if err != nil {
 		return "", "", "", "", err
 	}

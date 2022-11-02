@@ -19,25 +19,22 @@ type Worker struct {
 	drivers.WorkerBase
 	config    *Config
 	isRunning bool
-	cert      *tls.Certificate
 }
 
 func (w *Worker) Destroy() error {
-	controller.Del(w.Id(), w.cert)
+	controller.Del(w.Id())
 	return nil
 }
 
 func (w *Worker) Start() error {
 	w.isRunning = true
 
-	cert, err := parseCert(w.config.Key, w.config.Pem)
+	cert, certificate, err := parseCert(w.config.Key, w.config.Pem)
 	if err != nil {
 		return err
 	}
 
-	w.cert = cert
-
-	controller.Save(w.cert)
+	controller.Save(w.Id(), cert, certificate)
 
 	return nil
 }
@@ -46,7 +43,7 @@ func (w *Worker) Reset(conf interface{}, _ map[eosc.RequireId]eosc.IWorker) erro
 
 	config := conf.(*Config)
 
-	cert, err := parseCert(config.Key, config.Pem)
+	cert, certificate, err := parseCert(config.Key, config.Pem)
 	if err != nil {
 		return err
 	}
@@ -54,7 +51,7 @@ func (w *Worker) Reset(conf interface{}, _ map[eosc.RequireId]eosc.IWorker) erro
 	w.config = config
 
 	if w.isRunning {
-		controller.Save(cert)
+		controller.Save(w.Id(), cert, certificate)
 	}
 
 	return nil
@@ -69,22 +66,22 @@ func (w *Worker) CheckSkill(string) bool {
 	return false
 }
 
-func parseCert(privateKey, pemValue string) (*tls.Certificate, error) {
+func parseCert(privateKey, pemValue string) (*tls.Certificate, *x509.Certificate, error) {
 	var err error
 	privateKey, err = utils.B64Decode(privateKey)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	pemValue, err = utils.B64Decode(pemValue)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var cert tls.Certificate
 	//获取下一个pem格式证书数据 -----BEGIN CERTIFICATE-----   -----END CERTIFICATE-----
 	certDERBlock, restPEMBlock := pem.Decode([]byte(pemValue))
 	if certDERBlock == nil {
-		return nil, errors.New("证书解析失败")
+		return nil, nil, errors.New("证书解析失败")
 	}
 	//附加数字证书到返回
 	cert.Certificate = append(cert.Certificate, certDERBlock.Bytes)
@@ -98,7 +95,7 @@ func parseCert(privateKey, pemValue string) (*tls.Certificate, error) {
 	//解码pem格式的私钥------BEGIN RSA PRIVATE KEY-----   -----END RSA PRIVATE KEY-----
 	keyDERBlock, _ := pem.Decode([]byte(privateKey))
 	if keyDERBlock == nil {
-		return nil, errors.New("证书解析失败")
+		return nil, nil, errors.New("证书解析失败")
 	}
 	var key interface{}
 	var errParsePK error
@@ -111,15 +108,14 @@ func parseCert(privateKey, pemValue string) (*tls.Certificate, error) {
 	}
 
 	if errParsePK != nil {
-		return nil, errors.New("证书解析失败")
+		return nil, nil, errors.New("证书解析失败")
 	} else {
 		cert.PrivateKey = key
 	}
 	//第一个叶子证书就是我们https中使用的证书
 	x509Cert, err := x509.ParseCertificate(certDERBlock.Bytes)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	cert.Leaf = x509Cert
-	return &cert, nil
+	return &cert, x509Cert, nil
 }

@@ -2,6 +2,7 @@ package certs
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"github.com/eolinker/eosc/common/bean"
@@ -19,36 +20,55 @@ var errorCertificateNotExit = errors.New("not exist cert")
 
 type ICert interface {
 	GetCertificateFunc(certs []*config.Certificate, dir string) func(info *tls.ClientHelloInfo) (*tls.Certificate, error)
-	SaveCert(certificate *tls.Certificate)
-	DelCert(cert *tls.Certificate)
+	SaveCert(workerId string, cert *tls.Certificate, certificate *x509.Certificate)
+	DelCert(workerId string)
 }
 
 type cert struct {
-	certFunc func(info *tls.ClientHelloInfo) (*tls.Certificate, error)
-	certs    map[string]*tls.Certificate
-	lock     *sync.RWMutex
+	certs      map[string]*tls.Certificate
+	workerMaps map[string]map[string]*tls.Certificate
+	lock       *sync.RWMutex
 }
 
-func (c *cert) DelCert(cert *tls.Certificate) {
+func (c *cert) DelCert(workerId string) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	if cert != nil {
-		delete(c.certs, cert.Leaf.Subject.CommonName)
-		for _, name := range cert.Leaf.DNSNames {
-			delete(c.certs, name)
+	delCerts := c.workerMaps[workerId]
+	delete(c.workerMaps, workerId)
+
+	//删除组装后的证书信息
+	for key, _ := range delCerts {
+		delete(c.certs, key)
+	}
+
+	//为防止把其他worker的证书也删除了，重新组装
+	for _, certs := range c.workerMaps {
+		for k, v := range certs {
+			c.certs[k] = v
 		}
 	}
 }
 
-func (c *cert) SaveCert(cert *tls.Certificate) {
+func (c *cert) SaveCert(workerId string, cert *tls.Certificate, certificate *x509.Certificate) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	c.certs[cert.Leaf.Subject.CommonName] = cert
 
-	for _, dnsName := range cert.Leaf.DNSNames {
-		c.certs[dnsName] = cert
+	//每次save都是覆盖操作
+	certsMap := make(map[string]*tls.Certificate)
+
+	certsMap[certificate.Subject.CommonName] = cert
+	for _, dnsName := range certificate.DNSNames {
+		certsMap[dnsName] = cert
 	}
+
+	c.workerMaps[workerId] = certsMap
+
+	//将最新的证书组装好
+	for k, v := range certsMap {
+		c.certs[k] = v
+	}
+
 }
 
 func (c *cert) GetCertificateFunc(certs []*config.Certificate, dir string) func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
