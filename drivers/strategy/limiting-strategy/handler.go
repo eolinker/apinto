@@ -58,7 +58,7 @@ func NewLimitingHandler(conf *Config) (*LimitingHandler, error) {
 		filter:   filter,
 		metrics:  mts,
 		query:    parseThreshold(conf.Rule.Query),
-		traffic:  parseThreshold(conf.Rule.Traffic),
+		traffic:  parseThreshold(conf.Rule.Traffic, 1024*1024),
 		response: conf.Rule.Response,
 		priority: conf.Priority,
 		stop:     conf.Stop,

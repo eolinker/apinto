@@ -60,10 +60,17 @@ type Config struct {
 	Rule        Rule                  `json:"limiting" label:"限流规则" description:"限流规则"`
 }
 
-func parseThreshold(t Threshold) ThresholdUint {
+func parseThreshold(t Threshold, unit ...int64) ThresholdUint {
+	u := int64(1)
+	if len(unit) > 0 {
+		u = unit[0]
+	}
+	if u < 1 {
+		u = 1
+	}
 	return ThresholdUint{
-		Second: t.Second,
-		Minute: t.Minute,
-		Hour:   t.Hour,
+		Second: t.Second * u,
+		Minute: t.Minute * u,
+		Hour:   t.Hour * u,
 	}
 }
