@@ -3,14 +3,11 @@ package certs
 import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/setting"
 )
 
-const driverName = "cert"
-
 func Register(register eosc.IExtenderDriverRegister) {
-	register.RegisterExtenderDriver(driverName, newFactory())
-	setting.RegisterSetting(driverName, controller)
+	register.RegisterExtenderDriver("ssl-server", newFactory())
+	//setting.RegisterSetting("ssl-server", controller)
 }
 
 func newFactory() eosc.IExtenderDriverFactory {
