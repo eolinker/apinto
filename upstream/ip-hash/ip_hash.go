@@ -1,6 +1,7 @@
 package ip_hash
 
 import (
+	"errors"
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/upstream/balance"
 	eoscContext "github.com/eolinker/eosc/eocontext"
@@ -10,6 +11,10 @@ import (
 
 const (
 	name = "ip-hash"
+)
+
+var (
+	errNoValidNode = errors.New("no valid node")
 )
 
 // Register 注册ip-hash算法
@@ -46,7 +51,11 @@ func (r *ipHash) Next(org eoscContext.EoContext) (discovery.INode, error) {
 	}
 	readIp := httpContext.Request().ReadIP()
 	nodes := r.app.Nodes()
-	return nodes[HashCode(readIp)%len(nodes)], nil
+	size := len(nodes)
+	if size < 1 {
+		return nil, errNoValidNode
+	}
+	return nodes[HashCode(readIp)%size], nil
 }
 
 func newIpHash(app discovery.IApp) *ipHash {
