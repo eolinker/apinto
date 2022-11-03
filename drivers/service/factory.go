@@ -1,6 +1,7 @@
 package service
 
 import (
+	ip_hash "github.com/eolinker/apinto/upstream/ip-hash"
 	round_robin "github.com/eolinker/apinto/upstream/round-robin"
 	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
@@ -17,7 +18,7 @@ var (
 	})
 )
 
-//Register 注册service_http驱动工厂
+// Register 注册service_http驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
 	register.RegisterExtenderDriver(DriverName, NewFactory())
 }
@@ -33,13 +34,14 @@ func (f *factory) Render() interface{} {
 	return render
 }
 
-//NewFactory 创建service_http驱动工厂
+// NewFactory 创建service_http驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
 	round_robin.Register()
+	ip_hash.Register()
 	return &factory{}
 }
 
-//Create 创建service_http驱动
+// Create 创建service_http驱动
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 
 	return &driver{
