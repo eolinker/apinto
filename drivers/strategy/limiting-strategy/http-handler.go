@@ -50,39 +50,39 @@ func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*LimitingHandl
 			metricsAlready.Add(key)
 			metricsValue := h.Metrics().Metrics(ctx)
 
-			if scalars.QuerySecond.Get(metricsValue) > h.query.Second {
+			if h.query.Second > 0 && scalars.QuerySecond.Get(metricsValue) > h.query.Second {
 
 				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of second query ", h.Name())
 
 				return ErrorLimitingRefuse
 			}
-			if scalars.QueryMinute.Get(metricsValue) > h.query.Minute {
+			if h.query.Minute > 0 && scalars.QueryMinute.Get(metricsValue) > h.query.Minute {
 
 				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of minute query ", h.Name())
 				return ErrorLimitingRefuse
 			}
 
-			if scalars.QueryHour.Get(metricsValue) > h.query.Hour {
+			if h.query.Hour > 0 && scalars.QueryHour.Get(metricsValue) > h.query.Hour {
 				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of hour query ", h.Name())
 
 				return ErrorLimitingRefuse
 			}
-			if scalars.TrafficsSecond.Get(metricsValue) > h.traffic.Second {
+			if h.traffic.Second > 0 && scalars.TrafficsSecond.Get(metricsValue) > h.traffic.Second {
 
 				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of second traffic ", h.Name())
 				return ErrorLimitingRefuse
 			}
-			if scalars.TrafficsMinute.Get(metricsValue) > h.traffic.Minute {
+			if h.traffic.Minute > 0 && scalars.TrafficsMinute.Get(metricsValue) > h.traffic.Minute {
 				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of minute traffic ", h.Name())
 				return ErrorLimitingRefuse
 			}
 
-			if scalars.TrafficsHour.Get(metricsValue) > h.traffic.Hour {
+			if h.traffic.Hour > 0 && scalars.TrafficsHour.Get(metricsValue) > h.traffic.Hour {
 				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of hour traffic ", h.Name())
 
