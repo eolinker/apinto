@@ -197,15 +197,15 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Mod: eosc.ProfessionConfig_Worker,
 		},
 		{
-			Name:         "cert",
+			Name:         "certificate",
 			Label:        "证书",
 			Desc:         "证书",
 			Dependencies: nil,
 			AppendLabels: nil,
 			Drivers: []*eosc.DriverConfig{
 				{
-					Id:    "eolinker.com:apinto:cert",
-					Name:  "cert",
+					Id:    "eolinker.com:apinto:ssl-server",
+					Name:  "server",
 					Label: "证书",
 					Desc:  "证书",
 				},

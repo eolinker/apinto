@@ -82,6 +82,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	auth.Register(extenderRegister)
 
 	redis.Register(extenderRegister)
+
 	//plugin
 	plugin_manager.Register(extenderRegister)
 
@@ -115,4 +116,5 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 
 	fuse.Register(extenderRegister)
 	fuse_strategy.Register(extenderRegister)
+
 }
