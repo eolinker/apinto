@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"github.com/eolinker/apinto/certs"
-	"github.com/eolinker/eosc/common/bean"
 	"net"
 	"sync"
 
@@ -64,14 +63,6 @@ func (m *Manager) Delete(id string) {
 }
 
 var errNoCertificates = errors.New("tls: no certificates configured")
-
-var (
-	iCert certs.ICert
-)
-
-func init() {
-	bean.Autowired(&iCert)
-}
 
 // NewManager 创建路由管理器
 func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters eoscContext.IChainPro) *Manager {
