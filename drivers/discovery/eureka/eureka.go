@@ -3,9 +3,10 @@ package eureka
 import (
 	"context"
 	"fmt"
-	"github.com/eolinker/eosc/utils/config"
 	"sync"
 	"time"
+
+	"github.com/eolinker/eosc/utils/config"
 
 	"github.com/eolinker/eosc/log"
 
@@ -24,7 +25,7 @@ type eureka struct {
 	locker     sync.RWMutex
 }
 
-//GetApp 获取服务发现中目标服务的app
+// GetApp 获取服务发现中目标服务的app
 func (e *eureka) GetApp(serviceName string) (discovery.IApp, error) {
 	e.locker.RLock()
 	nodes, ok := e.nodes.Get(serviceName)
@@ -36,8 +37,8 @@ func (e *eureka) GetApp(serviceName string) (discovery.IApp, error) {
 			// 开始重新获取
 			ns, err := e.client.GetNodeList(serviceName)
 			if err != nil {
-				e.locker.Unlock()
-				return nil, err
+				log.Errorf("%s get %s node list error: %v", driverName, serviceName, err)
+				ns = make(discovery.Nodes)
 			}
 			e.nodes.Set(serviceName, ns)
 			nodes = ns
@@ -50,7 +51,7 @@ func (e *eureka) GetApp(serviceName string) (discovery.IApp, error) {
 	return app, nil
 }
 
-//Remove 从所有服务app中移除目标app
+// Remove 从所有服务app中移除目标app
 func (e *eureka) Remove(id string) error {
 	e.locker.Lock()
 	defer e.locker.Unlock()
@@ -62,12 +63,12 @@ func (e *eureka) Remove(id string) error {
 	return nil
 }
 
-//Id 返回 worker id
+// Id 返回 worker id
 func (e *eureka) Id() string {
 	return e.id
 }
 
-//Start 开始服务发现
+// Start 开始服务发现
 func (e *eureka) Start() error {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	e.context = ctx
@@ -104,7 +105,7 @@ func (e *eureka) Start() error {
 	return nil
 }
 
-//Reset 重置eureka实例配置
+// Reset 重置eureka实例配置
 func (e *eureka) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
@@ -114,13 +115,13 @@ func (e *eureka) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 	return nil
 }
 
-//Stop 停止服务发现
+// Stop 停止服务发现
 func (e *eureka) Stop() error {
 	e.cancelFunc()
 	return nil
 }
 
-//CheckSkill 检查目标能力是否存在
+// CheckSkill 检查目标能力是否存在
 func (e *eureka) CheckSkill(skill string) bool {
 	return discovery.CheckSkill(skill)
 }

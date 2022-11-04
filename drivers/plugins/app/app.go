@@ -41,9 +41,13 @@ func (a *App) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain)
 }
 
 func (a *App) auth(ctx http_service.IHttpContext) error {
+	if appManager.Count() < 1 {
+		return nil
+	}
 	driver := ctx.Request().Header().GetHeader("Authorization-Type")
 	filters := appManager.ListByDriver(driver)
-	if len(filters) < 1 && appManager.Count() > 0 {
+
+	if len(filters) < 1 {
 		filters = appManager.List()
 	}
 	for _, filter := range filters {
@@ -66,6 +70,11 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 			}
 			return user.App.Execute(ctx)
 		}
+	}
+	if app := appManager.AnonymousApp(); app != nil && !app.Disable() {
+		setLabels(ctx, app.Labels())
+		ctx.SetLabel("application", app.Id())
+		return app.Execute(ctx)
 	}
 	return errors.New("invalid user")
 }

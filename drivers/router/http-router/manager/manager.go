@@ -63,7 +63,7 @@ func (m *Manager) Delete(id string) {
 
 var errNoCertificates = errors.New("tls: no certificates configured")
 
-//NewManager 创建路由管理器
+// NewManager 创建路由管理器
 func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters eoscContext.IChainPro) *Manager {
 	log.Debug("new router manager")
 	m := &Manager{
@@ -127,6 +127,7 @@ func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 		log.Debug("match has:", port)
 		r.ServeHTTP(httpContext)
 	}
+	httpContext.GetFinish().Finish(httpContext)
 }
 
 type NotFoundHandler struct {
