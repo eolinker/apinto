@@ -3,11 +3,10 @@ package eureka
 import (
 	"context"
 	"fmt"
-	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/eosc/utils/config"
 	"sync"
 	"time"
 
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc/utils/config"
 
 	"github.com/eolinker/eosc/log"
@@ -64,7 +63,7 @@ func (e *eureka) Remove(id string) error {
 	return nil
 }
 
-//Start 开始服务发现
+// Start 开始服务发现
 func (e *eureka) Start() error {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	e.context = ctx

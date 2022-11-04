@@ -3,11 +3,10 @@ package nacos
 import (
 	"context"
 	"fmt"
-	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/eosc/utils/config"
 	"sync"
 	"time"
 
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc/utils/config"
 
 	"github.com/eolinker/eosc/log"
@@ -42,7 +41,7 @@ type Instance struct {
 	}
 }
 
-//CheckSkill 检查目标能力是否存在
+// CheckSkill 检查目标能力是否存在
 func (n *nacos) CheckSkill(skill string) bool {
 	return discovery.CheckSkill(skill)
 }
