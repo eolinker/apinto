@@ -3,6 +3,7 @@ package manager
 import (
 	"crypto/tls"
 	"errors"
+	"github.com/eolinker/apinto/certs"
 	"net"
 	"sync"
 
@@ -18,7 +19,7 @@ import (
 )
 
 var _ IManger = (*Manager)(nil)
-var notFound = new(NotFoundHandler)
+var notFound = new(HttpNotFoundHandler)
 var completeCaller = http_complete.NewHttpCompleteCaller()
 
 type IManger interface {
@@ -63,7 +64,7 @@ func (m *Manager) Delete(id string) {
 
 var errNoCertificates = errors.New("tls: no certificates configured")
 
-//NewManager 创建路由管理器
+// NewManager 创建路由管理器
 func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters eoscContext.IChainPro) *Manager {
 	log.Debug("new router manager")
 	m := &Manager{
@@ -86,15 +87,10 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters
 			if ln == nil {
 				continue
 			}
-			cert, err := config.NewCert(cfg.Certificate, listenCfg.Dir)
-			if err == nil {
-				ln = tls.NewListener(ln, &tls.Config{GetCertificate: cert.GetCertificate})
-			} else {
-				ln = tls.NewListener(ln, &tls.Config{GetCertificate: func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-					return nil, errNoCertificates
-				}})
-				log.Warn("worker create certificate error:", err)
-			}
+			cert, _ := config.LoadCert(cfg.Certificate, listenCfg.Dir)
+
+			ln = tls.NewListener(ln, &tls.Config{GetCertificate: certs.GetCertificateFunc(cert)})
+
 		} else {
 			ln = tf.ListenTcp(port, traffic.Http1)
 			if ln == nil {
@@ -116,7 +112,6 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters
 	return m
 }
 func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
-	log.Debug("fastHandler:", port)
 	httpContext := http_context.NewContext(ctx, port)
 	r, has := m.matcher.Match(port, httpContext.Request())
 	if !has {
@@ -127,12 +122,14 @@ func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 		log.Debug("match has:", port)
 		r.ServeHTTP(httpContext)
 	}
+	//}
+
 }
 
-type NotFoundHandler struct {
+type HttpNotFoundHandler struct {
 }
 
-func (m *NotFoundHandler) Complete(ctx eoscContext.EoContext) error {
+func (m *HttpNotFoundHandler) Complete(ctx eoscContext.EoContext) error {
 
 	httpContext, err := http_service.Assert(ctx)
 	if err != nil {
@@ -143,7 +140,7 @@ func (m *NotFoundHandler) Complete(ctx eoscContext.EoContext) error {
 	return nil
 }
 
-func (m *NotFoundHandler) Finish(ctx eoscContext.EoContext) error {
+func (m *HttpNotFoundHandler) Finish(ctx eoscContext.EoContext) error {
 	httpContext, err := http_service.Assert(ctx)
 	if err != nil {
 		return err

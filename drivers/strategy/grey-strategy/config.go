@@ -18,18 +18,18 @@ const (
 type Config struct {
 	Name        string                `json:"name" skip:"skip"`
 	Description string                `json:"description" skip:"skip"`
-	Stop        bool                  `json:"stop"`
+	Stop        bool                  `json:"stop" label:"禁用"`
 	Priority    int                   `json:"priority" label:"优先级" description:"1-999"`
 	Filters     strategy.FilterConfig `json:"filters" label:"过滤规则"`
-	Rule        *Rule                 `json:"rule" label:"灰度规则"`
+	Rule        Rule                  `json:"grey" label:"灰度规则"`
 }
 
 type Rule struct {
-	KeepSession  bool        `json:"keep_session"`
-	Nodes        []string    `json:"nodes"`        //
-	Distribution string      `json:"distribution"` // percent   match
-	Percent      int         `json:"percent"`      // 灰度的百分比 四位数
-	Matching     []*Matching `json:"matching"`
+	KeepSession  bool        `json:"keep_session" label:"会话保持规则"`
+	Nodes        []string    `json:"nodes" label:"灰度节点"`
+	Distribution string      `json:"distribution" label:"流量分配方式" enum:"percent,match"` // percent   match
+	Percent      int         `json:"percent" label:"灰度节点流量占比" description:"1-9999"`    // 灰度的百分比 四位数
+	Matching     []*Matching `json:"matching" label:"高级匹配"`
 }
 
 type Matching struct {

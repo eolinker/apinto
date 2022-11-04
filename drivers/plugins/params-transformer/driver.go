@@ -1,6 +1,7 @@
 package params_transformer
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"reflect"
 
 	"github.com/eolinker/eosc"
@@ -14,21 +15,18 @@ type Driver struct {
 	configType reflect.Type
 }
 
-func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	_, err := d.check(v)
-	if err != nil {
-		return err
-	}
-	return nil
+func Check(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+
+	return conf.doCheck()
 }
 
-func (d *Driver) check(v interface{}) (*Config, error) {
-	conf, ok := v.(*Config)
-	if !ok {
-		return nil, eosc.ErrorConfigFieldUnknown
-	}
+func check(v interface{}) (*Config, error) {
 
-	err := conf.doCheck()
+	conf, err := drivers.Assert[Config](v)
+	if err != nil {
+		return nil, err
+	}
+	err = conf.doCheck()
 	if err != nil {
 		return nil, err
 	}
@@ -36,23 +34,18 @@ func (d *Driver) check(v interface{}) (*Config, error) {
 	return conf, nil
 }
 
-func (d *Driver) ConfigType() reflect.Type {
-	return d.configType
-}
+func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-
-	conf, err := d.check(v)
+	err := conf.doCheck()
 	if err != nil {
 		return nil, err
 	}
 
 	ep := &ParamsTransformer{
-		Driver:    d,
-		id:        id,
-		params:    conf.Params,
-		remove:    conf.Remove,
-		errorType: conf.ErrorType,
+		WorkerBase: drivers.Worker(id, name),
+		params:     conf.Params,
+		remove:     conf.Remove,
+		errorType:  conf.ErrorType,
 	}
 
 	return ep, nil

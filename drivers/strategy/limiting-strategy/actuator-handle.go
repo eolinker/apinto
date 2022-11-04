@@ -1,13 +1,12 @@
 package limiting_strategy
 
 import (
-	"github.com/eolinker/apinto/drivers/strategy/limiting-strategy/scalar"
 	"github.com/eolinker/eosc/eocontext"
 )
 
 type ActuatorsHandler interface {
 	Assert(ctx eocontext.EoContext) bool
-	Check(ctx eocontext.EoContext, handlers []*LimitingHandler, queryScalar scalar.Manager, traffics scalar.Manager) error
+	Check(ctx eocontext.EoContext, handlers []*LimitingHandler, scalars *Scalars) error
 }
 
 var (

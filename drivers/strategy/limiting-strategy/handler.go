@@ -6,9 +6,9 @@ import (
 )
 
 type ThresholdUint struct {
-	Second uint64
-	Minute uint64
-	Hour   uint64
+	Second int64
+	Minute int64
+	Hour   int64
 }
 type LimitingHandler struct {
 	name     string
@@ -16,6 +16,7 @@ type LimitingHandler struct {
 	metrics  metrics.Metrics
 	query    ThresholdUint
 	traffic  ThresholdUint
+	response StrategyResponseConf
 	priority int
 	stop     bool
 }
@@ -32,16 +33,12 @@ func (l *LimitingHandler) Metrics() metrics.Metrics {
 	return l.metrics
 }
 
-func (l *LimitingHandler) Query() ThresholdUint {
-	return l.query
-}
-
-func (l *LimitingHandler) Traffic() ThresholdUint {
-	return l.traffic
-}
-
 func (l *LimitingHandler) Priority() int {
 	return l.priority
+}
+
+func (l *LimitingHandler) Response() StrategyResponseConf {
+	return l.response
 }
 
 func (l *LimitingHandler) Stop() bool {
@@ -61,7 +58,8 @@ func NewLimitingHandler(conf *Config) (*LimitingHandler, error) {
 		filter:   filter,
 		metrics:  mts,
 		query:    parseThreshold(conf.Rule.Query),
-		traffic:  parseThreshold(conf.Rule.Traffic),
+		traffic:  parseThreshold(conf.Rule.Traffic, 1024*1024),
+		response: conf.Rule.Response,
 		priority: conf.Priority,
 		stop:     conf.Stop,
 	}, nil

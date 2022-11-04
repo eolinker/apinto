@@ -1,6 +1,7 @@
 package template
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/template"
 
@@ -9,25 +10,18 @@ import (
 )
 
 type Template struct {
-	id   string
-	name string
+	drivers.WorkerBase
 
 	proxyDatas *ProxyDatas
 }
 
 func NewTemplate(id string, name string) *Template {
 	t := &Template{
-		id:   id,
-		name: name,
-
+		WorkerBase: drivers.Worker(id, name),
 		proxyDatas: NewProxyDatas(),
 	}
 
 	return t
-}
-
-func (t *Template) Id() string {
-	return t.id
 }
 
 func (t *Template) Start() error {

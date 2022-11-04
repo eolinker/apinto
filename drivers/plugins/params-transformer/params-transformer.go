@@ -2,6 +2,7 @@ package params_transformer
 
 import (
 	"encoding/json"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -16,8 +17,7 @@ var _ http_service.HttpFilter = (*ParamsTransformer)(nil)
 var _ eocontext.IFilter = (*ParamsTransformer)(nil)
 
 type ParamsTransformer struct {
-	*Driver
-	id        string
+	drivers.WorkerBase
 	params    []*TransParam
 	remove    bool
 	errorType string
@@ -187,16 +187,12 @@ func (p *ParamsTransformer) access(ctx http_service.IHttpContext) (int, error) {
 	return successStatusCode, nil
 }
 
-func (p *ParamsTransformer) Id() string {
-	return p.id
-}
-
 func (p *ParamsTransformer) Start() error {
 	return nil
 }
 
 func (p *ParamsTransformer) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	confObj, err := p.check(conf)
+	confObj, err := check(conf)
 	if err != nil {
 		return err
 	}

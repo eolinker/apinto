@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"github.com/eolinker/apinto/drivers"
 	"time"
 
 	"github.com/eolinker/apinto/application"
@@ -13,10 +14,11 @@ import (
 )
 
 type App struct {
-	id string
+	drivers.WorkerBase
 }
 
 func (a *App) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	// 判断是否是websocket
 	return http_service.DoHttpFilter(a, ctx, next)
 }
 
@@ -40,11 +42,32 @@ func (a *App) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain)
 	return nil
 }
 
+func (a *App) DoWebsocketFilter(ctx http_service.IWebsocketContext, next eocontext.IChain) error {
+	log.Debug("auth beginning")
+	err := a.auth(ctx)
+	if err != nil {
+		ctx.Response().SetStatus(403, "403")
+		ctx.Response().SetBody([]byte(err.Error()))
+		return err
+	}
+	if next != nil {
+		err = next.DoChain(ctx)
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (a *App) auth(ctx http_service.IHttpContext) error {
 	driver := ctx.Request().Header().GetHeader("Authorization-Type")
 	filters := appManager.ListByDriver(driver)
-	if len(filters) < 1 && appManager.Count() > 0 {
-		filters = appManager.List()
+	if len(filters) < 1 {
+		if appManager.Count() > 0 {
+			filters = appManager.List()
+		} else {
+			return nil
+		}
 	}
 	for _, filter := range filters {
 		user, ok := filter.GetUser(ctx)
@@ -61,11 +84,18 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 			setLabels(ctx, user.Labels)
 			setLabels(ctx, user.App.Labels())
 			ctx.SetLabel("application", user.App.Id())
+			ctx.SetLabel("application_name", user.App.Name())
 			if user.HideCredential {
 				application.HideToken(ctx, user.TokenName, user.Position)
 			}
 			return user.App.Execute(ctx)
 		}
+	}
+	if app := appManager.AnonymousApp(); app != nil && !app.Disable() {
+		setLabels(ctx, app.Labels())
+		ctx.SetLabel("application", app.Id())
+		ctx.SetLabel("application_name", app.Name())
+		return app.Execute(ctx)
 	}
 	return errors.New("invalid user")
 }
@@ -74,10 +104,6 @@ func setLabels(ctx http_service.IHttpContext, labels map[string]string) {
 	for k, v := range labels {
 		ctx.SetLabel(k, v)
 	}
-}
-
-func (a *App) Id() string {
-	return a.id
 }
 
 func (a *App) Start() error {

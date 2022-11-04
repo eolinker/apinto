@@ -2,7 +2,7 @@ package limiting_strategy
 
 import (
 	"errors"
-	"github.com/eolinker/apinto/drivers/strategy/limiting-strategy/scalar"
+	"fmt"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
@@ -33,12 +33,12 @@ func (hd *actuatorHttp) Assert(ctx eocontext.EoContext) bool {
 	return true
 }
 
-func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*LimitingHandler, queryScalars scalar.Manager, trafficScalars scalar.Manager) error {
+func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*LimitingHandler, scalars *Scalars) error {
 	httpContext, err := http_service.Assert(ctx)
 	if err != nil {
 		return err
 	}
-	length, _ := strconv.ParseUint(httpContext.Request().Header().GetHeader("content-length"), 10, 64)
+	contentLength, _ := strconv.ParseInt(httpContext.Request().Header().GetHeader("content-length"), 10, 64)
 
 	metricsAlready := newSet(len(handlers))
 	for _, h := range handlers {
@@ -50,51 +50,64 @@ func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*LimitingHandl
 			metricsAlready.Add(key)
 			metricsValue := h.Metrics().Metrics(ctx)
 
-			queryScalar := queryScalars.Get(metricsValue)
-			trafficScalar := trafficScalars.Get(metricsValue)
-			if !queryScalar.Second().CompareAndAdd(h.Query().Second, 1) {
-				setLimitingStrategyContent(httpContext, h.Name())
+			if h.query.Second > 0 && scalars.QuerySecond.Get(metricsValue) >= h.query.Second {
+
+				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of second query ", h.Name())
 
 				return ErrorLimitingRefuse
 			}
-			if !queryScalar.Minute().CompareAndAdd(h.Query().Minute, 1) {
-				setLimitingStrategyContent(httpContext, h.Name())
-				log.DebugF("refuse by limiting strategy %s of minute query ", h.Name())
+			if h.query.Minute > 0 && scalars.QueryMinute.Get(metricsValue) >= h.query.Minute {
 
+				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
+				log.DebugF("refuse by limiting strategy %s of minute query ", h.Name())
 				return ErrorLimitingRefuse
 			}
-			if !queryScalar.Hour().CompareAndAdd(h.Query().Hour, 1) {
-				setLimitingStrategyContent(httpContext, h.Name())
+
+			if h.query.Hour > 0 && scalars.QueryHour.Get(metricsValue) >= h.query.Hour {
+				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of hour query ", h.Name())
 
 				return ErrorLimitingRefuse
 			}
+			if h.traffic.Second > 0 && scalars.TrafficsSecond.Get(metricsValue) >= h.traffic.Second {
 
-			if !trafficScalar.Second().CompareAndAdd(h.Traffic().Second, length) {
-				setLimitingStrategyContent(httpContext, h.Name())
+				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of second traffic ", h.Name())
 				return ErrorLimitingRefuse
 			}
-
-			if !trafficScalar.Minute().CompareAndAdd(h.Traffic().Minute, length) {
-				setLimitingStrategyContent(httpContext, h.Name())
+			if h.traffic.Minute > 0 && scalars.TrafficsMinute.Get(metricsValue) >= h.traffic.Minute {
+				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of minute traffic ", h.Name())
 				return ErrorLimitingRefuse
 			}
 
-			if !trafficScalar.Hour().CompareAndAdd(h.Traffic().Hour, length) {
-				setLimitingStrategyContent(httpContext, h.Name())
+			if h.traffic.Hour > 0 && scalars.TrafficsHour.Get(metricsValue) >= h.traffic.Hour {
+				setLimitingStrategyContent(httpContext, h.Name(), h.Response())
 				log.DebugF("refuse by limiting strategy %s of hour traffic ", h.Name())
 
 				return ErrorLimitingRefuse
 			}
+			scalars.QuerySecond.Add(metricsValue, 1)
+			scalars.QueryMinute.Add(metricsValue, 1)
+			scalars.QueryHour.Add(metricsValue, 1)
+			scalars.TrafficsSecond.Add(metricsValue, contentLength)
+			scalars.TrafficsMinute.Add(metricsValue, contentLength)
+			scalars.TrafficsHour.Add(metricsValue, contentLength)
+
 		}
 	}
 	return nil
 }
-func setLimitingStrategyContent(httpContext http_service.IHttpContext, name string) {
-	httpContext.Response().SetStatus(http.StatusForbidden, http.StatusText(http.StatusForbidden))
+func setLimitingStrategyContent(httpContext http_service.IHttpContext, name string, response StrategyResponseConf) {
+	httpContext.Response().SetStatus(response.StatusCode, http.StatusText(response.StatusCode))
+	httpContext.Response().SetHeader("Content-Type", fmt.Sprintf("%s; charset=%s", response.ContentType, response.Charset))
+
+	for _, h := range response.Headers {
+		httpContext.Response().SetHeader(h.Key, h.Value)
+	}
+
+	httpContext.Response().SetBody([]byte(response.SetBodyLabel(httpContext.Labels())))
 	httpContext.Response().SetHeader("strategy", name)
 }
 

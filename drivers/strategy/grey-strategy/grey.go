@@ -2,6 +2,7 @@ package grey_strategy
 
 import (
 	"fmt"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"reflect"
 )
@@ -12,26 +13,21 @@ var (
 )
 
 type Grey struct {
-	id        string
-	name      string
+	drivers.WorkerBase
 	handler   *GreyHandler
 	config    *Config
 	isRunning int
 }
 
 func (l *Grey) Destroy() error {
-	controller.Del(l.id)
+	controller.Del(l.Id())
 	return nil
-}
-
-func (l *Grey) Id() string {
-	return l.id
 }
 
 func (l *Grey) Start() error {
 	if l.isRunning == 0 {
 		l.isRunning = 1
-		actuatorSet.Set(l.id, l.handler)
+		actuatorSet.Set(l.Id(), l.handler)
 	}
 
 	return nil
@@ -57,7 +53,7 @@ func (l *Grey) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) err
 	l.config = confCore
 	l.handler = handler
 	if l.isRunning != 0 {
-		actuatorSet.Set(l.id, l.handler)
+		actuatorSet.Set(l.Id(), l.handler)
 	}
 	return nil
 }
@@ -65,7 +61,7 @@ func (l *Grey) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) err
 func (l *Grey) Stop() error {
 	if l.isRunning != 0 {
 		l.isRunning = 0
-		actuatorSet.Del(l.id)
+		actuatorSet.Del(l.Id())
 	}
 
 	return nil

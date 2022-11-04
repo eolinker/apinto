@@ -1,21 +1,29 @@
 package redis
 
 import (
+	"github.com/eolinker/apinto/drivers"
+	round_robin "github.com/eolinker/apinto/upstream/round-robin"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/setting"
+	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
 )
 
 var (
-	singleton  *Controller
-	_          eosc.ISetting = singleton
-	configType               = reflect.TypeOf(new(Config))
+	configType = reflect.TypeOf(new(Config))
+	render     interface{}
 )
 
 func init() {
-	singleton = NewController()
+	render, _ = schema.Generate(configType, nil)
+
 }
 
 func Register(register eosc.IExtenderDriverRegister) {
-	setting.RegisterSetting("redis", singleton)
+	register.RegisterExtenderDriver("redis", NewFactory())
+}
+
+//NewFactory 创建service_http驱动工厂
+func NewFactory() eosc.IExtenderDriverFactory {
+	round_robin.Register()
+	return drivers.NewFactory[Config](Create)
 }

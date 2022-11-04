@@ -3,6 +3,7 @@ package eureka
 import (
 	"context"
 	"fmt"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc/utils/config"
 	"sync"
 	"time"
@@ -14,8 +15,7 @@ import (
 )
 
 type eureka struct {
-	id         string
-	name       string
+	drivers.WorkerBase
 	client     *client
 	nodes      discovery.INodesData
 	services   discovery.IServices
@@ -62,11 +62,6 @@ func (e *eureka) Remove(id string) error {
 	return nil
 }
 
-//Id 返回 worker id
-func (e *eureka) Id() string {
-	return e.id
-}
-
 //Start 开始服务发现
 func (e *eureka) Start() error {
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -87,7 +82,7 @@ func (e *eureka) Start() error {
 					for _, serviceName := range keys {
 						res, err := e.client.GetNodeList(serviceName)
 						if err != nil {
-							log.Warnf("eureka %s:%w for service %s", e.name, discovery.ErrDiscoveryDown, serviceName)
+							log.Warnf("eureka %s:%w for service %s", e.Name(), discovery.ErrDiscoveryDown, serviceName)
 							continue
 						}
 						//更新目标服务的节点列表

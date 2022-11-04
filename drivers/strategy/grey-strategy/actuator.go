@@ -18,10 +18,10 @@ const cookieName = "grey-cookie-%s"
 func init() {
 	actuator := newtActuator()
 	actuatorSet = actuator
-	strategy.AddStrategyHandler(actuator)
 }
 
 type ActuatorSet interface {
+	strategy.IStrategyHandler
 	Set(string, *GreyHandler)
 	Del(id string)
 }
@@ -68,7 +68,7 @@ func newtActuator() *tActuator {
 	}
 }
 
-func (a *tActuator) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) error {
+func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) error {
 
 	httpCtx, err := http_service.Assert(ctx)
 	if err != nil {
@@ -141,4 +141,8 @@ func (g *GreyBalanceHandler) Select(ctx eocontext.EoContext) (eocontext.INode, e
 		httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%v", cookieKey, normal))
 		return g.orgHandler.Select(ctx)
 	}
+}
+
+func DoStrategy(ctx eocontext.EoContext, next eocontext.IChain) error {
+	return actuatorSet.Strategy(ctx, next)
 }
