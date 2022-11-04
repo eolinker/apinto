@@ -62,5 +62,4 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 	ctx.SetUpstreamHostHandler(h.service)
 
 	h.filters.Chain(ctx, completeCaller)
-	ctx.GetFinish().Finish(ctx)
 }

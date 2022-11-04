@@ -60,14 +60,14 @@ func (a *App) DoWebsocketFilter(ctx http_service.IWebsocketContext, next eoconte
 }
 
 func (a *App) auth(ctx http_service.IHttpContext) error {
+	if appManager.Count() < 1 {
+		return nil
+	}
 	driver := ctx.Request().Header().GetHeader("Authorization-Type")
 	filters := appManager.ListByDriver(driver)
+
 	if len(filters) < 1 {
-		if appManager.Count() > 0 {
-			filters = appManager.List()
-		} else {
-			return nil
-		}
+		filters = appManager.List()
 	}
 	for _, filter := range filters {
 		user, ok := filter.GetUser(ctx)
