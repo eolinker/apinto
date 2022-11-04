@@ -9,6 +9,8 @@ Apinto is a microservice gateway developed based on golang. It can achieve the p
 
 **Note**：The **main** branch is the main development branch. Frequent updates may lead to unstable use. If you need to use a stable version, please look [release](https://github.com/eolinker/apinto/releases)
 
+**Apinto** integrates configuration and forwarding functions. Users can configure it through OpenAPI or through visual UI items [apinto dashboard](https://github.com/eolinker/apinto-dashboard) for configuration, click [apinto dashboard deployment document](https://help.apinto.com/docs/dashboard/quick/arrange) for relevant documents
+
 ### Summary / [中文介绍](https://github.com/eolinker/apinto/blob/main/README_CN.md)
 
 - [Why Apinto](#WhyApinto "Why Apinto")
@@ -33,7 +35,10 @@ Apinto API gateway has the following advantages:
 
 In a word, Apinto API gateway enables the business development team to focus more on business implementation.
 
-[![Stargazers over time](https://starchart.cc/eolinker/apinto.svg)](#)
+### Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=eolinker/apinto&type=Date)](https://star-history.com/#eolinker/apinto&Date)
+
 
 ### Feture
 
@@ -80,18 +85,18 @@ In a word, Apinto API gateway enables the business development team to focus mor
 
 ### Deployment
 
-* Direct Deployment：[Deployment Tutorial](https://help-apinto.eolink.com/?path=/quick/arrange)
-* [Quick Start Tutorial](https://help-apinto.eolink.com/?path=/quick/quick_course)
-* [Source Code Compilation Tutorial](https://help-apinto.eolink.com/?path=/quick/arrange)
-* Docker：Follow up support
+* Direct Deployment：[Deployment Tutorial](https://help.apinto.com/docs/apinto/quick/arrange.html)
+* [Quick Start Tutorial](https://help.apinto.com/docs/apinto/quick/quick_course.html)
+* [Source Code Compilation Tutorial](https://help.apinto.com/docs/apinto/quick/arrange.html)
+* [Docker](https://hub.docker.com/r/eolinker/apinto-gateway)
 * Kubernetes：Follow up support
 
 ### Get start
 
-1. Download and unzip the installation package (here is an example of the installation package of version v0.5.1)
+1. Download and unzip the installation package (here is an example of the installation package of version v0.8.0)
 
 ```
-wget https://github.com/eolinker/apinto/releases/download/v0.5.1/apinto-v0.5.1.linux.x64.tar.gz && tar -zxvf apinto-v0.5.1.linux.x64.tar.gz && cd apinto
+wget https://github.com/eolinker/apinto/releases/download/v0.8.0/apinto-v0.8.0.linux.x64.tar.gz && tar -zxvf apinto-v0.8.0.linux.x64.tar.gz && cd apinto
 ```
 
 2. Start gateway：
@@ -100,8 +105,10 @@ wget https://github.com/eolinker/apinto/releases/download/v0.5.1/apinto-v0.5.1.l
 ./apinto start
 ```
 
+3.To configure the gateway through the visual interface, click [apinto dashboard](https://github.com/eolinker/apinto-dashboard)
+
 ### Contact
-- **Help documentation**：[https://help.apinto.com](https://help.apinto.com)
+- **Help documentation**：[https://help.apinto.com](https://help.apinto.com/docs)
 - **QQ group**: 725853895
 - **Slack**：[Join us](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
 - **Official website**：[https://www.apinto.com](https://www.apinto.com)

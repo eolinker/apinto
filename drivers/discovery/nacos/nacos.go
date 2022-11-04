@@ -3,10 +3,11 @@ package nacos
 import (
 	"context"
 	"fmt"
-	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/eosc/utils/config"
 	"sync"
 	"time"
+
+	"github.com/eolinker/apinto/drivers"
+	"github.com/eolinker/eosc/utils/config"
 
 	"github.com/eolinker/eosc/log"
 
@@ -28,7 +29,7 @@ type nacos struct {
 	locker     sync.RWMutex
 }
 
-//Instance nacos 服务实例结构
+// Instance nacos 服务实例结构
 type Instance struct {
 	Hosts []struct {
 		Valid      bool    `json:"valid"`
@@ -40,12 +41,12 @@ type Instance struct {
 	}
 }
 
-//CheckSkill 检查目标能力是否存在
+// CheckSkill 检查目标能力是否存在
 func (n *nacos) CheckSkill(skill string) bool {
 	return discovery.CheckSkill(skill)
 }
 
-//Start 开始服务发现
+// Start 开始服务发现
 func (n *nacos) Start() error {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	n.context = ctx
@@ -83,7 +84,7 @@ func (n *nacos) Start() error {
 	return nil
 }
 
-//Reset 重置nacos实例配置
+// Reset 重置nacos实例配置
 func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
@@ -93,13 +94,13 @@ func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker)
 	return nil
 }
 
-//Stop 停止服务发现
+// Stop 停止服务发现
 func (n *nacos) Stop() error {
 	n.cancelFunc()
 	return nil
 }
 
-//Remove 从所有服务app中移除目标app
+// Remove 从所有服务app中移除目标app
 func (n *nacos) Remove(id string) error {
 	n.locker.Lock()
 	defer n.locker.Unlock()
@@ -110,7 +111,7 @@ func (n *nacos) Remove(id string) error {
 	return nil
 }
 
-//GetApp 获取服务发现中目标服务的app
+// GetApp 获取服务发现中目标服务的app
 func (n *nacos) GetApp(serviceName string) (discovery.IApp, error) {
 	n.locker.RLock()
 	nodes, ok := n.nodes.Get(serviceName)
@@ -121,8 +122,8 @@ func (n *nacos) GetApp(serviceName string) (discovery.IApp, error) {
 		if !ok {
 			ns, err := n.client.GetNodeList(serviceName)
 			if err != nil {
-				n.locker.Unlock()
-				return nil, err
+				log.Errorf("%s get %s node list error: %v", driverName, serviceName, err)
+				ns = make(discovery.Nodes)
 			}
 
 			n.nodes.Set(serviceName, ns)
