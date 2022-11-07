@@ -25,7 +25,7 @@ type consul struct {
 	cancelFunc context.CancelFunc
 }
 
-//Start 开始服务发现
+// Start 开始服务发现
 func (c *consul) Start() error {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	c.context = ctx
@@ -65,7 +65,7 @@ func (c *consul) Start() error {
 	return nil
 }
 
-//Reset 重置consul实例配置
+// Reset 重置consul实例配置
 func (c *consul) Reset(cfg interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	workerConfig, ok := cfg.(*Config)
 	if !ok {
@@ -78,13 +78,13 @@ func (c *consul) Reset(cfg interface{}, workers map[eosc.RequireId]eosc.IWorker)
 	return nil
 }
 
-//Stop 停止服务发现
+// Stop 停止服务发现
 func (c *consul) Stop() error {
 	c.cancelFunc()
 	return nil
 }
 
-//Remove 从所有服务app中移除目标app
+// Remove 从所有服务app中移除目标app
 func (c *consul) Remove(id string) error {
 	c.locker.Lock()
 	defer c.locker.Unlock()
@@ -95,7 +95,7 @@ func (c *consul) Remove(id string) error {
 	return nil
 }
 
-//GetApp 获取服务发现中目标服务的app
+// GetApp 获取服务发现中目标服务的app
 func (c *consul) GetApp(serviceName string) (discovery.IApp, error) {
 	var err error
 	var has bool
@@ -108,8 +108,8 @@ func (c *consul) GetApp(serviceName string) (discovery.IApp, error) {
 		if !has {
 			nodes, err = c.clients.getNodes(serviceName)
 			if err != nil {
-				c.locker.Unlock()
-				return nil, err
+				log.Errorf("%s get %s node list error: %v", driverName, serviceName, err)
+				nodes = make(discovery.Nodes)
 			}
 
 			c.nodes.Set(serviceName, nodes)
@@ -126,7 +126,7 @@ func (c *consul) GetApp(serviceName string) (discovery.IApp, error) {
 	return app, nil
 }
 
-//Create 创建目标服务的app
+// Create 创建目标服务的app
 func (c *consul) Create(serviceName string, attrs map[string]string, nodes map[string]discovery.INode) (discovery.IApp, error) {
 	return discovery.NewApp(nil, c, attrs, nodes), nil
 }
