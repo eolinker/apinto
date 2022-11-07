@@ -1,7 +1,47 @@
 listen:
   - 8099
-
+ssl:
+    listen:
+      - port: 8099
+        certificate:
+          - cert: ""
+            key: ""
 admin:
   scheme: http
   listen: 9400
   ip: 0.0.0.0
+  certificate:
+    key: ""
+    cert: ""
+
+certificate: # 证书默认目录
+    dir: /etc/apinto/cert
+
+## 下面为新配置
+cluster:
+  listen:
+     peer:
+       urls:
+         - "http://0.0.0.0:9401"
+      cert: apinto.crt
+      key: apinto.key
+    client:
+      urls:
+        - "http://0.0.0.0:9400"
+      cert: apinto-node1.crt
+      key: apinto.key
+  advertise:
+    peers:
+      - "http://10.1.0.1:9401"
+    clients:
+      - "http://10.1.0.1:9400"
+server:
+  listen:
+    urls:
+      - "http://10.0.0.1:8099"
+      - "http://0.0.0.0:8099"
+      - "http://:8099"
+    cert: apinto.demo.crt
+    key: apinto.demo.key
+  advertise:
+    - "http://"
