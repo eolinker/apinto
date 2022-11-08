@@ -37,7 +37,7 @@ func (r *ResponseRewrite) Reset(v interface{}, workers map[eosc.RequireId]eosc.I
 
 	//若body非空且需要base64转码
 	if conf.Body != "" && conf.BodyBase64 {
-		conf.Body, err = utils.B64Decode(conf.Body)
+		conf.Body, err = utils.B64DecodeString(conf.Body)
 		if err != nil {
 			return err
 		}

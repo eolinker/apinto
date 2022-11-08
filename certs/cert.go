@@ -2,7 +2,6 @@ package certs
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"github.com/eolinker/eosc/config"
 	"sync"
@@ -11,20 +10,15 @@ import (
 var errorCertificateNotExit = errors.New("not exist cert")
 
 type ICert interface {
-	SaveCert(workerId string, cert *tls.Certificate, certificate *x509.Certificate)
+	SaveCert(workerId string, cert *tls.Certificate)
 	DelCert(workerId string)
 }
 
 var (
-	workerMaps               = make(map[string]*info)
+	workerMaps               = make(map[string]*tls.Certificate)
 	lock                     = sync.RWMutex{}
 	currentCert *config.Cert = nil
 )
-
-type info struct {
-	cert        *tls.Certificate
-	certificate *x509.Certificate
-}
 
 func DelCert(workerId string) {
 	lock.Lock()
@@ -34,22 +28,19 @@ func DelCert(workerId string) {
 	rebuild()
 }
 
-func SaveCert(workerId string, cert *tls.Certificate, certificate *x509.Certificate) {
+func SaveCert(workerId string, cert *tls.Certificate) {
 	lock.Lock()
 	defer lock.Unlock()
-	workerMaps[workerId] = &info{
-		cert:        cert,
-		certificate: certificate,
-	}
+	workerMaps[workerId] = cert
 	rebuild()
 
 }
 func rebuild() {
 	certsMap := make(map[string]*tls.Certificate)
 	for _, i := range workerMaps {
-		certsMap[i.certificate.Subject.CommonName] = i.cert
-		for _, dnsName := range i.certificate.DNSNames {
-			certsMap[dnsName] = i.cert
+		certsMap[i.Leaf.Subject.CommonName] = i
+		for _, dnsName := range i.Leaf.DNSNames {
+			certsMap[dnsName] = i
 		}
 	}
 	currentCert = config.NewCert(certsMap)
