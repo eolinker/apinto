@@ -22,15 +22,17 @@ certificate: # 证书默认目录
 peer:
   listens:
     - "http://0.0.0.0:9401"
-  cert: apinto.crt
-  key: apinto.key
+  certificate:
+    - cert: apinto-node1.crt
+      key: apinto.key
   advertise:
     - "http://10.1.0.1:9401"
 client:
   listens:
     - "http://0.0.0.0:9400"
-  cert: apinto-node1.crt
-  key: apinto.key
+  certificate:
+    - cert: apinto-node1.crt
+      key: apinto.key
   advertise:
     - "http://10.1.0.1:9400"
 gateway:
@@ -38,7 +40,8 @@ gateway:
       - "http://10.0.0.1:8099"
       - "http://0.0.0.0:8099"
       - "http://:8099"
-    cert: apinto.demo.crt
-    key: apinto.demo.key
-    advertise:
+  certificate:
+    - cert: apinto-node1.crt
+      key: apinto.key
+  advertise:
       - "http://"
