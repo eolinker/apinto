@@ -2,6 +2,7 @@ package certs
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
@@ -67,5 +68,11 @@ func parseCert(privateKey, pemValue string) (*tls.Certificate, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	x509Cert, err := x509.ParseCertificate(certificate.Certificate[0])
+	if err != nil {
+		return nil, err
+	}
+	certificate.Leaf = x509Cert
 	return &certificate, nil
 }
