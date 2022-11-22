@@ -14,6 +14,7 @@ require (
 	github.com/pkg/sftp v1.13.4
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
 	github.com/satori/go.uuid v1.2.0
+	github.com/urfave/cli/v2 v2.3.0
 	github.com/valyala/fasthttp v1.31.0
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 )
@@ -76,7 +77,6 @@ require (
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/stretchr/testify v1.7.1 // indirect
-	github.com/urfave/cli/v2 v2.3.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect

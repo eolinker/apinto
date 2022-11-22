@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"mime"
 	"net/http"
@@ -155,5 +154,5 @@ func parseBodyParams(ctx http_service.IHttpContext) (interface{}, map[string][]s
 		bodyParams, err := oj.Parse(body)
 		return bodyParams, nil, err
 	}
-	return nil, nil, errors.New("unsupported content-type: " + contentType)
+	return nil, nil, nil
 }

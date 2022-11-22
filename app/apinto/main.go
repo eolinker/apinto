@@ -14,6 +14,8 @@ package main
 import (
 	"os"
 
+	"github.com/eolinker/apinto/utils/version"
+
 	"github.com/eolinker/eosc/env"
 
 	"github.com/eolinker/eosc"
@@ -50,6 +52,7 @@ func main() {
 	}
 	app := eoscli.NewApp()
 	app.Default()
+	app.AppendCommand(version.Build())
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Error(err)
