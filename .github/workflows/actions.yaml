@@ -28,6 +28,8 @@ jobs:
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOVERSION: $(go version)
+          EoscVersion: $(sed -n 's/.*eosc v/v/p' go.mod)
   dockerImage:
     needs: [releasePackage]
     name: buildDockerImage
