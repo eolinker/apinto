@@ -114,7 +114,10 @@ func createFilters(id string, auths []*Auth) ([]application.IAuth, map[string][]
 			return nil, nil, err
 		}
 		filters = append(filters, filter)
-		userMap[filter.ID()] = users
+		if _, ok := userMap[filter.ID()]; !ok {
+			userMap[filter.ID()] = make([]application.ITransformConfig, 0, len(users))
+		}
+		userMap[filter.ID()] = append(userMap[filter.ID()], users...)
 	}
 	return filters, userMap, nil
 }
