@@ -96,11 +96,15 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 ### 启动
 
-1.下载安装包并解压（此处以v0.8.0版本的安装包示例）
+1.下载安装包并解压（此处以v0.8.4版本的安装包示例）
 
 ```
-wget https://github.com/eolinker/apinto/releases/download/v0.8.0/apinto-v0.8.0.linux.x64.tar.gz && tar -zxvf apinto-v0.8.0.linux.x64.tar.gz && cd apinto
+wget https://github.com/eolinker/apinto/releases/download/v0.8.4/apinto_v0.8.4_linux_amd64.tar.gz && tar -zxvf apinto_v0.8.4_linux_amd64.tar.gz && cd apinto
 ```
+
+Apinto支持在arm64、i386、amd64架构上运行。
+
+请根据需要下载对应架构及系统的安装包，安装包下载请[点击](https://github.com/eolinker/apinto/releases/)跳转
 
 2.启动网关：
 
