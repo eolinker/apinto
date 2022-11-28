@@ -26,6 +26,11 @@ var upgrader = websocket.FastHTTPUpgrader{}
 
 func (w *WebsocketContext) Upgrade() error {
 	err := upgrader.Upgrade(w.fastHttpRequestCtx, func(conn *websocket.Conn) {
+		if w.upstreamConn == nil {
+			// 上游连接失败，直接返回
+			log.Error("fail to connect upstream")
+			return
+		}
 		defer conn.Close()
 		defer w.upstreamConn.Close()
 		wg := &sync.WaitGroup{}

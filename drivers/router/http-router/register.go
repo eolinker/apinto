@@ -27,7 +27,7 @@ type RouterDriverFactory struct {
 func (r *RouterDriverFactory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 	once.Do(func() {
 		var tf traffic.ITraffic
-		var cfg *trafficConfig.ListensMsg
+		var cfg *trafficConfig.ListenUrl
 
 		bean.Autowired(&tf)
 		bean.Autowired(&cfg)
