@@ -25,8 +25,17 @@ builds:
     binary: apinto
     builder: go
     gobinary: go
+#    ldflags:
+#      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser
+#      -
     ldflags:
-      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser
+      - -s -w
+      - -X "github.com/eolinker/apinto/utils/version.Version={{.Version}}"
+      - -X "github.com/eolinker/apinto/utils/version.gitCommit={{.Commit}}"
+      - -X "github.com/eolinker/apinto/utils/version.buildTime={{.Date}}"
+      - -X "github.com/eolinker/apinto/utils/version.buildUser=goreleaser"
+      - -X "github.com/eolinker/apinto/utils/version.goVersion={{.Env.GOVERSION}}"
+      - -X "github.com/eolinker/apinto/utils/version.eoscVersion={{.Env.EoscVersion}}"
 archives:
   - id: default
     format: tar.gz
