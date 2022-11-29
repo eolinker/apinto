@@ -11,10 +11,10 @@ import (
 	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/discovery"
-	"github.com/go-basic/uuid"
+	"github.com/google/uuid"
 )
 
-//NewHTTPCheck 创建HTTPCheck
+// NewHTTPCheck 创建HTTPCheck
 func NewHTTPCheck(config Config) *HTTPCheck {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -30,7 +30,7 @@ func NewHTTPCheck(config Config) *HTTPCheck {
 	return checker
 }
 
-//HTTPCheck HTTP健康检查结构,实现了IHealthChecker接口
+// HTTPCheck HTTP健康检查结构,实现了IHealthChecker接口
 type HTTPCheck struct {
 	config *Config
 	ctx    context.Context
@@ -41,7 +41,7 @@ type HTTPCheck struct {
 	locker sync.RWMutex
 }
 
-//doCheckLoop 定时检查，维护了一个待检测节点集合
+// doCheckLoop 定时检查，维护了一个待检测节点集合
 func (h *HTTPCheck) doCheckLoop() {
 	if h.config.Period < 1 {
 		return
@@ -78,18 +78,18 @@ func (h *HTTPCheck) doCheckLoop() {
 	}
 }
 
-//Agent 生成一个agent
+// Agent 生成一个agent
 func (h *HTTPCheck) Agent() (discovery.IHealthChecker, error) {
-	return NewAgent(uuid.New(), h), nil
+	return NewAgent(uuid.NewString(), h), nil
 }
 
-//Reset 重置HTTPCheck的配置
+// Reset 重置HTTPCheck的配置
 func (h *HTTPCheck) Reset(conf Config) error {
 	h.config = &conf
 	return nil
 }
 
-//AddToCheck 将节点添加进HTTPCheck的检查列表
+// AddToCheck 将节点添加进HTTPCheck的检查列表
 func (h *HTTPCheck) AddToCheck(node discovery.INode) error {
 	h.addToCheck(&checkNode{
 		node:    node,
@@ -98,24 +98,24 @@ func (h *HTTPCheck) AddToCheck(node discovery.INode) error {
 	return nil
 }
 
-//addToCheck 将节点传入HTTPCheck的检测Channel
+// addToCheck 将节点传入HTTPCheck的检测Channel
 func (h *HTTPCheck) addToCheck(node *checkNode) error {
 	h.ch <- node
 	return nil
 }
 
-//Stop 停止HTTPCheck，中止定时检查
+// Stop 停止HTTPCheck，中止定时检查
 func (h *HTTPCheck) Stop() error {
 	h.cancel()
 	return nil
 }
 
-//stop 停止从属该agentID的所有节点的健康检查
+// stop 停止从属该agentID的所有节点的健康检查
 func (h *HTTPCheck) stop(agentID string) {
 	h.delCh <- agentID
 }
 
-//check 对待检查的节点集合进行检测，入参：nodes map[agentID][nodeID]*checkNode
+// check 对待检查的节点集合进行检测，入参：nodes map[agentID][nodeID]*checkNode
 func (h *HTTPCheck) check(nodes map[string]map[string]*checkNode) map[string]map[string]*checkNode {
 	//将待检测节点集合中地址相同的节点整合在一起，结构为：map[node.Addr][]*checkNode
 	newNodes := make(map[string][]*checkNode)
@@ -157,7 +157,7 @@ func (h *HTTPCheck) check(nodes map[string]map[string]*checkNode) map[string]map
 	return nodes
 }
 
-//checkNode 进入检查channel的节点结构
+// checkNode 进入检查channel的节点结构
 type checkNode struct {
 	node    discovery.INode
 	agentID string
