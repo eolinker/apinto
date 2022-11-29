@@ -12,29 +12,6 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-// Proxy performs the given http request and fills the given http response.
-//
-// Request must contain at least non-zero RequestURI with full url (including
-// scheme and host) or non-zero Host header + RequestURI.
-//
-// Client determines the server to be requested in the following order:
-//
-//   - from RequestURI if it contains full url with scheme and host;
-//   - from Host header otherwise.
-//
-// The function doesn't follow redirects. Use Get* for following redirects.
-//
-// Response is ignored if resp is nil.
-//
-// ErrNoFreeConns is returned if all DefaultMaxConnsPerHost connections
-// to the requested host are busy.
-//
-// It is recommended obtaining req and resp via AcquireRequest
-// and AcquireResponse in performance-critical code.
-func Proxy(addr string, req *fasthttp.Request, resp *fasthttp.Response) error {
-	return defaultClient.Proxy(addr, req, resp)
-}
-
 // ProxyTimeout performs the given request and waits for response during
 // the given timeout duration.
 //
@@ -65,33 +42,6 @@ func Proxy(addr string, req *fasthttp.Request, resp *fasthttp.Response) error {
 // try using a Client and setting a ReadTimeout.
 func ProxyTimeout(addr string, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) error {
 	return defaultClient.ProxyTimeout(addr, req, resp, timeout)
-}
-
-// ProxyDeadline performs the given request and waits for response until
-// the given deadline.
-//
-// Request must contain at least non-zero RequestURI with full url (including
-// scheme and host) or non-zero Host header + RequestURI.
-//
-// Client determines the server to be requested in the following order:
-//
-//   - from RequestURI if it contains full url with scheme and host;
-//   - from Host header otherwise.
-//
-// The function doesn't follow redirects. Use Get* for following redirects.
-//
-// Response is ignored if resp is nil.
-//
-// ErrTimeout is returned if the response wasn't returned until
-// the given deadline.
-//
-// ErrNoFreeConns is returned if all DefaultMaxConnsPerHost connections
-// to the requested host are busy.
-//
-// It is recommended obtaining req and resp via AcquireRequest
-// and AcquireResponse in performance-critical code.
-func ProxyDeadline(addr string, req *fasthttp.Request, resp *fasthttp.Response, deadline time.Time) error {
-	return defaultClient.ProxyDeadline(addr, req, resp, deadline)
 }
 
 var defaultClient Client
@@ -328,106 +278,14 @@ func (c *Client) ProxyTimeout(addr string, req *fasthttp.Request, resp *fasthttp
 	if err != nil {
 		return err
 	}
-	old := string(req.URI().Scheme())
-	req.URI().SetScheme(scheme)
-	defer req.URI().SetScheme(old)
+
+	request := fasthttp.AcquireRequest()
+	defer fasthttp.ReleaseRequest(request)
+	req.CopyTo(request)
+	request.URI().SetScheme(scheme)
+	request.Header.ResetConnectionClose()
 	return client.DoTimeout(req, resp, timeout)
 
-}
-
-// ProxyDeadline performs the given request and waits for response until
-// the given deadline.
-//
-// Request must contain at least non-zero RequestURI with full url (including
-// scheme and host) or non-zero Host header + RequestURI.
-//
-// Client determines the server to be requested in the following order:
-//
-//   - from RequestURI if it contains full url with scheme and host;
-//   - from Host header otherwise.
-//
-// The function doesn't follow redirects. Use Get* for following redirects.
-//
-// Response is ignored if resp is nil.
-//
-// ErrTimeout is returned if the response wasn't returned until
-// the given deadline.
-//
-// ErrNoFreeConns is returned if all Client.MaxConnsPerHost connections
-// to the requested host are busy.
-//
-// It is recommended obtaining req and resp via AcquireRequest
-// and AcquireResponse in performance-critical code.
-func (c *Client) ProxyDeadline(address string, req *fasthttp.Request, resp *fasthttp.Response, deadline time.Time) error {
-	client, scheme, err := c.getHostClient(address)
-	if err != nil {
-		return err
-	}
-	old := string(req.URI().Scheme())
-	req.URI().SetScheme(scheme)
-	defer req.URI().SetScheme(old)
-	return client.DoDeadline(req, resp, deadline)
-}
-
-// DoRedirects performs the given http request and fills the given http response,
-// following up to maxRedirectsCount redirects. When the redirect count exceeds
-// maxRedirectsCount, ErrTooManyRedirects is returned.
-//
-// Request must contain at least non-zero RequestURI with full url (including
-// scheme and host) or non-zero Host header + RequestURI.
-//
-// Client determines the server to be requested in the following order:
-//
-//   - from RequestURI if it contains full url with scheme and host;
-//   - from Host header otherwise.
-//
-// Response is ignored if resp is nil.
-//
-// ErrNoFreeConns is returned if all DefaultMaxConnsPerHost connections
-// to the requested host are busy.
-//
-// It is recommended obtaining req and resp via AcquireRequest
-// and AcquireResponse in performance-critical code.
-func (c *Client) DoRedirects(address string, req *fasthttp.Request, resp *fasthttp.Response, maxRedirectsCount int) error {
-
-	client, scheme, err := c.getHostClient(address)
-	if err != nil {
-		return err
-	}
-	old := string(req.URI().Scheme())
-	req.URI().SetScheme(scheme)
-	defer req.URI().SetScheme(old)
-	return client.DoRedirects(req, resp, maxRedirectsCount)
-}
-
-// Proxy performs the given http request and fills the given http response.
-//
-// Request must contain at least non-zero RequestURI with full url (including
-// scheme and host) or non-zero Host header + RequestURI.
-//
-// Client determines the server to be requested in the following order:
-//
-//   - from RequestURI if it contains full url with scheme and host;
-//   - from Host header otherwise.
-//
-// Response is ignored if resp is nil.
-//
-// The function doesn't follow redirects. Use Get* for following redirects.
-//
-// ErrNoFreeConns is returned if all Client.MaxConnsPerHost connections
-// to the requested host are busy.
-//
-// It is recommended obtaining req and resp via AcquireRequest
-// and AcquireResponse in performance-critical code.
-func (c *Client) Proxy(address string, req *fasthttp.Request, resp *fasthttp.Response) error {
-	client, scheme, err := c.getHostClient(address)
-	if err != nil {
-		return err
-	}
-	old := string(req.URI().Scheme())
-	req.URI().SetScheme(scheme)
-	defer req.URI().SetScheme(old)
-	return client.Do(req, resp)
 }
 
 func (c *Client) mCleaner(m map[string]*fasthttp.HostClient) {
