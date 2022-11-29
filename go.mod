@@ -15,7 +15,7 @@ require (
 	github.com/pkg/sftp v1.13.4
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
 	github.com/satori/go.uuid v1.2.0
-	github.com/valyala/fasthttp v1.41.0
+	github.com/valyala/fasthttp v1.42.0
 	golang.org/x/crypto v0.1.0
 	golang.org/x/net v0.1.0
 )
