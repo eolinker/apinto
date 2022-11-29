@@ -1,7 +1,6 @@
 package fasthttp_client
 
 import (
-	"crypto/tls"
 	"fmt"
 	"net"
 	"strconv"
@@ -54,122 +53,6 @@ var defaultClient Client
 //
 // The fields of a Client should not be changed while it is in use.
 type Client struct {
-
-	// Client name. Used in User-Agent request header.
-	//
-	// Default client name is used if not set.
-	Name string
-
-	// NoDefaultUserAgentHeader when set to true, causes the default
-	// User-Agent header to be excluded from the Request.
-	NoDefaultUserAgentHeader bool
-
-	// Callback for establishing new connections to hosts.
-	//
-	// Default Dial is used if not set.
-	Dial fasthttp.DialFunc
-
-	// Attempt to connect to both ipv4 and ipv6 addresses if set to true.
-	//
-	// This option is used only if default TCP dialer is used,
-	// i.e. if Dial is blank.
-	//
-	// By default client connects only to ipv4 addresses,
-	// since unfortunately ipv6 remains broken in many networks worldwide :)
-	DialDualStack bool
-
-	// TLS config for https connections.
-	//
-	// Default TLS config is used if not set.
-	TLSConfig *tls.Config
-
-	// Maximum number of connections per each host which may be established.
-	//
-	// DefaultMaxConnsPerHost is used if not set.
-	MaxConnsPerHost int
-
-	// Idle keep-alive connections are closed after this duration.
-	//
-	// By default idle connections are closed
-	// after DefaultMaxIdleConnDuration.
-	MaxIdleConnDuration time.Duration
-
-	// Keep-alive connections are closed after this duration.
-	//
-	// By default connection duration is unlimited.
-	MaxConnDuration time.Duration
-
-	// Maximum number of attempts for idempotent calls
-	//
-	// DefaultMaxIdemponentCallAttempts is used if not set.
-	MaxIdemponentCallAttempts int
-
-	// Per-connection buffer size for responses' reading.
-	// This also limits the maximum header size.
-	//
-	// Default buffer size is used if 0.
-	ReadBufferSize int
-
-	// Per-connection buffer size for requests' writing.
-	//
-	// Default buffer size is used if 0.
-	WriteBufferSize int
-
-	// Maximum duration for full response reading (including body).
-	//
-	// By default response read timeout is unlimited.
-	ReadTimeout time.Duration
-
-	// Maximum duration for full request writing (including body).
-	//
-	// By default request write timeout is unlimited.
-	WriteTimeout time.Duration
-
-	// Maximum response body size.
-	//
-	// The client returns ErrBodyTooLarge if this limit is greater than 0
-	// and response body is greater than the limit.
-	//
-	// By default response body size is unlimited.
-	MaxResponseBodySize int
-
-	// Header names are passed as-is without normalization
-	// if this option is set.
-	//
-	// Disabled header names' normalization may be useful only for proxying
-	// responses to other clients expecting case-sensitive
-	// header names. See https://github.com/valyala/fasthttp/issues/57
-	// for details.
-	//
-	// By default request and response header names are normalized, i.e.
-	// The first letter and the first letters following dashes
-	// are uppercased, while all the other letters are lowercased.
-	// Examples:
-	//
-	//     * HOST -> Host
-	//     * content-type -> Content-Type
-	//     * cONTENT-lenGTH -> Content-Length
-	DisableHeaderNamesNormalizing bool
-
-	// Path values are sent as-is without normalization
-	//
-	// Disabled path normalization may be useful for proxying incoming requests
-	// to servers that are expecting paths to be forwarded as-is.
-	//
-	// By default path values are normalized, i.e.
-	// extra slashes are removed, special characters are encoded.
-	DisablePathNormalizing bool
-
-	// Maximum duration for waiting for a free connection.
-	//
-	// By default will not waiting, return ErrNoFreeConns immediately
-	MaxConnWaitTimeout time.Duration
-
-	// RetryIf controls whether a retry should be attempted after an error.
-	//
-	// By default will use isIdempotent function
-	RetryIf fasthttp.RetryIfFunc
-
 	mLock sync.Mutex
 	m     map[string]*fasthttp.HostClient
 	ms    map[string]*fasthttp.HostClient
@@ -211,26 +94,29 @@ func (c *Client) getHostClient(addr string) (*fasthttp.HostClient, string, error
 	hc := m[host]
 	if hc == nil {
 		hc = &fasthttp.HostClient{
-			Addr:                          addMissingPort(host, isTLS),
-			Name:                          c.Name,
-			NoDefaultUserAgentHeader:      c.NoDefaultUserAgentHeader,
-			Dial:                          c.Dial,
-			DialDualStack:                 c.DialDualStack,
-			IsTLS:                         isTLS,
-			TLSConfig:                     c.TLSConfig,
-			MaxConns:                      c.MaxConnsPerHost,
-			MaxIdleConnDuration:           c.MaxIdleConnDuration,
-			MaxConnDuration:               c.MaxConnDuration,
-			MaxIdemponentCallAttempts:     c.MaxIdemponentCallAttempts,
-			ReadBufferSize:                c.ReadBufferSize,
-			WriteBufferSize:               c.WriteBufferSize,
-			ReadTimeout:                   c.ReadTimeout,
-			WriteTimeout:                  c.WriteTimeout,
-			MaxResponseBodySize:           c.MaxResponseBodySize,
-			DisableHeaderNamesNormalizing: c.DisableHeaderNamesNormalizing,
-			DisablePathNormalizing:        c.DisablePathNormalizing,
-			MaxConnWaitTimeout:            c.MaxConnWaitTimeout,
-			RetryIf:                       c.RetryIf,
+			Addr:  addMissingPort(host, isTLS),
+			IsTLS: isTLS,
+			Dial:  Dial,
+			//Name:                          c.Name,
+			//NoDefaultUserAgentHeader:      c.NoDefaultUserAgentHeader,
+			//Dial:                          c.Dial,
+			//DialDualStack:                 c.DialDualStack,
+			//TLSConfig:                     c.TLSConfig,
+			//MaxConns:                      c.MaxConnsPerHost,
+			//MaxIdleConnDuration:           c.MaxIdleConnDuration,
+			//MaxConnDuration:               c.MaxConnDuration,
+			//MaxIdemponentCallAttempts:     c.MaxIdemponentCallAttempts,
+			//ReadBufferSize:                c.ReadBufferSize,
+			//WriteBufferSize:               c.WriteBufferSize,
+			//ReadTimeout:                   c.ReadTimeout,
+			//WriteTimeout:                  c.WriteTimeout,
+			//MaxResponseBodySize:           c.MaxResponseBodySize,
+			//DisableHeaderNamesNormalizing: c.DisableHeaderNamesNormalizing,
+			//DisablePathNormalizing:        c.DisablePathNormalizing,
+			//MaxConnWaitTimeout:            c.MaxConnWaitTimeout,
+			RetryIf: func(request *fasthttp.Request) bool {
+				return false
+			},
 		}
 		m[string(host)] = hc
 		if len(m) == 1 {
@@ -284,26 +170,36 @@ func (c *Client) ProxyTimeout(addr string, req *fasthttp.Request, resp *fasthttp
 	req.CopyTo(request)
 	request.URI().SetScheme(scheme)
 	request.Header.ResetConnectionClose()
-	return client.DoTimeout(req, resp, timeout)
-
+	request.Header.Set("Connection", "keep-alive")
+	response := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(response)
+	response.Header.ResetConnectionClose()
+	err = client.DoTimeout(request, response, timeout)
+	if err != nil {
+		return err
+	}
+	connectionClose := resp.ConnectionClose()
+	response.CopyTo(resp)
+	if connectionClose {
+		resp.SetConnectionClose()
+	}
+	return nil
 }
 
 func (c *Client) mCleaner(m map[string]*fasthttp.HostClient) {
 	mustStop := false
 
-	sleep := c.MaxIdleConnDuration
-	if sleep < time.Second {
-		sleep = time.Second
-	} else if sleep > 10*time.Second {
-		sleep = 10 * time.Second
-	}
-
+	//sleep := c.MaxIdleConnDuration
+	//if sleep < time.Second {
+	//	sleep = time.Second
+	//} else if sleep > 10*time.Second {
+	//	sleep = 10 * time.Second
+	//}
+	sleep := time.Second * 10
 	for {
 		c.mLock.Lock()
 		for k, v := range m {
-
 			shouldRemove := v.ConnsCount() == 0
-
 			if shouldRemove {
 				delete(m, k)
 			}
@@ -311,6 +207,7 @@ func (c *Client) mCleaner(m map[string]*fasthttp.HostClient) {
 		if len(m) == 0 {
 			mustStop = true
 		}
+
 		c.mLock.Unlock()
 
 		if mustStop {
