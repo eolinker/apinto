@@ -13,7 +13,7 @@ import (
 
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	uuid "github.com/satori/go.uuid"
+	uuid "github.com/google/uuid"
 	"github.com/valyala/fasthttp"
 )
 
@@ -169,8 +169,7 @@ func (ctx *HttpContext) Request() http_service.IRequestReader {
 // NewContext 创建Context
 func NewContext(ctx *fasthttp.RequestCtx, port int) *HttpContext {
 
-	id := uuid.NewV4()
-	requestID := id.String()
+	requestID := uuid.New().String()
 	newCtx := &HttpContext{
 		fastHttpRequestCtx: ctx,
 		requestID:          requestID,

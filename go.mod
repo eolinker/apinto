@@ -7,16 +7,14 @@ require (
 	github.com/coocood/freecache v1.2.2
 	github.com/eolinker/eosc v0.7.1
 	github.com/fasthttp/websocket v1.5.0
-	github.com/go-basic/uuid v1.0.0
 	github.com/go-redis/redis/v8 v8.11.5
+	github.com/google/uuid v1.3.0
 	github.com/hashicorp/consul/api v1.9.1
 	github.com/nsqio/go-nsq v1.1.0
 	github.com/ohler55/ojg v1.12.9
 	github.com/pkg/sftp v1.13.4
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
-	github.com/satori/go.uuid v1.2.0
-	github.com/urfave/cli/v2 v2.23.4
-	github.com/valyala/fasthttp v1.41.0
+	github.com/valyala/fasthttp v1.42.0
 	golang.org/x/crypto v0.1.0
 	golang.org/x/net v0.1.0
 )
@@ -42,7 +40,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
@@ -79,6 +76,7 @@ require (
 	github.com/savsgio/gotils v0.0.0-20211223103454-d0aaa54c5899 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/urfave/cli/v2 v2.23.4 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
