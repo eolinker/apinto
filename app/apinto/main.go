@@ -12,15 +12,14 @@
 package main
 
 import (
-	"os"
-
-	"github.com/eolinker/eosc/env"
-
+	"github.com/eolinker/apinto/utils/version"
 	"github.com/eolinker/eosc"
-
+	_ "github.com/eolinker/eosc/debug"
+	"github.com/eolinker/eosc/env"
 	"github.com/eolinker/eosc/eoscli"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/process"
+	"os"
 )
 
 func init() {
@@ -50,6 +49,7 @@ func main() {
 	}
 	app := eoscli.NewApp()
 	app.Default()
+	app.AppendCommand(version.Build())
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Error(err)

@@ -11,6 +11,9 @@ type URIRequest struct {
 	uri *fasthttp.URI
 }
 
+func (ur *URIRequest) reset(uri *fasthttp.URI) {
+	ur.uri = uri
+}
 func (ur *URIRequest) Path() string {
 	return string(ur.uri.Path())
 }

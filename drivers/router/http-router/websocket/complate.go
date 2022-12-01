@@ -32,10 +32,7 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	err = ctx.Upgrade()
-	if err != nil {
-		return err
-	}
+
 	balance := ctx.GetBalance()
 	app := ctx.GetApp()
 
@@ -73,9 +70,12 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 		if lastErr == nil {
 			resp.Body.Close()
 			ctx.SetUpstreamConn(conn)
-			return nil
+			break
 		}
 		log.Error("websocket upstream send error: ", lastErr)
+	}
+	if lastErr == nil {
+		lastErr = ctx.Upgrade()
 	}
 
 	return lastErr

@@ -12,7 +12,7 @@ import (
 var _ http_service.IResponse = (*Response)(nil)
 
 type Response struct {
-	*ResponseHeader
+	ResponseHeader
 	*fasthttp.Response
 	proxyStatusCode int
 	responseError   error
@@ -29,14 +29,19 @@ func (r *Response) ResponseError() error {
 func (r *Response) ClearError() {
 	r.responseError = nil
 }
-
-func (r *Response) reset() error {
-	r.ResponseHeader.tmp = nil
+func (r *Response) Finish() error {
+	r.Response = nil
+	r.ResponseHeader.reset(nil)
+	r.responseError = nil
+	r.proxyStatusCode = 0
 	return nil
 }
+func (r *Response) reset(resp *fasthttp.Response) {
+	r.Response = resp
+	r.ResponseHeader.reset(&resp.Header)
+	r.responseError = nil
+	r.proxyStatusCode = 0
 
-func NewResponse(ctx *fasthttp.RequestCtx) *Response {
-	return &Response{Response: &ctx.Response, ResponseHeader: NewResponseHeader(&ctx.Response.Header)}
 }
 
 func (r *Response) BodyLen() int {
@@ -79,7 +84,7 @@ func (r *Response) SetStatus(code int, status string) {
 	r.responseError = nil
 }
 
-//原始的响应状态码
+// 原始的响应状态码
 func (r *Response) ProxyStatusCode() int {
 	return r.proxyStatusCode
 }

@@ -1,6 +1,8 @@
 package http_entry
 
 import (
+	"strings"
+
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
@@ -30,7 +32,8 @@ func (p ProxyReaders) ReadByIndex(index int, name string, ctx http_service.IHttp
 }
 
 func (p ProxyReaders) Read(name string, ctx http_service.IHttpContext) (string, bool) {
-	v, ok := p[name]
+	ns := strings.SplitN(name, "_", 2)
+	v, ok := p[ns[0]]
 	if !ok {
 		return "", false
 	}
@@ -39,5 +42,8 @@ func (p ProxyReaders) Read(name string, ctx http_service.IHttpContext) (string, 
 	if proxyLen == 0 {
 		return "", false
 	}
-	return v.ReadProxy(name, proxies[proxyLen-1])
+	if len(ns) > 1 {
+		return v.ReadProxy(ns[1], proxies[proxyLen-1])
+	}
+	return v.ReadProxy("", proxies[proxyLen-1])
 }

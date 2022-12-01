@@ -2,11 +2,12 @@ package http_entry
 
 import (
 	"fmt"
-	"github.com/eolinker/apinto/utils"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/eolinker/apinto/utils"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -125,7 +126,10 @@ var (
 			return time.Now().Format("2006-01-02 15:04:05"), true
 		}),
 		"header": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			return url.Values(ctx.Request().Header().Headers()).Encode(), true
+			if name == "" {
+				return url.Values(ctx.Request().Header().Headers()).Encode(), true
+			}
+			return ctx.Request().Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
 		}),
 		"http": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.Request().Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
