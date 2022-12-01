@@ -18,3 +18,4 @@
 /vendor/
 /go.sum
 *.DS_Store
+/dist/
