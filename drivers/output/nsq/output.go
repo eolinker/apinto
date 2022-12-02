@@ -1,9 +1,10 @@
 package nsq
 
 import (
+	"reflect"
+
 	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
 var _ output.IEntryOutput = (*NsqOutput)(nil)

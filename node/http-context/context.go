@@ -3,10 +3,11 @@ package http_context
 import (
 	"context"
 	"fmt"
-	"github.com/eolinker/eosc/utils/config"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/eolinker/eosc/utils/config"
 
 	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
 
@@ -18,7 +19,7 @@ import (
 
 var _ http_service.IHttpContext = (*Context)(nil)
 
-//Context fasthttpRequestCtx
+// Context fasthttpRequestCtx
 type Context struct {
 	fastHttpRequestCtx  *fasthttp.RequestCtx
 	proxyRequest        *ProxyRequest
@@ -122,11 +123,9 @@ func (ctx *Context) Response() http_service.IResponse {
 }
 
 func (ctx *Context) SendTo(address string, timeout time.Duration) error {
-	clone := ctx.proxyRequest.clone()
-	_, host := readAddress(address)
-	clone.URI().SetHost(host)
-	ctx.proxyRequests = append(ctx.proxyRequests, clone)
+	scheme, host := readAddress(address)
 	request := ctx.proxyRequest.Request()
+	ctx.proxyRequests = append(ctx.proxyRequests, newRequestAgent(ctx.proxyRequest, host, scheme))
 
 	passHost, targethost := ctx.GetUpstreamHostHandler().PassHost()
 	switch passHost {
@@ -167,7 +166,7 @@ func (ctx *Context) Request() http_service.IRequestReader {
 	return ctx.requestReader
 }
 
-//NewContext 创建Context
+// NewContext 创建Context
 func NewContext(ctx *fasthttp.RequestCtx, port int) *Context {
 	id := uuid.NewV4()
 	requestID := id.String()
@@ -186,12 +185,12 @@ func NewContext(ctx *fasthttp.RequestCtx, port int) *Context {
 	return newCtx
 }
 
-//RequestId 请求ID
+// RequestId 请求ID
 func (ctx *Context) RequestId() string {
 	return ctx.requestID
 }
 
-//Finish finish
+// Finish finish
 func (ctx *Context) FastFinish() {
 	if ctx.response.responseError != nil {
 		ctx.fastHttpRequestCtx.SetStatusCode(504)
