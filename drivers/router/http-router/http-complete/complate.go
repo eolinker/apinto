@@ -50,8 +50,7 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 		scheme = "http"
 	case "tsl", "ssl":
 		scheme = "https"
-	default:
-		scheme = "http"
+
 	}
 	timeOut := app.TimeOut()
 	for index := 0; index <= h.retry; index++ {

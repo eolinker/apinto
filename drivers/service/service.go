@@ -47,7 +47,7 @@ func (s *Service) TimeOut() time.Duration {
 	return s.timeout
 }
 
-//Reset 重置服务实例的配置
+// Reset 重置服务实例的配置
 func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 
 	data, ok := conf.(*Config)
@@ -95,7 +95,8 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 	if err != nil {
 		return err
 	}
-
+	s.app = apps
+	s.scheme = data.Scheme
 	s.timeout = time.Duration(data.Timeout) * time.Millisecond
 	s.BalanceHandler = balanceHandler
 	s.passHost = parsePassHost(data.PassHost)
