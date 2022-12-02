@@ -165,21 +165,24 @@ func (c *Client) ProxyTimeout(addr string, req *fasthttp.Request, resp *fasthttp
 		return err
 	}
 
-	request := fasthttp.AcquireRequest()
-	defer fasthttp.ReleaseRequest(request)
-	req.CopyTo(request)
+	//request := fasthttp.AcquireRequest()
+	//defer fasthttp.ReleaseRequest(request)
+	//req.CopyTo(request)
+	request := req
 	request.URI().SetScheme(scheme)
 	request.Header.ResetConnectionClose()
 	request.Header.Set("Connection", "keep-alive")
-	response := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseResponse(response)
-	response.Header.ResetConnectionClose()
-	err = client.DoTimeout(request, response, timeout)
+
+	connectionClose := resp.ConnectionClose()
+	//response := fasthttp.AcquireResponse()
+	//defer fasthttp.ReleaseResponse(response)
+	//response.Header.ResetConnectionClose()
+	err = client.DoTimeout(request, resp, timeout)
 	if err != nil {
 		return err
 	}
-	connectionClose := resp.ConnectionClose()
-	response.CopyTo(resp)
+
+	//response.CopyTo(resp)
 	if connectionClose {
 		resp.SetConnectionClose()
 	}

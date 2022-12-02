@@ -103,9 +103,12 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListenUrl, globalFilters 
 		go func(ln net.Listener, port int) {
 			log.Debug("fast server:", port, ln.Addr())
 			wg.Done()
-			server := fasthttp.Server{DisablePreParseMultipartForm: true, Handler: func(ctx *fasthttp.RequestCtx) {
-				m.FastHandler(port, ctx)
-			}}
+			server := fasthttp.Server{
+				StreamRequestBody:            true,
+				DisablePreParseMultipartForm: true,
+				Handler: func(ctx *fasthttp.RequestCtx) {
+					m.FastHandler(port, ctx)
+				}}
 			server.Serve(ln)
 		}(ln, port)
 	}

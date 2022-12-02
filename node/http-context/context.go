@@ -123,9 +123,9 @@ func (ctx *HttpContext) Response() http_service.IResponse {
 
 func (ctx *HttpContext) SendTo(address string, timeout time.Duration) error {
 
-	_, host := readAddress(address)
+	scheme, host := readAddress(address)
 	request := ctx.proxyRequest.Request()
-	ctx.proxyRequests = append(ctx.proxyRequests, newRequestAgent(&ctx.proxyRequest, host))
+	ctx.proxyRequests = append(ctx.proxyRequests, newRequestAgent(&ctx.proxyRequest, host, scheme))
 
 	passHost, targethost := ctx.GetUpstreamHostHandler().PassHost()
 	switch passHost {
