@@ -61,7 +61,7 @@ func reset() {
 func DebugHandleFun(w http.ResponseWriter, r *http.Request) {
 	lock.Lock()
 	defer lock.Unlock()
-
+	fmt.Fprintf(w, "proxy dial:")
 	for _, v := range lists {
 		fmt.Fprintf(w, "%s %d : %d\n", v.Time, v.DialCount, v.CloseCount)
 	}
@@ -74,15 +74,15 @@ func Dial(addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	return conn, nil
-	//return &debugConn{Conn: conn}, nil
+	//return conn, nil
+	return &debugConn{Conn: conn}, nil
 }
 
-//type debugConn struct {
-//	net.Conn
-//}
-//
-//func (c *debugConn) Close() error {
-//	atomic.AddInt64(&closeCount, 1)
-//	return c.Conn.Close()
-//}
+type debugConn struct {
+	net.Conn
+}
+
+func (c *debugConn) Close() error {
+	atomic.AddInt64(&closeCount, 1)
+	return c.Conn.Close()
+}
