@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/Shopify/sarama v1.32.0
 	github.com/coocood/freecache v1.2.2
-	github.com/eolinker/eosc v0.8.0
+	github.com/eolinker/eosc v0.8.1
 	github.com/fasthttp/websocket v1.5.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/google/uuid v1.3.0
