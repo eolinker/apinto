@@ -4,7 +4,10 @@ import (
 	"crypto/tls"
 	"errors"
 	"github.com/eolinker/apinto/certs"
+	"github.com/eolinker/eosc/traffic/mixl"
 	"net"
+	"strconv"
+	"strings"
 	"sync"
 
 	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
@@ -65,7 +68,7 @@ func (m *Manager) Delete(id string) {
 var errNoCertificates = errors.New("tls: no certificates configured")
 
 // NewManager 创建路由管理器
-func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters eoscContext.IChainPro) *Manager {
+func NewManager(tf traffic.ITraffic, listenCfg *config.ListenUrl, globalFilters eoscContext.IChainPro) *Manager {
 	log.Debug("new router manager")
 	m := &Manager{
 		globalFilters: globalFilters,
@@ -77,39 +80,47 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListensMsg, globalFilters
 	}
 
 	wg := sync.WaitGroup{}
+	tcp, ssl := tf.Listen(listenCfg.ListenUrls...)
 
-	for _, cfg := range listenCfg.Listens {
-		port := int(cfg.Port)
-		var ln net.Listener
-		log.Debug("read listener:", cfg.Scheme, ":", port)
-		if cfg.Scheme == "https" {
-			ln = tf.ListenTcp(port, traffic.Https)
-			if ln == nil {
-				continue
-			}
-			cert, _ := config.LoadCert(cfg.Certificate, listenCfg.Dir)
+	listenerByPort := make(map[int][]net.Listener)
+	for _, l := range tcp {
+		port := readPort(l.Addr())
+		listenerByPort[port] = append(listenerByPort[port], l)
+	}
+	if len(ssl) > 0 {
+		tlsConfig := &tls.Config{GetCertificate: certs.GetCertificateFunc()}
 
-			ln = tls.NewListener(ln, &tls.Config{GetCertificate: certs.GetCertificateFunc(cert)})
-
-		} else {
-			ln = tf.ListenTcp(port, traffic.Http1)
-			if ln == nil {
-				continue
-			}
+		for _, l := range ssl {
+			port := readPort(l.Addr())
+			listenerByPort[port] = append(listenerByPort[port], tls.NewListener(l, tlsConfig))
 		}
+	}
+	for port, lns := range listenerByPort {
+
+		var ln net.Listener = mixl.NewMixListener(port, lns...)
 
 		wg.Add(1)
 		go func(ln net.Listener, port int) {
 			log.Debug("fast server:", port, ln.Addr())
 			wg.Done()
-			server := fasthttp.Server{DisablePreParseMultipartForm: true, Handler: func(ctx *fasthttp.RequestCtx) {
-				m.FastHandler(port, ctx)
-			}}
+			server := fasthttp.Server{
+				StreamRequestBody:            true,
+				DisablePreParseMultipartForm: true,
+				Handler: func(ctx *fasthttp.RequestCtx) {
+					m.FastHandler(port, ctx)
+				}}
 			server.Serve(ln)
 		}(ln, port)
 	}
 	wg.Wait()
 	return m
+}
+func readPort(addr net.Addr) int {
+	ipPort := addr.String()
+	i := strings.LastIndex(ipPort, ":")
+	port := ipPort[i+1:]
+	pv, _ := strconv.Atoi(port)
+	return pv
 }
 func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 	httpContext := http_context.NewContext(ctx, port)

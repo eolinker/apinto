@@ -20,7 +20,10 @@ jobs:
       - name: Checkout  #Checkout代码
         uses: actions/checkout@v3
       - name: GoTidy
-        run: go mod tidy
+        run: |
+          go mod tidy
+          echo "GOVERSION=$(go version)" >> $GITHUB_ENV
+          echo "EoscVersion=$(sed -n 's/.*eosc v/v/p' go.mod)" >> $GITHUB_ENV
       - name: Create archives on Release   #创建各种系统架构下的二进制包并上传至release assets
         uses: goreleaser/goreleaser-action@v3.1.0
         with:

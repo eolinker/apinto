@@ -1,6 +1,7 @@
 package http_context
 
 import (
+	"bytes"
 	"net/http"
 	"strings"
 
@@ -20,25 +21,18 @@ func (h *RequestHeader) RawHeader() string {
 	return h.header.String()
 }
 
-func NewRequestHeader(header *fasthttp.RequestHeader) *RequestHeader {
-	return &RequestHeader{header: header}
+func (h *RequestHeader) reset(header *fasthttp.RequestHeader) {
+	h.header = header
+	h.tmp = nil
 }
 
 func (h *RequestHeader) initHeader() {
 	if h.tmp == nil {
 		h.tmp = make(http.Header)
-		hs := strings.Split(h.header.String(), "\r\n")
-		for _, t := range hs {
-			vs := strings.SplitN(t, ":", 2)
-			if len(vs) < 2 {
-				if vs[0] == "" {
-					continue
-				}
-				h.tmp[vs[0]] = []string{""}
-				continue
-			}
-			h.tmp[vs[0]] = []string{strings.TrimSpace(vs[1])}
-		}
+		h.header.VisitAll(func(key, value []byte) {
+			bytes.SplitN(value, []byte(":"), 2)
+			h.tmp[string(key)] = []string{string(value)}
+		})
 	}
 }
 
@@ -88,6 +82,10 @@ type ResponseHeader struct {
 	tmp    http.Header
 }
 
+func (r *ResponseHeader) reset(header *fasthttp.ResponseHeader) {
+	r.header = header
+	r.tmp = nil
+}
 func NewResponseHeader(header *fasthttp.ResponseHeader) *ResponseHeader {
 	return &ResponseHeader{header: header}
 }

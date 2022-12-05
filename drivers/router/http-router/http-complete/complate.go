@@ -48,10 +48,9 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	switch strings.ToLower(scheme) {
 	case "", "tcp":
 		scheme = "http"
-	case "tsl", "ssl":
+	case "tsl", "ssl", "https":
 		scheme = "https"
-	default:
-		scheme = "http"
+
 	}
 	timeOut := app.TimeOut()
 	for index := 0; index <= h.retry; index++ {

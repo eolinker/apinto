@@ -2,15 +2,16 @@ package service
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/upstream/balance"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
-	"reflect"
-	"strings"
-	"time"
 )
 
 var (
@@ -47,7 +48,7 @@ func (s *Service) TimeOut() time.Duration {
 	return s.timeout
 }
 
-//Reset 重置服务实例的配置
+// Reset 重置服务实例的配置
 func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 
 	data, ok := conf.(*Config)
@@ -95,10 +96,13 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 	if err != nil {
 		return err
 	}
-
+	s.app = apps
+	s.scheme = data.Scheme
 	s.timeout = time.Duration(data.Timeout) * time.Millisecond
 	s.BalanceHandler = balanceHandler
 	s.passHost = parsePassHost(data.PassHost)
+	s.scheme = data.Scheme
+	s.app = apps
 	s.upstreamHost = data.UpstreamHost
 	return nil
 

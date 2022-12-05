@@ -53,7 +53,7 @@ func (c *Controller) Check(cfg interface{}) (profession, name, driver, desc stri
 		return
 	}
 
-	_, _, err = parseCert(conf.Key, conf.Pem)
+	_, err = parseCert(conf.Key, conf.Pem)
 	if err != nil {
 		return "", "", "", "", err
 	}
