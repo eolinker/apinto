@@ -20,6 +20,9 @@ func (p *Proxy) Set(values []interface{}) {
 
 func (p *Proxy) List() []interface{} {
 	t := p.pointer.Load()
+	if t == nil {
+		return nil
+	}
 	return *t
 }
 
