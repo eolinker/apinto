@@ -1,10 +1,11 @@
 package fileoutput
 
 import (
+	"reflect"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
 var _ output.IEntryOutput = (*FileOutput)(nil)
@@ -48,7 +49,7 @@ func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 			return err
 		}
 		a.writer = w
-
+		scopeManager.Set(a.Id(), a, cfg.Scopes)
 	}
 
 	return nil
@@ -77,6 +78,7 @@ func (a *FileOutput) Start() error {
 		return err
 	}
 	a.writer = w
+	scopeManager.Set(a.Id(), a, a.config.Scopes)
 	return nil
 
 }

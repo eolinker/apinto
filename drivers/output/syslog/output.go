@@ -1,10 +1,11 @@
 package syslog
 
 import (
+	"reflect"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
 var _ output.IEntryOutput = (*Output)(nil)
@@ -36,6 +37,7 @@ func (s *Output) Start() error {
 		}
 		s.writer = writer
 	}
+	scopeManager.Set(s.Id(), s, s.config.Scopes)
 	return nil
 }
 
@@ -61,6 +63,7 @@ func (s *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 		}
 		s.writer = writer
 	}
+	scopeManager.Set(s.Id(), s, s.config.Scopes)
 	return nil
 }
 

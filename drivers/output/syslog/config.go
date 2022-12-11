@@ -2,6 +2,7 @@ package syslog
 
 import (
 	"errors"
+
 	"github.com/eolinker/eosc"
 )
 
@@ -14,6 +15,7 @@ var (
 )
 
 type Config struct {
+	Scopes []string `json:"scopes" label:"作用域"`
 	// 所使用的网络协议, 如:tcp,udp,unix
 	Network string `json:"network" yaml:"network" enum:"tcp,udp,unix" label:"网络协议"`
 	Address string `json:"address" yaml:"address" label:"请求地址"`

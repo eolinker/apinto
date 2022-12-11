@@ -37,6 +37,7 @@ func (h *HttpOutput) Start() error {
 	}
 
 	h.handler = handler
+	scopeManager.Set(h.Id(), h, h.config.Scopes)
 	return nil
 }
 
@@ -64,8 +65,9 @@ func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		}
 
 		h.handler = handler
-	}
 
+	}
+	scopeManager.Set(h.Id(), h, h.config.Scopes)
 	return nil
 }
 
