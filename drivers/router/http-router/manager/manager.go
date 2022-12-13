@@ -126,6 +126,7 @@ func readPort(addr net.Addr) int {
 }
 func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 	httpContext := http_context.NewContext(ctx, port)
+	log.Debug("port is ", port, " request: ", httpContext.Request())
 	r, has := m.matcher.Match(port, httpContext.Request())
 	if !has {
 		httpContext.SetFinish(notFound)
