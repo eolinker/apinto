@@ -12,6 +12,9 @@ VOLUME /var/lib/apinto
 #设置环境变量
 ENV APP=apinto
 
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 #解压网关程序压缩包
 COPY ./apinto.linux.x64.tar.gz /
 RUN tar -zxvf apinto.linux.x64.tar.gz && rm -rf apinto.linux.x64.tar.gz
