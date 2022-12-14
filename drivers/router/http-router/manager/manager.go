@@ -108,6 +108,7 @@ func NewManager(tf traffic.ITraffic, listenCfg *config.ListenUrl, globalFilters 
 			server := fasthttp.Server{
 				StreamRequestBody:            true,
 				DisablePreParseMultipartForm: true,
+				MaxRequestBodySize:           100 * 1024 * 1024,
 				Handler: func(ctx *fasthttp.RequestCtx) {
 					m.FastHandler(port, ctx)
 				}}
