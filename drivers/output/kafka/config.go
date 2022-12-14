@@ -2,10 +2,11 @@ package kafka
 
 import (
 	"errors"
-	"github.com/Shopify/sarama"
-	"github.com/eolinker/eosc"
 	"strings"
 	"time"
+
+	"github.com/Shopify/sarama"
+	"github.com/eolinker/eosc"
 )
 
 var (
@@ -16,6 +17,7 @@ var (
 )
 
 type Config struct {
+	Scopes        []string             `json:"scopes" label:"作用域"`
 	Topic         string               `json:"topic" yaml:"topic" label:"Topic"`
 	Address       string               `json:"address" yaml:"address" label:"请求地址"`
 	Timeout       int                  `json:"timeout" yaml:"timeout" label:"超时时间"`

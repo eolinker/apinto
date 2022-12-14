@@ -2,15 +2,16 @@ package service
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/upstream/balance"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
-	"reflect"
-	"strings"
-	"time"
 )
 
 var (
@@ -100,6 +101,8 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 	s.timeout = time.Duration(data.Timeout) * time.Millisecond
 	s.BalanceHandler = balanceHandler
 	s.passHost = parsePassHost(data.PassHost)
+	s.scheme = data.Scheme
+	s.app = apps
 	s.upstreamHost = data.UpstreamHost
 	return nil
 

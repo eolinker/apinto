@@ -3,12 +3,13 @@ package manager
 import (
 	"crypto/tls"
 	"errors"
-	"github.com/eolinker/apinto/certs"
-	"github.com/eolinker/eosc/traffic/mixl"
 	"net"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/eolinker/apinto/certs"
+	"github.com/eolinker/eosc/traffic/mixl"
 
 	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
 	http_context "github.com/eolinker/apinto/node/http-context"
@@ -44,6 +45,7 @@ func (m *Manager) Set(id string, port int, hosts []string, method []string, path
 	routersData := m.routersData.Set(id, port, hosts, method, path, append, router)
 	matchers, err := routersData.Parse()
 	if err != nil {
+		log.Error("parse router data error: ", err)
 		return err
 	}
 	m.matcher = matchers
@@ -124,6 +126,7 @@ func readPort(addr net.Addr) int {
 }
 func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 	httpContext := http_context.NewContext(ctx, port)
+	log.Debug("port is ", port, " request: ", httpContext.Request())
 	r, has := m.matcher.Match(port, httpContext.Request())
 	if !has {
 		httpContext.SetFinish(notFound)

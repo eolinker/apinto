@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eolinker/apinto/utils/version"
+
 	"github.com/eolinker/apinto/utils"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -75,7 +77,7 @@ var (
 			return strconv.FormatInt(time.Now().Unix(), 10), true
 		}),
 		"apinto_version": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			return utils.Version, true
+			return version.Version, true
 		}),
 		"remote_addr": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.Request().RemoteAddr(), true
