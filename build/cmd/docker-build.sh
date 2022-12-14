@@ -25,7 +25,7 @@ fi
 cp ../../dist/apinto_${VERSION}_linux_amd64.tar.gz apinto.linux.x64.tar.gz
 
 PLATFORM=""
-if [ $IS_ARM == "true" ];then
+if [ "$IS_ARM" == "true" ];then
 	PLATFORM="--platform=linux/amd64"
 fi
 
@@ -33,7 +33,7 @@ docker build ${PLATFORM} -t "docker.eolinker.com/docker/apinto:${VERSION}" ./
 
 docker push "docker.eolinker.com/docker/apinto:${VERSION}"
 
-if [ $IS_LATEST == "true" ];then
+if [ "$IS_LATEST" == "true" ];then
 	docker tag "docker.eolinker.com/docker/apinto:${VERSION}" "docker.eolinker.com/docker/apinto:latest"
 	docker push "docker.eolinker.com/docker/apinto:latest"
 fi
