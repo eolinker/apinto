@@ -20,7 +20,7 @@ cd ../../ && GOVERSION=$(go version) EoscVersion=$(sed -n 's/.*eosc v/v/p' go.mo
 
 cd $(pwd)
 
-sleep 10s
+sleep 10
 
 cp ../../dist/apinto_${VERSION}_linux_amd64.tar.gz apinto.linux.x64.tar.gz
 
