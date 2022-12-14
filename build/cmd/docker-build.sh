@@ -16,11 +16,11 @@ if [ "${VERSION}" == "" ];then
 	exit 1
 fi
 
-cd ../../ && GOVERSION=$(go version) EoscVersion=$(sed -n 's/.*eosc v/v/p' go.mod) goreleaser release --skip-publish --rm-dist
-
-cd $(pwd)
-
-sleep 10
+#cd ../../ && GOVERSION=$(go version) EoscVersion=$(sed -n 's/.*eosc v/v/p' go.mod) goreleaser release --skip-publish --rm-dist
+#
+#cd $(pwd)
+#
+#sleep 20
 
 cp ../../dist/apinto_${VERSION}_linux_amd64.tar.gz apinto.linux.x64.tar.gz
 
