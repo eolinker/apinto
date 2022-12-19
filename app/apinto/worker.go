@@ -31,6 +31,7 @@ import (
 	"github.com/eolinker/apinto/drivers/plugins/strategy/grey"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/limiting"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/visit"
+	"github.com/eolinker/apinto/drivers/resources/datasource/influxdbv2"
 	"github.com/eolinker/apinto/drivers/resources/redis"
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
 	service "github.com/eolinker/apinto/drivers/service"
@@ -82,6 +83,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	auth.Register(extenderRegister)
 
 	redis.Register(extenderRegister)
+	influxdbv2.Register(extenderRegister)
 
 	//plugin
 	plugin_manager.Register(extenderRegister)
