@@ -56,7 +56,7 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 	if len(list) > 0 {
 		proxy := scope_manager.NewProxy()
 		proxy.Set(list)
-
+		o.proxy = proxy
 	} else {
 		o.proxy = scopeManager.Get("access_log")
 	}

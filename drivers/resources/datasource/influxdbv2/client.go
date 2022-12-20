@@ -4,7 +4,7 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/eolinker/apinto/monitor"
+	monitor_entry "github.com/eolinker/apinto/monitor-entry"
 
 	"github.com/eolinker/eosc/log"
 
@@ -33,11 +33,11 @@ func (c *Client) ID() string {
 	return c.id
 }
 
-func (c *Client) Write(point interface{}) error {
+func (c *Client) Write(point monitor_entry.IPoint) error {
 	if c.WriteAPIBlocking != nil {
-		p, ok := point.(monitor.IPoint)
+		p, ok := point.(monitor_entry.IPoint)
 		if !ok {
-			log.Error("need: ", reflect.TypeOf((monitor.IPoint)(nil)), "now: ", reflect.TypeOf(point))
+			log.Error("need: ", reflect.TypeOf((monitor_entry.IPoint)(nil)), "now: ", reflect.TypeOf(point))
 			return nil
 		}
 		return c.WritePoint(context.Background(), influxdb2.NewPoint(

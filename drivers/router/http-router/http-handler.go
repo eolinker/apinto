@@ -49,7 +49,6 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 		}
 		ctx = wsCtx
 	}
-
 	//Set Label
 	ctx.SetLabel("api", h.routerName)
 	ctx.SetLabel("api_id", h.routerId)

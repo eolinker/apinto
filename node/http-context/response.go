@@ -3,6 +3,7 @@ package http_context
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
@@ -14,8 +15,21 @@ var _ http_service.IResponse = (*Response)(nil)
 type Response struct {
 	ResponseHeader
 	*fasthttp.Response
+	length          int
+	responseTime    time.Duration
 	proxyStatusCode int
 	responseError   error
+}
+
+func (r *Response) ContentLength() int {
+	if r.length == 0 {
+		return r.Response.Header.ContentLength()
+	}
+	return r.length
+}
+
+func (r *Response) ContentType() string {
+	return string(r.Response.Header.ContentType())
 }
 
 func (r *Response) HeadersString() string {
@@ -64,7 +78,8 @@ func (r *Response) SetBody(bytes []byte) {
 		r.DelHeader("Content-Encoding")
 	}
 	r.Response.SetBody(bytes)
-	r.SetHeader("Content-Length", strconv.Itoa(len(bytes)))
+	r.length = len(bytes)
+	r.SetHeader("Content-Length", strconv.Itoa(r.length))
 	r.responseError = nil
 }
 
@@ -95,4 +110,12 @@ func (r *Response) ProxyStatus() string {
 
 func (r *Response) SetProxyStatus(code int, status string) {
 	r.proxyStatusCode = code
+}
+
+func (r *Response) SetResponseTime(t time.Duration) {
+	r.responseTime = t
+}
+
+func (r *Response) ResponseTime() time.Duration {
+	return r.responseTime
 }

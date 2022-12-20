@@ -1,4 +1,4 @@
-package access_log
+package monitor
 
 import (
 	"sync"

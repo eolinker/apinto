@@ -1,20 +1,16 @@
-package access_log
+package monitor
 
 import (
 	"fmt"
 
 	scope_manager "github.com/eolinker/apinto/drivers/scope-manager"
+	monitor_entry "github.com/eolinker/apinto/monitor-entry"
+	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/output"
 
 	"github.com/eolinker/eosc"
 )
-
-func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
-
-	return nil
-}
 
 func check(v interface{}) (*Config, error) {
 	cfg, ok := v.(*Config)
@@ -32,7 +28,7 @@ func getList(ids []eosc.RequireId) ([]interface{}, error) {
 			return nil, fmt.Errorf("%s:%w", id, eosc.ErrorWorkerNotExits)
 		}
 
-		_, ok := worker.(output.IEntryOutput)
+		_, ok := worker.(monitor_entry.IOutput)
 		if !ok {
 			return nil, fmt.Errorf("%s:worker not implement IEntryOutput", string(id))
 		}
@@ -44,21 +40,21 @@ func getList(ids []eosc.RequireId) ([]interface{}, error) {
 }
 
 func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-
+	log.Info("create monitor worker...")
 	list, err := getList(conf.Output)
 	if err != nil {
 		return nil, err
 	}
 
-	o := &monitor{
+	o := &worker{
 		WorkerBase: drivers.Worker(id, name),
 	}
 	if len(list) > 0 {
 		proxy := scope_manager.NewProxy()
 		proxy.Set(list)
-
+		outputManager.Set(id, proxy)
 	} else {
-		o.proxy = scopeManager.Get("access_log")
+		outputManager.Set(id, scopeManager.Get("monitor"))
 	}
 
 	return o, nil

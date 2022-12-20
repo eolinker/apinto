@@ -161,49 +161,44 @@ var (
 				return ctx.Response().ProxyStatus(), true
 			}),
 			"time": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-				responseTime := ctx.Value("response_time")
-				rt, ok := responseTime.(int64)
-				if !ok {
-					return "", false
-				}
-
-				return strconv.FormatInt(rt, 10), true
+				responseTime := ctx.Response().ResponseTime()
+				return strconv.FormatInt(responseTime.Milliseconds(), 10), true
 			}),
 		},
 		"proxy": proxyFields,
 	}
 
 	proxyFields = ProxyReaders{
-		"header": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"header": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			if name == "" {
 				return url.Values(proxy.Header().Headers()).Encode(), true
 			}
 
 			return proxy.Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
 		}),
-		"uri": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"uri": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			return proxy.URI().RequestURI(), true
 		}),
-		"query": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"query": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			if name == "" {
 				return utils.QueryUrlEncode(proxy.URI().RawQuery()), true
 			}
 			return url.QueryEscape(proxy.URI().GetQuery(name)), true
 		}),
-		"body": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"body": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			body, err := proxy.Body().RawBody()
 			if err != nil {
 				return "", false
 			}
 			return string(body), true
 		}),
-		"addr": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"addr": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			return proxy.URI().Host(), true
 		}),
-		"scheme": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"scheme": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			return proxy.URI().Scheme(), true
 		}),
-		"method": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"method": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			return proxy.Method(), true
 		}),
 	}

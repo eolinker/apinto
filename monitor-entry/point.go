@@ -1,4 +1,4 @@
-package monitor
+package monitor_entry
 
 import "time"
 

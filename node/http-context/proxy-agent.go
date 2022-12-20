@@ -1,17 +1,54 @@
 package http_context
 
-import http_service "github.com/eolinker/eosc/eocontext/http-context"
+import (
+	"strconv"
+	"time"
+
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
+)
+
+var _ http_service.IProxy = (*requestAgent)(nil)
 
 type requestAgent struct {
 	http_service.IRequest
-	host      string
-	scheme    string
-	hostAgent *UrlAgent
+	host           string
+	scheme         string
+	statusCode     int
+	status         string
+	responseLength int
+	responseTime   time.Duration
+	hostAgent      *UrlAgent
 }
 
-func newRequestAgent(IRequest http_service.IRequest, host string, scheme string) *requestAgent {
-	return &requestAgent{IRequest: IRequest, host: host, scheme: scheme}
+func (a *requestAgent) StatusCode() int {
+	return a.statusCode
 }
+
+func (a *requestAgent) Status() string {
+	return a.status
+}
+
+func (a *requestAgent) setStatusCode(code int) {
+	a.statusCode = code
+	a.status = strconv.Itoa(code)
+}
+
+func (a *requestAgent) ResponseLength() int {
+	return a.responseLength
+}
+
+func (a *requestAgent) setResponseLength(length int) {
+	a.responseLength = length
+}
+
+func newRequestAgent(IRequest http_service.IRequest, host string, scheme string, responseTime time.Duration) *requestAgent {
+	return &requestAgent{IRequest: IRequest, host: host, scheme: scheme, responseTime: responseTime}
+}
+
+func (a *requestAgent) ResponseTime() time.Duration {
+	return a.responseTime
+}
+
 func (a *requestAgent) URI() http_service.IURIWriter {
 	if a.hostAgent == nil {
 		a.hostAgent = NewUrlAgent(a.IRequest.URI(), a.host, a.scheme)

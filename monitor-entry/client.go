@@ -1,4 +1,4 @@
-package monitor
+package monitor_entry
 
 type IClient interface {
 	ID() string

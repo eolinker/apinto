@@ -36,8 +36,9 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	defer func() {
 		//设置原始响应状态码
 		ctx.Response().SetProxyStatus(ctx.Response().StatusCode(), "")
-		//设置上游响应时间, 单位为毫秒
-		ctx.WithValue("response_time", time.Now().Sub(proxyTime).Milliseconds())
+		//设置上游响应总时间, 单位为毫秒
+		//ctx.WithValue("response_time", time.Now().Sub(proxyTime).Milliseconds())
+		ctx.Response().SetResponseTime(time.Now().Sub(proxyTime))
 	}()
 
 	balance := ctx.GetBalance()

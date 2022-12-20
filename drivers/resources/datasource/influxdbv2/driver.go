@@ -18,6 +18,7 @@ func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker)
 	ctx, cancel := context.WithCancel(context.Background())
 	return &output{
 		WorkerBase: drivers.Worker(id, name),
+		cfg:        v,
 		ctx:        ctx,
 		cancel:     cancel,
 	}, nil

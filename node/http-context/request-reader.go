@@ -20,6 +20,14 @@ type RequestReader struct {
 	realIP     string
 }
 
+func (r *RequestReader) ContentLength() int {
+	return r.req.Header.ContentLength()
+}
+
+func (r *RequestReader) ContentType() string {
+	return string(r.req.Header.ContentType())
+}
+
 func (r *RequestReader) String() string {
 	return r.req.String()
 }

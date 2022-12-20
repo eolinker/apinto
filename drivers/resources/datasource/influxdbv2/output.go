@@ -4,27 +4,28 @@ import (
 	"context"
 	"fmt"
 
+	monitor_entry "github.com/eolinker/apinto/monitor-entry"
+
 	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/monitor"
 	"github.com/eolinker/eosc"
 )
 
 var _ eosc.IWorker = (*output)(nil)
-var _ monitor.IOutput = (*output)(nil)
+var _ monitor_entry.IOutput = (*output)(nil)
 
 type output struct {
 	drivers.WorkerBase
 	cfg     *Config
-	client  monitor.IClient
+	client  monitor_entry.IClient
 	ctx     context.Context
 	cancel  context.CancelFunc
-	metrics chan monitor.IPoint
+	metrics chan []monitor_entry.IPoint
 }
 
 func (o *output) Start() error {
-	o.metrics = make(chan monitor.IPoint, 1000)
+	o.metrics = make(chan []monitor_entry.IPoint, 100)
 	client := NewClient(o.cfg)
 	if _, err := client.Ping(o.ctx); err != nil {
 		return fmt.Errorf("connect influxdbv2 eror: %w", err)
@@ -56,10 +57,10 @@ func (o *output) Stop() error {
 }
 
 func (o *output) CheckSkill(skill string) bool {
-	return skill == monitor.Skill
+	return skill == monitor_entry.Skill
 }
 
-func (o *output) Output(metrics monitor.IPoint) {
+func (o *output) Output(metrics ...monitor_entry.IPoint) {
 	if o.metrics == nil {
 		return
 	}
@@ -75,11 +76,13 @@ func (o *output) doLoop() {
 			if !ok {
 				return
 			}
-
-			err := o.client.Write(metrics)
-			if err != nil {
-				log.Error(err)
+			for _, m := range metrics {
+				err := o.client.Write(m)
+				if err != nil {
+					log.Error("influxdbv2 write error: ", err)
+				}
 			}
+
 		}
 	}
 }
