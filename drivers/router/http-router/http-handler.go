@@ -3,6 +3,8 @@ package http_router
 import (
 	"net/http"
 
+	"github.com/eolinker/eosc/utils"
+
 	http_service "github.com/eolinker/apinto/node/http-context"
 
 	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
@@ -49,11 +51,15 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 		}
 		ctx = wsCtx
 	}
-
+	globalLabels := utils.GlobalLabelGet()
+	for key, value := range globalLabels {
+		ctx.SetLabel(key, value)
+	}
 	//Set Label
 	ctx.SetLabel("api", h.routerName)
 	ctx.SetLabel("api_id", h.routerId)
 	ctx.SetLabel("service", h.serviceName)
+	ctx.SetLabel("service_id", h.service.Id())
 	ctx.SetLabel("ip", httpContext.Request().ReadIP())
 	ctx.SetFinish(h.finisher)
 	ctx.SetCompleteHandler(h.completeHandler)

@@ -193,6 +193,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "redis 集群",
 					Desc:  "redis 集群",
 				},
+				{
+					Id:    "eolinker.com:apinto:influxdbv2",
+					Name:  "influxdbv2",
+					Label: "influxdbv2输出",
+					Desc:  "influxdbv2输出",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},

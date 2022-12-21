@@ -69,7 +69,7 @@ func (l *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWor
 	if len(list) > 0 {
 		proxy := scope_manager.NewProxy()
 		proxy.Set(list)
-
+		l.proxy = proxy
 	} else {
 		l.proxy = scopeManager.Get("access_log")
 	}

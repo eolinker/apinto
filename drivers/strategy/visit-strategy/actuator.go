@@ -1,11 +1,12 @@
 package visit_strategy
 
 import (
+	"sort"
+	"sync"
+
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"sort"
-	"sync"
 )
 
 var (
@@ -86,6 +87,7 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 
 		//第一个判断条件为访问规则必须是允许,并且生效范围检测出是黑名单                 第二个判断条件为访问规则必须是拒绝,并且生效返回检测出是黑名单
 		if (handler.rule.visit && !handler.rule.effectFilter.Check(ctx)) || (!handler.rule.visit && handler.rule.effectFilter.Check(ctx)) {
+			ctx.SetLabel("handler", "visit")
 			httpCtx.Response().SetStatus(403, "")
 			return nil
 		}

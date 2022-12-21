@@ -1,16 +1,17 @@
 package cache_strategy
 
 import (
-	"github.com/eolinker/apinto/drivers/strategy/cache-strategy/cache"
-	"github.com/eolinker/apinto/resources"
-	"github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/eolinker/apinto/drivers/strategy/cache-strategy/cache"
+	"github.com/eolinker/apinto/resources"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 var (
@@ -95,6 +96,7 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, iCa
 			responseData := cache.GetResponseData(iCache, uri)
 
 			if responseData != nil {
+				ctx.SetLabel("handler", "cache")
 				httpCtx.SetCompleteHandler(responseData)
 			} else {
 				httpCtx.SetCompleteHandler(NewCacheGetCompleteHandler(httpCtx.GetComplete(), handler.validTime, uri, iCache))
