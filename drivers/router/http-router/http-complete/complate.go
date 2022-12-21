@@ -39,6 +39,7 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 		//设置上游响应总时间, 单位为毫秒
 		//ctx.WithValue("response_time", time.Now().Sub(proxyTime).Milliseconds())
 		ctx.Response().SetResponseTime(time.Now().Sub(proxyTime))
+		ctx.SetLabel("handler", "proxy")
 	}()
 
 	balance := ctx.GetBalance()

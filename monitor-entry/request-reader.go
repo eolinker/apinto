@@ -28,10 +28,12 @@ var requestFields = []string{
 type RequestReadFunc func(ctx http_context.IHttpContext) (interface{}, bool)
 
 func ReadRequest(ctx http_context.IHttpContext) []IPoint {
-	tags := make(map[string]string)
-	fields := make(map[string]interface{})
-	for _, label := range labels {
-		tags[label] = ctx.GetLabel(label)
+	tags := map[string]string{
+		"request_id": ctx.RequestId(),
+	}
+
+	for key, label := range labels {
+		tags[key] = ctx.GetLabel(label)
 	}
 	for _, metrics := range requestMetrics {
 		f, has := request[metrics]
@@ -45,7 +47,7 @@ func ReadRequest(ctx http_context.IHttpContext) []IPoint {
 		}
 		tags[metrics] = v.(string)
 	}
-
+	fields := make(map[string]interface{})
 	for _, field := range requestFields {
 		f, has := request[field]
 		if !has {
@@ -86,11 +88,8 @@ var request = map[string]RequestReadFunc{
 	"status": func(ctx http_context.IHttpContext) (interface{}, bool) {
 		return ctx.Response().Status(), true
 	},
-	"request_id": func(ctx http_context.IHttpContext) (interface{}, bool) {
-		return ctx.RequestId(), true
-	},
 	"timing": func(ctx http_context.IHttpContext) (interface{}, bool) {
-		return time.Now().Sub(ctx.AcceptTime()), true
+		return time.Now().Sub(ctx.AcceptTime()).Milliseconds(), true
 	},
 	"request": func(ctx http_context.IHttpContext) (interface{}, bool) {
 		return ctx.Request().ContentLength(), true

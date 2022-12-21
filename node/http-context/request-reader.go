@@ -18,10 +18,11 @@ type RequestReader struct {
 	remoteAddr string
 	remotePort string
 	realIP     string
+	length     int
 }
 
 func (r *RequestReader) ContentLength() int {
-	return r.req.Header.ContentLength()
+	return r.length
 }
 
 func (r *RequestReader) ContentType() string {
@@ -83,6 +84,10 @@ func (r *RequestReader) reset(req *fasthttp.Request, remoteAddr string) {
 	if idx != -1 {
 		r.remoteAddr = remoteAddr[:idx]
 		r.remotePort = remoteAddr[idx+1:]
+	}
+	length := r.req.Header.ContentLength()
+	if length > 0 {
+		r.length = length
 	}
 
 }

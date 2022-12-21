@@ -26,12 +26,15 @@ type output struct {
 
 func (o *output) Start() error {
 	o.metrics = make(chan []monitor_entry.IPoint, 100)
+
+	go o.doLoop()
 	client := NewClient(o.cfg)
 	if _, err := client.Ping(o.ctx); err != nil {
 		return fmt.Errorf("connect influxdbv2 eror: %w", err)
 	}
 	o.client = client
 	scopeManager.Set(o.Id(), o, o.cfg.Scopes)
+
 	return nil
 }
 
@@ -64,6 +67,8 @@ func (o *output) Output(metrics ...monitor_entry.IPoint) {
 	if o.metrics == nil {
 		return
 	}
+	log.Info("metrics chan size: ", cap(o.metrics))
+	log.Info("metrics chan length: ", len(o.metrics))
 	o.metrics <- metrics
 }
 

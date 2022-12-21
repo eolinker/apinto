@@ -15,7 +15,6 @@ var proxyMetrics = []string{
 	"host",
 	"addr",
 	"path",
-	"request_id",
 	"status",
 }
 
@@ -29,16 +28,18 @@ func ReadProxy(ctx http_context.IHttpContext) []IPoint {
 	if len(ctx.Proxies()) < 1 {
 		return make([]IPoint, 0, 1)
 	}
-	labelMetrics := make(map[string]string)
-	for _, label := range labels {
-		labelMetrics[label] = ctx.GetLabel(label)
+	labelMetrics := map[string]string{
+		"request_id": ctx.RequestId(),
+	}
+	for key, label := range labels {
+		labelMetrics[key] = ctx.GetLabel(label)
 	}
 	points := make([]IPoint, 0, len(ctx.Proxies()))
 	for i, p := range ctx.Proxies() {
 		tags := map[string]string{
 			"index": strconv.Itoa(i),
 		}
-		fields := make(map[string]interface{})
+
 		for key, value := range labelMetrics {
 			tags[key] = value
 		}
@@ -54,6 +55,8 @@ func ReadProxy(ctx http_context.IHttpContext) []IPoint {
 			}
 			tags[metrics] = v.(string)
 		}
+
+		fields := make(map[string]interface{})
 		for _, field := range proxyFields {
 			f, has := proxy[field]
 			if !has {

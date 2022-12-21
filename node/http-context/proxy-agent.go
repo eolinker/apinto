@@ -38,15 +38,17 @@ func (a *requestAgent) ResponseLength() int {
 }
 
 func (a *requestAgent) setResponseLength(length int) {
-	a.responseLength = length
+	if length > 0 {
+		a.responseLength = length
+	}
 }
 
 func newRequestAgent(IRequest http_service.IRequest, host string, scheme string, responseTime time.Duration) *requestAgent {
 	return &requestAgent{IRequest: IRequest, host: host, scheme: scheme, responseTime: responseTime}
 }
 
-func (a *requestAgent) ResponseTime() time.Duration {
-	return a.responseTime
+func (a *requestAgent) ResponseTime() int64 {
+	return a.responseTime.Milliseconds()
 }
 
 func (a *requestAgent) URI() http_service.IURIWriter {

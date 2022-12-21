@@ -1,10 +1,11 @@
 package limiting_strategy
 
 import (
-	"github.com/eolinker/apinto/resources"
-	"github.com/eolinker/eosc/eocontext"
 	"sort"
 	"sync"
+
+	"github.com/eolinker/apinto/resources"
+	"github.com/eolinker/eosc/eocontext"
 )
 
 var (
@@ -76,6 +77,7 @@ func (a *tActuatorSet) Strategy(ctx eocontext.EoContext, next eocontext.IChain, 
 		if ach.Assert(ctx) {
 			err := ach.Check(ctx, handlers, scalars)
 			if err != nil {
+				ctx.SetLabel("handler", "limiting")
 				return err
 			}
 			break

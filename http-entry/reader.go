@@ -51,6 +51,9 @@ var (
 		"request_id": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.RequestId(), true
 		}),
+		"api_id": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+			return ctx.GetLabel("api_id"), true
+		}),
 		"query": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			if name == "" {
 				return utils.QueryUrlEncode(ctx.Request().URI().RawQuery()), true
