@@ -8,6 +8,7 @@ require (
 	github.com/eolinker/eosc v0.7.1
 	github.com/fasthttp/websocket v1.5.0
 	github.com/go-redis/redis/v8 v8.11.5
+	github.com/golang/mock v1.3.1
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/consul/api v1.9.1
 	github.com/influxdata/influxdb-client-go/v2 v2.12.1

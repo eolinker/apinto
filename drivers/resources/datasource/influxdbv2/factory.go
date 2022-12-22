@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/eolinker/eosc/common/bean"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 
-	scope_manager "github.com/eolinker/apinto/drivers/scope-manager"
+	"github.com/eolinker/eosc/common/bean"
 
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"

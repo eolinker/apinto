@@ -67,8 +67,6 @@ func (o *output) Output(metrics ...monitor_entry.IPoint) {
 	if o.metrics == nil {
 		return
 	}
-	log.Info("metrics chan size: ", cap(o.metrics))
-	log.Info("metrics chan length: ", len(o.metrics))
 	o.metrics <- metrics
 }
 

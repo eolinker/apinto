@@ -22,13 +22,15 @@ func (l *worker) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err e
 }
 
 func (l *worker) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
+	apiID := ctx.GetLabel("api_id")
+	monitorManager.ConcurrencyAdd(apiID, 1)
 	err = next.DoChain(ctx)
 	if err != nil {
 		log.Error(err)
 	}
 	points := monitor_entry.ReadProxy(ctx)
 	points = append(points, monitor_entry.ReadRequest(ctx)...)
-	outputManager.Output(l.Id(), points)
+	monitorManager.Output(l.Id(), points)
 	return nil
 }
 

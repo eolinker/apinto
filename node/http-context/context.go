@@ -135,10 +135,10 @@ func (ctx *HttpContext) SendTo(address string, timeout time.Duration) error {
 		request.URI().SetHost(targetHost)
 	}
 
-	now := time.Now()
+	beginTime := time.Now()
 	ctx.response.responseError = fasthttp_client.ProxyTimeout(address, request, &ctx.fastHttpRequestCtx.Response, timeout)
 
-	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, time.Now().Sub(now))
+	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, beginTime, time.Now())
 	agent.setStatusCode(ctx.fastHttpRequestCtx.Response.StatusCode())
 	agent.setResponseLength(ctx.fastHttpRequestCtx.Response.Header.ContentLength())
 

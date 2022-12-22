@@ -3,7 +3,7 @@ package httpoutput
 import (
 	"sync"
 
-	scope_manager "github.com/eolinker/apinto/drivers/scope-manager"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/eosc/common/bean"
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/eolinker/eosc/utils"
+
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
 )
@@ -28,8 +30,11 @@ func ReadProxy(ctx http_context.IHttpContext) []IPoint {
 	if len(ctx.Proxies()) < 1 {
 		return make([]IPoint, 0, 1)
 	}
+	globalLabels := utils.GlobalLabelGet()
 	labelMetrics := map[string]string{
 		"request_id": ctx.RequestId(),
+		"cluster":    globalLabels["cluster_id"],
+		"node":       globalLabels["node_id"],
 	}
 	for key, label := range labels {
 		labelMetrics[key] = ctx.GetLabel(label)
@@ -46,7 +51,7 @@ func ReadProxy(ctx http_context.IHttpContext) []IPoint {
 		for _, metrics := range proxyMetrics {
 			f, has := proxy[metrics]
 			if !has {
-				log.Error("missing function belong to ", metrics)
+				log.Error("proxy missing tag function belong to ", metrics)
 				continue
 			}
 			v, has := f(p)
@@ -60,7 +65,7 @@ func ReadProxy(ctx http_context.IHttpContext) []IPoint {
 		for _, field := range proxyFields {
 			f, has := proxy[field]
 			if !has {
-				log.Error("missing function belong to ", field)
+				log.Error("proxy missing field function belong to ", field)
 				continue
 			}
 			v, has := f(p)
@@ -69,7 +74,7 @@ func ReadProxy(ctx http_context.IHttpContext) []IPoint {
 			}
 			fields[field] = v
 		}
-		points = append(points, NewPoint("proxy", tags, fields, ctx.AcceptTime()))
+		points = append(points, NewPoint("proxy", tags, fields, p.ProxyTime()))
 	}
 	return points
 }

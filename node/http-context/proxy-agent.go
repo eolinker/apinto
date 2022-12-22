@@ -16,8 +16,13 @@ type requestAgent struct {
 	statusCode     int
 	status         string
 	responseLength int
-	responseTime   time.Duration
+	beginTime      time.Time
+	endTime        time.Time
 	hostAgent      *UrlAgent
+}
+
+func (a *requestAgent) ProxyTime() time.Time {
+	return a.beginTime
 }
 
 func (a *requestAgent) StatusCode() int {
@@ -43,12 +48,12 @@ func (a *requestAgent) setResponseLength(length int) {
 	}
 }
 
-func newRequestAgent(IRequest http_service.IRequest, host string, scheme string, responseTime time.Duration) *requestAgent {
-	return &requestAgent{IRequest: IRequest, host: host, scheme: scheme, responseTime: responseTime}
+func newRequestAgent(IRequest http_service.IRequest, host string, scheme string, beginTime, endTime time.Time) *requestAgent {
+	return &requestAgent{IRequest: IRequest, host: host, scheme: scheme, beginTime: beginTime, endTime: endTime}
 }
 
 func (a *requestAgent) ResponseTime() int64 {
-	return a.responseTime.Milliseconds()
+	return a.endTime.Sub(a.beginTime).Milliseconds()
 }
 
 func (a *requestAgent) URI() http_service.IURIWriter {
