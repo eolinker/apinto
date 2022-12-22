@@ -38,7 +38,11 @@ func ReadRequest(ctx http_context.IHttpContext) []IPoint {
 	}
 
 	for key, label := range labels {
-		tags[key] = ctx.GetLabel(label)
+		value := ctx.GetLabel(label)
+		if value == "" {
+			value = "-"
+		}
+		tags[key] = value
 	}
 	for _, metrics := range requestMetrics {
 		f, has := request[metrics]

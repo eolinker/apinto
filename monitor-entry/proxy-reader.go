@@ -43,7 +43,11 @@ func ReadProxy(ctx http_context.IHttpContext) []IPoint {
 		"node":       globalLabels["node_id"],
 	}
 	for key, label := range labels {
-		labelMetrics[key] = ctx.GetLabel(label)
+		value := ctx.GetLabel(label)
+		if value == "" {
+			value = "-"
+		}
+		labelMetrics[key] = value
 	}
 
 	for _, key := range proxyRequestMetrics {
