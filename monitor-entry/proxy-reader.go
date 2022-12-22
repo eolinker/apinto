@@ -12,6 +12,11 @@ import (
 
 type ProxyReadFunc func(request http_context.IProxy) (interface{}, bool)
 
+var proxyRequestMetrics = []string{
+	"ip",
+	"path",
+}
+
 var proxyMetrics = []string{
 	"method",
 	"host",
@@ -30,6 +35,7 @@ func ReadProxy(ctx http_context.IHttpContext) []IPoint {
 	if len(ctx.Proxies()) < 1 {
 		return make([]IPoint, 0, 1)
 	}
+
 	globalLabels := utils.GlobalLabelGet()
 	labelMetrics := map[string]string{
 		"request_id": ctx.RequestId(),
@@ -39,6 +45,20 @@ func ReadProxy(ctx http_context.IHttpContext) []IPoint {
 	for key, label := range labels {
 		labelMetrics[key] = ctx.GetLabel(label)
 	}
+
+	for _, key := range proxyRequestMetrics {
+		f, has := request[key]
+		if !has {
+			log.Error("proxy missing request tag function belong to ", key)
+			continue
+		}
+		v, has := f(ctx)
+		if !has {
+			continue
+		}
+		labelMetrics[fmt.Sprintf("request_%s", key)] = v.(string)
+	}
+
 	points := make([]IPoint, 0, len(ctx.Proxies()))
 	for i, p := range ctx.Proxies() {
 		tags := map[string]string{
