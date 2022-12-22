@@ -3,7 +3,7 @@ package access_log
 import (
 	"sync"
 
-	scope_manager "github.com/eolinker/apinto/drivers/scope-manager"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"

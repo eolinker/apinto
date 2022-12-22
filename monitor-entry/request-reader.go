@@ -4,6 +4,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eolinker/eosc/utils"
+
 	"github.com/eolinker/eosc/log"
 
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
@@ -28,8 +30,11 @@ var requestFields = []string{
 type RequestReadFunc func(ctx http_context.IHttpContext) (interface{}, bool)
 
 func ReadRequest(ctx http_context.IHttpContext) []IPoint {
+	globalLabels := utils.GlobalLabelGet()
 	tags := map[string]string{
 		"request_id": ctx.RequestId(),
+		"cluster":    globalLabels["cluster_id"],
+		"node":       globalLabels["node_id"],
 	}
 
 	for key, label := range labels {

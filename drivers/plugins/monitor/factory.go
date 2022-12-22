@@ -3,7 +3,9 @@ package monitor
 import (
 	"sync"
 
-	scope_manager "github.com/eolinker/apinto/drivers/scope-manager"
+	monitor_manager "github.com/eolinker/apinto/monitor-manager"
+
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
@@ -15,9 +17,10 @@ const (
 )
 
 var (
-	workers      eosc.IWorkers
-	scopeManager scope_manager.IManager
-	once         sync.Once
+	workers        eosc.IWorkers
+	scopeManager   scope_manager.IManager
+	monitorManager monitor_manager.IManager
+	once           sync.Once
 )
 
 func Register(register eosc.IExtenderDriverRegister) {
@@ -38,6 +41,7 @@ func (f *Factory) Create(profession string, name string, label string, desc stri
 	once.Do(func() {
 		bean.Autowired(&workers)
 		bean.Autowired(&scopeManager)
+		bean.Autowired(&monitorManager)
 	})
 
 	return f.IExtenderDriverFactory.Create(profession, name, label, desc, params)

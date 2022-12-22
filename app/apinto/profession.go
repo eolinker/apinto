@@ -218,22 +218,5 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
-		//{
-		//	Name:         "setting",
-		//	Label:        "setting",
-		//	Desc:         "系统设置",
-		//	Dependencies: nil,
-		//	AppendLabels: nil,
-		//	Drivers: []*eosc.DriverConfig{
-		//		{
-		//			Id:     "eolinker.com:apinto:plugin",
-		//			Name:   "plugin",
-		//			Label:  "plugin",
-		//			Desc:   "插件管理器",
-		//			Params: nil,
-		//		},
-		//	},
-		//	Mod: eosc.ProfessionConfig_Singleton,
-		//},
 	}
 }
