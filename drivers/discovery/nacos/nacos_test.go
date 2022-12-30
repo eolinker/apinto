@@ -8,21 +8,18 @@ import (
 )
 
 func TestGetApp(t *testing.T) {
-	serviceName := "nacos.naming.serviceName"
+	serviceName := "demo"
 	cfg := Config{
 		Config: AccessConfig{
 			Address: []string{
-				"10.1.94.48:8848",
+				"172.18.166.219:8848",
 			},
 			Params: map[string]string{
-				"username": "test",
-				"password": "test",
+				"namespaceId": "82eab342-52a5-400d-a601-3dd7b7d4029c",
 			},
 		},
 	}
 	n := &nacos{
-		id:       "1",
-		name:     "nacos",
 		client:   newClient(cfg.Config.Address, cfg.getParams()),
 		nodes:    discovery.NewNodesData(),
 		services: discovery.NewServices(),

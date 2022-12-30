@@ -1,9 +1,10 @@
 package kafka
 
 import (
+	"reflect"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
 type Driver struct {
@@ -37,10 +38,9 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 	}
 
 	worker := &Output{
-		id:       id,
-		name:     name,
-		producer: nil,
-		config:   cfg,
+		WorkerBase: drivers.Worker(id, name),
+		producer:   nil,
+		config:     cfg,
 	}
 
 	return worker, err

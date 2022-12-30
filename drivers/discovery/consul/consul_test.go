@@ -10,13 +10,12 @@ import (
 func TestConsulGetNodes(t *testing.T) {
 	//创建consul
 	accessConfig := &AccessConfig{
-		Address: []string{"10.1.94.48:8500", "10.1.94.48:8501"},
-		Params:  map[string]string{"token": "a92316d8-5c99-4fa0-b4cd-30b9e66718aa"}, //token在10.1.94.48下的/opt/consul/server_config/node_3/conf/acl.hcl文件里
+		Address: []string{"http://172.18.166.219:8500"},
+		//Params:  map[string]string{"token": "a92316d8-5c99-4fa0-b4cd-30b9e66718aa"}, //token在10.1.94.48下的/opt/consul/server_config/node_3/conf/acl.hcl文件里
 	}
 	clients := newClients(accessConfig.Address, accessConfig.Params)
 
 	newConsul := &consul{
-		id:         "newConsul",
 		clients:    clients,
 		nodes:      discovery.NewNodesData(),
 		services:   discovery.NewServices(),
@@ -27,7 +26,7 @@ func TestConsulGetNodes(t *testing.T) {
 
 	newConsul.Start()
 
-	APP, _ := newConsul.GetApp("consul")
+	APP, _ := newConsul.GetApp("apinto-test")
 
 	t.Log(APP)
 

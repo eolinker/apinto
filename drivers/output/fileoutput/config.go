@@ -5,6 +5,7 @@ import (
 )
 
 type Config struct {
+	Scopes    []string             `json:"scopes" label:"作用域"`
 	File      string               `json:"file" yaml:"file" label:"文件名称"`
 	Dir       string               `json:"dir" yaml:"dir" label:"文件存放目录"`
 	Period    string               `json:"period" yaml:"period" enum:"hour,day" label:"日志分割周期"`

@@ -1,10 +1,11 @@
 package nsq
 
 import (
+	"reflect"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
 var _ output.IEntryOutput = (*NsqOutput)(nil)
@@ -46,7 +47,7 @@ func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWor
 		}
 		n.write = w
 	}
-
+	scopeManager.Set(n.Id(), n, n.config.Scopes)
 	return nil
 }
 
@@ -69,7 +70,7 @@ func (n *NsqOutput) Start() error {
 		return err
 	}
 	n.write = w
-
+	scopeManager.Set(n.Id(), n, n.config.Scopes)
 	return nil
 }
 
