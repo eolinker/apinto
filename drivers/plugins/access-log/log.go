@@ -3,8 +3,9 @@ package access_log
 import (
 	"reflect"
 
+	scope_manager "github.com/eolinker/apinto/scope-manager"
+
 	"github.com/eolinker/apinto/drivers"
-	scope_manager "github.com/eolinker/apinto/drivers/scope-manager"
 	http_entry "github.com/eolinker/apinto/http-entry"
 	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
@@ -69,7 +70,7 @@ func (l *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWor
 	if len(list) > 0 {
 		proxy := scope_manager.NewProxy()
 		proxy.Set(list)
-
+		l.proxy = proxy
 	} else {
 		l.proxy = scopeManager.Get("access_log")
 	}

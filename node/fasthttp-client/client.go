@@ -11,39 +11,16 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-// ProxyTimeout performs the given request and waits for response during
-// the given timeout duration.
-//
-// Request must contain at least non-zero RequestURI with full url (including
-// scheme and host) or non-zero Host header + RequestURI.
-//
-// Client determines the server to be requested in the following order:
-//
-//   - from RequestURI if it contains full url with scheme and host;
-//   - from Host header otherwise.
-//
-// The function doesn't follow redirects. Use Get* for following redirects.
-//
-// Response is ignored if resp is nil.
-//
-// ErrTimeout is returned if the response wasn't returned during
-// the given timeout.
-//
-// ErrNoFreeConns is returned if all DefaultMaxConnsPerHost connections
-// to the requested host are busy.
-//
-// It is recommended obtaining req and resp via AcquireRequest
-// and AcquireResponse in performance-critical code.
-//
-// Warning: ProxyTimeout does not terminate the request itself. The request will
-// continue in the background and the response will be discarded.
-// If requests take too long and the connection pool gets filled up please
-// try using a Client and setting a ReadTimeout.
 func ProxyTimeout(addr string, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) error {
 	return defaultClient.ProxyTimeout(addr, req, resp, timeout)
 }
 
 var defaultClient Client
+
+const (
+	DefaultMaxConns           = 10240
+	DefaultMaxConnWaitTimeout = time.Second * 60
+)
 
 // Client implements http client.
 //
@@ -94,31 +71,16 @@ func (c *Client) getHostClient(addr string) (*fasthttp.HostClient, string, error
 	hc := m[host]
 	if hc == nil {
 		hc = &fasthttp.HostClient{
-			Addr:  addMissingPort(host, isTLS),
-			IsTLS: isTLS,
-			Dial:  Dial,
-			//Name:                          c.Name,
-			//NoDefaultUserAgentHeader:      c.NoDefaultUserAgentHeader,
-			//Dial:                          c.Dial,
-			//DialDualStack:                 c.DialDualStack,
-			//TLSConfig:                     c.TLSConfig,
-			//MaxConns:                      c.MaxConnsPerHost,
-			//MaxIdleConnDuration:           c.MaxIdleConnDuration,
-			//MaxConnDuration:               c.MaxConnDuration,
-			//MaxIdemponentCallAttempts:     c.MaxIdemponentCallAttempts,
-			//ReadBufferSize:                c.ReadBufferSize,
-			//WriteBufferSize:               c.WriteBufferSize,
-			//ReadTimeout:                   c.ReadTimeout,
-			//WriteTimeout:                  c.WriteTimeout,
-			//MaxResponseBodySize:           c.MaxResponseBodySize,
-			//DisableHeaderNamesNormalizing: c.DisableHeaderNamesNormalizing,
-			//DisablePathNormalizing:        c.DisablePathNormalizing,
-			//MaxConnWaitTimeout:            c.MaxConnWaitTimeout,
+			Addr:               addMissingPort(host, isTLS),
+			IsTLS:              isTLS,
+			Dial:               Dial,
+			MaxConns:           DefaultMaxConns,
+			MaxConnWaitTimeout: DefaultMaxConnWaitTimeout,
 			RetryIf: func(request *fasthttp.Request) bool {
 				return false
 			},
 		}
-		m[string(host)] = hc
+		m[host] = hc
 		if len(m) == 1 {
 			startCleaner = true
 		}
@@ -165,24 +127,18 @@ func (c *Client) ProxyTimeout(addr string, req *fasthttp.Request, resp *fasthttp
 		return err
 	}
 
-	//request := fasthttp.AcquireRequest()
-	//defer fasthttp.ReleaseRequest(request)
-	//req.CopyTo(request)
 	request := req
 	request.URI().SetScheme(scheme)
 	request.Header.ResetConnectionClose()
 	request.Header.Set("Connection", "keep-alive")
 
 	connectionClose := resp.ConnectionClose()
-	//response := fasthttp.AcquireResponse()
-	//defer fasthttp.ReleaseResponse(response)
-	//response.Header.ResetConnectionClose()
+
 	err = client.DoTimeout(request, resp, timeout)
 	if err != nil {
 		return err
 	}
 
-	//response.CopyTo(resp)
 	if connectionClose {
 		resp.SetConnectionClose()
 	}

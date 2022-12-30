@@ -2,14 +2,15 @@ package fuse_strategy
 
 import (
 	"fmt"
-	"github.com/eolinker/apinto/resources"
-	"github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"github.com/eolinker/eosc/log"
 	"sort"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/eolinker/apinto/resources"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/eosc/log"
 )
 
 var (
@@ -100,6 +101,7 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cac
 			httpCtx.Response().SetHeader("Content-Type", fmt.Sprintf("%s; charset=%s", res.contentType, res.charset))
 
 			httpCtx.Response().SetBody([]byte(res.Body(httpCtx.Labels())))
+			ctx.SetLabel("handler", "fuse")
 			return nil
 		} else {
 			ctx.SetFinish(newFuseFinishHandler(ctx.GetFinish(), cache, handler, metrics))

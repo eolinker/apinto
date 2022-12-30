@@ -23,7 +23,7 @@ var _ http_service.IHttpContext = (*HttpContext)(nil)
 type HttpContext struct {
 	fastHttpRequestCtx  *fasthttp.RequestCtx
 	proxyRequest        ProxyRequest
-	proxyRequests       []http_service.IRequest
+	proxyRequests       []http_service.IProxy
 	requestID           string
 	response            Response
 	requestReader       RequestReader
@@ -113,7 +113,7 @@ func (ctx *HttpContext) Assert(i interface{}) error {
 	return fmt.Errorf("not suport:%s", config.TypeNameOf(i))
 }
 
-func (ctx *HttpContext) Proxies() []http_service.IRequest {
+func (ctx *HttpContext) Proxies() []http_service.IProxy {
 	return ctx.proxyRequests
 }
 
@@ -125,19 +125,24 @@ func (ctx *HttpContext) SendTo(address string, timeout time.Duration) error {
 
 	scheme, host := readAddress(address)
 	request := ctx.proxyRequest.Request()
-	ctx.proxyRequests = append(ctx.proxyRequests, newRequestAgent(&ctx.proxyRequest, host, scheme))
 
-	passHost, targethost := ctx.GetUpstreamHostHandler().PassHost()
+	passHost, targetHost := ctx.GetUpstreamHostHandler().PassHost()
 	switch passHost {
 	case eoscContext.PassHost:
 	case eoscContext.NodeHost:
 		request.URI().SetHost(host)
 	case eoscContext.ReWriteHost:
-		request.URI().SetHost(targethost)
+		request.URI().SetHost(targetHost)
 	}
 
+	beginTime := time.Now()
 	ctx.response.responseError = fasthttp_client.ProxyTimeout(address, request, &ctx.fastHttpRequestCtx.Response, timeout)
 
+	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, beginTime, time.Now())
+	agent.setStatusCode(ctx.fastHttpRequestCtx.Response.StatusCode())
+	agent.setResponseLength(ctx.fastHttpRequestCtx.Response.Header.ContentLength())
+
+	ctx.proxyRequests = append(ctx.proxyRequests, agent)
 	return ctx.response.responseError
 
 }
@@ -147,6 +152,10 @@ func (ctx *HttpContext) Context() context.Context {
 		ctx.ctx = context.Background()
 	}
 	return ctx.ctx
+}
+
+func (ctx *HttpContext) AcceptTime() time.Time {
+	return ctx.fastHttpRequestCtx.ConnTime()
 }
 
 func (ctx *HttpContext) Value(key interface{}) interface{} {

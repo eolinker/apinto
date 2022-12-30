@@ -21,6 +21,7 @@ import (
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
 	ip_restriction "github.com/eolinker/apinto/drivers/plugins/ip-restriction"
+	"github.com/eolinker/apinto/drivers/plugins/monitor"
 	params_transformer "github.com/eolinker/apinto/drivers/plugins/params-transformer"
 	proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/proxy-rewrite"
 	proxy_rewriteV2 "github.com/eolinker/apinto/drivers/plugins/proxy_rewrite_v2"
@@ -31,6 +32,7 @@ import (
 	"github.com/eolinker/apinto/drivers/plugins/strategy/grey"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/limiting"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/visit"
+	"github.com/eolinker/apinto/drivers/resources/datasource/influxdbv2"
 	"github.com/eolinker/apinto/drivers/resources/redis"
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
 	service "github.com/eolinker/apinto/drivers/service"
@@ -82,6 +84,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	auth.Register(extenderRegister)
 
 	redis.Register(extenderRegister)
+	influxdbv2.Register(extenderRegister)
 
 	//plugin
 	plugin_manager.Register(extenderRegister)
@@ -100,6 +103,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	circuit_breaker.Register(extenderRegister)
 
 	access_log.Register(extenderRegister)
+	monitor.Register(extenderRegister)
 	proxy_rewriteV2.Register(extenderRegister)
 
 	limiting.Register(extenderRegister)
