@@ -2,8 +2,9 @@ package limiting_strategy
 
 import (
 	"fmt"
-	"github.com/eolinker/apinto/strategy"
 	"strings"
+
+	"github.com/eolinker/apinto/strategy"
 )
 
 type Threshold struct {
@@ -32,9 +33,9 @@ func (s *StrategyResponseConf) SetBodyLabel(labels map[string]string) string {
 	body = strings.ReplaceAll(body, "$api_id", labels["api_id"])
 	body = strings.ReplaceAll(body, "$api_name", labels["api"])
 
-	body = strings.ReplaceAll(body, "$application", fmt.Sprintf("%s(%s)", labels["application_name"], labels["application"]))
-	body = strings.ReplaceAll(body, "$application_id", labels["application"])
-	body = strings.ReplaceAll(body, "$application_name", labels["application_name"])
+	body = strings.ReplaceAll(body, "$application", fmt.Sprintf("%s(%s)", labels["application"], labels["application_id"]))
+	body = strings.ReplaceAll(body, "$application_id", labels["application_id"])
+	body = strings.ReplaceAll(body, "$application_name", labels["application"])
 
 	body = strings.ReplaceAll(body, "$service", labels["service"])
 	body = strings.ReplaceAll(body, "$service_id", labels["service"])

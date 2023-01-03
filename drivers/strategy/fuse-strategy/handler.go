@@ -2,13 +2,14 @@ package fuse_strategy
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/eolinker/apinto/metrics"
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/apinto/strategy"
 	"golang.org/x/net/context"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type fuseStatus string
@@ -106,9 +107,9 @@ func (s *strategyResponseConf) Body(labels map[string]string) string {
 	tempBody = strings.ReplaceAll(tempBody, "$api_id", labels["api_id"])
 	tempBody = strings.ReplaceAll(tempBody, "$api_name", labels["api"])
 
-	tempBody = strings.ReplaceAll(tempBody, "$application", fmt.Sprintf("%s(%s)", labels["application_name"], labels["application"]))
-	tempBody = strings.ReplaceAll(tempBody, "$application_id", labels["application"])
-	tempBody = strings.ReplaceAll(tempBody, "$application_name", labels["application_name"])
+	tempBody = strings.ReplaceAll(tempBody, "$application", fmt.Sprintf("%s(%s)", labels["application"], labels["application_id"]))
+	tempBody = strings.ReplaceAll(tempBody, "$application_id", labels["application_id"])
+	tempBody = strings.ReplaceAll(tempBody, "$application_name", labels["application"])
 
 	tempBody = strings.ReplaceAll(tempBody, "$service", labels["service"])
 	tempBody = strings.ReplaceAll(tempBody, "$service_id", labels["service"])

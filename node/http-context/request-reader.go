@@ -50,6 +50,13 @@ func (r *RequestReader) URI() http_service.IURIReader {
 }
 
 func (r *RequestReader) ReadIP() string {
+	if r.realIP == "" {
+		realIP := r.headers.GetHeader("x-real-ip")
+		if realIP == "" {
+			realIP = r.remoteAddr
+		}
+		r.realIP = realIP
+	}
 	return r.realIP
 }
 
