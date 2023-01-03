@@ -1,7 +1,6 @@
 package monitor_entry
 
 import (
-	"strings"
 	"time"
 
 	"github.com/eolinker/eosc/utils"
@@ -84,15 +83,7 @@ var request = map[string]RequestReadFunc{
 		return ctx.Request().URI().Path(), true
 	},
 	"ip": func(ctx http_context.IHttpContext) (interface{}, bool) {
-		forwardFor := ctx.Request().ForwardIP()
-		if forwardFor != "" {
-			return strings.Split(forwardFor, ",")[0], true
-		}
-		realIp := ctx.Request().ReadIP()
-		if realIp != "" {
-			return realIp, true
-		}
-		return ctx.Request().RemoteAddr(), true
+		return ctx.GetLabel("ip"), true
 	},
 	"status": func(ctx http_context.IHttpContext) (interface{}, bool) {
 		return ctx.Response().Status(), true
