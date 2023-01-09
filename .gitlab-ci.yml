@@ -1,0 +1,31 @@
+stages:
+  - notice
+  - check
+
+variables:
+  PATH: /usr/local/sonar-scanner/sonar-scanner-4.4.0.2170-linux/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/data/golang/go/bin/:/root/go/bin
+  GOROOT: /data/golang/go
+  GOPROXY: https://goproxy.cn
+
+
+feishu-informer: # 飞书回调
+  stage: notice
+  variables:
+    DIFF_URL: "$CI_MERGE_REQUEST_PROJECT_URL/-/merge_requests/$CI_MERGE_REQUEST_IID/diffs"
+  rules:
+    - if: $CI_PIPELINE_SOURCE=="merge_request_event"
+  script:
+    - |
+      curl -X POST -H "Content-Type: application/json" \
+      -d "{\"msg_type\":\"text\",\"content\":{\"text\":\"项目：${CI_PROJECT_NAME}\\n提交人：${GITLAB_USER_NAME}\\n提交信息：${CI_MERGE_REQUEST_TITLE}\\n合并分支信息：${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME} -> ${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}\\n差异性地址：${DIFF_URL}\\n请及时review代码\"}}" \
+      https://open.feishu.cn/open-apis/bot/v2/hook/1c334752-2874-41a1-8f1b-3060f2d46b6c
+checker:
+  stage: check
+  rules:
+    - if: $CI_COMMIT_BRANCH=="develop"
+  script:
+    - set +e
+    - go mod tidy
+    - go test -covermode=atomic -coverpkg=./... -coverprofile=coverage.data -timeout=1m ./...
+    - golangci-lint run --timeout=3m --out-format checkstyle --issues-exit-code 0 ./... > report.xml
+    - sonar-scanner

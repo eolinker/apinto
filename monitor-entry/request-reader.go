@@ -15,7 +15,6 @@ var requestMetrics = []string{
 	"host",
 	"ip",
 	"path",
-	"request_id",
 	"status",
 }
 
