@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+
 	"github.com/eolinker/apinto/drivers"
 
 	"github.com/eolinker/apinto/application"
@@ -14,6 +15,7 @@ type app struct {
 	drivers.WorkerBase
 	driverIDs []string
 	config    *Config
+	anonymous bool
 	executor  application.IAppExecutor
 }
 
@@ -40,6 +42,10 @@ func (a *app) Disable() bool {
 
 func (a *app) Destroy() error {
 	appManager.Del(a.Id())
+	if a.anonymous {
+		appManager.SetAnonymousApp(nil)
+	}
+
 	return nil
 }
 
@@ -70,11 +76,13 @@ func (a *app) set(cfg *Config) error {
 			return errors.New("anonymous app is already exists")
 		}
 		appManager.SetAnonymousApp(a)
+		a.anonymous = true
 	} else {
 		filters, users, err := createFilters(a.Id(), cfg.Auth)
 		if err != nil {
 			return err
 		}
+		a.anonymous = false
 		appManager.Set(a, filters, users)
 	}
 	e := newExecutor()
