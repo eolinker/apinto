@@ -2,8 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/apinto)](https://goreportcard.com/report/github.com/eolinker/apinto) [![Releases](https://img.shields.io/github/release/eolinker/apinto/all.svg?style=flat-square)](https://github.com/eolinker/apinto/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/Apinto.svg?style=flat-square)](https://github.com/eolinker/apinto/blob/main/LICENSE)![](https://shields.io/github/downloads/eolinker/apinto/total)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
-![apinto-水平蓝](https://user-images.githubusercontent.com/25589530/149460352-751a2146-42ad-49f7-8b98-41aa889d631d.png)
-
+![](http://data.eolinker.com/course/eaC48Js3400ffd03c21e36b3eea434dce22d7877a3194f6.png)
 
 Apinto is a microservice gateway developed based on golang. It can achieve the purposes of high-performance HTTP API forwarding, multi tenant management, API access control, etc. it has a powerful user-defined plug-in system, which can be expanded by itself, and can quickly help enterprises manage API services and improve the stability and security of API services. In the future, we will provide the plug-in market. Through the strong plug-in expansion ability of **Apinto**, users can expand **Apinto** plug-ins as needed like Lego blocks to enrich **Apinto** capabilities.
 
@@ -93,10 +92,10 @@ In a word, Apinto API gateway enables the business development team to focus mor
 
 ### Get start
 
-1. Download and unzip the installation package (here is an example of the installation package of version v0.8.4)
+1. Download and unzip the installation package (here is an example of the installation package of version v0.9.0)
 
 ```
-wget https://github.com/eolinker/apinto/releases/download/v0.8.4/apinto_v0.8.4_linux_amd64.tar.gz && tar -zxvf apinto_v0.8.4_linux_amd64.tar.gz && cd apinto
+wget https://github.com/eolinker/apinto/releases/download/v0.8.4/apinto_v0.9.0_linux_amd64.tar.gz && tar -zxvf apinto_v0.9.0_linux_amd64.tar.gz && cd apinto
 ```
 Apinto supports running on the arm64, i386 and amd64 architectures. 
 
