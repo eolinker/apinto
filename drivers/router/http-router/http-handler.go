@@ -29,7 +29,7 @@ type httpHandler struct {
 }
 
 func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
-	ctx.SetFinish(h.finisher)
+
 	httpContext, err := http_context.Assert(ctx)
 	if err != nil {
 		return
@@ -62,6 +62,6 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 	ctx.SetApp(h.service)
 	ctx.SetBalance(h.service)
 	ctx.SetUpstreamHostHandler(h.service)
-
+	ctx.SetFinish(h.finisher)
 	h.filters.Chain(ctx, completeCaller)
 }

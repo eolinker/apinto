@@ -13,9 +13,6 @@ import (
 var requestMetrics = []string{
 	"method",
 	"host",
-	"ip",
-	"path",
-	"status",
 }
 
 var requestFields = []string{
@@ -23,6 +20,7 @@ var requestFields = []string{
 	"response",
 	"retry",
 	"timing",
+	"status",
 }
 
 type RequestReadFunc func(ctx http_context.IHttpContext) (interface{}, bool)
@@ -30,9 +28,8 @@ type RequestReadFunc func(ctx http_context.IHttpContext) (interface{}, bool)
 func ReadRequest(ctx http_context.IHttpContext) []IPoint {
 	globalLabels := utils.GlobalLabelGet()
 	tags := map[string]string{
-		"request_id": ctx.RequestId(),
-		"cluster":    globalLabels["cluster_id"],
-		"node":       globalLabels["node_id"],
+		"cluster": globalLabels["cluster_id"],
+		"node":    globalLabels["node_id"],
 	}
 
 	for key, label := range labels {
@@ -78,14 +75,14 @@ var request = map[string]RequestReadFunc{
 	"method": func(ctx http_context.IHttpContext) (interface{}, bool) {
 		return ctx.Request().Method(), true
 	},
-	"path": func(ctx http_context.IHttpContext) (interface{}, bool) {
-		return ctx.Request().URI().Path(), true
-	},
-	"ip": func(ctx http_context.IHttpContext) (interface{}, bool) {
-		return ctx.GetLabel("ip"), true
-	},
+	//"path": func(ctx http_context.IHttpContext) (interface{}, bool) {
+	//	return ctx.Request().URI().Path(), true
+	//},
+	//"ip": func(ctx http_context.IHttpContext) (interface{}, bool) {
+	//	return ctx.GetLabel("ip"), true
+	//},
 	"status": func(ctx http_context.IHttpContext) (interface{}, bool) {
-		return ctx.Response().Status(), true
+		return ctx.Response().StatusCode(), true
 	},
 	"timing": func(ctx http_context.IHttpContext) (interface{}, bool) {
 		return time.Now().Sub(ctx.AcceptTime()).Milliseconds(), true
