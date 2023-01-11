@@ -29,6 +29,7 @@ type httpHandler struct {
 }
 
 func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
+	ctx.SetFinish(h.finisher)
 	httpContext, err := http_context.Assert(ctx)
 	if err != nil {
 		return
@@ -56,7 +57,7 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 	ctx.SetLabel("service", h.serviceName)
 	ctx.SetLabel("service_id", h.service.Id())
 	ctx.SetLabel("ip", httpContext.Request().ReadIP())
-	ctx.SetFinish(h.finisher)
+
 	ctx.SetCompleteHandler(h.completeHandler)
 	ctx.SetApp(h.service)
 	ctx.SetBalance(h.service)

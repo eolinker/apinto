@@ -3,8 +3,9 @@ package app
 import (
 	"errors"
 	"fmt"
-	"github.com/eolinker/apinto/drivers"
 	"time"
+
+	"github.com/eolinker/apinto/drivers"
 
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/eosc"
@@ -83,8 +84,8 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 			}
 			setLabels(ctx, user.Labels)
 			setLabels(ctx, user.App.Labels())
-			ctx.SetLabel("application", user.App.Id())
-			ctx.SetLabel("application_name", user.App.Name())
+			ctx.SetLabel("application_id", user.App.Id())
+			ctx.SetLabel("application", user.App.Name())
 			if user.HideCredential {
 				application.HideToken(ctx, user.TokenName, user.Position)
 			}
@@ -93,8 +94,8 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 	}
 	if app := appManager.AnonymousApp(); app != nil && !app.Disable() {
 		setLabels(ctx, app.Labels())
-		ctx.SetLabel("application", app.Id())
-		ctx.SetLabel("application_name", app.Name())
+		ctx.SetLabel("application_id", app.Id())
+		ctx.SetLabel("application", app.Name())
 		return app.Execute(ctx)
 	}
 	return errors.New("invalid user")

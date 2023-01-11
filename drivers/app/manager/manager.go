@@ -106,10 +106,34 @@ func (m *Manager) Set(app application.IApp, filters []application.IAuth, users m
 		idMap[filter.Driver()] = append(idMap[filter.Driver()], filter.ID())
 	}
 	for driver, ids := range idMap {
+		old := m.appManager.GetByAppID(app.Id())
 		m.appManager.Set(app.Id(), driver, ids)
+		cs := compareArray(old, ids)
+		for id := range cs {
+			filter, has := m.Untyped.Get(id)
+			if has {
+				filter.Del(app.Id())
+				if filter.UserCount() == 0 {
+					m.Untyped.Del(id)
+				}
+			}
+		}
 	}
 
 	return
+}
+
+func compareArray[T comparable](o, n []T) map[T]struct{} {
+	m := make(map[T]struct{})
+	for _, i := range o {
+		m[i] = struct{}{}
+	}
+	for _, i := range n {
+		if _, ok := m[i]; ok {
+			delete(m, i)
+		}
+	}
+	return m
 }
 
 func (m *Manager) Del(appID string) {
