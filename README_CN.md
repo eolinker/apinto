@@ -3,9 +3,8 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/apinto)](https://goreportcard.com/report/github.com/eolinker/apinto) [![Releases](https://img.shields.io/github/release/eolinker/apinto/all.svg?style=flat-square)](https://github.com/eolinker/apinto/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/apinto.svg?style=flat-square)](https://github.com/eolinker/apinto/blob/main/LICENSE)![](https://shields.io/github/downloads/eolinker/apinto/total)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT_CN.md)
 
-![apinto-水平蓝](https://user-images.githubusercontent.com/25589530/149460352-751a2146-42ad-49f7-8b98-41aa889d631d.png)
-
 ------------
+![](http://data.eolinker.com/course/eaC48Js3400ffd03c21e36b3eea434dce22d7877a3194f6.png)
 
 Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HTTP API 转发、多租户管理、API 访问权限控制等目的，拥有强大的自定义插件系统可以自行扩展，能够快速帮助企业进行 API 服务治理、提高 API 服务的稳定性和安全性。未来我们将提供插件市场，通过**Apinto**强大的插件拓展能力，用户可像乐高积木一样根据需要自行拓展**Apinto**的插件，丰富**Apinto**的能力。
 
@@ -96,10 +95,10 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 ### 启动
 
-1.下载安装包并解压（此处以v0.8.4版本的安装包示例）
+1.下载安装包并解压（此处以v0.9.0版本的安装包示例）
 
 ```
-wget https://github.com/eolinker/apinto/releases/download/v0.8.4/apinto_v0.8.4_linux_amd64.tar.gz && tar -zxvf apinto_v0.8.4_linux_amd64.tar.gz && cd apinto
+wget https://github.com/eolinker/apinto/releases/download/v0.9.0/apinto_v0.9.0_linux_amd64.tar.gz && tar -zxvf apinto_v0.9.0_linux_amd64.tar.gz && cd apinto
 ```
 
 Apinto支持在arm64、i386、amd64架构上运行。
@@ -132,6 +131,6 @@ Apinto支持在arm64、i386、amd64架构上运行。
 
 EOLINK 是领先的 API 管理服务供应商，为全球超过3000家企业提供专业的 API 研发管理、API自动化测试、API监控、API网关等服务。是首家为ITSS（中国电子工业标准化技术协会）制定API研发管理行业规范的企业。
 
-官方网站：[https://www.eolink.com](https://www.eolink.com "EOLINKER官方网站")
+官方网站：[https://www.eolink.com](https://www.eolink.com "EOLINK官方网站")
 
 免费下载PC桌面端：[https://www.eolink.com/pc/](https://www.eolink.com/pc/ "免费下载PC客户端")
