@@ -28,12 +28,13 @@ function buildApp(){
     OUTPATH="${BasePath}/out/${APP}-${VERSION}"
     rm -rf ${OUTPATH}
     mkdir -p ${OUTPATH}
+    EOSC_VERSION=$(sed -n 's/.*eosc v/v/p' ${BasePath}/go.mod)
     flags="-X 'github.com/eolinker/apinto/utils/version.Version=${VERSION}'
            -X 'github.com/eolinker/apinto/utils/version.gitCommit=$(git rev-parse HEAD)'
            -X 'github.com/eolinker/apinto/utils/version.buildTime=$(date -u +"%Y-%m-%dT%H:%M:%SZ")'
            -X 'github.com/eolinker/apinto/utils/version.buildUser=gitlab'
            -X 'github.com/eolinker/apinto/utils/version.goVersion=${go version}'
-           -X 'github.com/eolinker/apinto/utils/version.eoscVersion=$(sed -n 's/.*eosc v/v/p' ${BasePath}/go.mod)'"
+           -X 'github.com/eolinker/apinto/utils/version.eoscVersion=${EOSC_VERSION}'"
     buildCMD="go build -ldflags '-w -s $flags' -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
     echo "build $APP:${buildCMD}"
 
