@@ -1,6 +1,8 @@
 stages:
   - notice
   - check
+  - build
+  - publish
 
 variables:
   PATH: /usr/local/sonar-scanner/sonar-scanner-4.4.0.2170-linux/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/data/golang/go/bin/:/root/go/bin
@@ -29,3 +31,16 @@ checker:
     - go test -covermode=atomic -coverpkg=./... -coverprofile=coverage.data -timeout=1m ./...
     - golangci-lint run --timeout=3m --out-format checkstyle --issues-exit-code 0 ./... > report.xml
     - sonar-scanner
+builder:
+  stage: build
+  script:
+    - cd build/cmd && ./build.sh
+publisher:
+  stage: publish
+  dependencies:
+    - builder
+  script:
+    - tar -zxvf out/*.tar.gz
+    - ls -l
+  when: on_success
+

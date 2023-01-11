@@ -28,8 +28,15 @@ function buildApp(){
     OUTPATH="${BasePath}/out/${APP}-${VERSION}"
     rm -rf ${OUTPATH}
     mkdir -p ${OUTPATH}
-    buildCMD="go build  -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
+    flags="-X 'github.com/eolinker/apinto/utils/version.Version=${VERSION}'
+           -X 'github.com/eolinker/apinto/utils/version.gitCommit=$(git rev-parse HEAD)'
+           -X 'github.com/eolinker/apinto/utils/version.buildTime=$(date -u +"%Y-%m-%dT%H:%M:%SZ")'
+           -X 'github.com/eolinker/apinto/utils/version.buildUser=gitlab'
+           -X 'github.com/eolinker/apinto/utils/version.goVersion=${go version}'
+           -X 'github.com/eolinker/apinto/utils/version.eoscVersion=$(sed -n 's/.*eosc v/v/p' ${BasePath}/go.mod)'"
+    buildCMD="go build -ldflags '-w -s $flags' -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
     echo "build $APP:${buildCMD}"
+
     ${buildCMD}
 
     if [[ "$?" != "0" ]]
