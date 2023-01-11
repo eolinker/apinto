@@ -34,7 +34,7 @@ checker:
 builder:
   stage: build
   script:
-    - cd build/cmd && ./build.sh
+    - cd build/cmd && ./package.sh
 publisher:
   stage: publish
   dependencies:
