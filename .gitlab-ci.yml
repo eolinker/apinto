@@ -15,6 +15,8 @@ variables:
   GOPROXY: https://goproxy.cn
   APP: apinto
   VERSION: $CI_COMMIT_SHORT_SHA
+  SAVE_DIR: /opt/apinto
+  APP_PRE: ${APP}-${VERSION}
 
 feishu-informer: # 飞书回调
   stage: notice
@@ -39,8 +41,13 @@ checker:
     - sonar-scanner
 builder:
   stage: build
-  # rules:
-  #   - if: $CI_COMMIT_BRANCH=="develop"
+  rules:
+    - if: $CI_COMMIT_BRANCH=="develop" 
+      variables:
+        DEPLOY_SERVER: root@172.18.189.43
+    - if: $CI_COMMIT_BRANCH=="test"
+      variables:
+        DEPLOY_SERVER: root@172.18.65.60
   script:
     - sed -i '/replace github.com\/eolinker\/eosc => */d' go.mod
     - go mod tidy
@@ -48,35 +55,12 @@ builder:
   cache:
     paths:
       - out/
-dev-publish:
+publish:
   stage: publish
-  # rules:
-  #   - if: $CI_COMMIT_BRANCH=="develop"
+  rules:
+    - if: $CI_COMMIT_BRANCH=="develop"
   dependencies:
     - builder
-  variables:
-    DEPLOY_SERVER: root@172.18.189.43
-    SAVE_DIR: /opt/apinto
-    APP_PRE: ${APP}-${VERSION}
-  script:
-    - echo ${APP_PRE}
-    - scp out/${APP_PRE}.linux.x64.tar.gz ${DEPLOY_SERVER}:${SAVE_DIR}
-    - ssh ${DEPLOY_SERVER} "set -e; cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}; ./install.sh upgrade;cd ${SAVE_DIR}; ./clean.sh ${APP_PRE}"
-  when: on_success
-  cache:
-    paths:
-      - out/
-
-test-publish:
-  stage: publish
-  # rules:
-  #   - if: $CI_COMMIT_BRANCH=="test"
-  dependencies:
-    - builder
-  variables:
-    DEPLOY_SERVER: root@172.18.65.60
-    SAVE_DIR: /opt/apinto
-    APP_PRE: ${APP}-${VERSION}
   script:
     - echo ${APP_PRE}
     - scp out/${APP_PRE}.linux.x64.tar.gz ${DEPLOY_SERVER}:${SAVE_DIR}
