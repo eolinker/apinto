@@ -1,14 +1,19 @@
 stages:
   - notice
   - check
+  - build
+  - publish
 
 variables:
   PATH: /usr/local/sonar-scanner/sonar-scanner-4.4.0.2170-linux/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/data/golang/go/bin/:/root/go/bin
   GOROOT: /data/golang/go
   GOPROXY: https://goproxy.cn
+  APP: apinto
+  VERSION: $CI_COMMIT_SHORT_SHA
+  SAVE_DIR: /opt/apinto
+  APP_PRE: ${APP}-${VERSION}
 
-
-feishu-informer: # 飞书回调
+merge-informer: # 飞书回调
   stage: notice
   variables:
     DIFF_URL: "$CI_MERGE_REQUEST_PROJECT_URL/-/merge_requests/$CI_MERGE_REQUEST_IID/diffs"
@@ -29,3 +34,42 @@ checker:
     - go test -covermode=atomic -coverpkg=./... -coverprofile=coverage.data -timeout=1m ./...
     - golangci-lint run --timeout=3m --out-format checkstyle --issues-exit-code 0 ./... > report.xml
     - sonar-scanner
+builder:
+  stage: build
+  rules:
+    - if: $CI_COMMIT_BRANCH=="develop"
+      when: on_success
+    - if: $CI_COMMIT_BRANCH=="test"
+      when: on_success
+  script:
+    - sed -i '/replace github.com\/eolinker\/eosc => */d' go.mod
+    - go mod tidy
+    - cd build/cmd && ./package.sh $VERSION
+  cache:
+    paths:
+      - out/
+publish:
+  stage: publish
+  rules:
+    - if: $CI_COMMIT_BRANCH=="develop"
+      variables:
+        DEPLOY_SERVER: root@172.18.189.43
+        DEPLOY_DESC: "dev环境"
+    - if: $CI_COMMIT_BRANCH=="test"
+      variables:
+        DEPLOY_SERVER: root@172.18.65.60
+        DEPLOY_DESC: "test环境"
+  dependencies:
+    - builder
+  script:
+    - set -e
+    - scp out/${APP_PRE}.linux.x64.tar.gz ${DEPLOY_SERVER}:${SAVE_DIR}
+    - ssh ${DEPLOY_SERVER} "set -e; cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}; ./install.sh upgrade;cd ${SAVE_DIR}; ./clean.sh ${APP_PRE}"
+    - |
+      curl -X POST -H "Content-Type: application/json" \
+      -d "{\"msg_type\":\"text\",\"content\":{\"text\":\"${DEPLOY_DESC} 更新部署完成. "}}" \
+      https://open.feishu.cn/open-apis/bot/v2/hook/1c334752-2874-41a1-8f1b-3060f2d46b6c
+  when: on_success
+  cache:
+    paths:
+      - out/

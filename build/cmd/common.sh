@@ -26,11 +26,23 @@ function buildApp(){
     APP=$1
     VERSION=$2
     OUTPATH="${BasePath}/out/${APP}-${VERSION}"
+    echo "rm -rf ${OUTPATH}"
     rm -rf ${OUTPATH}
+    echo "mkdir -p ${OUTPATH}"
     mkdir -p ${OUTPATH}
-    buildCMD="go build  -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
-    echo "build $APP:${buildCMD}"
-    ${buildCMD}
+    BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    EOSC_VERSION=$(sed -n 's/.*eosc v/v/p' ${BasePath}/go.mod)
+    flags="-X 'github.com/eolinker/apinto/utils/version.Version=${VERSION}'
+           -X 'github.com/eolinker/apinto/utils/version.gitCommit=$(git rev-parse HEAD)'
+           -X 'github.com/eolinker/apinto/utils/version.buildTime=${BUILD_TIME}'
+           -X 'github.com/eolinker/apinto/utils/version.buildUser=gitlab'
+           -X 'github.com/eolinker/apinto/utils/version.goVersion=$(go version)'
+           -X 'github.com/eolinker/apinto/utils/version.eoscVersion=${EOSC_VERSION}'"
+    echo -e "build $APP:go build -ldflags "-w -s $flags" -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
+    go build -ldflags "-w -s $flags" -o ${OUTPATH}/$APP ${BasePath}/app/$APP
+#    echo "build $APP:${buildCMD}"
+
+#    echo `${buildCMD}`
 
     if [[ "$?" != "0" ]]
     then
