@@ -53,5 +53,5 @@ dev-publish:
     APP_PRE: ${APP}-${VERSION}
   script:
     - scp out/${APP_PRE}.linux.x64.tar.gz ${DEV_SERVER}:${SAVE_DIR}
-    - ssh ${DEV_SERVER} "cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}; ./install.sh install"
+    - ssh ${DEV_SERVER} "cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}; ./install.sh upgrade"
   when: on_success
