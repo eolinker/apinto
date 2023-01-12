@@ -54,5 +54,5 @@ dev-publish:
   script:
     - echo ${APP_PRE}
     - scp out/${APP_PRE}.linux.x64.tar.gz ${DEV_SERVER}:${SAVE_DIR}
-    - ssh ${DEV_SERVER} "cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}; ./install.sh upgrade;cd ${SAVE_DIR}/${APP_PRE};if [ ${SAVE_DIR} != \"\" && ${SAVE_DIR} != \"/\" && ${SAVE_DIR} != \"/root\" ];then echo abc;fi"
+    - ssh ${DEV_SERVER} "set -e; cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}; ./install.sh upgrade;cd ${SAVE_DIR}; ./clean.sh ${APP_PRE}"
   when: on_success
