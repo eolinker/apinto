@@ -4,10 +4,10 @@ stages:
   - build
   - publish
 
-default:
-  cache:
-    paths:
-      - out/
+# default:
+#   cache:
+#     paths:
+#       - out/
 
 variables:
   PATH: /usr/local/sonar-scanner/sonar-scanner-4.4.0.2170-linux/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/data/golang/go/bin/:/root/go/bin
@@ -15,7 +15,6 @@ variables:
   GOPROXY: https://goproxy.cn
   APP: apinto
   VERSION: $CI_COMMIT_SHORT_SHA
-  DEV_SERVER: root@172.18.189.43
 
 feishu-informer: # 飞书回调
   stage: notice
@@ -40,23 +39,43 @@ checker:
     - sonar-scanner
 builder:
   stage: build
-  rules:
-    - if: $CI_COMMIT_BRANCH=="develop"
+  # rules:
+  #   - if: $CI_COMMIT_BRANCH=="develop"
   script:
     - sed -i '/replace github.com\/eolinker\/eosc => */d' go.mod
     - go mod tidy
     - cd build/cmd && ./package.sh $VERSION
+  cache:
+    paths:
+      - out/
 dev-publish:
   stage: publish
-  rules:
-    - if: $CI_COMMIT_BRANCH=="develop"
+  # rules:
+  #   - if: $CI_COMMIT_BRANCH=="develop"
   dependencies:
     - builder
   variables:
+    DEPLOY_SERVER: root@172.18.189.43
     SAVE_DIR: /opt/apinto
     APP_PRE: ${APP}-${VERSION}
   script:
     - echo ${APP_PRE}
-    - scp out/${APP_PRE}.linux.x64.tar.gz ${DEV_SERVER}:${SAVE_DIR}
-    - ssh ${DEV_SERVER} "set -e; cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}; ./install.sh upgrade;cd ${SAVE_DIR}; ./clean.sh ${APP_PRE}"
+    - scp out/${APP_PRE}.linux.x64.tar.gz ${DEPLOY_SERVER}:${SAVE_DIR}
+    - ssh ${DEPLOY_SERVER} "set -e; cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}; ./install.sh upgrade;cd ${SAVE_DIR}; ./clean.sh ${APP_PRE}"
+  when: on_success
+
+test-publish:
+  stage: publish
+  # rules:
+  #   - if: $CI_COMMIT_BRANCH=="test"
+  dependencies:
+    - builder
+  variables:
+    DEPLOY_SERVER: root@172.18.65.60
+    SAVE_DIR: /opt/apinto
+    APP_PRE: ${APP}-${VERSION}
+  script:
+    - echo ${APP_PRE}
+    - scp out/${APP_PRE}.linux.x64.tar.gz ${DEPLOY_SERVER}:${SAVE_DIR}
+    - ssh ${DEPLOY_SERVER} "set -e; cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}; ./install.sh upgrade;cd ${SAVE_DIR}; ./clean.sh ${APP_PRE}"
   when: on_success
