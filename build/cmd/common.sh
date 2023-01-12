@@ -6,9 +6,7 @@ cd  $(dirname $0) # 当前位置跳到脚本位置
 CMD=$(pwd) # 脚本所在位置
 cd ../..
 BasePath=$(pwd) ## 项目根目录
-echo $BasePath
-echo $CMD
-echo ORGPATH
+
 
 # 生成版本号
 function genVersion(){
@@ -28,7 +26,9 @@ function buildApp(){
     APP=$1
     VERSION=$2
     OUTPATH="${BasePath}/out/${APP}-${VERSION}"
+    echo "rm -rf ${OUTPATH}"
     rm -rf ${OUTPATH}
+    echo "mkdir -p ${OUTPATH}"
     mkdir -p ${OUTPATH}
     BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     EOSC_VERSION=$(sed -n 's/.*eosc v/v/p' ${BasePath}/go.mod)
