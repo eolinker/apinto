@@ -6,7 +6,9 @@ cd  $(dirname $0) # 当前位置跳到脚本位置
 CMD=$(pwd) # 脚本所在位置
 cd ../..
 BasePath=$(pwd) ## 项目根目录
-
+echo $BasePath
+echo $CMD
+echo ORGPATH
 
 # 生成版本号
 function genVersion(){
