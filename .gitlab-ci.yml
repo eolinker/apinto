@@ -13,7 +13,9 @@ variables:
   PATH: /usr/local/sonar-scanner/sonar-scanner-4.4.0.2170-linux/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/data/golang/go/bin/:/root/go/bin
   GOROOT: /data/golang/go
   GOPROXY: https://goproxy.cn
-
+  APP: apinto
+  VERSION: $CI_COMMIT_SHORT_SHA
+  DEV_SERVER: root@172.18.189.43
 
 feishu-informer: # 飞书回调
   stage: notice
@@ -40,13 +42,15 @@ builder:
   stage: build
   script:
     - go mod tidy
-    - cd build/cmd && ./package.sh
-publisher:
+    - cd build/cmd && ./package.sh $VERSION
+dev-publish:
   stage: publish
   dependencies:
     - builder
+  variables:
+    SAVE_DIR: /opt/apinto
+    APP_PRE: ${APP}-${VERSION}
   script:
-    - tar -zxvf out/*.tar.gz
-    - ls -l
+    - scp out/${APP_NAME}.linux.x64.tar.gz ${DEV_SERVER}:${SAVE_DIR}
+    - ssh ${DEV_SERVER} "cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}; ./install.sh"
   when: on_success
-
