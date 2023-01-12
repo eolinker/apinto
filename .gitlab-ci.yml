@@ -40,12 +40,16 @@ checker:
     - sonar-scanner
 builder:
   stage: build
+  rules:
+    - if: $CI_COMMIT_BRANCH=="develop"
   script:
     - sed -i '/replace github.com\/eolinker\/eosc => */d' go.mod
     - go mod tidy
     - cd build/cmd && ./package.sh $VERSION
 dev-publish:
   stage: publish
+  rules:
+    - if: $CI_COMMIT_BRANCH=="develop"
   dependencies:
     - builder
   variables:
