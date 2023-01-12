@@ -34,6 +34,7 @@ checker:
 builder:
   stage: build
   script:
+    - go mod tidy
     - cd build/cmd && ./package.sh
 publisher:
   stage: publish
