@@ -41,6 +41,7 @@ checker:
 builder:
   stage: build
   script:
+    - sed -i '/replace github.com\/eolinker\/eosc => */d' go.mod
     - go mod tidy
     - cd build/cmd && ./package.sh $VERSION
 dev-publish:
