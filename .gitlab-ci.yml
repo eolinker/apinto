@@ -4,6 +4,11 @@ stages:
   - build
   - publish
 
+default:
+  cache:
+    paths:
+      - out/
+
 variables:
   PATH: /usr/local/sonar-scanner/sonar-scanner-4.4.0.2170-linux/bin:/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/data/golang/go/bin/:/root/go/bin
   GOROOT: /data/golang/go
