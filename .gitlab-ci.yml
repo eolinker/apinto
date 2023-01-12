@@ -67,7 +67,7 @@ publish:
     - ssh ${DEPLOY_SERVER} "set -e; cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}; ./install.sh upgrade;cd ${SAVE_DIR}; ./clean.sh ${APP_PRE}"
     - |
       curl -X POST -H "Content-Type: application/json" \
-      -d "{\"msg_type\":\"text\",\"content\":{\"text\":\"${DEPLOY_DESC} 更新部署完成. "}}" \
+      -d "{\"msg_type\":\"text\",\"content\":{\"text\":\"${DEPLOY_DESC} 更新部署完成. \"}}" \
       https://open.feishu.cn/open-apis/bot/v2/hook/1c334752-2874-41a1-8f1b-3060f2d46b6c
   when: on_success
   cache:
