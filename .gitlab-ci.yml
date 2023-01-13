@@ -87,5 +87,5 @@ publisher:
     - sed -i '/replace github.com\/eolinker\/eosc => */d' go.mod
     - go mod tidy
     - GOVERSION=$(go version) EoscVersion=$(sed -n 's/.*eosc v/v/p' go.mod) goreleaser release --skip-validate --rm-dist --skip-publish
-    - mkdir -p /data/pkg/apinto/${VERSION}
-    - cp -if dist/*.tar.gz /data/pkg/apinto/${VERSION}
+    - mkdir -p /data/pkg/apinto/${CI_COMMIT_TAG}
+    - cp -if dist/*.tar.gz /data/pkg/apinto/${CI_COMMIT_TAG}
