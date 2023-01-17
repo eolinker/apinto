@@ -10,8 +10,8 @@ var (
 )
 
 var labels = map[string]string{
-	LabelApi:      "api_id",
-	LabelApp:      "application_id",
+	LabelApi:      "api",
+	LabelApp:      "application",
 	LabelHandler:  "handler",
-	LabelUpstream: "service_id",
+	LabelUpstream: "service",
 }
