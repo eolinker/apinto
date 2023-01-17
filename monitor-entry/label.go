@@ -4,6 +4,7 @@ var (
 	LabelApi      = "api"
 	LabelApp      = "app"
 	LabelUpstream = "upstream"
+	LabelHandler  = "handler"
 )
 
 var labels = map[string]string{
