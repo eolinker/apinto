@@ -60,21 +60,22 @@ func (a *App) DoWebsocketFilter(ctx http_service.IWebsocketContext, next eoconte
 	return nil
 }
 
-func anonymousAppHandler(ctx http_service.IHttpContext) error {
+func anonymousAppHandler(ctx http_service.IHttpContext) (bool, error) {
 	if app := appManager.AnonymousApp(); app != nil && !app.Disable() {
 		setLabels(ctx, app.Labels())
 		ctx.SetLabel("application_id", app.Id())
 		ctx.SetLabel("application", app.Name())
 		log.Error("application name is ", app.Name())
-		return app.Execute(ctx)
+		return true, app.Execute(ctx)
 	}
-	return nil
+	return false, nil
 }
 
 func (a *App) auth(ctx http_service.IHttpContext) error {
 	log.Error("start auth...")
 	if appManager.Count() < 1 {
-		return anonymousAppHandler(ctx)
+		_, err := anonymousAppHandler(ctx)
+		return err
 	}
 	driver := ctx.Request().Header().GetHeader("Authorization-Type")
 	filters := appManager.ListByDriver(driver)
@@ -105,9 +106,12 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 			return user.App.Execute(ctx)
 		}
 	}
-	err := anonymousAppHandler(ctx)
+	has, err := anonymousAppHandler(ctx)
 	if err != nil {
 		return err
+	}
+	if has {
+		return nil
 	}
 	return errors.New("invalid user")
 }
