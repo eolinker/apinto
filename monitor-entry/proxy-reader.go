@@ -39,6 +39,7 @@ func ReadProxy(ctx http_context.IHttpContext) []IPoint {
 		if value == "" {
 			value = "-"
 		}
+		log.Error("label name: ", key, " label value: ", value)
 		labelMetrics[key] = value
 	}
 
