@@ -159,7 +159,7 @@ func (ctx *HttpContext) Context() context.Context {
 }
 
 func (ctx *HttpContext) AcceptTime() time.Time {
-	return ctx.fastHttpRequestCtx.ConnTime()
+	return ctx.fastHttpRequestCtx.Time()
 }
 
 func (ctx *HttpContext) Value(key interface{}) interface{} {
