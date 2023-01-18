@@ -86,6 +86,7 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 			setLabels(ctx, user.App.Labels())
 			ctx.SetLabel("application_id", user.App.Id())
 			ctx.SetLabel("application", user.App.Name())
+			log.Error("application name is ", user.App.Name())
 			if user.HideCredential {
 				application.HideToken(ctx, user.TokenName, user.Position)
 			}
@@ -96,6 +97,7 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 		setLabels(ctx, app.Labels())
 		ctx.SetLabel("application_id", app.Id())
 		ctx.SetLabel("application", app.Name())
+		log.Error("application name is ", app.Name())
 		return app.Execute(ctx)
 	}
 	return errors.New("invalid user")

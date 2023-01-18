@@ -22,6 +22,7 @@ func (l *worker) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err e
 }
 
 func (l *worker) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
+	log.Error("start monitor...")
 	apiID := ctx.GetLabel("api_id")
 	monitorManager.ConcurrencyAdd(apiID, 1)
 	err = next.DoChain(ctx)
