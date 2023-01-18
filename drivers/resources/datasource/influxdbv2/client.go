@@ -39,7 +39,7 @@ func (c *Client) Write(point monitor_entry.IPoint) error {
 			log.Error("need: ", reflect.TypeOf((monitor_entry.IPoint)(nil)), "now: ", reflect.TypeOf(point))
 			return nil
 		}
-
+		log.Error("table: ", p.Table(), " tags: ", p.Tags(), " fields: ", p.Fields(), " time: ", p.Time())
 		c.WritePoint(influxdb2.NewPoint(
 			p.Table(),
 			p.Tags(),
