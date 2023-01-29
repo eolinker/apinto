@@ -3,6 +3,7 @@ package certs
 import (
 	"crypto/tls"
 	"crypto/x509"
+
 	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
@@ -55,6 +56,10 @@ func (w *Worker) CheckSkill(string) bool {
 }
 
 func parseCert(privateKey, pemValue string) (*tls.Certificate, error) {
+	cert, err := genCert([]byte(privateKey), []byte(pemValue))
+	if err == nil {
+		return cert, nil
+	}
 
 	keydata, err := utils.B64Decode(privateKey)
 	if err != nil {
@@ -64,7 +69,11 @@ func parseCert(privateKey, pemValue string) (*tls.Certificate, error) {
 	if err != nil {
 		return nil, err
 	}
-	certificate, err := tls.X509KeyPair(pem, keydata)
+	return genCert(keydata, pem)
+}
+
+func genCert(key, pem []byte) (*tls.Certificate, error) {
+	certificate, err := tls.X509KeyPair(pem, key)
 	if err != nil {
 		return nil, err
 	}
