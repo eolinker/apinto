@@ -2,6 +2,7 @@ package circuit_breaker
 
 import (
 	"encoding/json"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -13,8 +14,8 @@ var _ eocontext.IFilter = (*CircuitBreaker)(nil)
 var _ http_service.HttpFilter = (*CircuitBreaker)(nil)
 
 type CircuitBreaker struct {
-	*Driver
-	id      string
+	drivers.WorkerBase
+
 	counter *circuitCount
 	conf    *Config
 }
@@ -25,24 +26,20 @@ const (
 	BreakerRecovering = 2
 )
 
-func (c *CircuitBreaker) Id() string {
-	return c.id
-}
-
 func (c *CircuitBreaker) Start() error {
 	return nil
 }
 
 func (c *CircuitBreaker) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-conf, err := c.check(v)
-if err != nil {
-return err
-}
+	conf, err := check(v)
+	if err != nil {
+		return err
+	}
 
-c.counter = newCircuitCount()
-c.conf = conf
+	c.counter = newCircuitCount()
+	c.conf = conf
 
-return nil
+	return nil
 }
 
 func (c *CircuitBreaker) Stop() error {

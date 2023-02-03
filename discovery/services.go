@@ -4,24 +4,22 @@ import (
 	"github.com/eolinker/eosc"
 )
 
+type serviceHandler eosc.Untyped[string, IApp]
 type services struct {
-	apps        eosc.IUntyped
-	appNameOfID eosc.IUntyped
+	apps        eosc.Untyped[string, serviceHandler]
+	appNameOfID eosc.Untyped[string, string]
 }
 
 //NewServices 创建服务发现的服务app集合
 func NewServices() IServices {
-	return &services{apps: eosc.NewUntyped(), appNameOfID: eosc.NewUntyped()}
+	return &services{apps: eosc.BuildUntyped[string, serviceHandler](), appNameOfID: eosc.BuildUntyped[string, string]()}
 }
 
 //get 获取对应服务名的节点列表
-func (s *services) get(serviceName string) (eosc.IUntyped, bool) {
+func (s *services) get(serviceName string) (serviceHandler, bool) {
 	v, ok := s.apps.Get(serviceName)
-	if !ok {
-		return nil, ok
-	}
-	apps, ok := v.(eosc.IUntyped)
-	return apps, ok
+
+	return v, ok
 }
 
 //func (s *services) GetStatus(serviceName string) (IApp, bool) {
@@ -43,7 +41,7 @@ func (s *services) Set(serviceName string, id string, app IApp) error {
 		apps.Set(id, app)
 		return nil
 	}
-	apps := eosc.NewUntyped()
+	apps := eosc.BuildUntyped[string, IApp]()
 	apps.Set(id, app)
 	s.apps.Set(serviceName, apps)
 	return nil
@@ -51,9 +49,8 @@ func (s *services) Set(serviceName string, id string, app IApp) error {
 
 //Remove 将目标app从其对应服务的app列表中删除，传入值为目标app的id
 func (s *services) Remove(appID string) (string, int) {
-	v, has := s.appNameOfID.Del(appID)
+	name, has := s.appNameOfID.Del(appID)
 	if has {
-		name := v.(string)
 		apps, ok := s.get(name)
 		if ok {
 			apps.Del(appID)
@@ -67,11 +64,8 @@ func (s *services) Remove(appID string) (string, int) {
 //Update 更新目标服务所有app的节点列表
 func (s *services) Update(serviceName string, nodes Nodes) error {
 	if apps, ok := s.get(serviceName); ok {
-		for _, r := range apps.List() {
-			v, ok := r.(IApp)
-			if ok {
-				v.Reset(nodes)
-			}
+		for _, v := range apps.List() {
+			v.Reset(nodes)
 		}
 	}
 	return nil

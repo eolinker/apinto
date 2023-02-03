@@ -5,6 +5,8 @@ import (
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
+var defaultFinisher = &Finisher{}
+
 type Finisher struct {
 }
 
@@ -14,5 +16,6 @@ func (f *Finisher) Finish(org eocontext.EoContext) error {
 		return err
 	}
 	ctx.FastFinish()
+
 	return nil
 }

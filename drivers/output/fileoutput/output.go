@@ -1,17 +1,18 @@
 package fileoutput
 
 import (
+	"reflect"
+
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
 var _ output.IEntryOutput = (*FileOutput)(nil)
 var _ eosc.IWorker = (*FileOutput)(nil)
 
 type FileOutput struct {
-	id        string
-	name      string
+	drivers.WorkerBase
 	config    *Config
 	writer    *FileWriter
 	isRunning bool
@@ -27,7 +28,7 @@ func (a *FileOutput) Output(entry eosc.IEntry) error {
 
 func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
 
-	cfg, err := Check(conf)
+	cfg, err := check(conf)
 
 	if err != nil {
 		return err
@@ -48,7 +49,7 @@ func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 			return err
 		}
 		a.writer = w
-
+		scopeManager.Set(a.Id(), a, cfg.Scopes)
 	}
 
 	return nil
@@ -65,10 +66,6 @@ func (a *FileOutput) Stop() error {
 	return nil
 }
 
-func (a *FileOutput) Id() string {
-	return a.id
-}
-
 func (a *FileOutput) Start() error {
 	a.isRunning = true
 	w := a.writer
@@ -81,6 +78,7 @@ func (a *FileOutput) Start() error {
 		return err
 	}
 	a.writer = w
+	scopeManager.Set(a.Id(), a, a.config.Scopes)
 	return nil
 
 }

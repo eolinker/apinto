@@ -2,6 +2,7 @@ package ip_restriction
 
 import (
 	"encoding/json"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -11,8 +12,7 @@ var _ http_service.HttpFilter = (*IPHandler)(nil)
 var _ eocontext.IFilter = (*IPHandler)(nil)
 
 type IPHandler struct {
-	*Driver
-	id           string
+	drivers.WorkerBase
 	responseType string
 	filter       IPFilter
 }
@@ -32,21 +32,17 @@ func (I *IPHandler) doRestriction(ctx http_service.IHttpContext) error {
 	return nil
 }
 
-func (I *IPHandler) Id() string {
-	return I.id
-}
-
 func (I *IPHandler) Start() error {
 	return nil
 }
 
 func (I *IPHandler) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-confObj, err := I.check(conf)
-if err != nil {
-return err
-}
-I.filter = confObj.genFilter()
-return nil
+	confObj, err := check(conf)
+	if err != nil {
+		return err
+	}
+	I.filter = confObj.genFilter()
+	return nil
 }
 
 func (I *IPHandler) Stop() error {

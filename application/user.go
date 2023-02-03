@@ -11,9 +11,9 @@ type IUser interface {
 }
 
 type User struct {
-	Expire         int64             `json:"expire"`
-	Labels         map[string]string `json:"labels"`
-	HideCredential bool              `json:"hide_credential"`
+	Labels         map[string]string `json:"labels" label:"用户标签"`
+	Expire         int64             `json:"expire" label:"过期时间" format:"date-time"`
+	HideCredential bool              `json:"hide_credential" label:"是否隐藏证书"`
 }
 
 type UserInfo struct {
@@ -41,8 +41,8 @@ type IUserManager interface {
 
 type UserManager struct {
 	// users map[string]IUser
-	users   eosc.IUntyped
-	connApp eosc.IUntyped
+	users   eosc.Untyped[string, *UserInfo]
+	connApp eosc.Untyped[string, []string]
 }
 
 func (u *UserManager) Check(appID string, driver string, users []IUser) error {
@@ -67,16 +67,12 @@ func (u *UserManager) Count() int {
 }
 
 func (u *UserManager) List() []*UserInfo {
-	users := u.users.List()
-	us := make([]*UserInfo, 0, len(users))
-	for _, user := range users {
-		us = append(us, user.(*UserInfo))
-	}
-	return us
+	return u.users.List()
+
 }
 
 func NewUserManager() *UserManager {
-	return &UserManager{users: eosc.NewUntyped(), connApp: eosc.NewUntyped()}
+	return &UserManager{users: eosc.BuildUntyped[string, *UserInfo](), connApp: eosc.BuildUntyped[string, []string]()}
 }
 
 func (u *UserManager) Get(name string) (*UserInfo, bool) {
@@ -84,21 +80,16 @@ func (u *UserManager) Get(name string) (*UserInfo, bool) {
 }
 
 func (u *UserManager) get(name string) (*UserInfo, bool) {
-	user, has := u.users.Get(name)
-	if !has {
-		return nil, false
-	}
-
-	return user.(*UserInfo), true
+	return u.users.Get(name)
 }
 
 func (u *UserManager) Set(appID string, users []*UserInfo) {
 
-	userMap := make(map[string]bool)
+	userMap := make(map[string]struct{})
 	names, has := u.getByAppID(appID)
 	if has {
 		for _, name := range names {
-			userMap[name] = true
+			userMap[name] = struct{}{}
 		}
 	}
 
@@ -130,23 +121,15 @@ func (u *UserManager) DelByAppID(appID string) {
 }
 
 func (u *UserManager) delByAppID(appID string) ([]string, bool) {
-	names, has := u.connApp.Del(appID)
-	if !has {
-		return nil, false
-	}
-	return names.([]string), true
+	return u.connApp.Del(appID)
 }
 
 func (u *UserManager) getByAppID(appID string) ([]string, bool) {
-	names, has := u.connApp.Get(appID)
-	if !has {
-		return nil, false
-	}
-	return names.([]string), true
+	return u.connApp.Get(appID)
 }
 
 type Auth struct {
-	Type      string `json:"type"`
-	Position  string `json:"position"`
-	TokenName string `json:"token_name"`
+	Type      string `json:"type" label:"鉴权类型" skip:""`
+	Position  string `json:"position" label:"token位置" enum:"header,query,body"`
+	TokenName string `json:"token_name" label:"token名称"`
 }

@@ -5,11 +5,11 @@ import (
 )
 
 type IProxyReader interface {
-	ReadProxy(name string, proxy http_service.IRequest) (string, bool)
+	ReadProxy(name string, proxy http_service.IProxy) (string, bool)
 }
 
-type ProxyReadFunc func(name string, proxy http_service.IRequest) (string, bool)
+type ProxyReadFunc func(name string, proxy http_service.IProxy) (string, bool)
 
-func (p ProxyReadFunc) ReadProxy(name string, proxy http_service.IRequest) (string, bool) {
+func (p ProxyReadFunc) ReadProxy(name string, proxy http_service.IProxy) (string, bool) {
 	return p(name, proxy)
 }

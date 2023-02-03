@@ -9,6 +9,7 @@ import (
 type FileWriter struct {
 	formatter eosc.IFormatter
 	transport *file_transport.FileWriterByPeriod
+	//id        string
 }
 
 func (a *FileWriter) output(entry eosc.IEntry) error {

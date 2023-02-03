@@ -19,7 +19,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Label:        "路由",
 			Desc:         "路由",
 			Dependencies: []string{"service", "template"},
-			AppendLabels: []string{"host", "target", "listen", "disable"},
+			AppendLabels: []string{"host", "service", "listen", "disable"},
 			Drivers: []*eosc.DriverConfig{
 				{
 					Id:     "eolinker.com:apinto:http_router",
@@ -100,7 +100,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Label:        "应用",
 			Desc:         "应用",
 			Dependencies: nil,
-			AppendLabels: nil,
+			AppendLabels: []string{"disable"},
 			Drivers: []*eosc.DriverConfig{
 				{
 					Id:    "eolinker.com:apinto:app",
@@ -122,6 +122,30 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Name:  "limiting",
 					Label: "限流策略",
 					Desc:  "限流策略",
+				},
+				{
+					Id:    "eolinker.com:apinto:strategy-cache",
+					Name:  "cache",
+					Label: "缓存策略",
+					Desc:  "缓存策略",
+				},
+				{
+					Id:    "eolinker.com:apinto:strategy-grey",
+					Name:  "grey",
+					Label: "灰度策略",
+					Desc:  "灰度策略",
+				},
+				{
+					Id:    "eolinker.com:apinto:strategy-visit",
+					Name:  "visit",
+					Label: "访问策略",
+					Desc:  "访问策略",
+				},
+				{
+					Id:    "eolinker.com:apinto:strategy-fuse",
+					Name:  "fuse",
+					Label: "熔断策略",
+					Desc:  "熔断策略",
 				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
@@ -163,25 +187,36 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "kafka输出",
 					Desc:  "kafka输出",
 				},
+				{
+					Id:    "eolinker.com:apinto:redis",
+					Name:  "redis",
+					Label: "redis 集群",
+					Desc:  "redis 集群",
+				},
+				{
+					Id:    "eolinker.com:apinto:influxdbv2",
+					Name:  "influxdbv2",
+					Label: "influxdbv2输出",
+					Desc:  "influxdbv2输出",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
-		//{
-		//	Name:         "setting",
-		//	Label:        "setting",
-		//	Desc:         "系统设置",
-		//	Dependencies: nil,
-		//	AppendLabels: nil,
-		//	Drivers: []*eosc.DriverConfig{
-		//		{
-		//			Id:     "eolinker.com:apinto:plugin",
-		//			Name:   "plugin",
-		//			Label:  "plugin",
-		//			Desc:   "插件管理器",
-		//			Params: nil,
-		//		},
-		//	},
-		//	Mod: eosc.ProfessionConfig_Singleton,
-		//},
+		{
+			Name:         "certificate",
+			Label:        "证书",
+			Desc:         "证书",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:apinto:ssl-server",
+					Name:  "server",
+					Label: "证书",
+					Desc:  "证书",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		},
 	}
 }

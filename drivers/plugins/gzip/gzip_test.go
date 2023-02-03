@@ -75,7 +75,7 @@ func TestFilter(t *testing.T) {
 			ctx.Response().SetBody([]byte(cc.body))
 			ctx.Request().Header().Headers().Set("Accept-Encoding", cc.header)
 			before := ctx.Response().BodyLen()
-			h.DoFilter(httpCtx, nil)
+			h.DoHttpFilter(httpCtx, nil)
 			after := ctx.Response().BodyLen()
 			if cc.wantCompress && before <= after {
 				t.Errorf("want compress; before %d, after %d", before, after)

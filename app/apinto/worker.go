@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/apinto/drivers/app"
+	"github.com/eolinker/apinto/drivers/certs"
 	"github.com/eolinker/apinto/drivers/discovery/consul"
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
@@ -20,15 +21,26 @@ import (
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
 	ip_restriction "github.com/eolinker/apinto/drivers/plugins/ip-restriction"
+	"github.com/eolinker/apinto/drivers/plugins/monitor"
 	params_transformer "github.com/eolinker/apinto/drivers/plugins/params-transformer"
 	proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/proxy-rewrite"
 	proxy_rewriteV2 "github.com/eolinker/apinto/drivers/plugins/proxy_rewrite_v2"
 	rate_limiting "github.com/eolinker/apinto/drivers/plugins/rate-limiting"
 	response_rewrite "github.com/eolinker/apinto/drivers/plugins/response-rewrite"
-	"github.com/eolinker/apinto/drivers/plugins/strategy"
+	"github.com/eolinker/apinto/drivers/plugins/strategy/cache"
+	"github.com/eolinker/apinto/drivers/plugins/strategy/fuse"
+	"github.com/eolinker/apinto/drivers/plugins/strategy/grey"
+	"github.com/eolinker/apinto/drivers/plugins/strategy/limiting"
+	"github.com/eolinker/apinto/drivers/plugins/strategy/visit"
+	"github.com/eolinker/apinto/drivers/resources/datasource/influxdbv2"
+	"github.com/eolinker/apinto/drivers/resources/redis"
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
 	service "github.com/eolinker/apinto/drivers/service"
-	limiting_stragety "github.com/eolinker/apinto/drivers/strategy/limiting-stragety"
+	cache_strategy "github.com/eolinker/apinto/drivers/strategy/cache-strategy"
+	fuse_strategy "github.com/eolinker/apinto/drivers/strategy/fuse-strategy"
+	grey_strategy "github.com/eolinker/apinto/drivers/strategy/grey-strategy"
+	limiting_strategy "github.com/eolinker/apinto/drivers/strategy/limiting-strategy"
+	visit_strategy "github.com/eolinker/apinto/drivers/strategy/visit-strategy"
 	template "github.com/eolinker/apinto/drivers/template"
 
 	"github.com/eolinker/eosc"
@@ -71,8 +83,13 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	app.Register(extenderRegister)
 	auth.Register(extenderRegister)
 
+	redis.Register(extenderRegister)
+	influxdbv2.Register(extenderRegister)
+
 	//plugin
 	plugin_manager.Register(extenderRegister)
+
+	certs.Register(extenderRegister)
 
 	plugin_app.Register(extenderRegister)
 	extra_params.Register(extenderRegister)
@@ -86,8 +103,22 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	circuit_breaker.Register(extenderRegister)
 
 	access_log.Register(extenderRegister)
+	monitor.Register(extenderRegister)
 	proxy_rewriteV2.Register(extenderRegister)
 
-	strategy.Register(extenderRegister)
-	limiting_stragety.Register(extenderRegister)
+	limiting.Register(extenderRegister)
+	limiting_strategy.Register(extenderRegister)
+
+	cache.Register(extenderRegister)
+	cache_strategy.Register(extenderRegister)
+
+	grey.Register(extenderRegister)
+	grey_strategy.Register(extenderRegister)
+
+	visit.Register(extenderRegister)
+	visit_strategy.Register(extenderRegister)
+
+	fuse.Register(extenderRegister)
+	fuse_strategy.Register(extenderRegister)
+
 }

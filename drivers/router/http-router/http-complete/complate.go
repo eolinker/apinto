@@ -3,11 +3,12 @@ package http_complete
 import (
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
-	"strings"
-	"time"
 )
 
 var (
@@ -35,8 +36,10 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	defer func() {
 		//设置原始响应状态码
 		ctx.Response().SetProxyStatus(ctx.Response().StatusCode(), "")
-		//设置上游响应时间, 单位为毫秒
-		ctx.WithValue("response_time", time.Now().Sub(proxyTime).Milliseconds())
+		//设置上游响应总时间, 单位为毫秒
+		//ctx.WithValue("response_time", time.Now().Sub(proxyTime).Milliseconds())
+		ctx.Response().SetResponseTime(time.Now().Sub(proxyTime))
+		ctx.SetLabel("handler", "proxy")
 	}()
 
 	balance := ctx.GetBalance()
@@ -47,10 +50,9 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	switch strings.ToLower(scheme) {
 	case "", "tcp":
 		scheme = "http"
-	case "tsl", "ssl":
+	case "tsl", "ssl", "https":
 		scheme = "https"
-	default:
-		scheme = "http"
+
 	}
 	timeOut := app.TimeOut()
 	for index := 0; index <= h.retry; index++ {
@@ -60,8 +62,9 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 		}
 		node, err := balance.Select(ctx)
 		if err != nil {
-			log.Error("select error: ", lastErr)
-
+			log.Error("select error: ", err)
+			ctx.Response().SetStatus(501, "501")
+			ctx.Response().SetBody([]byte(err.Error()))
 			return err
 		}
 

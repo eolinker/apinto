@@ -2,11 +2,14 @@ package http_entry
 
 import (
 	"fmt"
-	"github.com/eolinker/apinto/utils"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/eolinker/apinto/utils/version"
+
+	"github.com/eolinker/apinto/utils"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -48,6 +51,9 @@ var (
 		"request_id": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.RequestId(), true
 		}),
+		"api_id": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+			return ctx.GetLabel("api_id"), true
+		}),
 		"query": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			if name == "" {
 				return utils.QueryUrlEncode(ctx.Request().URI().RawQuery()), true
@@ -74,7 +80,7 @@ var (
 			return strconv.FormatInt(time.Now().Unix(), 10), true
 		}),
 		"apinto_version": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			return utils.Version, true
+			return version.Version, true
 		}),
 		"remote_addr": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.Request().RemoteAddr(), true
@@ -125,7 +131,10 @@ var (
 			return time.Now().Format("2006-01-02 15:04:05"), true
 		}),
 		"header": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-			return url.Values(ctx.Request().Header().Headers()).Encode(), true
+			if name == "" {
+				return url.Values(ctx.Request().Header().Headers()).Encode(), true
+			}
+			return ctx.Request().Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
 		}),
 		"http": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.Request().Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
@@ -155,49 +164,44 @@ var (
 				return ctx.Response().ProxyStatus(), true
 			}),
 			"time": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
-				responseTime := ctx.Value("response_time")
-				rt, ok := responseTime.(int64)
-				if !ok {
-					return "", false
-				}
-
-				return strconv.FormatInt(rt, 10), true
+				responseTime := ctx.Response().ResponseTime()
+				return strconv.FormatInt(responseTime.Milliseconds(), 10), true
 			}),
 		},
 		"proxy": proxyFields,
 	}
 
 	proxyFields = ProxyReaders{
-		"header": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"header": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			if name == "" {
 				return url.Values(proxy.Header().Headers()).Encode(), true
 			}
 
 			return proxy.Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
 		}),
-		"uri": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"uri": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			return proxy.URI().RequestURI(), true
 		}),
-		"query": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"query": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			if name == "" {
 				return utils.QueryUrlEncode(proxy.URI().RawQuery()), true
 			}
 			return url.QueryEscape(proxy.URI().GetQuery(name)), true
 		}),
-		"body": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"body": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			body, err := proxy.Body().RawBody()
 			if err != nil {
 				return "", false
 			}
 			return string(body), true
 		}),
-		"addr": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"addr": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			return proxy.URI().Host(), true
 		}),
-		"scheme": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"scheme": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			return proxy.URI().Scheme(), true
 		}),
-		"method": ProxyReadFunc(func(name string, proxy http_service.IRequest) (string, bool) {
+		"method": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			return proxy.Method(), true
 		}),
 	}

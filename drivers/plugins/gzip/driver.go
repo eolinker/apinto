@@ -1,49 +1,37 @@
 package gzip
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
-type Driver struct {
-	profession string
-	name       string
-	label      string
-	desc       string
-	configType reflect.Type
+func Check(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+
+	return conf.doCheck()
 }
 
-func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	_, err := d.check(v)
-	return err
-}
-
-func (d *Driver) check(v interface{}) (*Config, error) {
-	conf, ok := v.(*Config)
-	if !ok {
-		return nil, eosc.ErrorConfigFieldUnknown
+func check(v interface{}) (*Config, error) {
+	conf, err := drivers.Assert[Config](v)
+	if err != nil {
+		return nil, err
 	}
-	err := conf.doCheck()
+
+	err = conf.doCheck()
 	if err != nil {
 		return nil, err
 	}
 	return conf, nil
 }
 
-func (d *Driver) ConfigType() reflect.Type {
-	return d.configType
-}
+func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-
-	conf, err := d.check(v)
+	err := Check(conf, workers)
 	if err != nil {
 		return nil, err
 	}
 	c := &Gzip{
-		Driver: d,
-		id:     id,
-		conf:   conf,
+		WorkerBase: drivers.Worker(id, name),
+		conf:       conf,
 	}
 	return c, nil
 }

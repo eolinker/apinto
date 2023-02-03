@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"mime"
+	"net/http"
+	"strings"
+
+	"github.com/ohler55/ojg/oj"
+
 	http_context "github.com/eolinker/apinto/node/http-context"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"mime"
-	"strings"
 )
 
 const (
@@ -41,30 +45,56 @@ func encodeErr(ent string, origin string, statusCode int) error {
 	return fmt.Errorf("%s statusCode: %d", origin, statusCode)
 }
 
-func parseBodyParams(ctx http_service.IHttpContext) (map[string]interface{}, map[string][]string, error) {
-	//formParams := make(map[string][]string)
-	//bodyParams := make(map[string]interface{})
+func parseBodyParams(ctx http_service.IHttpContext) (interface{}, map[string][]string, error) {
+	if ctx.Proxy().Method() != http.MethodPost && ctx.Proxy().Method() != http.MethodPut && ctx.Proxy().Method() != http.MethodPatch {
+		return nil, nil, nil
+	}
 	contentType, _, _ := mime.ParseMediaType(ctx.Proxy().Body().ContentType())
-
 	switch contentType {
 	case http_context.FormData, http_context.MultipartForm:
 		formParams, err := ctx.Proxy().Body().BodyForm()
 		if err != nil {
-			return nil, formParams, err
+			return nil, nil, err
 		}
+		return nil, formParams, nil
 	case http_context.JSON:
 		body, err := ctx.Proxy().Body().RawBody()
 		if err != nil {
 			return nil, nil, err
 		}
-		var bodyParams map[string]interface{}
-		err = json.Unmarshal(body, &bodyParams)
-		if err != nil {
-			return bodyParams, nil, err
+		if string(body) == "" {
+			body = []byte("{}")
 		}
+		bodyParams, err := oj.Parse(body)
+		return bodyParams, nil, err
 	}
-	return nil, nil, errors.New("[params_transformer] unsupported content-type: " + contentType)
+	return nil, nil, errors.New("unsupported content-type: " + contentType)
 }
+
+//
+//func parseBodyParams(ctx http_service.IHttpContext) (map[string]interface{}, map[string][]string, error) {
+//	contentType, _, _ := mime.ParseMediaType(ctx.Proxy().Body().ContentType())
+//
+//	switch contentType {
+//	case http_context.FormData, http_context.MultipartForm:
+//		formParams, err := ctx.Proxy().Body().BodyForm()
+//		if err != nil {
+//			return nil, nil, err
+//		}
+//		return nil, formParams, nil
+//	case http_context.JSON:
+//		body, err := ctx.Proxy().Body().RawBody()
+//		if err != nil {
+//			return nil, nil, err
+//		}
+//		var bodyParams map[string]interface{}
+//		err = json.Unmarshal(body, &bodyParams)
+//		if err != nil {
+//			return bodyParams, nil, err
+//		}
+//	}
+//	return nil, nil, errors.New("[params_transformer] unsupported content-type: " + contentType)
+//}
 
 func getHeaderValue(headers map[string][]string, param *ExtraParam, value string) (string, error) {
 	paramName := ConvertHeaderKey(param.Name)

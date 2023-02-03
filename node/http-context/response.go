@@ -3,6 +3,7 @@ package http_context
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
@@ -12,10 +13,23 @@ import (
 var _ http_service.IResponse = (*Response)(nil)
 
 type Response struct {
-	*ResponseHeader
+	ResponseHeader
 	*fasthttp.Response
+	length          int
+	responseTime    time.Duration
 	proxyStatusCode int
 	responseError   error
+}
+
+func (r *Response) ContentLength() int {
+	if r.length == 0 {
+		return r.Response.Header.ContentLength()
+	}
+	return r.length
+}
+
+func (r *Response) ContentType() string {
+	return string(r.Response.Header.ContentType())
 }
 
 func (r *Response) HeadersString() string {
@@ -29,14 +43,19 @@ func (r *Response) ResponseError() error {
 func (r *Response) ClearError() {
 	r.responseError = nil
 }
-
-func (r *Response) reset() error {
-	r.ResponseHeader.tmp = nil
+func (r *Response) Finish() error {
+	r.Response = nil
+	r.ResponseHeader.reset(nil)
+	r.responseError = nil
+	r.proxyStatusCode = 0
 	return nil
 }
+func (r *Response) reset(resp *fasthttp.Response) {
+	r.Response = resp
+	r.ResponseHeader.reset(&resp.Header)
+	r.responseError = nil
+	r.proxyStatusCode = 0
 
-func NewResponse(ctx *fasthttp.RequestCtx) *Response {
-	return &Response{Response: &ctx.Response, ResponseHeader: NewResponseHeader(&ctx.Response.Header)}
 }
 
 func (r *Response) BodyLen() int {
@@ -59,7 +78,8 @@ func (r *Response) SetBody(bytes []byte) {
 		r.DelHeader("Content-Encoding")
 	}
 	r.Response.SetBody(bytes)
-	r.SetHeader("Content-Length", strconv.Itoa(len(bytes)))
+	r.length = len(bytes)
+	r.SetHeader("Content-Length", strconv.Itoa(r.length))
 	r.responseError = nil
 }
 
@@ -79,7 +99,7 @@ func (r *Response) SetStatus(code int, status string) {
 	r.responseError = nil
 }
 
-//原始的响应状态码
+// 原始的响应状态码
 func (r *Response) ProxyStatusCode() int {
 	return r.proxyStatusCode
 }
@@ -90,4 +110,12 @@ func (r *Response) ProxyStatus() string {
 
 func (r *Response) SetProxyStatus(code int, status string) {
 	r.proxyStatusCode = code
+}
+
+func (r *Response) SetResponseTime(t time.Duration) {
+	r.responseTime = t
+}
+
+func (r *Response) ResponseTime() time.Duration {
+	return r.responseTime
 }

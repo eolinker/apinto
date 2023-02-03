@@ -1,6 +1,7 @@
 package cors
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"reflect"
 )
@@ -13,15 +14,15 @@ type Driver struct {
 	configType reflect.Type
 }
 
-func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	_, err := d.check(v)
-	return err
+func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+
+	return v.doCheck()
 }
 
-func (d *Driver) check(v interface{}) (*Config, error) {
+func check(v interface{}) (*Config, error) {
 	conf, ok := v.(*Config)
 	if !ok {
-		return nil, eosc.ErrorConfigFieldUnknown
+		return nil, eosc.ErrorConfigType
 	}
 	err := conf.doCheck()
 	if err != nil {
@@ -30,19 +31,14 @@ func (d *Driver) check(v interface{}) (*Config, error) {
 	return conf, nil
 }
 
-func (d *Driver) ConfigType() reflect.Type {
-	return d.configType
-}
+func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-
-	conf, err := d.check(v)
+	err := Check(conf, workers)
 	if err != nil {
 		return nil, err
 	}
 	c := &CorsFilter{
-		Driver:           d,
-		id:               id,
+		WorkerBase:       drivers.Worker(id, name),
 		option:           conf.genOptionHandler(),
 		originChecker:    NewChecker(conf.AllowOrigins, "Access-Control-Allow-Origin"),
 		methodChecker:    NewChecker(conf.AllowMethods, "Access-Control-Allow-Methods"),

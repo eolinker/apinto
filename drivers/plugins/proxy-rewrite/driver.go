@@ -2,6 +2,7 @@ package proxy_rewrite
 
 import (
 	"fmt"
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"reflect"
 	"regexp"
@@ -15,21 +16,21 @@ type Driver struct {
 	configType reflect.Type
 }
 
-func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	_, err := d.check(v)
+func Check(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+	err := conf.doCheck()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (d *Driver) check(v interface{}) (*Config, error) {
-	conf, ok := v.(*Config)
-	if !ok {
-		return nil, eosc.ErrorConfigFieldUnknown
-	}
+func check(v interface{}) (*Config, error) {
 
-	err := conf.doCheck()
+	conf, err := drivers.Assert[Config](v)
+	if err != nil {
+		return nil, err
+	}
+	err = conf.doCheck()
 	if err != nil {
 		return nil, err
 	}
@@ -37,24 +38,19 @@ func (d *Driver) check(v interface{}) (*Config, error) {
 	return conf, nil
 }
 
-func (d *Driver) ConfigType() reflect.Type {
-	return d.configType
-}
+func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-
-	conf, err := d.check(v)
+	err := conf.doCheck()
 	if err != nil {
 		return nil, err
 	}
 
 	pw := &ProxyRewrite{
-		Driver:   d,
-		id:       id,
-		uri:      conf.URI,
-		regexURI: conf.RegexURI,
-		host:     conf.Host,
-		headers:  conf.Headers,
+		WorkerBase: drivers.Worker(id, name),
+		uri:        conf.URI,
+		regexURI:   conf.RegexURI,
+		host:       conf.Host,
+		headers:    conf.Headers,
 	}
 
 	if len(conf.RegexURI) > 0 {

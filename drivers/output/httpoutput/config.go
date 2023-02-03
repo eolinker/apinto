@@ -2,11 +2,13 @@ package httpoutput
 
 import (
 	"encoding/json"
-	"github.com/eolinker/eosc"
 	"net/http"
+
+	"github.com/eolinker/eosc"
 )
 
 type Config struct {
+	Scopes    []string             `json:"scopes" label:"作用域"`
 	Method    string               `json:"method" yaml:"method" enum:"GET,POST,PUT" label:"请求方式"`
 	Url       string               `json:"url" yaml:"url" format:"uri" label:"请求Url"`
 	Headers   map[string]string    `json:"headers" yaml:"headers" label:"请求头部"`

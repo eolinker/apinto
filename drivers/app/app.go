@@ -1,18 +1,21 @@
 package app
 
 import (
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"errors"
+
+	"github.com/eolinker/apinto/drivers"
 
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/eosc"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 type app struct {
-	id        string
-	name      string
+	drivers.WorkerBase
 	driverIDs []string
 	config    *Config
+	anonymous bool
 	executor  application.IAppExecutor
 }
 
@@ -21,10 +24,6 @@ func (a *app) Execute(ctx http_service.IHttpContext) error {
 		return nil
 	}
 	return a.executor.Execute(ctx)
-}
-
-func (a *app) Name() string {
-	return a.name
 }
 
 func (a *app) Labels() map[string]string {
@@ -42,12 +41,12 @@ func (a *app) Disable() bool {
 }
 
 func (a *app) Destroy() error {
-	appManager.Del(a.id)
-	return nil
-}
+	appManager.Del(a.Id())
+	if a.anonymous {
+		appManager.SetAnonymousApp(nil)
+	}
 
-func (a *app) Id() string {
-	return a.id
+	return nil
 }
 
 func (a *app) Start() error {
@@ -70,14 +69,22 @@ func (a *app) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) e
 }
 
 func (a *app) set(cfg *Config) error {
-	filters, users, err := createFilters(a.id, cfg.Auth)
-	if err != nil {
-		return err
+
+	if cfg.Anonymous {
+		anonymousApp := appManager.AnonymousApp()
+		if anonymousApp != nil && anonymousApp.Id() != a.Id() {
+			return errors.New("anonymous app is already exists")
+		}
+		appManager.SetAnonymousApp(a)
+		a.anonymous = true
+	} else {
+		filters, users, err := createFilters(a.Id(), cfg.Auth)
+		if err != nil {
+			return err
+		}
+		a.anonymous = false
+		appManager.Set(a, filters, users)
 	}
-
-	//cfg.Labels["application"] = strings.TrimSuffix(app., "@app")
-
-	appManager.Set(a, filters, users)
 	e := newExecutor()
 	e.append(newAdditionalParam(cfg.Additional))
 	a.executor = e
@@ -93,26 +100,33 @@ func (a *app) CheckSkill(skill string) bool {
 	return false
 }
 
-func createFilters(id string, auths []*Auth) ([]application.IAuth, map[string][]*application.BaseConfig, error) {
+func createFilters(id string, auths []*Auth) ([]application.IAuth, map[string][]application.ITransformConfig, error) {
 	filters := make([]application.IAuth, 0, len(auths))
-	userMap := make(map[string][]*application.BaseConfig)
+	userMap := make(map[string][]application.ITransformConfig)
 	for _, v := range auths {
 
 		filter, err := createFilter(v.Type, v.TokenName, v.Position, v.Config)
 		if err != nil {
 			return nil, nil, err
 		}
-		err = checkUsers(id, filter, v.Users)
+		users := make([]application.ITransformConfig, 0, len(v.Users))
+		for _, u := range v.Users {
+			users = append(users, u)
+		}
+		err = checkUsers(id, filter, users)
 		if err != nil {
 			return nil, nil, err
 		}
 		filters = append(filters, filter)
-		userMap[filter.ID()] = v.Users
+		if _, ok := userMap[filter.ID()]; !ok {
+			userMap[filter.ID()] = make([]application.ITransformConfig, 0, len(users))
+		}
+		userMap[filter.ID()] = append(userMap[filter.ID()], users...)
 	}
 	return filters, userMap, nil
 }
 
-func checkUsers(id string, filter application.IAuth, users []*application.BaseConfig) error {
+func checkUsers(id string, filter application.IAuth, users []application.ITransformConfig) error {
 	return filter.Check(id, users)
 }
 

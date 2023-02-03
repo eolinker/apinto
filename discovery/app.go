@@ -1,9 +1,8 @@
 package discovery
 
 import (
+	"github.com/google/uuid"
 	"sync"
-
-	"github.com/go-basic/uuid"
 )
 
 type app struct {
@@ -15,7 +14,7 @@ type app struct {
 	container     IAppContainer
 }
 
-//Reset 重置app的节点列表
+// Reset 重置app的节点列表
 func (s *app) Reset(nodes Nodes) {
 
 	tmp := make(map[string]INode)
@@ -33,14 +32,14 @@ func (s *app) Reset(nodes Nodes) {
 	s.locker.Unlock()
 }
 
-//GetAttrs 获取app的属性集合
+// GetAttrs 获取app的属性集合
 func (s *app) GetAttrs() Attrs {
 	s.locker.RLock()
 	defer s.locker.RUnlock()
 	return s.attrs
 }
 
-//GetAttrByName 通过属性名获取app对应属性
+// GetAttrByName 通过属性名获取app对应属性
 func (s *app) GetAttrByName(name string) (string, bool) {
 	s.locker.RLock()
 	defer s.locker.RUnlock()
@@ -48,7 +47,7 @@ func (s *app) GetAttrByName(name string) (string, bool) {
 	return attr, ok
 }
 
-//NewApp 创建服务发现app
+// NewApp 创建服务发现app
 func NewApp(checker IHealthChecker, container IAppContainer, attrs Attrs, nodes Nodes) IApp {
 	if attrs == nil {
 		attrs = make(Attrs)
@@ -58,17 +57,17 @@ func NewApp(checker IHealthChecker, container IAppContainer, attrs Attrs, nodes 
 		nodes:         nodes,
 		locker:        sync.RWMutex{},
 		healthChecker: checker,
-		id:            uuid.New(),
+		id:            uuid.NewString(),
 		container:     container,
 	}
 }
 
-//ID 返回app的id
+// ID 返回app的id
 func (s *app) ID() string {
 	return s.id
 }
 
-//Nodes 将运行中的节点列表返回
+// Nodes 将运行中的节点列表返回
 func (s *app) Nodes() []INode {
 	s.locker.RLock()
 	defer s.locker.RUnlock()
@@ -82,7 +81,7 @@ func (s *app) Nodes() []INode {
 	return nodes
 }
 
-//NodeError 定时检查节点，当节点失败时，则返回错误
+// NodeError 定时检查节点，当节点失败时，则返回错误
 func (s *app) NodeError(id string) error {
 	s.locker.Lock()
 	defer s.locker.Unlock()
@@ -96,7 +95,7 @@ func (s *app) NodeError(id string) error {
 	return nil
 }
 
-//Close 关闭服务发现的app
+// Close 关闭服务发现的app
 func (s *app) Close() error {
 	//
 	s.container.Remove(s.id)

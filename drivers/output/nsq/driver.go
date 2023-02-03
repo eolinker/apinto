@@ -1,33 +1,32 @@
 package nsq
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
-type Driver struct {
-	configType reflect.Type
-}
-
-func (d *Driver) ConfigType() reflect.Type {
-	return d.configType
-}
-
-func Check(v interface{}) (*Config, error) {
-	conf, ok := v.(*Config)
-	if !ok {
-		return nil, errConfigType
+func check(v interface{}) (*Config, error) {
+	conf, err := drivers.Assert[Config](v)
+	if err != nil {
+		return nil, err
 	}
+	err = doCheck(conf)
+	if err != nil {
+		return nil, err
+	}
+	return conf, nil
+}
+func doCheck(conf *Config) error {
 
 	nsqConf := conf
 	if nsqConf == nil {
-		return nil, errNsqConfNull
+		return errNsqConfNull
 	}
 	if nsqConf.Topic == "" {
-		return nil, errTopicNull
+		return errTopicNull
 	}
 	if len(nsqConf.Address) == 0 {
-		return nil, errAddressNull
+		return errAddressNull
 	}
 	if nsqConf.Type == "" {
 		nsqConf.Type = "line"
@@ -35,24 +34,24 @@ func Check(v interface{}) (*Config, error) {
 	switch nsqConf.Type {
 	case "line", "json":
 	default:
-		return nil, errFormatterType
+		return errFormatterType
 	}
 
 	if len(nsqConf.Formatter) == 0 {
-		return nil, errFormatterConf
+		return errFormatterConf
 	}
 
-	return nsqConf, nil
+	return nil
 }
 
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
-	conf, err := Check(v)
+	err := doCheck(conf)
 	if err != nil {
 		return nil, err
 	}
 	worker := &NsqOutput{
-		id: id,
+		WorkerBase: drivers.Worker(id, name),
 	}
 	worker.config = conf
 	return worker, nil

@@ -56,7 +56,7 @@ func (a *aksk) Driver() string {
 	return driverName
 }
 
-func (a *aksk) Check(appID string, users []*application.BaseConfig) error {
+func (a *aksk) Check(appID string, users []application.ITransformConfig) error {
 	us := make([]application.IUser, 0, len(users))
 	for _, u := range users {
 		v, ok := u.Config().(*User)
@@ -68,7 +68,7 @@ func (a *aksk) Check(appID string, users []*application.BaseConfig) error {
 	return a.users.Check(appID, driverName, us)
 }
 
-func (a *aksk) Set(app application.IApp, users []*application.BaseConfig) {
+func (a *aksk) Set(app application.IApp, users []application.ITransformConfig) {
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, u := range users {
 		v, _ := u.Config().(*User)

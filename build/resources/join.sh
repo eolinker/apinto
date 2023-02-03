@@ -32,7 +32,7 @@ do
   if [ ${ip} != ${POD_IP} ]
   then
   #join the cluster
-    ./apinto join --ip ${POD_IP} --addr=${ip}:${APINTO_ADMIN_PORT}
+    ./apinto join --addr=${ip}:${APINTO_ADMIN_PORT}
     break
   fi
 done

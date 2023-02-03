@@ -11,6 +11,7 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 注意：**main**分支为开发主要分支，频繁更新可能导致使用不稳定，若需要使用稳定版本，请查看[release](https://github.com/eolinker/apinto/releases)
 
+**Apinto** 集合了配置和转发功能，使用者可以通过openAPI进行配置，也可通过可视化UI项目[Apinto Dashboard](https://github.com/eolinker/apinto-dashboard)进行配置，相关文档可点击[Apinto Dashboard部署文档](https://help.apinto.com/docs/dashboard/quick/arrange)
 ### 概况 | [English Introduction](https://github.com/eolinker/apinto/blob/main/README.md)
 
 - [为什么要使用Apinto](#为什么要使用Apinto "Apinto")
@@ -36,7 +37,10 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 总而言之，Apinto 能让业务开发团队更加专注地实现业务。
 
-[![Stargazers over time](https://starchart.cc/eolinker/apinto.svg)](#)
+### Star 历史
+
+[![Star History Chart](https://api.star-history.com/svg?repos=eolinker/apinto&type=Date)](https://star-history.com/#eolinker/apinto&Date)
+
 
 ### 产品特性
 
@@ -84,18 +88,18 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 ### 部署
 
-* 直接部署：[部署教程](https://help.apinto.com/?path=/quick/arrange)
-* [快速入门教程](https://help.apinto.com/?path=/quick/quick_course)
-* [源码编译教程](https://help.apinto.com/?path=/quick/arrange)
-* Docker部署：后续支持
+* 直接部署：[部署教程](https://help.apinto.com/docs/apinto/quick/arrange)
+* [快速入门教程](https://help.apinto.com/docs/apinto/quick/quick_course)
+* [源码编译教程](https://help.apinto.com/docs/apinto/quick/arrange)
+* [Docker部署](https://hub.docker.com/r/eolinker/apinto-gateway)
 * Kubernetes部署：后续支持
 
 ### 启动
 
-1.下载安装包并解压（此处以v0.5.1版本的安装包示例）
+1.下载安装包并解压（此处以v0.8.0版本的安装包示例）
 
 ```
-wget https://github.com/eolinker/apinto/releases/download/v0.5.1/apinto-v0.5.1.linux.x64.tar.gz && tar -zxvf apinto-v0.5.1.linux.x64.tar.gz && cd apinto
+wget https://github.com/eolinker/apinto/releases/download/v0.8.0/apinto-v0.8.0.linux.x64.tar.gz && tar -zxvf apinto-v0.8.0.linux.x64.tar.gz && cd apinto
 ```
 
 2.启动网关：
@@ -104,10 +108,13 @@ wget https://github.com/eolinker/apinto/releases/download/v0.5.1/apinto-v0.5.1.l
 ./apinto start
 ```
 
+3.如需可视化界面请点击[Apinto Dashboard](https://github.com/eolinker/apinto-dashboard)
+
+
 - ### **联系我们**
 
 
-* **帮助文档**：[https://help.apinto.com](https://help.apinto.com/)
+* **帮助文档**：[https://help.apinto.com](https://help.apinto.com/docs)
 
 - **QQ群**: 725853895
 

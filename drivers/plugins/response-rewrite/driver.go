@@ -1,6 +1,7 @@
 package response_rewrite
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
 	"reflect"
@@ -14,21 +15,14 @@ type Driver struct {
 	configType reflect.Type
 }
 
-func (d *Driver) Check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	_, err := d.check(v)
-	if err != nil {
-		return err
-	}
-	return nil
+func Check(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+
+	return conf.doCheck()
 }
 
-func (d *Driver) check(v interface{}) (*Config, error) {
-	conf, ok := v.(*Config)
-	if !ok {
-		return nil, eosc.ErrorConfigFieldUnknown
-	}
+func check(v interface{}) (*Config, error) {
 
-	err := conf.doCheck()
+	conf, err := drivers.Assert[Config](v)
 	if err != nil {
 		return nil, err
 	}
@@ -36,27 +30,22 @@ func (d *Driver) check(v interface{}) (*Config, error) {
 	return conf, nil
 }
 
-func (d *Driver) ConfigType() reflect.Type {
-	return d.configType
-}
-
-func (d *Driver) Create(id, name string, v interface{}, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	conf, err := d.check(v)
+func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+	err := conf.doCheck()
 	if err != nil {
 		return nil, err
 	}
 
 	//若body非空且需要base64转码
 	if conf.Body != "" && conf.BodyBase64 {
-		conf.Body, err = utils.B64Decode(conf.Body)
+		conf.Body, err = utils.B64DecodeString(conf.Body)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	r := &ResponseRewrite{
-		Driver:     d,
-		id:         id,
+		WorkerBase: drivers.Worker(id, name),
 		statusCode: conf.StatusCode,
 		body:       conf.Body,
 		headers:    conf.Headers,
