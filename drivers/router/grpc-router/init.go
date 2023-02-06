@@ -7,6 +7,6 @@ import (
 
 func init() {
 	router.Register(router.GRPC, func(port int, listener net.Listener) {
-		// star grpc server
+		//todo star grpc server
 	})
 }

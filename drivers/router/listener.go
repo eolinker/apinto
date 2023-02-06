@@ -20,6 +20,7 @@ type RouterType int
 const (
 	GRPC RouterType = iota
 	Http
+	Dubbo
 	TslTCP
 	AnyTCP
 
@@ -43,9 +44,11 @@ func Register(tp RouterType, handler RouterServerHandler) error {
 type RouterServerHandler func(port int, listener net.Listener)
 
 func init() {
+	dubboMagic := []byte{0xda, 0xbb}
 	matchers[AnyTCP] = []cmux.Matcher{cmux.Any()}
 	matchers[TslTCP] = []cmux.Matcher{cmux.TLS()}
 	matchers[Http] = []cmux.Matcher{cmux.HTTP1Fast()}
+	matchers[Dubbo] = []cmux.Matcher{cmux.PrefixMatcher(string(dubboMagic))}
 	matchers[GRPC] = []cmux.Matcher{cmux.HTTP2HeaderField("content-type", "application/grpc")}
 
 	var tf traffic.ITraffic
