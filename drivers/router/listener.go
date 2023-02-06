@@ -2,28 +2,55 @@ package router
 
 import (
 	"crypto/tls"
+	"errors"
 	"github.com/eolinker/apinto/certs"
-	"github.com/eolinker/apinto/drivers/router/http-router/manager"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/config"
-	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/traffic"
 	"github.com/eolinker/eosc/traffic/mixl"
-	"github.com/valyala/fasthttp"
+	"github.com/soheilhy/cmux"
 	"net"
 	"strconv"
 	"strings"
 	"sync"
 )
 
-var (
-	httpRouterManger manager.IManger
+type RouterType int
+
+const (
+	GRPC RouterType = iota
+	Http
+	TslTCP
+	AnyTCP
+
+	depth
 )
 
+var (
+	handlers                 = make([]RouterServerHandler, depth)
+	matchers                 = make([][]cmux.Matcher, depth)
+	ErrorDuplicateRouterType = errors.New("duplicate")
+)
+
+func Register(tp RouterType, handler RouterServerHandler) error {
+	if handlers[tp] != nil {
+		return ErrorDuplicateRouterType
+	}
+	handlers[tp] = handler
+	return nil
+}
+
+type RouterServerHandler func(port int, listener net.Listener)
+
 func init() {
+	matchers[AnyTCP] = []cmux.Matcher{cmux.Any()}
+	matchers[TslTCP] = []cmux.Matcher{cmux.TLS()}
+	matchers[Http] = []cmux.Matcher{cmux.HTTP1Fast()}
+	matchers[GRPC] = []cmux.Matcher{cmux.HTTP2HeaderField("content-type", "application/grpc")}
+
 	var tf traffic.ITraffic
 	var listenCfg *config.ListenUrl
-	bean.Autowired(&httpRouterManger, &tf, &listenCfg)
+	bean.Autowired(&tf, &listenCfg)
 
 	bean.AddInitializingBeanFunc(func() {
 		initListener(tf, listenCfg)
@@ -35,10 +62,6 @@ func initListener(tf traffic.ITraffic, listenCfg *config.ListenUrl) {
 		return
 	}
 
-	m, ok := httpRouterManger.(*manager.Manager)
-	if !ok {
-		return
-	}
 	wg := sync.WaitGroup{}
 	tcp, ssl := tf.Listen(listenCfg.ListenUrls...)
 
@@ -60,18 +83,20 @@ func initListener(tf traffic.ITraffic, listenCfg *config.ListenUrl) {
 		var ln net.Listener = mixl.NewMixListener(port, lns...)
 
 		wg.Add(1)
-		go func(ln net.Listener, port int) {
-			log.Debug("fast server:", port, ln.Addr())
+		go func(ln net.Listener, p int) {
 			wg.Done()
-			server := fasthttp.Server{
-				StreamRequestBody:            true,
-				DisablePreParseMultipartForm: true,
-				MaxRequestBodySize:           100 * 1024 * 1024,
-				Handler: func(ctx *fasthttp.RequestCtx) {
-					m.FastHandler(port, ctx)
-				}}
-			server.Serve(ln)
+			cMux := cmux.New(ln)
+
+			for i, handler := range handlers {
+				if handler != nil {
+					lnMatch := cMux.Match(matchers[i]...)
+					go handler(p, lnMatch)
+				}
+			}
+
+			cMux.Serve()
 		}(ln, port)
+
 	}
 	wg.Wait()
 	return
