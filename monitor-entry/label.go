@@ -1,17 +1,15 @@
 package monitor_entry
 
 var (
-	LabelNode     = "node"
-	LabelCluster  = "cluster"
 	LabelApi      = "api"
 	LabelApp      = "app"
-	LabelHandler  = "handler"
 	LabelUpstream = "upstream"
+	LabelHandler  = "handler"
 )
 
 var labels = map[string]string{
-	LabelApi:      "api_id",
-	LabelApp:      "application_id",
+	LabelApi:      "api",
+	LabelApp:      "application",
 	LabelHandler:  "handler",
-	LabelUpstream: "service_id",
+	LabelUpstream: "service",
 }

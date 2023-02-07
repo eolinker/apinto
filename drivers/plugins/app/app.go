@@ -60,9 +60,22 @@ func (a *App) DoWebsocketFilter(ctx http_service.IWebsocketContext, next eoconte
 	return nil
 }
 
+func anonymousAppHandler(ctx http_service.IHttpContext) (bool, error) {
+	if app := appManager.AnonymousApp(); app != nil && !app.Disable() {
+		setLabels(ctx, app.Labels())
+		ctx.SetLabel("application_id", app.Id())
+		ctx.SetLabel("application", app.Name())
+		log.Error("application name is ", app.Name())
+		return true, app.Execute(ctx)
+	}
+	return false, nil
+}
+
 func (a *App) auth(ctx http_service.IHttpContext) error {
+	log.Error("start auth...")
 	if appManager.Count() < 1 {
-		return nil
+		_, err := anonymousAppHandler(ctx)
+		return err
 	}
 	driver := ctx.Request().Header().GetHeader("Authorization-Type")
 	filters := appManager.ListByDriver(driver)
@@ -86,17 +99,19 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 			setLabels(ctx, user.App.Labels())
 			ctx.SetLabel("application_id", user.App.Id())
 			ctx.SetLabel("application", user.App.Name())
+			log.Error("application name is ", user.App.Name())
 			if user.HideCredential {
 				application.HideToken(ctx, user.TokenName, user.Position)
 			}
 			return user.App.Execute(ctx)
 		}
 	}
-	if app := appManager.AnonymousApp(); app != nil && !app.Disable() {
-		setLabels(ctx, app.Labels())
-		ctx.SetLabel("application_id", app.Id())
-		ctx.SetLabel("application", app.Name())
-		return app.Execute(ctx)
+	has, err := anonymousAppHandler(ctx)
+	if err != nil {
+		return err
+	}
+	if has {
+		return nil
 	}
 	return errors.New("invalid user")
 }

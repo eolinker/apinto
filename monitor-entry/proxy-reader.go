@@ -2,7 +2,6 @@ package monitor_entry
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/eolinker/eosc/utils"
 
@@ -12,23 +11,17 @@ import (
 
 type ProxyReadFunc func(request http_context.IProxy) (interface{}, bool)
 
-var proxyRequestMetrics = []string{
-	"ip",
-	"path",
-}
-
 var proxyMetrics = []string{
 	"method",
 	"host",
 	"addr",
-	"path",
-	"status",
 }
 
 var proxyFields = []string{
 	"timing",
 	"request",
 	"response",
+	"status",
 }
 
 func ReadProxy(ctx http_context.IHttpContext) []IPoint {
@@ -38,36 +31,21 @@ func ReadProxy(ctx http_context.IHttpContext) []IPoint {
 
 	globalLabels := utils.GlobalLabelGet()
 	labelMetrics := map[string]string{
-		"request_id": ctx.RequestId(),
-		"cluster":    globalLabels["cluster_id"],
-		"node":       globalLabels["node_id"],
+		"cluster": globalLabels["cluster_id"],
+		"node":    globalLabels["node_id"],
 	}
 	for key, label := range labels {
 		value := ctx.GetLabel(label)
 		if value == "" {
 			value = "-"
 		}
+		log.Error("label name: ", key, " label value: ", value)
 		labelMetrics[key] = value
-	}
-
-	for _, key := range proxyRequestMetrics {
-		f, has := request[key]
-		if !has {
-			log.Error("proxy missing request tag function belong to ", key)
-			continue
-		}
-		v, has := f(ctx)
-		if !has {
-			continue
-		}
-		labelMetrics[fmt.Sprintf("request_%s", key)] = v.(string)
 	}
 
 	points := make([]IPoint, 0, len(ctx.Proxies()))
 	for i, p := range ctx.Proxies() {
-		tags := map[string]string{
-			"index": strconv.Itoa(i),
-		}
+		tags := map[string]string{}
 
 		for key, value := range labelMetrics {
 			tags[key] = value
@@ -85,7 +63,9 @@ func ReadProxy(ctx http_context.IHttpContext) []IPoint {
 			tags[metrics] = v.(string)
 		}
 
-		fields := make(map[string]interface{})
+		fields := map[string]interface{}{
+			"index": i,
+		}
 		for _, field := range proxyFields {
 			f, has := proxy[field]
 			if !has {
@@ -110,14 +90,14 @@ var proxy = map[string]ProxyReadFunc{
 	"method": func(proxy http_context.IProxy) (interface{}, bool) {
 		return proxy.Method(), true
 	},
-	"path": func(proxy http_context.IProxy) (interface{}, bool) {
-		return proxy.URI().Path(), true
-	},
+	//"path": func(proxy http_context.IProxy) (interface{}, bool) {
+	//	return proxy.URI().Path(), true
+	//},
 	"addr": func(proxy http_context.IProxy) (interface{}, bool) {
 		return fmt.Sprintf("%s://%s", proxy.URI().Scheme(), proxy.URI().Host()), true
 	},
 	"status": func(proxy http_context.IProxy) (interface{}, bool) {
-		return proxy.Status(), true
+		return proxy.StatusCode(), true
 	},
 	"timing": func(proxy http_context.IProxy) (interface{}, bool) {
 		return proxy.ResponseTime(), true

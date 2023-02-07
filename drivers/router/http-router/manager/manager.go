@@ -137,7 +137,10 @@ func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 		log.Debug("match has:", port)
 		r.ServeHTTP(httpContext)
 	}
-	httpContext.GetFinish().Finish(httpContext)
+	finishHandler := httpContext.GetFinish()
+	if finishHandler != nil {
+		finishHandler.Finish(httpContext)
+	}
 }
 
 type NotFoundHandler struct {

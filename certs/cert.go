@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/eolinker/eosc/config"
 	"sync"
+	"sync/atomic"
 )
 
 var errorCertificateNotExit = errors.New("not exist cert")
@@ -15,11 +16,14 @@ type ICert interface {
 }
 
 var (
-	workerMaps               = make(map[string]*tls.Certificate)
-	lock                     = sync.RWMutex{}
-	currentCert *config.Cert = nil
+	workerMaps  = make(map[string]*tls.Certificate)
+	lock        = sync.RWMutex{}
+	currentCert = atomic.Pointer[config.Cert]{}
 )
 
+func init() {
+	currentCert.Store(config.NewCert(nil))
+}
 func DelCert(workerId string) {
 	lock.Lock()
 	defer lock.Unlock()
@@ -43,36 +47,27 @@ func rebuild() {
 			certsMap[dnsName] = i
 		}
 	}
-	currentCert = config.NewCert(certsMap)
+	currentCert.Swap(config.NewCert(certsMap))
 }
 func GetCertificateFunc(certsLocal ...*config.Cert) func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-	lock.RLock()
-	certsCluster := currentCert
-	lock.RUnlock()
 
-	certList := make([]*config.Cert, 0, len(certsLocal)+1)
-	for _, c := range certList {
+	if len(certsLocal) == 0 {
+
+		return func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			return currentCert.Load().GetCertificate(info)
+		}
+	}
+	certList := make([]*config.Cert, 0, len(certsLocal))
+	for _, c := range certsLocal {
 		if c != nil {
 			certList = append(certList, c)
 		}
 	}
-	if certsCluster != nil {
-		certList = append(certList, certsCluster)
-	}
-	if len(certList) == 0 {
-		return func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-			return nil, errorCertificateNotExit
-		}
-	}
-	if len(certList) == 1 {
-		certs := certList[0]
-		return func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
-			return certs.GetCertificate(info)
-		}
-	}
-
 	return func(info *tls.ClientHelloInfo) (certificate *tls.Certificate, err error) {
-
+		certificate, err = currentCert.Load().GetCertificate(info)
+		if certificate != nil {
+			return
+		}
 		for _, cert := range certList {
 			certificate, err = cert.GetCertificate(info)
 			if certificate != nil {

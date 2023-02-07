@@ -137,9 +137,13 @@ func (ctx *HttpContext) SendTo(address string, timeout time.Duration) error {
 
 	beginTime := time.Now()
 	ctx.response.responseError = fasthttp_client.ProxyTimeout(address, request, &ctx.fastHttpRequestCtx.Response, timeout)
-
 	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, beginTime, time.Now())
-	agent.setStatusCode(ctx.fastHttpRequestCtx.Response.StatusCode())
+	if ctx.response.responseError != nil {
+		agent.setStatusCode(504)
+	} else {
+		agent.setStatusCode(ctx.fastHttpRequestCtx.Response.StatusCode())
+	}
+
 	agent.setResponseLength(ctx.fastHttpRequestCtx.Response.Header.ContentLength())
 
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)
@@ -155,7 +159,7 @@ func (ctx *HttpContext) Context() context.Context {
 }
 
 func (ctx *HttpContext) AcceptTime() time.Time {
-	return ctx.fastHttpRequestCtx.ConnTime()
+	return ctx.fastHttpRequestCtx.Time()
 }
 
 func (ctx *HttpContext) Value(key interface{}) interface{} {
