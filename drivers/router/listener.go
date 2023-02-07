@@ -23,7 +23,6 @@ const (
 	Dubbo
 	TslTCP
 	AnyTCP
-
 	depth
 )
 
