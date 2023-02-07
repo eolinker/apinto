@@ -5,9 +5,13 @@ import (
 	"dubbo.apache.org/dubbo-go/v3/common"
 	"dubbo.apache.org/dubbo-go/v3/common/constant"
 	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo"
+	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
+	"fmt"
 	"github.com/apache/dubbo-go-hessian2"
+	"net"
 	"reflect"
+	"time"
 )
 
 // HttpToDubbo
@@ -51,4 +55,62 @@ func HttpToDubbo(addr string, serviceName, methodName string, typesList []string
 	}
 
 	return result.Result(), nil
+}
+
+func TcpToDubbo() {
+	conn, err := net.Dial("tcp", "127.0.0.1:4399")
+	if err != nil {
+		panic(err)
+	}
+	methodName := "sayHello"
+
+	attachments := make(map[string]interface{})
+	attachments["jwt"] = "fdsf1ds23f1sdf5ds64fds123"
+
+	var params []interface{}
+	params = append(params, methodName)
+	params = append(params, "java.lang.String")
+	params = append(params, map[int]interface{}{0: "zhangzeyi"})
+
+	//todo codec.EncodeRequest限制了序列化接口只能用Hessian2和proto
+	//codec := &dubbo.DubboCodec{}
+	//rpcInvocation := invocation.NewRPCInvocation(methodName, params, attachments)
+	//rpcInvocation.SetAttachment(constant.InterfaceKey, "cn.zzy.api.UserService")
+	//var invocationProtocol protocol.Invocation = rpcInvocation
+	//
+	//request := remoting.NewRequest("")
+	//request.SerialID = constant.SHessian2
+	//
+	//request.Data = &invocationProtocol
+	//
+	//buffer, err := codec.EncodeRequest(request)
+	//if err != nil {
+	//	panic(err)
+	//}
+
+	//todo 可扩展序列化接口   需要实现impl.Serializer()接口  然后设置dubboPackage.SetSerializer()
+	dubboPackage := impl.NewDubboPackage(nil)
+	dubboPackage.Service = impl.Service{
+		Interface: "cn.zzy.api.UserService",
+		Method:    "$invoke",       //todo 固定写死
+		Timeout:   time.Second * 3, //request Timeout
+	}
+
+	dubboPackage.Header = impl.DubboHeader{
+		SerialID: constant.SHessian2,
+		Type:     impl.PackageRequest,
+		ID:       10, //request.ID uuid
+	}
+	body := impl.NewRequestPayload(params, attachments)
+	dubboPackage.Body = body
+
+	buffer1, err := dubboPackage.Marshal()
+	if err != nil {
+		panic(err)
+	}
+	bytes := buffer1.Bytes()
+	fmt.Println(string(bytes))
+	_, err = conn.Write(bytes)
+	select {}
+
 }

@@ -10,7 +10,11 @@ import (
 
 func main() {
 	go dubbo_server.StartDubboServer()
+
 	time.Sleep(time.Second)
+
+	http_dubbo.TcpToDubbo()
+	return
 	types := make([]string, 0)
 	types = append(types, "java.lang.String")
 	valuesList := make([]hessian.Object, 0)
