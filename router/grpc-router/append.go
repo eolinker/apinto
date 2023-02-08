@@ -1,4 +1,4 @@
-package http_router
+package grpc_router
 
 import (
 	"sort"
@@ -13,8 +13,6 @@ type RuleType = string
 
 const (
 	HttpHeader RuleType = "header"
-	HttpQuery  RuleType = "query"
-	HttpCookie RuleType = "cookie"
 )
 
 func Parse(rules []router.AppendRule) router.MatcherChecker {
@@ -29,16 +27,6 @@ func Parse(rules []router.AppendRule) router.MatcherChecker {
 		switch strings.ToLower(r.Type) {
 		case HttpHeader:
 			rls = append(rls, &HeaderChecker{
-				name:    r.Name,
-				Checker: ck,
-			})
-		case HttpQuery:
-			rls = append(rls, &QueryChecker{
-				name:    r.Name,
-				Checker: ck,
-			})
-		case HttpCookie:
-			rls = append(rls, &CookieChecker{
 				name:    r.Name,
 				Checker: ck,
 			})

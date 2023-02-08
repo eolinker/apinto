@@ -1,4 +1,4 @@
-package http_router
+package grpc_router
 
 import (
 	"errors"
@@ -42,43 +42,34 @@ func (p *Ports) Build() router.IMatcher {
 }
 
 type Hosts struct {
-	methods map[string]*Methods
+	services map[string]*Services
 }
 
 func (h *Hosts) Build() router.IMatcher {
+	serviceMatchers := make(map[string]router.IMatcher)
+	for m, c := range h.services {
+		serviceMatchers[m] = c.Build()
+	}
+	return newServiceMatcher(serviceMatchers)
+}
+
+type Services struct {
+	methods map[string]*Methods
+}
+
+func (s *Services) Build() router.IMatcher {
 	methodMatchers := make(map[string]router.IMatcher)
-	for m, c := range h.methods {
+	for m, c := range s.methods {
 		methodMatchers[m] = c.Build()
 	}
-	return newMethodMatcher(methodMatchers, nil)
+	return newMethodMatcher(methodMatchers)
 }
 
 type Methods struct {
-	paths map[string]*Paths
 }
 
 func (m *Methods) Build() router.IMatcher {
-
-	checkers := make([]*CheckerHandler, 0, len(m.paths))
-	equals := make(map[string]router.IMatcher, len(m.paths))
-	var all router.IMatcher
-	for _, next := range m.paths {
-		matcher := next.Build()
-		if next.checker.CheckType() == checker.CheckTypeEqual {
-			equals[next.checker.Value()] = matcher
-			continue
-		}
-		if next.checker.CheckType() == checker.CheckTypeAll {
-			all = next.Build()
-			continue
-		}
-
-		checkers = append(checkers, &CheckerHandler{
-			checker: next.checker,
-			next:    matcher,
-		})
-	}
-	return NewPathMatcher(equals, checkers, all)
+	return nil
 }
 
 type Paths struct {
@@ -134,11 +125,17 @@ func NewPorts() *Ports {
 }
 func NewHosts() *Hosts {
 	return &Hosts{
+		services: map[string]*Services{},
+	}
+}
+func NewServices() *Services {
+	return &Services{
 		methods: map[string]*Methods{},
 	}
 }
+
 func NewMethods() *Methods {
-	return &Methods{paths: map[string]*Paths{}}
+	return &Methods{}
 }
 func NewPaths(checker checker.Checker) *Paths {
 	return &Paths{
@@ -166,7 +163,7 @@ func (r *Root) Add(id string, handler router.IRouterHandler, port int, hosts []s
 	return nil
 }
 
-func (p *Ports) Add(id string, handler router.IRouterHandler, hosts []string, methods []string, path string, append []router.AppendRule) error {
+func (p *Ports) Add(id string, handler router.IRouterHandler, hosts []string, services []string, method string, append []router.AppendRule) error {
 
 	if len(hosts) == 0 {
 		return p.add(id, handler, router.All, methods, path, append)
@@ -179,40 +176,60 @@ func (p *Ports) Add(id string, handler router.IRouterHandler, hosts []string, me
 	}
 	return nil
 }
-func (p *Ports) add(id string, handler router.IRouterHandler, host string, methods []string, path string, append []router.AppendRule) error {
+func (p *Ports) add(id string, handler router.IRouterHandler, host string, services []string, method string, append []router.AppendRule) error {
 	hN, has := p.hosts[host]
 	if !has {
 		hN = NewHosts()
 		p.hosts[host] = hN
 	}
-	err := hN.Add(id, handler, methods, path, append)
+	err := hN.Add(id, handler, services, method, append)
 	if err != nil {
 		return fmt.Errorf("host=%s %w", host, err)
 	}
 	return nil
 }
 
-func (h *Hosts) add(id string, handler router.IRouterHandler, method string, path string, append []router.AppendRule) error {
-	methods, has := h.methods[method]
+func (h *Hosts) add(id string, handler router.IRouterHandler, service string, method string, append []router.AppendRule) error {
+	services, has := h.services[service]
 	if !has {
-		methods = NewMethods()
-		h.methods[method] = methods
+		services = NewServices()
+		h.services[service] = services
 	}
-	err := methods.Add(id, handler, path, append)
+	err := services.Add(id, handler, method, append)
 	if err != nil {
 		return fmt.Errorf("method=%s %w", method, err)
 	}
 	return nil
 }
-func (h *Hosts) Add(id string, handler router.IRouterHandler, methods []string, path string, append []router.AppendRule) error {
-	if len(methods) == 0 {
-		return h.add(id, handler, router.All, path, append)
+
+func (h *Hosts) Add(id string, handler router.IRouterHandler, services []string, method string, append []router.AppendRule) error {
+	if len(services) == 0 {
+		return h.add(id, handler, router.All, method, append)
 	}
-	for _, m := range methods {
-		err := h.add(id, handler, m, path, append)
+	for _, m := range services {
+		err := h.add(id, handler, m, method, append)
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (s *Services) Add(id string, handler router.IRouterHandler, methods string, append []router.AppendRule) error {
+	ck, err := checker.Parse(path)
+	if err != nil {
+		return fmt.Errorf("path=%s %w", path, err)
+	}
+	key := ck.Key()
+	p, has := m.paths[key]
+	if !has {
+		p = NewPaths(ck)
+		m.paths[key] = p
+	}
+
+	err = p.Add(id, handler, append)
+	if err != nil {
+		return fmt.Errorf("path=%s %w", key, err)
 	}
 	return nil
 }
