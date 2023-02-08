@@ -1,6 +1,7 @@
 package grpc_router
 
 import (
+	"fmt"
 	"strconv"
 
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
@@ -33,22 +34,12 @@ func newHostMatcher(children map[string]router.IMatcher) router.IMatcher {
 	}
 }
 
-func newServiceMatcher(children map[string]router.IMatcher) router.IMatcher {
+func newPathMatcher(children map[string]router.IMatcher) router.IMatcher {
 	return &SimpleMatcher{
 		children: children,
 		name:     "service_name",
 		read: func(port int, request grpc_context.IRequest) (string, bool) {
-			return request.Service(), true
-		},
-	}
-}
-
-func newMethodMatcher(children map[string]router.IMatcher) router.IMatcher {
-	return &SimpleMatcher{
-		children: children,
-		name:     "method",
-		read: func(port int, request grpc_context.IRequest) (string, bool) {
-			return request.Method(), true
+			return fmt.Sprintf("%s/%s", request.Service(), request.Method()), true
 		},
 	}
 }
