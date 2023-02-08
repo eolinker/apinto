@@ -58,19 +58,34 @@ func HttpToDubbo(addr string, serviceName, methodName string, typesList []string
 }
 
 func TcpToDubbo() {
-	conn, err := net.Dial("tcp", "127.0.0.1:4399")
+
+	conn, err := net.Dial("tcp", "127.0.0.1:20000")
 	if err != nil {
 		panic(err)
 	}
-	methodName := "sayHello"
+	methodName := "UpdateUser"
 
 	attachments := make(map[string]interface{})
 	attachments["jwt"] = "fdsf1ds23f1sdf5ds64fds123"
 
 	var params []interface{}
 	params = append(params, methodName)
-	params = append(params, "java.lang.String")
-	params = append(params, map[int]interface{}{0: "zhangzeyi"})
+
+	//todo types长度和values长度一一对应
+	types := make([]string, 0)
+	types = append(types, "object")
+
+	values := make([]hessian.Object, 0)
+
+	mm := make(map[string]interface{})
+	mm["id"] = 10
+	mm["name"] = "nihao"
+	mm["age"] = "18"
+
+	values = append(values, mm)
+
+	params = append(params, types)
+	params = append(params, values)
 
 	//todo codec.EncodeRequest限制了序列化接口只能用Hessian2和proto
 	//codec := &dubbo.DubboCodec{}
@@ -91,7 +106,8 @@ func TcpToDubbo() {
 	//todo 可扩展序列化接口   需要实现impl.Serializer()接口  然后设置dubboPackage.SetSerializer()
 	dubboPackage := impl.NewDubboPackage(nil)
 	dubboPackage.Service = impl.Service{
-		Interface: "cn.zzy.api.UserService",
+		Path:      "api.UserService",
+		Interface: "api.UserService",
 		Method:    "$invoke",       //todo 固定写死
 		Timeout:   time.Second * 3, //request Timeout
 	}

@@ -18,9 +18,7 @@ func main() {
 	types := make([]string, 0)
 	types = append(types, "java.lang.String")
 	valuesList := make([]hessian.Object, 0)
-	m := make(map[int]interface{})
-	m[0] = "zhangzeyi"
-	valuesList = append(valuesList, m)
-	dubbo, err := http_dubbo.HttpToDubbo("dubbo://127.0.0.1:4399", "cn.zzy.api.UserService", "sayHello", types, valuesList)
+	valuesList = append(valuesList, "zhangzeyi")
+	dubbo, err := http_dubbo.HttpToDubbo("dubbo://127.0.0.1:20880", "cn.zzy.api.UserService", "sayHello", types, valuesList)
 	fmt.Println(&dubbo, err)
 }
