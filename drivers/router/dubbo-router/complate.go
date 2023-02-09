@@ -1,9 +1,9 @@
-package dubbo
+package dubbo_router
 
 import (
 	"errors"
 	"github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	dubbo_context "github.com/eolinker/eosc/eocontext/dubbo-context"
 	"time"
 )
 
@@ -21,7 +21,7 @@ func NewComplete(retry int, timeOut time.Duration) *Complete {
 }
 
 func (h *Complete) Complete(org eocontext.EoContext) error {
-	_, err := http_service.DubboAssert(org)
+	_, err := dubbo_context.Assert(org)
 	if err != nil {
 		return err
 	}

@@ -1,13 +1,13 @@
 package dubbo_router
 
 import (
-	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
+	dubbo_context "github.com/eolinker/eosc/eocontext/dubbo-context"
 )
 
 type IMatcher interface {
-	Match(port int, service impl.Service) (IDubboRouterHandler, bool)
+	Match(port int, service dubbo_context.IRequestReader) (IDubboRouterHandler, bool)
 }
 
 type IDubboRouterHandler interface {
-	DubboProxy(dubboPackage *impl.DubboPackage)
+	DubboProxy(ctx dubbo_context.IDubboContext)
 }

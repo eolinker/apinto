@@ -3,23 +3,23 @@ package manager
 import (
 	"bytes"
 	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
+	dubbo_context "github.com/eolinker/apinto/node/dubbo-context"
 	dubbo_router "github.com/eolinker/apinto/router/dubbo-router"
 	"github.com/eolinker/eosc/log"
 	"net"
 	"sync"
 )
 
-var _ IDubboManger = (*dubboManger)(nil)
+var _ IManger = (*dubboManger)(nil)
 
-type IDubboManger interface {
-	//Set driver:http/dubbo/grpc
-	Set(id string, port int, driver, host, path, httpMethod, serviceName, methodName string) error
+type IManger interface {
+	Set(id string, port int, serviceName, methodName string, rule []AppendRule, handler dubbo_router.IDubboRouterHandler) error
 	Delete(id string)
 	// FastHandler func(port int, ln net.Listener)方法中调用
 	FastHandler(port int, conn net.Conn)
 }
 
-func NewManager() IDubboManger {
+func NewManager() IManger {
 	return &dubboManger{}
 }
 
@@ -28,7 +28,7 @@ type dubboManger struct {
 	matcher dubbo_router.IMatcher
 }
 
-func (d *dubboManger) Set(id string, port int, driver, host, path, httpMethod, serviceName, methodName string) error {
+func (d *dubboManger) Set(id string, port int, serviceName, methodName string, rule []AppendRule, handler dubbo_router.IDubboRouterHandler) error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -54,12 +54,17 @@ func (d *dubboManger) FastHandler(port int, conn net.Conn) {
 		return
 	}
 
-	match, has := d.matcher.Match(port, dubboPackage.Service)
+	context := dubbo_context.NewContext(dubboPackage, port, conn)
+
+	match, has := d.matcher.Match(port, context.HeaderReader())
 	if !has {
 		//todo 怎样处理 conn.Write() ???
-
 	} else {
 		log.Debug("match has:", port)
-		match.DubboProxy(dubboPackage)
+		match.DubboProxy(context)
 	}
+}
+
+func format() {
+
 }

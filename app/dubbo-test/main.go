@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	hessian "github.com/apache/dubbo-go-hessian2"
-	dubbo_server "github.com/eolinker/apinto/dubbo-test/dubbo-server"
-	http_dubbo "github.com/eolinker/apinto/dubbo-test/http-dubbo"
+	dubbo_server "github.com/eolinker/apinto/app/dubbo-test/dubbo-server"
+	http_dubbo "github.com/eolinker/apinto/app/dubbo-test/http-dubbo"
 	"time"
 )
 

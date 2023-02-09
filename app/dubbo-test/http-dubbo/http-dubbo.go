@@ -1,6 +1,8 @@
 package http_dubbo
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"dubbo.apache.org/dubbo-go/v3/common"
 	"dubbo.apache.org/dubbo-go/v3/common/constant"
@@ -9,6 +11,7 @@ import (
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
 	"fmt"
 	"github.com/apache/dubbo-go-hessian2"
+	"io"
 	"net"
 	"reflect"
 	"time"
@@ -59,7 +62,7 @@ func HttpToDubbo(addr string, serviceName, methodName string, typesList []string
 
 func TcpToDubbo() {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:20000")
+	conn, err := net.Dial("tcp", "127.0.0.1:20001")
 	if err != nil {
 		panic(err)
 	}
@@ -106,7 +109,7 @@ func TcpToDubbo() {
 	//todo 可扩展序列化接口   需要实现impl.Serializer()接口  然后设置dubboPackage.SetSerializer()
 	dubboPackage := impl.NewDubboPackage(nil)
 	dubboPackage.Service = impl.Service{
-		Path:      "api.UserService",
+		Path:      "/api.UserService",
 		Interface: "api.UserService",
 		Method:    "$invoke",       //todo 固定写死
 		Timeout:   time.Second * 3, //request Timeout
@@ -124,9 +127,40 @@ func TcpToDubbo() {
 	if err != nil {
 		panic(err)
 	}
-	bytes := buffer1.Bytes()
-	fmt.Println(string(bytes))
-	_, err = conn.Write(bytes)
+	bytes1 := buffer1.Bytes()
+	fmt.Println(string(bytes1))
+
+	go read(conn)
+
+	_, err = conn.Write(bytes1)
+
 	select {}
+
+}
+
+func write(conn net.Conn) {
+
+}
+
+func read(conn net.Conn) {
+	defer conn.Close()
+	//
+	buf := make([]byte, 1024*128)
+	reader := bufio.NewReader(conn)
+
+	for {
+		n, err := reader.Read(buf[:])
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return
+		}
+
+		fmt.Println("===============")
+		resDubboPackage := impl.NewDubboPackage(bytes.NewBuffer(buf[:n]))
+		err = resDubboPackage.Unmarshal()
+
+	}
 
 }
