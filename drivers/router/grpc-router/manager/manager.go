@@ -4,18 +4,17 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"google.golang.org/grpc"
+
 	"github.com/eolinker/apinto/router"
 
 	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
-	http_context "github.com/eolinker/apinto/node/http-context"
 	eoscContext "github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
-	"github.com/valyala/fasthttp"
 )
 
 var _ IManger = (*Manager)(nil)
-var notFound = new(HttpNotFoundHandler)
+var notFound = new(NotFoundHandler)
 var completeCaller = http_complete.NewHttpCompleteCaller()
 
 type IManger interface {
@@ -67,50 +66,17 @@ func (m *Manager) Delete(id string) {
 	return
 }
 
-func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
-	httpContext := http_context.NewContext(ctx, port)
-	log.Debug("port is ", port, " request: ", httpContext.Request())
-	r, has := m.matcher.Match(port, httpContext.Request())
-	if !has {
-		httpContext.SetFinish(notFound)
-		httpContext.SetCompleteHandler(notFound)
-		globalFilters := m.globalFilters.Load()
-		if globalFilters != nil {
-			(*globalFilters).Chain(httpContext, completeCaller)
-
-		}
-	} else {
-		log.Debug("match has:", port)
-		r.ServeHTTP(httpContext)
-	}
-	finishHandler := httpContext.GetFinish()
-	if finishHandler != nil {
-		finishHandler.Finish(httpContext)
-	}
+func (m *Manager) FastHandler(port int, srv interface{}, stream grpc.ServerStream) {
+	log.Infof("listen port: %d, is client stream: %v, is server stream: %v", port, srv, stream)
 }
 
 type NotFoundHandler struct {
 }
 
-type HttpNotFoundHandler struct {
+func (h *NotFoundHandler) Complete(ctx eoscContext.EoContext) error {
+	panic("no implement")
 }
 
-func (m *HttpNotFoundHandler) Complete(ctx eoscContext.EoContext) error {
-
-	httpContext, err := http_service.Assert(ctx)
-	if err != nil {
-		return nil
-	}
-	httpContext.Response().SetStatus(404, "404")
-	httpContext.Response().SetBody([]byte("404 Not Found"))
-	return nil
-}
-
-func (m *HttpNotFoundHandler) Finish(ctx eoscContext.EoContext) error {
-	httpContext, err := http_service.Assert(ctx)
-	if err != nil {
-		return err
-	}
-	httpContext.FastFinish()
-	return nil
+func (h *NotFoundHandler) Finish(ctx eoscContext.EoContext) error {
+	panic("no implement")
 }

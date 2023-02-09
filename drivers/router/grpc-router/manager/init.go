@@ -3,12 +3,14 @@ package manager
 import (
 	"net"
 
+	"google.golang.org/grpc"
+
+	"github.com/eolinker/eosc/eocontext"
+
 	"github.com/eolinker/apinto/drivers/router"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/eosc/common/bean"
-	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
-	"github.com/valyala/fasthttp"
 )
 
 var (
@@ -19,16 +21,16 @@ func init() {
 
 	var routerManager = NewManager()
 	serverHandler := func(port int, ln net.Listener) {
-		server := fasthttp.Server{
-			StreamRequestBody:            true,
-			DisablePreParseMultipartForm: true,
-			MaxRequestBodySize:           100 * 1024 * 1024,
-			Handler: func(ctx *fasthttp.RequestCtx) {
-				routerManager.FastHandler(port, ctx)
-			}}
+		opts := []grpc.ServerOption{
+			grpc.UnknownServiceHandler(func(srv interface{}, stream grpc.ServerStream) error {
+				routerManager.FastHandler(port, srv, stream)
+				return nil
+			}),
+		}
+		server := grpc.NewServer(opts...)
 		server.Serve(ln)
 	}
-	router.Register(router.Http, serverHandler)
+	router.Register(router.GRPC, serverHandler)
 
 	var pluginManager plugin.IPluginManager
 	bean.Autowired(&pluginManager)
@@ -37,9 +39,9 @@ func init() {
 	var m IManger = routerManager
 	bean.Injection(&m)
 	bean.AddInitializingBeanFunc(func() {
-		log.Debug("init router manager")
+		log.Debug("init grpc router manager")
 		chainProxy = pluginManager.CreateRequest("global", map[string]*plugin.Config{})
 		routerManager.SetGlobalFilters(&chainProxy)
-
 	})
+
 }
