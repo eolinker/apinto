@@ -1,9 +1,10 @@
-package http_router
+package grpc_router
 
 import (
-	"sort"
+	"fmt"
 	"strconv"
-	"strings"
+
+	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
 
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/router"
@@ -11,36 +12,34 @@ import (
 	"github.com/eolinker/eosc/log"
 )
 
-type readerHandler func(port int, request http_service.IRequestReader) (string, bool)
+type readerHandler func(port int, request grpc_context.IRequest) (string, bool)
 
 func newPortMatcher(children map[string]router.IMatcher) router.IMatcher {
 	return &SimpleMatcher{
 		children: children,
 		name:     "port",
-		read: func(port int, request http_service.IRequestReader) (string, bool) {
+		read: func(port int, request grpc_context.IRequest) (string, bool) {
 			return strconv.Itoa(port), true
 		},
 	}
 }
-func newMethodMatcher(children map[string]router.IMatcher, handler router.IRouterHandler) router.IMatcher {
-	return &SimpleMatcher{
-		children: children,
-		name:     "method",
-		read: func(port int, request http_service.IRequestReader) (string, bool) {
-			return request.Method(), true
-		},
-	}
-}
+
 func newHostMatcher(children map[string]router.IMatcher) router.IMatcher {
 	return &SimpleMatcher{
 		children: children,
-		name:     "host",
-		read: func(port int, request http_service.IRequestReader) (string, bool) {
-			orgHost := request.URI().Host()
-			if i := strings.Index(orgHost, ":"); i > 0 {
-				return orgHost[:i], true
-			}
-			return orgHost, true
+		name:     "service_name",
+		read: func(port int, request grpc_context.IRequest) (string, bool) {
+			return request.Host(), true
+		},
+	}
+}
+
+func newPathMatcher(children map[string]router.IMatcher) router.IMatcher {
+	return &SimpleMatcher{
+		children: children,
+		name:     "service_name",
+		read: func(port int, request grpc_context.IRequest) (string, bool) {
+			return fmt.Sprintf("%s/%s", request.Service(), request.Method()), true
 		},
 	}
 }
@@ -52,7 +51,7 @@ type SimpleMatcher struct {
 }
 
 func (s *SimpleMatcher) Match(port int, req interface{}) (router.IRouterHandler, bool) {
-	request, ok := req.(http_service.IRequestReader)
+	request, ok := req.(grpc_context.IRequest)
 	if !ok {
 		return nil, false
 	}
@@ -90,23 +89,8 @@ type CheckMatcher struct {
 	name     string
 }
 
-func NewPathMatcher(equals map[string]router.IMatcher, checkers []*CheckerHandler, all router.IMatcher) *CheckMatcher {
-	read := func(port int, request http_service.IRequestReader) (string, bool) {
-		return request.URI().Path(), true
-	}
-	sort.Sort(CheckerSort(checkers))
-
-	return &CheckMatcher{
-		name:     "path",
-		equals:   equals,
-		checkers: checkers,
-		read:     read,
-		all:      all,
-	}
-}
-
 func (c *CheckMatcher) Match(port int, req interface{}) (router.IRouterHandler, bool) {
-	request, ok := req.(http_service.IRequestReader)
+	request, ok := req.(grpc_context.IRequest)
 	if !ok {
 		return nil, false
 	}

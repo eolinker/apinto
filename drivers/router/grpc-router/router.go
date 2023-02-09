@@ -1,18 +1,13 @@
-package http_router
+package grpc_router
 
 import (
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/eolinker/apinto/drivers"
-	http_router "github.com/eolinker/apinto/router"
+	"github.com/eolinker/apinto/router"
 
-	"github.com/eolinker/apinto/drivers/router/http-router/websocket"
-
-	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
-
-	"github.com/eolinker/apinto/drivers/router/http-router/manager"
+	"github.com/eolinker/apinto/drivers/router/grpc-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/template"
@@ -21,28 +16,28 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 )
 
-type HttpRouter struct {
+type GrpcRouter struct {
 	id            string
 	name          string
 	routerManager manager.IManger
 	pluginManager plugin.IPluginManager
 }
 
-func (h *HttpRouter) Destroy() error {
+func (h *GrpcRouter) Destroy() error {
 
 	h.routerManager.Delete(h.id)
 	return nil
 }
 
-func (h *HttpRouter) Id() string {
+func (h *GrpcRouter) Id() string {
 	return h.id
 }
 
-func (h *HttpRouter) Start() error {
+func (h *GrpcRouter) Start() error {
 	return nil
 }
 
-func (h *HttpRouter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+func (h *GrpcRouter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg, err := drivers.Assert[Config](conf)
 	if err != nil {
 		return err
@@ -50,20 +45,17 @@ func (h *HttpRouter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	return h.reset(cfg, workers)
 
 }
-func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+func (h *GrpcRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 
-	methods := cfg.Method
-
-	handler := &httpHandler{
+	handler := &grpcRouter{
 		routerName:      h.name,
 		routerId:        h.id,
 		serviceName:     strings.TrimSuffix(string(cfg.Service), "@service"),
-		completeHandler: http_complete.NewHttpComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
+		completeHandler: NewComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
 		finisher:        defaultFinisher,
 		service:         nil,
 		filters:         nil,
 		disable:         cfg.Disable,
-		websocket:       cfg.Websocket,
 	}
 
 	if !cfg.Disable {
@@ -93,32 +85,27 @@ func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 		handler.service = serviceHandler
 		handler.filters = plugins
 
-		if cfg.Websocket {
-			handler.completeHandler = websocket.NewComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond)
-			methods = []string{http.MethodGet}
-			//handler.finisher = &websocket.Finisher{}
-		}
 	}
 
-	appendRule := make([]http_router.AppendRule, 0, len(cfg.Rules))
+	appendRule := make([]router.AppendRule, 0, len(cfg.Rules))
 	for _, r := range cfg.Rules {
-		appendRule = append(appendRule, http_router.AppendRule{
+		appendRule = append(appendRule, router.AppendRule{
 			Type:    r.Type,
 			Name:    r.Name,
 			Pattern: r.Value,
 		})
 	}
-	err := h.routerManager.Set(h.id, cfg.Listen, cfg.Host, methods, cfg.Path, appendRule, handler)
+	err := h.routerManager.Set(h.id, cfg.Listen, cfg.Host, cfg.ServiceName, cfg.MethodName, appendRule, handler)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func (h *HttpRouter) Stop() error {
+func (h *GrpcRouter) Stop() error {
 	h.Destroy()
 	return nil
 }
 
-func (h *HttpRouter) CheckSkill(skill string) bool {
+func (h *GrpcRouter) CheckSkill(skill string) bool {
 	return false
 }
