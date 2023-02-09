@@ -34,6 +34,7 @@ import (
 	"github.com/eolinker/apinto/drivers/plugins/strategy/visit"
 	"github.com/eolinker/apinto/drivers/resources/datasource/influxdbv2"
 	"github.com/eolinker/apinto/drivers/resources/redis"
+	grpc_router "github.com/eolinker/apinto/drivers/router/grpc-router"
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
 	service "github.com/eolinker/apinto/drivers/service"
 	cache_strategy "github.com/eolinker/apinto/drivers/strategy/cache-strategy"
@@ -58,6 +59,7 @@ func registerInnerExtenders() {
 func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	// router
 	http_router.Register(extenderRegister)
+	grpc_router.Register(extenderRegister)
 	template.Register(extenderRegister)
 
 	// service

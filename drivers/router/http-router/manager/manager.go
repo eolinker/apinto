@@ -6,7 +6,7 @@ import (
 
 	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
 	http_context "github.com/eolinker/apinto/node/http-context"
-	http_router "github.com/eolinker/apinto/router/http-router"
+	"github.com/eolinker/apinto/router"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
@@ -18,12 +18,12 @@ var notFound = new(HttpNotFoundHandler)
 var completeCaller = http_complete.NewHttpCompleteCaller()
 
 type IManger interface {
-	Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router http_router.IRouterHandler) error
+	Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) error
 	Delete(id string)
 }
 type Manager struct {
 	lock    sync.RWMutex
-	matcher http_router.IMatcher
+	matcher router.IMatcher
 
 	routersData   IRouterData
 	globalFilters atomic.Pointer[eoscContext.IChainPro]
@@ -38,7 +38,7 @@ func NewManager() *Manager {
 	return &Manager{routersData: new(RouterData)}
 }
 
-func (m *Manager) Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router http_router.IRouterHandler) error {
+func (m *Manager) Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 	routersData := m.routersData.Set(id, port, hosts, method, path, append, router)

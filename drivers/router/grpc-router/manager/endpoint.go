@@ -1,13 +1,13 @@
 package manager
 
-import http_router "github.com/eolinker/apinto/router/http-router"
+import "github.com/eolinker/apinto/router"
 
 type Router struct {
-	Id          string
-	Port        int
-	Hosts       []string
-	Method      []string
-	Path        string
-	Appends     []AppendRule
-	HttpHandler http_router.IRouterHandler
+	Id         string
+	Port       int
+	Hosts      []string
+	Service    string
+	Method     string
+	Appends    []AppendRule
+	GrpcRouter router.IRouterHandler
 }

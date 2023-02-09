@@ -1,7 +1,5 @@
 package manager
 
-import (
-	http_router "github.com/eolinker/apinto/router"
-)
+import "github.com/eolinker/apinto/router"
 
-type AppendRule = http_router.AppendRule
+type AppendRule = router.AppendRule

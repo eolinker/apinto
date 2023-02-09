@@ -12,12 +12,6 @@ const All = "*"
 
 type RuleType = string
 
-const (
-	HttpHeader RuleType = "header"
-	HttpQuery  RuleType = "query"
-	HttpCookie RuleType = "cookie"
-)
-
 type AppendRule struct {
 	Type    string
 	Name    string
