@@ -1,8 +1,6 @@
 package http_dubbo
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"dubbo.apache.org/dubbo-go/v3/common"
 	"dubbo.apache.org/dubbo-go/v3/common/constant"
@@ -11,7 +9,6 @@ import (
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
 	"fmt"
 	"github.com/apache/dubbo-go-hessian2"
-	"io"
 	"net"
 	"reflect"
 	"time"
@@ -62,7 +59,7 @@ func HttpToDubbo(addr string, serviceName, methodName string, typesList []string
 
 func TcpToDubbo() {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:20001")
+	conn, err := net.Dial("tcp", "127.0.0.1:3333")
 	if err != nil {
 		panic(err)
 	}
@@ -138,29 +135,18 @@ func TcpToDubbo() {
 
 }
 
-func write(conn net.Conn) {
-
-}
-
 func read(conn net.Conn) {
-	defer conn.Close()
 	//
-	buf := make([]byte, 1024*128)
-	reader := bufio.NewReader(conn)
+	fmt.Println(conn.LocalAddr())
+	buf := make([]byte, 512)
+	fmt.Println("开始读")
+	t := time.Now()
+	n, err := conn.Read(buf)
 
-	for {
-		n, err := reader.Read(buf[:])
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return
-		}
-
-		fmt.Println("===============")
-		resDubboPackage := impl.NewDubboPackage(bytes.NewBuffer(buf[:n]))
-		err = resDubboPackage.Unmarshal()
-
-	}
+	fmt.Println(n)
+	fmt.Println(string(buf))
+	fmt.Println("读取时间", time.Now().Sub(t).String())
+	fmt.Println("结束读")
+	fmt.Println(err)
 
 }

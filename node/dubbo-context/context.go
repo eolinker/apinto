@@ -23,6 +23,7 @@ type DubboContext struct {
 	app                 eoscContext.EoApp
 	balance             eoscContext.BalanceHandler
 	upstreamHostHandler eoscContext.UpstreamHostHandler
+	response            dubbo_context.IResponse
 	requestReader       dubbo_context.IRequestReader
 	proxy               dubbo_context.IProxy
 	labels              map[string]string
@@ -30,6 +31,10 @@ type DubboContext struct {
 	requestID           string
 	conn                net.Conn
 	acceptTime          time.Time
+}
+
+func (d *DubboContext) Response() dubbo_context.IResponse {
+	return d.response
 }
 
 func NewContext(dubboPackage *impl.DubboPackage, port int, conn net.Conn) dubbo_context.IDubboContext {
@@ -92,6 +97,7 @@ func NewContext(dubboPackage *impl.DubboPackage, port int, conn net.Conn) dubbo_
 		requestReader: requestReader,
 		conn:          conn,
 		acceptTime:    t,
+		response:      &Response{},
 	}
 	dubboContext.ctx = context.Background()
 	dubboContext.WithValue("request_time", t)
