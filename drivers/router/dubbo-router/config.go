@@ -6,18 +6,17 @@ import (
 )
 
 type Config struct {
-	Listen      int            `json:"listen" yaml:"listen" title:"port" description:"使用端口" default:"80" label:"端口号" maximum:"65535"`
-	Method      []string       `json:"method" yaml:"method" enum:"GET,POST,PUT,DELETE,PATH,HEAD,OPTIONS" label:"请求方式"`
-	Host        []string       `json:"host" yaml:"host" label:"域名"`
-	Path        string         `json:"location"`
+	Listen int `json:"listen" yaml:"listen" title:"port" description:"使用端口" default:"80" label:"端口号" maximum:"65535"`
+
+	Host []string `json:"host" yaml:"host" label:"域名"`
+
+	ServiceName string         `json:"service_name" yaml:"service_name" label:"服务名"`
+	MethodName  string         `json:"method_name" yaml:"method_name" label:"方法名"`
 	Rules       []Rule         `json:"rules" yaml:"rules" label:"路由规则"`
 	Service     eosc.RequireId `json:"service" yaml:"service" skill:"github.com/eolinker/apinto/service.service.IService" required:"true" label:"目标服务"`
 	Template    eosc.RequireId `json:"template" yaml:"template" skill:"github.com/eolinker/apinto/template.template.ITemplate" required:"false" label:"插件模版"`
-	Websocket   bool           `json:"websocket" yaml:"websocket" label:"Websocket"`
 	Disable     bool           `json:"disable" yaml:"disable" label:"禁用路由"`
 	Plugins     plugin.Plugins `json:"plugins" yaml:"plugins" label:"插件配置"`
-	ServiceName string         `json:"service_name" yaml:"service_name" label:"服务名"`
-	MethodName  string         `json:"method_name" yaml:"method_name" label:"方法名"`
 	Retry       int            `json:"retry" label:"重试次数" yaml:"retry"`
 	TimeOut     int            `json:"time_out" label:"超时时间"`
 }

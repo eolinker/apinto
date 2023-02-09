@@ -10,6 +10,7 @@ import (
 	"github.com/eolinker/eosc/utils/config"
 	"github.com/google/uuid"
 	"net"
+	"reflect"
 	"time"
 )
 
@@ -49,12 +50,14 @@ func NewContext(dubboPackage *impl.DubboPackage, port int, conn net.Conn) dubbo_
 		responseStatus: headerReader.responseStatus,
 	}
 
+	attachments, method := packageUnmarshal(dubboPackage)
+
 	serviceReader := &RequestServiceReader{
 		path:        dubboPackage.Service.Path,
 		serviceName: dubboPackage.Service.Interface,
 		group:       dubboPackage.Service.Group,
 		version:     dubboPackage.Service.Version,
-		method:      dubboPackage.Service.Method,
+		method:      method,
 		timeout:     dubboPackage.Service.Timeout,
 	}
 	serviceWriter := &RequestServiceWrite{
@@ -76,7 +79,8 @@ func NewContext(dubboPackage *impl.DubboPackage, port int, conn net.Conn) dubbo_
 		headerReader:  headerReader,
 		serviceReader: serviceReader,
 		body:          dubboPackage,
-		attachments:   nil,
+		host:          conn.LocalAddr().String(),
+		attachments:   attachments,
 	}
 
 	t := time.Now()
@@ -113,8 +117,7 @@ func (d *DubboContext) RequestId() string {
 }
 
 func (d *DubboContext) AcceptTime() time.Time {
-	//TODO implement me
-	panic("implement me")
+	return d.acceptTime
 }
 
 func (d *DubboContext) Context() context.Context {
@@ -214,4 +217,37 @@ func addrToIP(addr net.Addr) net.IP {
 		return net.IPv4zero
 	}
 	return x.IP
+}
+
+func packageUnmarshal(dubboPackage *impl.DubboPackage) (map[string]interface{}, string) {
+	attachments := make(map[string]interface{})
+	methodName := ""
+	if bodyMap, bOk := dubboPackage.Body.(map[string]interface{}); bOk {
+		if attachmentsInteface, aOk := bodyMap["attachments"]; aOk {
+			if attachmentsTemp, ok := attachmentsInteface.(map[string]interface{}); ok {
+				attachments = attachmentsTemp
+			}
+
+		}
+
+		if argsMap, aOk := bodyMap["args"]; aOk {
+			fmt.Println(reflect.TypeOf(argsMap))
+			if argsList, lOk := argsMap.([]interface{}); lOk {
+
+				if len(argsList) > 0 {
+					if argsStr, sOk := argsList[0].(string); sOk {
+						methodName = argsStr
+					}
+				}
+				//if len(argsList) > 1 {
+				//	if argsStr, sOk := argsList[1].([]string); sOk {
+				//		typeList = argsStr
+				//	}
+				//}
+
+			}
+		}
+	}
+
+	return attachments, methodName
 }

@@ -35,6 +35,13 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Desc:   "grpc路由",
 					Params: nil,
 				},
+				{
+					Id:     "eolinker.com:apinto:dubbo_router",
+					Name:   "dubbo",
+					Label:  "dubbo",
+					Desc:   "dubbo路由",
+					Params: nil,
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},

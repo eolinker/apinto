@@ -10,7 +10,12 @@ type RequestReader struct {
 	headerReader  dubbo_context.IHeaderReader
 	serviceReader dubbo_context.IServiceReader
 	body          interface{}
+	host          string
 	attachments   map[string]interface{}
+}
+
+func (r *RequestReader) Host() string {
+	return r.host
 }
 
 func (r *RequestReader) Attachments() map[string]interface{} {

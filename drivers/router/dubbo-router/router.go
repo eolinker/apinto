@@ -3,9 +3,7 @@ package dubbo_router
 import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/drivers/router/dubbo-router/manager"
-	"github.com/eolinker/apinto/drivers/router/http-router/websocket"
 	"github.com/eolinker/apinto/plugin"
-	http_router "github.com/eolinker/apinto/router/http-router"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/eosc"
 	"strings"
@@ -13,9 +11,10 @@ import (
 )
 
 type DubboRouter struct {
-	id     string
-	name   string
-	manger manager.IManger
+	id            string
+	name          string
+	manger        manager.IManger
+	pluginManager plugin.IPluginManager
 }
 
 func (h *DubboRouter) Destroy() error {
@@ -66,14 +65,11 @@ func (h *DubboRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker
 
 		handler.service = serviceHandler
 
-		if cfg.Websocket {
-			handler.completeHandler = websocket.NewComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond)
-		}
 	}
 
-	appendRule := make([]http_router.AppendRule, 0, len(cfg.Rules))
+	appendRule := make([]manager.AppendRule, 0, len(cfg.Rules))
 	for _, r := range cfg.Rules {
-		appendRule = append(appendRule, http_router.AppendRule{
+		appendRule = append(appendRule, manager.AppendRule{
 			Type:    r.Type,
 			Name:    r.Name,
 			Pattern: r.Value,
