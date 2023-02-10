@@ -11,7 +11,7 @@ type Response struct {
 	responseError error
 	timeout       time.Duration
 	duration      time.Duration
-	body          []byte
+	body          interface{}
 }
 
 func (r *Response) ResponseError() error {
@@ -26,14 +26,10 @@ func (r *Response) ResponseTime() time.Duration {
 	return r.duration
 }
 
-func (r *Response) GetBody() []byte {
+func (r *Response) GetBody() interface{} {
 	return r.body
 }
 
-func (r *Response) BodyLen() int {
-	return len(r.body)
-}
-
-func (r *Response) SetBody(body []byte) {
+func (r *Response) SetBody(body interface{}) {
 	r.body = body
 }

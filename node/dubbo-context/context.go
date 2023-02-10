@@ -2,17 +2,29 @@ package dubbo_context
 
 import (
 	"context"
+	"dubbo.apache.org/dubbo-go/v3/common"
+	"dubbo.apache.org/dubbo-go/v3/common/constant"
+	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo"
 	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
+	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
 	"fmt"
+	hessian "github.com/apache/dubbo-go-hessian2"
+	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc/eocontext"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	dubbo_context "github.com/eolinker/eosc/eocontext/dubbo-context"
+	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
 	"github.com/google/uuid"
 	"net"
 	"reflect"
 	"time"
 )
+
+type DubboParamBody struct {
+	typesList  []string
+	valuesList []hessian.Object
+}
 
 var _ dubbo_context.IDubboContext = (*DubboContext)(nil)
 
@@ -55,7 +67,7 @@ func NewContext(dubboPackage *impl.DubboPackage, port int, conn net.Conn) dubbo_
 		responseStatus: headerReader.responseStatus,
 	}
 
-	attachments, method := packageUnmarshal(dubboPackage)
+	attachments, method, typesList, valuesList := packageUnmarshal(dubboPackage)
 
 	serviceReader := &RequestServiceReader{
 		path:        dubboPackage.Service.Path,
@@ -77,15 +89,21 @@ func NewContext(dubboPackage *impl.DubboPackage, port int, conn net.Conn) dubbo_
 	proxy := &Proxy{
 		HeaderWriter:  headerWrite,
 		serviceWriter: serviceWriter,
-		body:          dubboPackage,
+		param: &DubboParamBody{
+			typesList:  typesList,
+			valuesList: valuesList,
+		},
+		attachments: attachments,
 	}
+
+	copyMaps := utils.CopyMaps(attachments)
 
 	requestReader := &RequestReader{
 		headerReader:  headerReader,
 		serviceReader: serviceReader,
 		body:          dubboPackage,
 		host:          conn.LocalAddr().String(),
-		attachments:   attachments,
+		attachments:   copyMaps,
 	}
 
 	t := time.Now()
@@ -113,9 +131,84 @@ func (d *DubboContext) Proxy() dubbo_context.IProxy {
 	return d.proxy
 }
 
-func (d *DubboContext) SendTo(address string, timeout time.Duration) error {
-	//TODO implement me
-	panic("implement me")
+func (d *DubboContext) Invoke(address string, timeout time.Duration) error {
+
+	t := time.Now()
+	defer func() {
+		d.response.SetResponseTime(time.Now().Sub(t))
+	}()
+
+	return d.dial(address, timeout)
+}
+
+func (d *DubboContext) dial(addr string, timeout time.Duration) error {
+	if d.conn != nil {
+		defer d.conn.Close()
+	}
+	arguments := make([]interface{}, 3)
+	parameterValues := make([]reflect.Value, 3)
+
+	typesList := make([]string, 0)
+	valuesList := make([]hessian.Object, 0)
+	if param, ok := d.proxy.GetParam().(*DubboParamBody); ok {
+		typesList = param.typesList
+		valuesList = param.valuesList
+	}
+
+	arguments[0] = d.proxy.Service().Method()
+	arguments[1] = typesList
+	arguments[2] = valuesList
+
+	parameterValues[0] = reflect.ValueOf(arguments[0])
+	parameterValues[1] = reflect.ValueOf(arguments[1])
+	parameterValues[2] = reflect.ValueOf(arguments[2])
+
+	invoc := invocation.NewRPCInvocationWithOptions(invocation.WithMethodName("$invoke"),
+		invocation.WithArguments(arguments),
+		invocation.WithParameterValues(parameterValues))
+
+	serviceName := d.proxy.Service().Interface()
+	url, err := common.NewURL(addr,
+		common.WithProtocol(dubbo.DUBBO), common.WithParamsValue(constant.SerializationKey, constant.Hessian2Serialization),
+		common.WithParamsValue(constant.GenericFilterKey, "true"),
+		common.WithParamsValue(constant.TimeoutKey, timeout.String()),
+		common.WithParamsValue(constant.InterfaceKey, serviceName),
+		common.WithParamsValue(constant.ReferenceFilterKey, "generic,filter"),
+		common.WithPath(serviceName),
+	)
+	if err != nil {
+		return err
+	}
+
+	for k, v := range d.proxy.Attachments() {
+		invoc.SetAttachment(k, v)
+	}
+
+	dubboProtocol := dubbo.NewDubboProtocol()
+	invoker := dubboProtocol.Refer(url)
+	var resp interface{}
+	invoc.SetReply(&resp)
+
+	result := invoker.Invoke(context.Background(), invoc)
+	if result.Error() != nil {
+		return result.Error()
+	}
+
+	v := result.Result().(*interface{})
+
+	bytes := formatData(*v)
+
+	d.response.SetBody(bytes)
+
+	by, err := d.packageMarshal(bytes)
+	if err != nil {
+		log.Errorf("dubbo-dial.packageMarshal err=%v", err)
+		return err
+	}
+
+	_, err = d.conn.Write(by)
+
+	return err
 }
 
 func (d *DubboContext) RequestId() string {
@@ -225,9 +318,27 @@ func addrToIP(addr net.Addr) net.IP {
 	return x.IP
 }
 
-func packageUnmarshal(dubboPackage *impl.DubboPackage) (map[string]interface{}, string) {
+func (d *DubboContext) packageMarshal(body interface{}) ([]byte, error) {
+	dubboPackage := impl.NewDubboPackage(nil)
+	dubboPackage.Header = impl.DubboHeader{
+		SerialID:       d.proxy.Header().SerialID(),
+		Type:           impl.PackageResponse,
+		ID:             d.proxy.Header().ID(),
+		ResponseStatus: impl.Response_OK,
+	}
+	dubboPackage.SetBody(impl.EnsureResponsePayload(body))
+	buf, err := dubboPackage.Marshal()
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func packageUnmarshal(dubboPackage *impl.DubboPackage) (map[string]interface{}, string, []string, []hessian.Object) {
 	attachments := make(map[string]interface{})
 	methodName := ""
+	typeList := make([]string, 0)
+	valueList := make([]hessian.Object, 0)
 	if bodyMap, bOk := dubboPackage.Body.(map[string]interface{}); bOk {
 		if attachmentsInteface, aOk := bodyMap["attachments"]; aOk {
 			if attachmentsTemp, ok := attachmentsInteface.(map[string]interface{}); ok {
@@ -237,7 +348,6 @@ func packageUnmarshal(dubboPackage *impl.DubboPackage) (map[string]interface{}, 
 		}
 
 		if argsMap, aOk := bodyMap["args"]; aOk {
-			fmt.Println(reflect.TypeOf(argsMap))
 			if argsList, lOk := argsMap.([]interface{}); lOk {
 
 				if len(argsList) > 0 {
@@ -245,15 +355,41 @@ func packageUnmarshal(dubboPackage *impl.DubboPackage) (map[string]interface{}, 
 						methodName = argsStr
 					}
 				}
-				//if len(argsList) > 1 {
-				//	if argsStr, sOk := argsList[1].([]string); sOk {
-				//		typeList = argsStr
-				//	}
-				//}
+				if len(argsList) > 1 {
+					if argsTypeList, sOk := argsList[1].([]string); sOk {
+						typeList = argsTypeList
+					}
+				}
+				if len(argsList) > 2 {
+					if argsValueList, sOk := argsList[2].([]hessian.Object); sOk {
+						valueList = argsValueList
+					}
+				}
 
 			}
 		}
 	}
 
-	return attachments, methodName
+	return attachments, methodName, typeList, valueList
+}
+
+func formatData(value interface{}) interface{} {
+
+	switch valueTemp := value.(type) {
+	case map[interface{}]interface{}:
+		maps := make(map[string]interface{})
+		for k, v := range valueTemp {
+			maps[utils.InterfaceToString(k)] = formatData(v)
+		}
+		return maps
+	case []interface{}:
+		values := make([]interface{}, 0)
+
+		for _, v := range valueTemp {
+			values = append(values, formatData(v))
+		}
+		return values
+	default:
+		return value
+	}
 }

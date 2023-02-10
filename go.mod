@@ -11,6 +11,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/consul/api v1.9.1
 	github.com/influxdata/influxdb-client-go/v2 v2.12.1
+	github.com/jhump/protoreflect v1.14.1
 	github.com/nsqio/go-nsq v1.1.0
 	github.com/ohler55/ojg v1.12.9
 	github.com/pkg/sftp v1.13.4
@@ -141,8 +142,8 @@ require (
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11 // indirect
 	google.golang.org/genproto v0.0.0-20211104193956-4c6863e31247 // indirect
-	google.golang.org/grpc v1.50.1 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/grpc v1.50.1
+	google.golang.org/protobuf v1.28.1
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

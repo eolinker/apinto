@@ -1,6 +1,7 @@
 package http_dubbo
 
 import (
+	"bytes"
 	"context"
 	"dubbo.apache.org/dubbo-go/v3/common"
 	"dubbo.apache.org/dubbo-go/v3/common/constant"
@@ -14,9 +15,9 @@ import (
 	"time"
 )
 
-// HttpToDubbo
-// addr:dubbo://192.168.198.160:20000
-func HttpToDubbo(addr string, serviceName, methodName string, typesList []string, valuesList []hessian.Object) (interface{}, error) {
+// ProxyToDubbo
+// addr:192.168.198.160:20000
+func ProxyToDubbo(addr string, serviceName, methodName string, timeout time.Duration, typesList []string, valuesList []hessian.Object) (interface{}, error) {
 	arguments := make([]interface{}, 3)
 	parameterValues := make([]reflect.Value, 3)
 
@@ -33,9 +34,9 @@ func HttpToDubbo(addr string, serviceName, methodName string, typesList []string
 		invocation.WithParameterValues(parameterValues))
 
 	url, err := common.NewURL(addr,
-		common.WithProtocol(dubbo.DUBBO), common.WithParamsValue(constant.SerializationKey, constant.ProtobufSerialization),
+		common.WithProtocol(dubbo.DUBBO), common.WithParamsValue(constant.SerializationKey, constant.Hessian2Serialization),
 		common.WithParamsValue(constant.GenericFilterKey, "true"),
-		common.WithParamsValue(constant.TimeoutKey, "5s"),
+		common.WithParamsValue(constant.TimeoutKey, timeout.String()),
 		common.WithParamsValue(constant.InterfaceKey, serviceName),
 		common.WithParamsValue(constant.ReferenceFilterKey, "generic,filter"),
 		//dubboAttachment must contains group and version info
@@ -59,7 +60,7 @@ func HttpToDubbo(addr string, serviceName, methodName string, typesList []string
 
 func TcpToDubbo() {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:3333")
+	conn, err := net.Dial("tcp", "127.0.0.1:20001")
 	if err != nil {
 		panic(err)
 	}
@@ -79,8 +80,8 @@ func TcpToDubbo() {
 
 	mm := make(map[string]interface{})
 	mm["id"] = 10
-	mm["name"] = "nihao"
-	mm["age"] = "18"
+	mm["name"] = "张泽意"
+	mm["age"] = "26"
 
 	values = append(values, mm)
 
@@ -114,8 +115,8 @@ func TcpToDubbo() {
 
 	dubboPackage.Header = impl.DubboHeader{
 		SerialID: constant.SHessian2,
-		Type:     impl.PackageRequest,
-		ID:       10, //request.ID uuid
+		Type:     impl.PackageRequest_TwoWay,
+		ID:       20, //request.ID uuid
 	}
 	body := impl.NewRequestPayload(params, attachments)
 	dubboPackage.Body = body
@@ -138,10 +139,19 @@ func TcpToDubbo() {
 func read(conn net.Conn) {
 	//
 	fmt.Println(conn.LocalAddr())
-	buf := make([]byte, 512)
+	buf := make([]byte, 128*1024)
 	fmt.Println("开始读")
 	t := time.Now()
 	n, err := conn.Read(buf)
+
+	//codec := dubbo.DubboCodec{}
+	//decodeResult, i, err := codec.Decode(buf[:n])
+	//fmt.Println(decodeResult, i, err)
+	buffer := bytes.NewBuffer(buf[:n])
+	dubboPackage := impl.NewDubboPackage(buffer)
+	var resp interface{}
+	dubboPackage.SetBody(resp)
+	dubboPackage.Unmarshal()
 
 	fmt.Println(n)
 	fmt.Println(string(buf))

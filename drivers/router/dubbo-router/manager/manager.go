@@ -28,6 +28,7 @@ func (d *dubboManger) SetGlobalFilters(globalFilters *eoscContext.IChainPro) {
 func NewManager() *dubboManger {
 	return &dubboManger{
 		matcher:       nil,
+		routersData:   new(RouterData),
 		globalFilters: atomic.Pointer[eoscContext.IChainPro]{},
 	}
 }

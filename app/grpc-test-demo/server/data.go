@@ -3,7 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"liujian-test/grpc-test-demo/common/flag"
 	"net/http"
 	"reflect"
@@ -20,7 +20,7 @@ func getService(fullMethod string, name string) (interface{}, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

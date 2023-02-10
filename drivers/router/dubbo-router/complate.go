@@ -2,7 +2,6 @@ package dubbo_router
 
 import (
 	"errors"
-	"fmt"
 	"github.com/eolinker/eosc/eocontext"
 	dubbo_context "github.com/eolinker/eosc/eocontext/dubbo-context"
 	"github.com/eolinker/eosc/log"
@@ -33,7 +32,6 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 	balance := ctx.GetBalance()
 	app := ctx.GetApp()
 	var lastErr error
-	scheme := app.Scheme()
 
 	timeOut := app.TimeOut()
 	for index := 0; index <= h.retry; index++ {
@@ -50,8 +48,7 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 		}
 
 		log.Debug("node: ", node.Addr())
-		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
-		lastErr = ctx.SendTo(addr, timeOut)
+		lastErr = ctx.Invoke(node.Addr(), timeOut)
 		if lastErr == nil {
 			return nil
 		}
