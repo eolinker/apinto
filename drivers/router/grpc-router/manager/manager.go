@@ -1,12 +1,14 @@
 package manager
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 
-	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
 
 	"github.com/eolinker/apinto/router"
+	"google.golang.org/grpc"
 
 	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
 	eoscContext "github.com/eolinker/eosc/eocontext"
@@ -67,7 +69,14 @@ func (m *Manager) Delete(id string) {
 }
 
 func (m *Manager) FastHandler(port int, srv interface{}, stream grpc.ServerStream) {
-	log.Infof("listen port: %d, is client stream: %v, is server stream: %v", port, srv, stream)
+	p, has := peer.FromContext(stream.Context())
+	if !has {
+		return
+	}
+	fmt.Println(p.Addr.String(), p.AuthInfo.AuthType())
+	if m.matcher == nil {
+		return
+	}
 }
 
 type NotFoundHandler struct {

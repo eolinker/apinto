@@ -2,7 +2,11 @@ package grpc_router
 
 import (
 	"errors"
+	"fmt"
 	"time"
+
+	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
+	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/eosc/eocontext"
 )
@@ -21,7 +25,40 @@ func NewComplete(retry int, timeOut time.Duration) *Complete {
 }
 
 func (h *Complete) Complete(org eocontext.EoContext) error {
-	panic("need finish")
+	ctx, err := grpc_context.Assert(org)
+	if err != nil {
+		return err
+	}
+	//设置响应开始时间
+	proxyTime := time.Now()
+
+	balance := ctx.GetBalance()
+	app := ctx.GetApp()
+	var lastErr error
+	scheme := app.Scheme()
+
+	timeOut := app.TimeOut()
+	for index := 0; index <= h.retry; index++ {
+
+		if h.timeOut > 0 && time.Now().Sub(proxyTime) > h.timeOut {
+			return ErrorTimeoutComplete
+		}
+		node, err := balance.Select(ctx)
+		if err != nil {
+
+			return err
+		}
+
+		log.Debug("node: ", node.Addr())
+		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
+		lastErr = ctx.Invoke(addr, timeOut)
+		if lastErr == nil {
+			return nil
+		}
+		log.Error("http upstream send error: ", lastErr)
+	}
+
+	return lastErr
 }
 
 type CompleteCaller struct {
