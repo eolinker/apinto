@@ -3,16 +3,19 @@ package router
 import (
 	"crypto/tls"
 	"errors"
+	"net"
+	"strconv"
+	"strings"
+	"sync"
+
+	"github.com/eolinker/eosc/log"
+
 	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/config"
 	"github.com/eolinker/eosc/traffic"
 	"github.com/eolinker/eosc/traffic/mixl"
 	"github.com/soheilhy/cmux"
-	"net"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 type RouterType int
@@ -23,13 +26,13 @@ const (
 	Dubbo
 	TslTCP
 	AnyTCP
-
 	depth
 )
 
 var (
 	handlers                 = make([]RouterServerHandler, depth)
 	matchers                 = make([][]cmux.Matcher, depth)
+	matchWriters             = make([][]cmux.MatchWriter, depth)
 	ErrorDuplicateRouterType = errors.New("duplicate")
 )
 
@@ -49,8 +52,8 @@ func init() {
 	matchers[TslTCP] = []cmux.Matcher{cmux.TLS()}
 	matchers[Http] = []cmux.Matcher{cmux.HTTP1Fast()}
 	matchers[Dubbo] = []cmux.Matcher{cmux.PrefixMatcher(string(dubboMagic))}
-	matchers[GRPC] = []cmux.Matcher{cmux.HTTP2HeaderField("content-type", "application/grpc")}
-
+	//matchers[GRPC] = []cmux.Matcher{cmux.HTTP2HeaderFieldPrefix("content-type", "application/grpc")}
+	matchWriters[GRPC] = []cmux.MatchWriter{cmux.HTTP2MatchHeaderFieldPrefixSendSettings("content-type", "application/grpc")}
 	var tf traffic.ITraffic
 	var listenCfg *config.ListenUrl
 	bean.Autowired(&tf, &listenCfg)
@@ -89,11 +92,12 @@ func initListener(tf traffic.ITraffic, listenCfg *config.ListenUrl) {
 		go func(ln net.Listener, p int) {
 			wg.Done()
 			cMux := cmux.New(ln)
-
 			for i, handler := range handlers {
+				log.Debug("i is ", i, " handler is ", handler)
 				if handler != nil {
 					lnMatch := cMux.Match(matchers[i]...)
 					go handler(p, lnMatch)
+					go handler(p, cMux.MatchWithWriters(matchWriters[i]...))
 				}
 			}
 

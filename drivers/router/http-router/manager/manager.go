@@ -67,7 +67,17 @@ func (m *Manager) Delete(id string) {
 }
 
 func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
+
 	httpContext := http_context.NewContext(ctx, port)
+	if m.matcher == nil {
+		httpContext.SetFinish(notFound)
+		httpContext.SetCompleteHandler(notFound)
+		globalFilters := m.globalFilters.Load()
+		if globalFilters != nil {
+			(*globalFilters).Chain(httpContext, completeCaller)
+		}
+		return
+	}
 	log.Debug("port is ", port, " request: ", httpContext.Request())
 	r, has := m.matcher.Match(port, httpContext.Request())
 	if !has {

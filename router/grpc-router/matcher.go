@@ -27,7 +27,7 @@ func newPortMatcher(children map[string]router.IMatcher) router.IMatcher {
 func newHostMatcher(children map[string]router.IMatcher) router.IMatcher {
 	return &SimpleMatcher{
 		children: children,
-		name:     "service_name",
+		name:     "host",
 		read: func(port int, request grpc_context.IRequest) (string, bool) {
 			return request.Host(), true
 		},
@@ -37,7 +37,7 @@ func newHostMatcher(children map[string]router.IMatcher) router.IMatcher {
 func newPathMatcher(children map[string]router.IMatcher) router.IMatcher {
 	return &SimpleMatcher{
 		children: children,
-		name:     "service_name",
+		name:     "path",
 		read: func(port int, request grpc_context.IRequest) (string, bool) {
 			return fmt.Sprintf("%s/%s", request.Service(), request.Method()), true
 		},
