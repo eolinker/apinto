@@ -15,6 +15,12 @@ import (
 	"time"
 )
 
+var dubboProtocol *dubbo.DubboProtocol
+
+func init() {
+	dubboProtocol = dubbo.NewDubboProtocol()
+}
+
 // ProxyToDubbo
 // addr:192.168.198.160:20000
 func ProxyToDubbo(addr string, serviceName, methodName string, timeout time.Duration, typesList []string, valuesList []hessian.Object) (interface{}, error) {
@@ -45,7 +51,8 @@ func ProxyToDubbo(addr string, serviceName, methodName string, timeout time.Dura
 	if err != nil {
 		return nil, err
 	}
-	dubboProtocol := dubbo.NewDubboProtocol()
+	dubboProtocol = dubbo.NewDubboProtocol()
+
 	invoker := dubboProtocol.Refer(url)
 	var resp interface{}
 	invoc.SetReply(&resp)
@@ -60,11 +67,11 @@ func ProxyToDubbo(addr string, serviceName, methodName string, timeout time.Dura
 
 func TcpToDubbo() {
 
-	conn, err := net.Dial("tcp", "127.0.0.1:20001")
+	conn, err := net.Dial("tcp", "192.168.198.166:20001")
 	if err != nil {
 		panic(err)
 	}
-	methodName := "UpdateUser"
+	methodName := "GetUser1"
 
 	attachments := make(map[string]interface{})
 	attachments["jwt"] = "fdsf1ds23f1sdf5ds64fds123"

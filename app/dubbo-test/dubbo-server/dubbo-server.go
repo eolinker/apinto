@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	hessian "github.com/apache/dubbo-go-hessian2"
+	gxbytes "github.com/dubbogo/gost/bytes"
+	"github.com/pkg/errors"
+	"io"
 	"net"
 )
 
@@ -24,8 +27,54 @@ func StartDubboServer() {
 			panic(err)
 		}
 		// 启动一个协程去单独处理该连接
-		go handle(conn)
+		go testHandle(conn)
 	}
+}
+
+func testHandle(conn net.Conn) {
+	pktBuf := gxbytes.NewBuffer(nil)
+	var (
+		err      error
+		ok       bool
+		netError net.Error
+		buf      []byte
+	)
+
+	bufLen := 0
+	reader := io.Reader(conn)
+	for {
+		// for clause for the network timeout condition check
+		// s.conn.SetReadTimeout(time.Now().Add(s.rTimeout))
+		buf = pktBuf.WriteNextBegin(4 * 1024)
+		bufLen, err = reader.Read(buf)
+		if err != nil {
+			if netError, ok = errors.Cause(err).(net.Error); ok && netError.Timeout() {
+				break
+			}
+			if errors.Cause(err) == io.EOF {
+				err = nil
+				if bufLen != 0 {
+					// as https://github.com/apache/dubbo-getty/issues/77#issuecomment-939652203
+					// this branch is impossible. Even if it happens, the bufLen will be zero and the error
+					// is io.EOF when getty continues to read the socket.
+				}
+				break
+			}
+		}
+		break
+	}
+	dubboPackage := impl.NewDubboPackage(bytes.NewBuffer(buf))
+	if err = dubboPackage.ReadHeader(); err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(dubboPackage)
+	if err = dubboPackage.Unmarshal(); err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(dubboPackage.Header)
+	fmt.Println(dubboPackage.Service)
 }
 
 func handle(conn net.Conn) {

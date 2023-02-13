@@ -1,8 +1,8 @@
-package dubbo_router
+package dubbo2_router
 
 import (
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/drivers/router/dubbo-router/manager"
+	"github.com/eolinker/apinto/drivers/router/dubbo2-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/eosc"
@@ -75,7 +75,7 @@ func (h *DubboRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker
 			Pattern: r.Value,
 		})
 	}
-	err := h.manger.Set(h.id, cfg.Listen, cfg.Host, cfg.ServiceName, cfg.MethodName, appendRule, handler)
+	err := h.manger.Set(h.id, cfg.Listen, cfg.ServiceName, cfg.MethodName, appendRule, handler)
 	if err != nil {
 		return err
 	}

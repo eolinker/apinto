@@ -112,7 +112,7 @@ func (p *Paths) Build() router.IMatcher {
 	return nexts
 }
 
-func (r *Root) Add(id string, handler router.IRouterHandler, port int, hosts []string, service string, method string, append []router.AppendRule) error {
+func (r *Root) Add(id string, handler router.IRouterHandler, port int, service string, method string, append []router.AppendRule) error {
 	if r.ports == nil {
 		r.ports = make(map[int]*Ports)
 	}
@@ -121,25 +121,16 @@ func (r *Root) Add(id string, handler router.IRouterHandler, port int, hosts []s
 		pN = NewPorts()
 		r.ports[port] = pN
 	}
-	err := pN.Add(id, handler, hosts, service, method, append)
+	err := pN.Add(id, handler, service, method, append)
 	if err != nil {
 		return fmt.Errorf("port=%d %w", port, err)
 	}
 	return nil
 }
 
-func (p *Ports) Add(id string, handler router.IRouterHandler, hosts []string, service string, method string, append []router.AppendRule) error {
+func (p *Ports) Add(id string, handler router.IRouterHandler, service string, method string, append []router.AppendRule) error {
+	return p.add(id, handler, router.All, service, method, append)
 
-	if len(hosts) == 0 {
-		return p.add(id, handler, router.All, service, method, append)
-	}
-	for _, host := range hosts {
-		err := p.add(id, handler, host, service, method, append)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 func (p *Ports) add(id string, handler router.IRouterHandler, host string, services string, method string, append []router.AppendRule) error {
 	hN, has := p.hosts[host]

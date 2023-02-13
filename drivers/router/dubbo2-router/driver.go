@@ -1,8 +1,8 @@
-package dubbo_router
+package dubbo2_router
 
 import (
 	"fmt"
-	"github.com/eolinker/apinto/drivers/router/dubbo-router/manager"
+	"github.com/eolinker/apinto/drivers/router/dubbo2-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/template"

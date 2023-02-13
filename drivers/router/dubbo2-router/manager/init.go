@@ -18,16 +18,17 @@ func init() {
 
 	serverHandler := func(port int, listener net.Listener) {
 
+		go manager.Handler(port)
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
 				log.Errorf("dubbo-manger listener.Accept err=%v", err)
 			}
-			go manager.FastHandler(port, conn)
+			go manager.connHandler.Handler(conn)
 		}
 
 	}
-	router.Register(router.Dubbo, serverHandler)
+	router.Register(router.Dubbo2, serverHandler)
 
 	var pluginManager plugin.IPluginManager
 	bean.Autowired(&pluginManager)

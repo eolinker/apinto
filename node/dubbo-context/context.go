@@ -13,7 +13,6 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	dubbo_context "github.com/eolinker/eosc/eocontext/dubbo-context"
-	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
 	"github.com/google/uuid"
 	"net"
@@ -26,9 +25,11 @@ type DubboParamBody struct {
 	valuesList []hessian.Object
 }
 
-var _ dubbo_context.IDubboContext = (*DubboContext)(nil)
+var _ dubbo_context.IDubbo2Context = (*DubboContext)(nil)
 
 type DubboContext struct {
+	netIP               net.IP
+	localAddr           net.Addr
 	ctx                 context.Context
 	completeHandler     eoscContext.CompleteHandler
 	finishHandler       eoscContext.FinishHandler
@@ -41,7 +42,6 @@ type DubboContext struct {
 	labels              map[string]string
 	port                int
 	requestID           string
-	conn                net.Conn
 	acceptTime          time.Time
 }
 
@@ -49,7 +49,7 @@ func (d *DubboContext) Response() dubbo_context.IResponse {
 	return d.response
 }
 
-func NewContext(dubboPackage *impl.DubboPackage, port int, conn net.Conn) dubbo_context.IDubboContext {
+func NewContext(dubboPackage *impl.DubboPackage, port int, conn net.Conn) dubbo_context.IDubbo2Context {
 
 	headerReader := &RequestHeaderReader{
 		id:             dubboPackage.Header.ID,
@@ -113,7 +113,8 @@ func NewContext(dubboPackage *impl.DubboPackage, port int, conn net.Conn) dubbo_
 		requestID:     uuid.New().String(),
 		proxy:         proxy,
 		requestReader: requestReader,
-		conn:          conn,
+		netIP:         addrToIP(conn.LocalAddr()),
+		localAddr:     conn.LocalAddr(),
 		acceptTime:    t,
 		response:      &Response{},
 	}
@@ -142,9 +143,6 @@ func (d *DubboContext) Invoke(address string, timeout time.Duration) error {
 }
 
 func (d *DubboContext) dial(addr string, timeout time.Duration) error {
-	if d.conn != nil {
-		defer d.conn.Close()
-	}
 	arguments := make([]interface{}, 3)
 	parameterValues := make([]reflect.Value, 3)
 
@@ -184,6 +182,7 @@ func (d *DubboContext) dial(addr string, timeout time.Duration) error {
 		invoc.SetAttachment(k, v)
 	}
 
+	//源码中已对连接做了缓存池
 	dubboProtocol := dubbo.NewDubboProtocol()
 	invoker := dubboProtocol.Refer(url)
 	var resp interface{}
@@ -200,13 +199,11 @@ func (d *DubboContext) dial(addr string, timeout time.Duration) error {
 
 	d.response.SetBody(bytes)
 
-	by, err := d.packageMarshal(bytes)
-	if err != nil {
-		log.Errorf("dubbo-dial.packageMarshal err=%v", err)
-		return err
-	}
-
-	_, err = d.conn.Write(by)
+	//by, err := d.packageMarshal(bytes)
+	//if err != nil {
+	//	log.Errorf("dubbo-dial.packageMarshal err=%v", err)
+	//	return err
+	//}
 
 	return err
 }
@@ -239,7 +236,7 @@ func (d *DubboContext) Scheme() string {
 }
 
 func (d *DubboContext) Assert(i interface{}) error {
-	if v, ok := i.(*dubbo_context.IDubboContext); ok {
+	if v, ok := i.(*dubbo_context.IDubbo2Context); ok {
 		*v = d
 		return nil
 	}
@@ -299,11 +296,11 @@ func (d *DubboContext) SetUpstreamHostHandler(handler eocontext.UpstreamHostHand
 }
 
 func (d *DubboContext) LocalIP() net.IP {
-	return addrToIP(d.conn.LocalAddr())
+	return d.netIP
 }
 
 func (d *DubboContext) LocalAddr() net.Addr {
-	return d.conn.LocalAddr()
+	return d.localAddr
 }
 
 func (d *DubboContext) LocalPort() int {

@@ -16,8 +16,8 @@ var errClientReadTimeout = errors.New("maybe the client read timeout or fail to 
 func main() {
 	go dubbo_server.StartDubboServer()
 
-	time.Sleep(time.Second)
-
+	//time.Sleep(time.Second)
+	//
 	//http_dubbo.TcpToDubbo()
 	//return
 	types := make([]string, 0)
@@ -27,7 +27,10 @@ func main() {
 	valuesList = append(valuesList, map[string]interface{}{"name": "123456", "id": 10})
 	//valuesList = append(valuesList, "zhangzeyi")
 	//cn.zzy.
-	resp, err := http_dubbo.ProxyToDubbo("192.168.198.165:8099", "api.UserService", "GetUser", time.Second*3, types, valuesList)
+	addr := "192.168.198.167:8099"
+	addr = "192.168.198.167:20001"
+	addr = "127.0.0.1:4999"
+	resp, err := http_dubbo.ProxyToDubbo(addr, "api.UserService", "GetUser", time.Second*3, types, valuesList)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -37,6 +40,7 @@ func main() {
 
 	bytes, err := json.Marshal(vvv)
 	fmt.Println(string(bytes), err)
+
 }
 
 func formatData(value interface{}) interface{} {
