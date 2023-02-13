@@ -38,8 +38,7 @@ func init() {
 
 	bean.AddInitializingBeanFunc(func() {
 		log.Debug("init router manager")
-		chainProxy = pluginManager.CreateRequest("global", map[string]*plugin.Config{})
+		chainProxy = pluginManager.Global()
 		manager.SetGlobalFilters(&chainProxy)
-
 	})
 }
