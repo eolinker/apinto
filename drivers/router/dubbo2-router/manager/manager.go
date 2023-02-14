@@ -5,7 +5,7 @@ import (
 	"dubbo.apache.org/dubbo-go/v3/protocol"
 	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
 	"dubbo.apache.org/dubbo-go/v3/remoting"
-	dubbo_context "github.com/eolinker/apinto/node/dubbo-context"
+	dubbo2_context "github.com/eolinker/apinto/node/dubbo2-context"
 	"github.com/eolinker/apinto/router"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
@@ -75,35 +75,38 @@ func (d *dubboManger) Handler(port int) {
 	for result := range d.connHandler.GetResult() {
 
 		if result.Result().IsRequest {
-			req := result.Result().Result.(*remoting.Request)
+			go func() {
+				req := result.Result().Result.(*remoting.Request)
 
-			dubboPackage := impl.NewDubboPackage(nil)
+				dubboPackage := impl.NewDubboPackage(nil)
 
-			dubboPackage.Header = impl.DubboHeader{
-				SerialID: req.SerialID,
-				Type:     impl.PackageRequest,
-				ID:       req.ID,
-			}
+				dubboPackage.Header = impl.DubboHeader{
+					SerialID: req.SerialID,
+					Type:     impl.PackageRequest,
+					ID:       req.ID,
+				}
 
-			if invoc, ok := req.Data.(*protocol.Invocation); ok {
-				invocation := *invoc
+				if invoc, ok := req.Data.(*protocol.Invocation); ok {
+					invocation := *invoc
 
-				dubboPackage.Service.Path = invocation.GetAttachmentWithDefaultValue(constant.PathKey, "")
-				dubboPackage.Service.Interface = invocation.GetAttachmentWithDefaultValue(constant.InterfaceKey, "")
-				dubboPackage.Service.Version = invocation.GetAttachmentWithDefaultValue(constant.VersionKey, "")
-				dubboPackage.Service.Group = invocation.GetAttachmentWithDefaultValue(constant.GroupKey, "")
-				dubboPackage.Service.Method = invocation.MethodName()
-			}
+					dubboPackage.Service.Path = invocation.GetAttachmentWithDefaultValue(constant.PathKey, "")
+					dubboPackage.Service.Interface = invocation.GetAttachmentWithDefaultValue(constant.InterfaceKey, "")
+					dubboPackage.Service.Version = invocation.GetAttachmentWithDefaultValue(constant.VersionKey, "")
+					dubboPackage.Service.Group = invocation.GetAttachmentWithDefaultValue(constant.GroupKey, "")
+					dubboPackage.Service.Method = invocation.MethodName()
+				}
 
-			context := dubbo_context.NewContext(dubboPackage, port, result.Conn())
+				context := dubbo2_context.NewContext(dubboPackage, port, result.Conn())
 
-			match, has := d.matcher.Match(port, context.HeaderReader())
-			if !has {
-				//todo 怎样处理 conn.Write() ???
-			} else {
-				log.Debug("match has:", port)
-				match.ServeHTTP(context)
-			}
+				match, has := d.matcher.Match(port, context.HeaderReader())
+				if !has {
+					//todo 怎样处理 conn.Write() ???
+				} else {
+					log.Debug("match has:", port)
+					match.ServeHTTP(context)
+				}
+			}()
+
 		}
 
 	}

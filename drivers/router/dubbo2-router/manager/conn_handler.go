@@ -68,6 +68,7 @@ func (p *ConnHandler) task(conn net.Conn) {
 		for {
 			pktBuf := gxbytes.NewBuffer(nil)
 			var bufLen = 0
+
 			for {
 				reader := io.Reader(conn)
 				buf = pktBuf.WriteNextBegin(maxReadBufLen)
@@ -81,8 +82,9 @@ func (p *ConnHandler) task(conn net.Conn) {
 						err = nil
 						if bufLen != 0 {
 							log.Infof("session.conn read EOF, while the bufLen(%d) is non-zero.")
+							break
 						}
-						break
+						return
 					}
 
 					log.Errorf("[session.conn.read] = error:%+v", perrors.WithStack(err))
@@ -106,7 +108,7 @@ func (p *ConnHandler) task(conn net.Conn) {
 						err = perrors.Errorf("pkgLen %d > session max message len %d", pkgLen, maxReadBufLen)
 					}
 					if err != nil {
-						break
+						return
 					}
 					if pkg == nil {
 						break

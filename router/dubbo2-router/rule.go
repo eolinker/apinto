@@ -1,4 +1,4 @@
-package dubbo_router
+package dubbo2_router
 
 import (
 	"errors"

@@ -1,8 +1,8 @@
-package dubbo_router
+package dubbo2_router
 
 import (
 	"fmt"
-	dubbo_context "github.com/eolinker/eosc/eocontext/dubbo-context"
+	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
 	"strconv"
 
 	"github.com/eolinker/apinto/checker"
@@ -10,13 +10,13 @@ import (
 	"github.com/eolinker/eosc/log"
 )
 
-type readerHandler func(port int, request dubbo_context.IRequestReader) (string, bool)
+type readerHandler func(port int, request dubbo2_context.IRequestReader) (string, bool)
 
 func newPortMatcher(children map[string]router.IMatcher) router.IMatcher {
 	return &SimpleMatcher{
 		children: children,
 		name:     "port",
-		read: func(port int, request dubbo_context.IRequestReader) (string, bool) {
+		read: func(port int, request dubbo2_context.IRequestReader) (string, bool) {
 			return strconv.Itoa(port), true
 		},
 	}
@@ -26,7 +26,7 @@ func newHostMatcher(children map[string]router.IMatcher) router.IMatcher {
 	return &SimpleMatcher{
 		children: children,
 		name:     "host",
-		read: func(port int, request dubbo_context.IRequestReader) (string, bool) {
+		read: func(port int, request dubbo2_context.IRequestReader) (string, bool) {
 			return request.Host(), true
 		},
 	}
@@ -36,7 +36,7 @@ func newPathMatcher(children map[string]router.IMatcher) router.IMatcher {
 	return &SimpleMatcher{
 		children: children,
 		name:     "path",
-		read: func(port int, request dubbo_context.IRequestReader) (string, bool) {
+		read: func(port int, request dubbo2_context.IRequestReader) (string, bool) {
 			return fmt.Sprintf("%s", request.Service().Path()), true
 		},
 	}
@@ -49,7 +49,7 @@ type SimpleMatcher struct {
 }
 
 func (s *SimpleMatcher) Match(port int, req interface{}) (router.IRouterHandler, bool) {
-	request, ok := req.(dubbo_context.IRequestReader)
+	request, ok := req.(dubbo2_context.IRequestReader)
 	if !ok {
 		return nil, false
 	}
@@ -88,7 +88,7 @@ type CheckMatcher struct {
 }
 
 func (c *CheckMatcher) Match(port int, req interface{}) (router.IRouterHandler, bool) {
-	request, ok := req.(dubbo_context.IRequestReader)
+	request, ok := req.(dubbo2_context.IRequestReader)
 	if !ok {
 		return nil, false
 	}
@@ -157,7 +157,7 @@ func (as AppendMatchers) Swap(i, j int) {
 }
 
 func (a *AppendMatcher) Match(port int, req interface{}) (router.IRouterHandler, bool) {
-	request, ok := req.(dubbo_context.IRequestReader)
+	request, ok := req.(dubbo2_context.IRequestReader)
 	if !ok {
 		return nil, false
 	}

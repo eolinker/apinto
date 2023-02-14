@@ -3,7 +3,7 @@ package dubbo2_router
 import (
 	"errors"
 	"github.com/eolinker/eosc/eocontext"
-	dubbo_context "github.com/eolinker/eosc/eocontext/dubbo-context"
+	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
 	"github.com/eolinker/eosc/log"
 	"time"
 )
@@ -17,12 +17,12 @@ type Complete struct {
 	timeOut time.Duration
 }
 
-func NewComplete(retry int, timeOut time.Duration) *Complete {
+func newComplete(retry int, timeOut time.Duration) *Complete {
 	return &Complete{retry: retry, timeOut: timeOut}
 }
 
 func (h *Complete) Complete(org eocontext.EoContext) error {
-	ctx, err := dubbo_context.Assert(org)
+	ctx, err := dubbo2_context.Assert(org)
 	if err != nil {
 		return err
 	}

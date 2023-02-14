@@ -1,11 +1,11 @@
-package dubbo_context
+package dubbo2_context
 
 import (
-	dubbo_context "github.com/eolinker/eosc/eocontext/dubbo-context"
+	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
 	"time"
 )
 
-var _ dubbo_context.IServiceReader = (*RequestServiceReader)(nil)
+var _ dubbo2_context.IServiceReader = (*RequestServiceReader)(nil)
 
 type RequestServiceReader struct {
 	path        string

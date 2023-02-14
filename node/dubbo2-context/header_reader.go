@@ -1,10 +1,10 @@
-package dubbo_context
+package dubbo2_context
 
 import (
-	dubbo_context "github.com/eolinker/eosc/eocontext/dubbo-context"
+	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
 )
 
-var _ dubbo_context.IHeaderReader = (*RequestHeaderReader)(nil)
+var _ dubbo2_context.IHeaderReader = (*RequestHeaderReader)(nil)
 
 type RequestHeaderReader struct {
 	id             int64

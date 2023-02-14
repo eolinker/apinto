@@ -1,8 +1,8 @@
-package dubbo_router
+package dubbo2_router
 
 import (
 	"github.com/eolinker/apinto/utils"
-	dubbo_context "github.com/eolinker/eosc/eocontext/dubbo-context"
+	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
 	"sort"
 	"strings"
 
@@ -47,7 +47,7 @@ func (h *HeaderChecker) Weight() int {
 }
 
 func (h *HeaderChecker) MatchCheck(req interface{}) bool {
-	request, ok := req.(dubbo_context.IRequestReader)
+	request, ok := req.(dubbo2_context.IRequestReader)
 	if !ok {
 		return false
 	}

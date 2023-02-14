@@ -2,7 +2,7 @@ package manager
 
 import (
 	"github.com/eolinker/apinto/router"
-	dubbo_router "github.com/eolinker/apinto/router/dubbo-router"
+	dubbo2_router "github.com/eolinker/apinto/router/dubbo2-router"
 )
 
 type IRouterData interface {
@@ -16,7 +16,7 @@ type RouterData struct {
 }
 
 func (rs *RouterData) Parse() (router.IMatcher, error) {
-	root := dubbo_router.NewRoot()
+	root := dubbo2_router.NewRoot()
 	for _, v := range rs.data {
 		err := root.Add(v.Id, v.Router, v.Port, v.Service, v.Method, v.Appends)
 		if err != nil {

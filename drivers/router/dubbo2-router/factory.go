@@ -6,7 +6,7 @@ import (
 	"github.com/eolinker/eosc/common/bean"
 )
 
-var name = "dubbo_router"
+var name = "dubbo2_router"
 
 // Register 注册grpc路由驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {

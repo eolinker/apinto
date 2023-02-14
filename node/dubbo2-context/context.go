@@ -1,4 +1,4 @@
-package dubbo_context
+package dubbo2_context
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc/eocontext"
 	eoscContext "github.com/eolinker/eosc/eocontext"
-	dubbo_context "github.com/eolinker/eosc/eocontext/dubbo-context"
+	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
 	"github.com/eolinker/eosc/utils/config"
 	"github.com/google/uuid"
 	"net"
@@ -25,7 +25,7 @@ type DubboParamBody struct {
 	valuesList []hessian.Object
 }
 
-var _ dubbo_context.IDubbo2Context = (*DubboContext)(nil)
+var _ dubbo2_context.IDubbo2Context = (*DubboContext)(nil)
 
 type DubboContext struct {
 	netIP               net.IP
@@ -36,20 +36,20 @@ type DubboContext struct {
 	app                 eoscContext.EoApp
 	balance             eoscContext.BalanceHandler
 	upstreamHostHandler eoscContext.UpstreamHostHandler
-	response            dubbo_context.IResponse
-	requestReader       dubbo_context.IRequestReader
-	proxy               dubbo_context.IProxy
+	response            dubbo2_context.IResponse
+	requestReader       dubbo2_context.IRequestReader
+	proxy               dubbo2_context.IProxy
 	labels              map[string]string
 	port                int
 	requestID           string
 	acceptTime          time.Time
 }
 
-func (d *DubboContext) Response() dubbo_context.IResponse {
+func (d *DubboContext) Response() dubbo2_context.IResponse {
 	return d.response
 }
 
-func NewContext(dubboPackage *impl.DubboPackage, port int, conn net.Conn) dubbo_context.IDubbo2Context {
+func NewContext(dubboPackage *impl.DubboPackage, port int, conn net.Conn) dubbo2_context.IDubbo2Context {
 
 	headerReader := &RequestHeaderReader{
 		id:             dubboPackage.Header.ID,
@@ -124,11 +124,11 @@ func NewContext(dubboPackage *impl.DubboPackage, port int, conn net.Conn) dubbo_
 	return dubboContext
 }
 
-func (d *DubboContext) HeaderReader() dubbo_context.IRequestReader {
+func (d *DubboContext) HeaderReader() dubbo2_context.IRequestReader {
 	return d.requestReader
 }
 
-func (d *DubboContext) Proxy() dubbo_context.IProxy {
+func (d *DubboContext) Proxy() dubbo2_context.IProxy {
 	return d.proxy
 }
 
@@ -236,7 +236,7 @@ func (d *DubboContext) Scheme() string {
 }
 
 func (d *DubboContext) Assert(i interface{}) error {
-	if v, ok := i.(*dubbo_context.IDubbo2Context); ok {
+	if v, ok := i.(*dubbo2_context.IDubbo2Context); ok {
 		*v = d
 		return nil
 	}

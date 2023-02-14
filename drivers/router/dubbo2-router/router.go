@@ -43,10 +43,11 @@ func (h *DubboRouter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IW
 func (h *DubboRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 
 	handler := &dubboHandler{
+		completeHandler: newComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
+		finishHandler:   newFinishHandler(),
 		routerName:      h.name,
 		routerId:        h.id,
 		serviceName:     strings.TrimSuffix(string(cfg.Service), "@service"),
-		completeHandler: NewComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
 		disable:         cfg.Disable,
 	}
 

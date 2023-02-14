@@ -4,13 +4,14 @@ import (
 	"github.com/eolinker/apinto/router"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/eosc/eocontext"
-	dubbo_context "github.com/eolinker/eosc/eocontext/dubbo-context"
+	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
 )
 
 var _ router.IRouterHandler = (*dubboHandler)(nil)
 
 type dubboHandler struct {
 	completeHandler eocontext.CompleteHandler
+	finishHandler   eocontext.FinishHandler
 	routerName      string
 	routerId        string
 	serviceName     string
@@ -20,7 +21,7 @@ type dubboHandler struct {
 
 func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
 
-	_, err := dubbo_context.Assert(ctx)
+	_, err := dubbo2_context.Assert(ctx)
 	if err != nil {
 		return
 	}
@@ -39,6 +40,7 @@ func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
 	//ctx.SetLabel("ip", dubboCtx.Request().ReadIP())
 
 	ctx.SetCompleteHandler(d.completeHandler)
+	ctx.SetFinish(d.finishHandler)
 	ctx.SetApp(d.service)
 	ctx.SetBalance(d.service)
 	ctx.SetUpstreamHostHandler(d.service)
