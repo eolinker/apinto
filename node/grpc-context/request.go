@@ -27,6 +27,7 @@ type Request struct {
 	method  string
 	message *dynamic.Message
 	stream  grpc.ServerStream
+	realIP  string
 }
 
 func (r *Request) SetService(service string) {
@@ -41,7 +42,7 @@ func NewRequest(stream grpc.ServerStream) *Request {
 	fullService, has := grpc.MethodFromServerStream(stream)
 	var service, method string
 	if has {
-		names := strings.Split(strings.TrimSuffix(fullService, "/"), "/")
+		names := strings.Split(strings.TrimPrefix(fullService, "/"), "/")
 		service = names[0]
 		if len(names) > 1 {
 			method = names[1]
@@ -77,6 +78,17 @@ func (r *Request) Method() string {
 
 func (r *Request) FullMethodName() string {
 	return fmt.Sprintf("/%s/%s", r.service, r.method)
+}
+
+func (r *Request) RealIP() string {
+	if r.realIP == "" {
+		r.realIP = strings.Join(r.headers.Get("x-real-ip"), ";")
+	}
+	return r.realIP
+}
+
+func (r *Request) ForwardIP() string {
+	return strings.Join(r.headers.Get("x-forwarded-for"), ";")
 }
 
 func (r *Request) Message(msgDesc *desc.MessageDescriptor) *dynamic.Message {

@@ -1,8 +1,7 @@
-package grpc_router
+package manager
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
@@ -35,7 +34,6 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 	balance := ctx.GetBalance()
 	app := ctx.GetApp()
 	var lastErr error
-	scheme := app.Scheme()
 
 	timeOut := app.TimeOut()
 	for index := 0; index <= h.retry; index++ {
@@ -45,17 +43,15 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 		}
 		node, err := balance.Select(ctx)
 		if err != nil {
-
 			return err
 		}
 
-		log.Debug("node: ", node.Addr())
-		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
-		lastErr = ctx.Invoke(addr, timeOut)
+		log.Debug("node addr : ", node.Addr())
+		lastErr = ctx.Invoke(node.Addr(), timeOut)
 		if lastErr == nil {
 			return nil
 		}
-		log.Error("http upstream send error: ", lastErr)
+		log.Error("grpc upstream send error: ", lastErr)
 	}
 
 	return lastErr

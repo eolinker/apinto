@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"io"
 	"net"
 
 	"google.golang.org/grpc"
@@ -23,8 +24,11 @@ func init() {
 	serverHandler := func(port int, ln net.Listener) {
 		opts := []grpc.ServerOption{
 			grpc.UnknownServiceHandler(func(srv interface{}, stream grpc.ServerStream) error {
-				routerManager.FastHandler(port, srv, stream)
-				return nil
+				err := routerManager.FastHandler(port, srv, stream)
+				if err == io.EOF {
+					return nil
+				}
+				return err
 			}),
 		}
 		server := grpc.NewServer(opts...)

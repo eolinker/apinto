@@ -16,10 +16,13 @@ require (
 	github.com/ohler55/ojg v1.12.9
 	github.com/pkg/sftp v1.13.4
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
+	github.com/soheilhy/cmux v0.1.5
 	github.com/urfave/cli/v2 v2.23.4
 	github.com/valyala/fasthttp v1.42.0
 	golang.org/x/crypto v0.1.0
 	golang.org/x/net v0.1.0
+	google.golang.org/grpc v1.50.1
+	google.golang.org/protobuf v1.28.1
 )
 
 require (

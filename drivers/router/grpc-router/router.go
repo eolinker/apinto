@@ -51,7 +51,7 @@ func (h *GrpcRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 		routerName:      h.name,
 		routerId:        h.id,
 		serviceName:     strings.TrimSuffix(string(cfg.Service), "@service"),
-		completeHandler: NewComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
+		completeHandler: manager.NewComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
 		finisher:        defaultFinisher,
 		service:         nil,
 		filters:         nil,
@@ -95,7 +95,7 @@ func (h *GrpcRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 			Pattern: r.Value,
 		})
 	}
-	err := h.routerManager.Set(h.id, cfg.Listen, cfg.Host, cfg.ServiceName, cfg.MethodName, appendRule, handler)
+	err := h.routerManager.Set(h.id, cfg.Listen, cfg.ServiceName, cfg.MethodName, appendRule, handler)
 	if err != nil {
 		return err
 	}

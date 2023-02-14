@@ -1,26 +1,26 @@
 package manager
 
 import (
-	"fmt"
 	"sync"
 	"sync/atomic"
 
-	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	grpc_context "github.com/eolinker/apinto/node/grpc-context"
 
 	"github.com/eolinker/apinto/router"
 	"google.golang.org/grpc"
 
-	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
-	eoscContext "github.com/eolinker/eosc/eocontext"
+	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 )
 
 var _ IManger = (*Manager)(nil)
-var notFound = new(NotFoundHandler)
-var completeCaller = http_complete.NewHttpCompleteCaller()
+var completeCaller = NewCompleteCaller()
 
 type IManger interface {
-	Set(id string, port int, hosts []string, service string, method string, append []AppendRule, router router.IRouterHandler) error
+	Set(id string, port int, service string, method string, append []AppendRule, router router.IRouterHandler) error
 	Delete(id string)
 }
 type Manager struct {
@@ -28,10 +28,10 @@ type Manager struct {
 	matcher router.IMatcher
 
 	routersData   IRouterData
-	globalFilters atomic.Pointer[eoscContext.IChainPro]
+	globalFilters atomic.Pointer[eocontext.IChainPro]
 }
 
-func (m *Manager) SetGlobalFilters(globalFilters *eoscContext.IChainPro) {
+func (m *Manager) SetGlobalFilters(globalFilters *eocontext.IChainPro) {
 	m.globalFilters.Store(globalFilters)
 }
 
@@ -40,10 +40,10 @@ func NewManager() *Manager {
 	return &Manager{routersData: new(RouterData)}
 }
 
-func (m *Manager) Set(id string, port int, hosts []string, service string, method string, append []AppendRule, router router.IRouterHandler) error {
+func (m *Manager) Set(id string, port int, service string, method string, append []AppendRule, router router.IRouterHandler) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	routersData := m.routersData.Set(id, port, hosts, service, method, append, router)
+	routersData := m.routersData.Set(id, port, service, method, append, router)
 	matchers, err := routersData.Parse()
 	if err != nil {
 		log.Error("parse router data error: ", err)
@@ -68,24 +68,45 @@ func (m *Manager) Delete(id string) {
 	return
 }
 
-func (m *Manager) FastHandler(port int, srv interface{}, stream grpc.ServerStream) {
-	p, has := peer.FromContext(stream.Context())
-	if !has {
-		return
-	}
-	fmt.Println(p.Addr.String(), p.AuthInfo.AuthType())
+func (m *Manager) FastHandler(port int, srv interface{}, stream grpc.ServerStream) error {
+	ctx := grpc_context.NewContext(srv, stream)
 	if m.matcher == nil {
-		return
+		return status.Error(codes.NotFound, "not found")
 	}
+
+	r, has := m.matcher.Match(port, ctx.Request())
+	if !has {
+		errHandler := NewErrHandler(status.Error(codes.NotFound, "not found"))
+		ctx.SetFinish(errHandler)
+		ctx.SetCompleteHandler(errHandler)
+		globalFilters := m.globalFilters.Load()
+		if globalFilters != nil {
+			(*globalFilters).Chain(ctx, completeCaller)
+		}
+	} else {
+		log.Debug("match has:", port)
+		r.ServeHTTP(ctx)
+	}
+
+	finishHandler := ctx.GetFinish()
+	if finishHandler != nil {
+		return finishHandler.Finish(ctx)
+	}
+	return nil
 }
 
-type NotFoundHandler struct {
+type ErrHandler struct {
+	err error
 }
 
-func (h *NotFoundHandler) Complete(ctx eoscContext.EoContext) error {
-	panic("no implement")
+func (e *ErrHandler) Complete(ctx eocontext.EoContext) error {
+	return e.err
 }
 
-func (h *NotFoundHandler) Finish(ctx eoscContext.EoContext) error {
-	panic("no implement")
+func NewErrHandler(err error) *ErrHandler {
+	return &ErrHandler{err: err}
+}
+
+func (e *ErrHandler) Finish(ctx eocontext.EoContext) error {
+	return e.err
 }

@@ -8,7 +8,7 @@ import (
 type Config struct {
 	Listen int `json:"listen" yaml:"listen" title:"port" description:"使用端口" default:"80" label:"端口号" maximum:"65535"`
 
-	Host []string `json:"host" yaml:"host" label:"域名"`
+	//Host []string `json:"host" yaml:"host" label:"域名"`
 
 	ServiceName string         `json:"service_name" yaml:"service_name" label:"服务名"`
 	MethodName  string         `json:"method_name" yaml:"method_name" label:"方法名"`

@@ -86,7 +86,6 @@ func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 		globalFilters := m.globalFilters.Load()
 		if globalFilters != nil {
 			(*globalFilters).Chain(httpContext, completeCaller)
-
 		}
 	} else {
 		log.Debug("match has:", port)
