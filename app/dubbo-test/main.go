@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	hessian "github.com/apache/dubbo-go-hessian2"
-	dubbo_server "github.com/eolinker/apinto/app/dubbo-test/dubbo-server"
 	http_dubbo "github.com/eolinker/apinto/app/dubbo-test/http-dubbo"
 	"github.com/eolinker/apinto/utils"
 	"time"
@@ -14,7 +13,7 @@ import (
 var errClientReadTimeout = errors.New("maybe the client read timeout or fail to decode tcp stream in Writer.Write")
 
 func main() {
-	go dubbo_server.StartDubboServer()
+	//go dubbo_server.StartDubboServer()
 
 	//time.Sleep(time.Second)
 	//
@@ -29,7 +28,7 @@ func main() {
 	//cn.zzy.
 	addr := "192.168.198.167:8099"
 	addr = "192.168.198.167:20001"
-	addr = "127.0.0.1:4999"
+	addr = "127.0.0.1:20001"
 	resp, err := http_dubbo.ProxyToDubbo(addr, "api.UserService", "GetUser", time.Second*3, types, valuesList)
 	if err != nil {
 		fmt.Println(err)

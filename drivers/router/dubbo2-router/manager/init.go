@@ -2,6 +2,7 @@ package manager
 
 import (
 	"github.com/eolinker/apinto/drivers/router"
+	getty "github.com/eolinker/apinto/dubbo-getty/server"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/eocontext"
@@ -18,14 +19,8 @@ func init() {
 
 	serverHandler := func(port int, listener net.Listener) {
 
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				log.Errorf("dubbo-manger listener.Accept err=%v", err)
-			}
-			go manager.connHandler.Handler(port, conn)
-		}
-
+		server := getty.NewServer(manager.Handler, getty.WithListenerServer(listener))
+		server.Start()
 	}
 	router.Register(router.Dubbo2, serverHandler)
 
