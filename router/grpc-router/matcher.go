@@ -24,22 +24,12 @@ func newPortMatcher(children map[string]router.IMatcher) router.IMatcher {
 	}
 }
 
-func newHostMatcher(children map[string]router.IMatcher) router.IMatcher {
-	return &SimpleMatcher{
-		children: children,
-		name:     "host",
-		read: func(port int, request grpc_context.IRequest) (string, bool) {
-			return request.Host(), true
-		},
-	}
-}
-
 func newPathMatcher(children map[string]router.IMatcher) router.IMatcher {
 	return &SimpleMatcher{
 		children: children,
 		name:     "path",
 		read: func(port int, request grpc_context.IRequest) (string, bool) {
-			return fmt.Sprintf("%s/%s", request.Service(), request.Method()), true
+			return fmt.Sprintf("/%s/%s", request.Service(), request.Method()), true
 		},
 	}
 }

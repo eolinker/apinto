@@ -42,7 +42,7 @@ func NewRequest(stream grpc.ServerStream) *Request {
 	fullService, has := grpc.MethodFromServerStream(stream)
 	var service, method string
 	if has {
-		names := strings.Split(strings.TrimSuffix(fullService, "/"), "/")
+		names := strings.Split(strings.TrimPrefix(fullService, "/"), "/")
 		service = names[0]
 		if len(names) > 1 {
 			method = names[1]

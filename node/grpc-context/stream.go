@@ -1,7 +1,6 @@
 package grpc_context
 
 import (
-	"context"
 	"io"
 
 	"google.golang.org/grpc/metadata"
@@ -22,15 +21,13 @@ var (
 	}
 )
 
-func handlerStream(outgoingCtx context.Context, serverStream grpc.ServerStream, clientConn *grpc.ClientConn, fullMethodName string, response grpc_context.IResponse) error {
-	// We require that the director's returned context inherits from the serverStream.Context().
+func (c *Context) readError(serverStream grpc.ServerStream, clientStream grpc.ClientStream, response grpc_context.IResponse) {
+	c.errChan <- handlerStream(serverStream, clientStream, response)
+	close(c.errChan)
+}
 
-	clientCtx, clientCancel := context.WithCancel(outgoingCtx)
-	defer clientCancel()
-	clientStream, err := grpc.NewClientStream(clientCtx, clientStreamDescForProxying, clientConn, fullMethodName)
-	if err != nil {
-		return err
-	}
+func handlerStream(serverStream grpc.ServerStream, clientStream grpc.ClientStream, response grpc_context.IResponse) error {
+
 	// Explicitly *do not close* s2cErrChan and c2sErrChan, otherwise the select below will not terminate.
 	// Channels do not have to be closed, it is just a control flow mechanism, see
 	// https://groups.google.com/forum/#!msg/golang-nuts/pZwdYRGxCIk/qpbHxRRPJdUJ
@@ -48,7 +45,6 @@ func handlerStream(outgoingCtx context.Context, serverStream grpc.ServerStream, 
 				// however, we may have gotten a receive error (stream disconnected, a read error etc) in which case we need
 				// to cancel the clientStream to the backend, let all of its goroutines be freed up by the CancelFunc and
 				// exit with an error to the stack
-				clientCancel()
 				return status.Errorf(codes.Internal, "failed proxying s2c: %v", s2cErr)
 			}
 		case c2sErr := <-c2sErrChan:

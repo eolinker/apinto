@@ -47,6 +47,7 @@ type Context struct {
 	insecureCertificateVerify bool
 	port                      int
 	finish                    bool
+	errChan                   chan error
 }
 
 func (c *Context) EnableTls(b bool) {
@@ -65,13 +66,16 @@ func NewContext(srv interface{}, stream grpc.ServerStream) *Context {
 		addr = p.Addr
 	}
 	return &Context{
-		ctx:      ctx,
-		cancel:   cancel,
-		addr:     addr,
-		srv:      srv,
-		request:  NewRequest(stream),
-		proxy:    NewRequest(stream),
-		response: NewResponse(),
+		ctx:          ctx,
+		cancel:       cancel,
+		addr:         addr,
+		srv:          srv,
+		serverStream: stream,
+		request:      NewRequest(stream),
+		proxy:        NewRequest(stream),
+		response:     NewResponse(),
+		labels:       map[string]string{},
+		errChan:      make(chan error),
 	}
 }
 
@@ -192,19 +196,40 @@ func (c *Context) Invoke(address string, timeout time.Duration) error {
 	if err != nil {
 		return err
 	}
-	go handlerStream(outgoingCtx, c.serverStream, clientConn, c.proxy.FullMethodName(), c.response)
+	// We require that the director's returned context inherits from the serverStream.Context().
+
+	clientCtx, _ := context.WithCancel(outgoingCtx)
+	clientStream, err := grpc.NewClientStream(clientCtx, clientStreamDescForProxying, clientConn, c.proxy.FullMethodName())
+	if err != nil {
+		return err
+	}
 	c.finish = true
+	go c.readError(c.serverStream, clientStream, c.response)
 	return nil
 }
 
-func (c *Context) FastFinish() {
+func (c *Context) FastFinish() error {
 	if c.finish {
-		return
+		err, ok := <-c.errChan
+		if !ok {
+			return nil
+		}
+		return err
 	}
 	c.serverStream.SendHeader(c.response.Headers())
 	c.serverStream.SendMsg(c.response.Message())
 	c.serverStream.SetTrailer(c.response.Trailer())
 
+	c.port = 0
+	c.ctx = nil
+	c.app = nil
+	c.balance = nil
+	c.upstreamHostHandler = nil
+	c.finishHandler = nil
+	c.completeHandler = nil
+
+	pool.Put(c)
+	return nil
 }
 
 func (c *Context) dial(address string, timeout time.Duration) (context.Context, *grpc.ClientConn, error) {
@@ -219,12 +244,11 @@ func (c *Context) dial(address string, timeout time.Duration) (context.Context, 
 				},
 			)))
 	}
-	authorities := c.proxy.Headers().Get(":authority")
-	if len(authorities) > 0 {
-		opts = append(opts, grpc.WithAuthority(authorities[0]))
-	}
-	opts = append(opts, grpc.WithTimeout(timeout))
-
+	//authorities := c.proxy.Headers().Get(":authority")
+	//if len(authorities) > 0 {
+	//	opts = append(opts, grpc.WithAuthority(authorities[0]))
+	//}
+	//opts = append(opts, grpc.WithTimeout(timeout))
 	conn, err := grpc.DialContext(c.ctx, address, opts...)
 	return metadata.NewOutgoingContext(c.Context(), c.proxy.Headers().Copy()), conn, err
 }

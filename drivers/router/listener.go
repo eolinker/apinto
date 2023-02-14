@@ -3,6 +3,7 @@ package router
 import (
 	"crypto/tls"
 	"errors"
+	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -30,8 +31,8 @@ const (
 )
 
 var (
-	handlers                 = make([]RouterServerHandler, depth)
-	matchers                 = make([][]cmux.Matcher, depth)
+	handlers = make([]RouterServerHandler, depth)
+	//matchers                 = make([][]cmux.Matcher, depth)
 	matchWriters             = make([][]cmux.MatchWriter, depth)
 	ErrorDuplicateRouterType = errors.New("duplicate")
 )
@@ -47,12 +48,10 @@ func Register(tp RouterType, handler RouterServerHandler) error {
 type RouterServerHandler func(port int, listener net.Listener)
 
 func init() {
-	dubboMagic := []byte{0xda, 0xbb}
-	matchers[AnyTCP] = []cmux.Matcher{cmux.Any()}
-	matchers[TslTCP] = []cmux.Matcher{cmux.TLS()}
-	matchers[Http] = []cmux.Matcher{cmux.HTTP1Fast()}
-	matchers[Dubbo] = []cmux.Matcher{cmux.PrefixMatcher(string(dubboMagic))}
-	//matchers[GRPC] = []cmux.Matcher{cmux.HTTP2HeaderFieldPrefix("content-type", "application/grpc")}
+	matchWriters[AnyTCP] = matchersToMatchWriters([]cmux.Matcher{cmux.Any()})
+	matchWriters[TslTCP] = matchersToMatchWriters([]cmux.Matcher{cmux.TLS()})
+	matchWriters[Http] = matchersToMatchWriters([]cmux.Matcher{cmux.HTTP1Fast()})
+	matchWriters[Dubbo] = matchersToMatchWriters([]cmux.Matcher{cmux.PrefixMatcher(string([]byte{0xda, 0xbb}))})
 	matchWriters[GRPC] = []cmux.MatchWriter{cmux.HTTP2MatchHeaderFieldPrefixSendSettings("content-type", "application/grpc")}
 	var tf traffic.ITraffic
 	var listenCfg *config.ListenUrl
@@ -95,8 +94,6 @@ func initListener(tf traffic.ITraffic, listenCfg *config.ListenUrl) {
 			for i, handler := range handlers {
 				log.Debug("i is ", i, " handler is ", handler)
 				if handler != nil {
-					lnMatch := cMux.Match(matchers[i]...)
-					go handler(p, lnMatch)
 					go handler(p, cMux.MatchWithWriters(matchWriters[i]...))
 				}
 			}
@@ -114,4 +111,15 @@ func readPort(addr net.Addr) int {
 	port := ipPort[i+1:]
 	pv, _ := strconv.Atoi(port)
 	return pv
+}
+
+func matchersToMatchWriters(matchers []cmux.Matcher) []cmux.MatchWriter {
+	mws := make([]cmux.MatchWriter, 0, len(matchers))
+	for _, m := range matchers {
+		cm := m
+		mws = append(mws, func(w io.Writer, r io.Reader) bool {
+			return cm(r)
+		})
+	}
+	return mws
 }
