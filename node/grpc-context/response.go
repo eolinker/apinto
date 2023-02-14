@@ -12,6 +12,15 @@ type Response struct {
 	header  metadata.MD
 	trailer metadata.MD
 	msg     *dynamic.Message
+	err     error
+}
+
+func (r *Response) SetErr(err error) {
+	r.err = err
+}
+
+func (r *Response) Error() error {
+	return r.err
 }
 
 func (r *Response) Write(msg *dynamic.Message) {

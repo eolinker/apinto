@@ -2,16 +2,12 @@ package grpc_context
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc/metadata"
-
-	"google.golang.org/grpc/credentials"
-
-	"google.golang.org/grpc/credentials/insecure"
 
 	"google.golang.org/grpc/peer"
 
@@ -25,6 +21,17 @@ import (
 )
 
 var _ grpc_context.IGrpcContext = (*Context)(nil)
+
+var (
+	pool = sync.Pool{
+		New: newContext,
+	}
+)
+
+func newContext() interface{} {
+	h := new(Context)
+	return h
+}
 
 type Context struct {
 	ctx                       context.Context
@@ -192,13 +199,12 @@ func (c *Context) SetResponse(response grpc_context.IResponse) {
 }
 
 func (c *Context) Invoke(address string, timeout time.Duration) error {
-	outgoingCtx, clientConn, err := c.dial(address, timeout)
+	clientConn, err := c.dial(address)
 	if err != nil {
 		return err
 	}
-	// We require that the director's returned context inherits from the serverStream.Context().
 
-	clientCtx, _ := context.WithCancel(outgoingCtx)
+	clientCtx, _ := context.WithCancel(metadata.NewOutgoingContext(c.Context(), c.proxy.Headers().Copy()))
 	clientStream, err := grpc.NewClientStream(clientCtx, clientStreamDescForProxying, clientConn, c.proxy.FullMethodName())
 	if err != nil {
 		return err
@@ -209,6 +215,7 @@ func (c *Context) Invoke(address string, timeout time.Duration) error {
 }
 
 func (c *Context) FastFinish() error {
+	defer c.reset()
 	if c.finish {
 		err, ok := <-c.errChan
 		if !ok {
@@ -216,10 +223,18 @@ func (c *Context) FastFinish() error {
 		}
 		return err
 	}
+	err := c.response.Error()
+	if err != nil {
+		return err
+	}
 	c.serverStream.SendHeader(c.response.Headers())
 	c.serverStream.SendMsg(c.response.Message())
 	c.serverStream.SetTrailer(c.response.Trailer())
 
+	return nil
+}
+
+func (c *Context) reset() {
 	c.port = 0
 	c.ctx = nil
 	c.app = nil
@@ -229,26 +244,13 @@ func (c *Context) FastFinish() error {
 	c.completeHandler = nil
 
 	pool.Put(c)
-	return nil
 }
 
-func (c *Context) dial(address string, timeout time.Duration) (context.Context, *grpc.ClientConn, error) {
-	opts := make([]grpc.DialOption, 0, 3)
-	if !c.tls {
-		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	} else {
-		opts = append(opts, grpc.WithTransportCredentials(
-			credentials.NewTLS(
-				&tls.Config{
-					InsecureSkipVerify: c.insecureCertificateVerify,
-				},
-			)))
+func (c *Context) dial(address string) (*grpc.ClientConn, error) {
+	p, has := clientPool.Get(address, c.tls)
+	if !has {
+		p = NewClientPoolWithOption(address, &defaultClientOption)
+		defer clientPool.Set(address, c.tls, p)
 	}
-	//authorities := c.proxy.Headers().Get(":authority")
-	//if len(authorities) > 0 {
-	//	opts = append(opts, grpc.WithAuthority(authorities[0]))
-	//}
-	//opts = append(opts, grpc.WithTimeout(timeout))
-	conn, err := grpc.DialContext(c.ctx, address, opts...)
-	return metadata.NewOutgoingContext(c.Context(), c.proxy.Headers().Copy()), conn, err
+	return p.Get()
 }
