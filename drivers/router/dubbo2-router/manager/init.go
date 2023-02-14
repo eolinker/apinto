@@ -18,7 +18,6 @@ func init() {
 
 	serverHandler := func(port int, listener net.Listener) {
 
-		go manager.Handler(port)
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
