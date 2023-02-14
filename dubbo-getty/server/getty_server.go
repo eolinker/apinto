@@ -20,20 +20,18 @@ package getty
 import (
 	"crypto/tls"
 	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo"
-	"fmt"
+	"github.com/eolinker/eosc/log"
 	"net"
+	"reflect"
 )
 
 import (
 	"github.com/eolinker/apinto/dubbo-getty"
 
 	gxsync "github.com/dubbogo/gost/sync"
-
-	perrors "github.com/pkg/errors"
 )
 
 import (
-	"dubbo.apache.org/dubbo-go/v3/common/logger"
 	"dubbo.apache.org/dubbo-go/v3/config"
 	"dubbo.apache.org/dubbo-go/v3/protocol"
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
@@ -100,9 +98,9 @@ func NewServer(handlers func(*invocation.RPCInvocation) protocol.RPCResult, serv
 
 func (s *Server) newSession(session getty.Session) error {
 	var (
-		ok      bool
-		tcpConn *net.TCPConn
-		err     error
+		ok bool
+		//tcpConn *net.TCPConn
+		//err     error
 	)
 	conf := s.conf
 
@@ -118,35 +116,40 @@ func (s *Server) newSession(session getty.Session) error {
 		session.SetWriteTimeout(conf.GettySessionParam.tcpWriteTimeout)
 		session.SetCronPeriod((int)(conf.heartbeatPeriod.Nanoseconds() / 1e6))
 		session.SetWaitTime(conf.GettySessionParam.waitTimeout)
-		logger.Debugf("server accepts new session:%s\n", session.Stat())
+		log.Debug("server accepts new session:%s\n", session.Stat())
 		return nil
 	}
-	if _, ok = session.Conn().(*net.TCPConn); !ok {
-		panic(fmt.Sprintf("%s, session.conn{%#v} is not tcp connection\n", session.Stat(), session.Conn()))
-	}
+
+	//session.Conn 为 *cmux.MuxConn
+
+	log.Infof("session.Conn = %v", reflect.TypeOf(session.Conn()))
+
+	//if _, ok = session.Conn().(*net.TCPConn); !ok {
+	//	panic(fmt.Sprintf("%s, session.conn{%#v} is not tcp connection\n", session.Stat(), session.Conn()))
+	//}
 
 	if _, ok = session.Conn().(*tls.Conn); !ok {
-		if tcpConn, ok = session.Conn().(*net.TCPConn); !ok {
-			return perrors.New(fmt.Sprintf("%s, session.conn{%#v} is not tcp connection", session.Stat(), session.Conn()))
-		}
-
-		if err = tcpConn.SetNoDelay(conf.GettySessionParam.TcpNoDelay); err != nil {
-			return err
-		}
-		if err = tcpConn.SetKeepAlive(conf.GettySessionParam.TcpKeepAlive); err != nil {
-			return err
-		}
-		if conf.GettySessionParam.TcpKeepAlive {
-			if err = tcpConn.SetKeepAlivePeriod(conf.GettySessionParam.keepAlivePeriod); err != nil {
-				return err
-			}
-		}
-		if err = tcpConn.SetReadBuffer(conf.GettySessionParam.TcpRBufSize); err != nil {
-			return err
-		}
-		if err = tcpConn.SetWriteBuffer(conf.GettySessionParam.TcpWBufSize); err != nil {
-			return err
-		}
+		//if tcpConn, ok = session.Conn().(*net.TCPConn); !ok {
+		//	return perrors.New(fmt.Sprintf("%s, session.conn{%#v} is not tcp connection", session.Stat(), session.Conn()))
+		//}
+		//
+		//if err = tcpConn.SetNoDelay(conf.GettySessionParam.TcpNoDelay); err != nil {
+		//	return err
+		//}
+		//if err = tcpConn.SetKeepAlive(conf.GettySessionParam.TcpKeepAlive); err != nil {
+		//	return err
+		//}
+		//if conf.GettySessionParam.TcpKeepAlive {
+		//	if err = tcpConn.SetKeepAlivePeriod(conf.GettySessionParam.keepAlivePeriod); err != nil {
+		//		return err
+		//	}
+		//}
+		//if err = tcpConn.SetReadBuffer(conf.GettySessionParam.TcpRBufSize); err != nil {
+		//	return err
+		//}
+		//if err = tcpConn.SetWriteBuffer(conf.GettySessionParam.TcpWBufSize); err != nil {
+		//	return err
+		//}
 	}
 
 	conf.GettySessionParam.MaxMsgLen = 128 * 1024
@@ -158,7 +161,7 @@ func (s *Server) newSession(session getty.Session) error {
 
 	session.SetCronPeriod(CronPeriod)
 	session.SetWaitTime(conf.GettySessionParam.waitTimeout)
-	logger.Debugf("server accepts new session: %s", session.Stat())
+	log.Debug("server accepts new session: %s", session.Stat())
 	return nil
 }
 
@@ -187,7 +190,7 @@ func (s *Server) Start() {
 
 	tcpServer = getty.NewTCPServer(serverOpts...)
 	tcpServer.RunEventLoop(s.newSession)
-	logger.Debugf("s bind addr{%s} ok!", s.addr)
+	log.Debug("s bind addr{%s} ok!", s.addr)
 	s.tcpServer = tcpServer
 }
 

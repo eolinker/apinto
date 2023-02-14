@@ -1,6 +1,8 @@
 package dubbo2_router
 
 import (
+	"errors"
+	"github.com/eolinker/apinto/drivers/router/dubbo2-router/manager"
 	"github.com/eolinker/apinto/router"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/eosc/eocontext"
@@ -17,18 +19,20 @@ type dubboHandler struct {
 	serviceName     string
 	disable         bool
 	service         service.IService
+	filters         eocontext.IChainPro
 }
+
+var completeCaller = manager.NewCompleteCaller()
 
 func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
 
-	_, err := dubbo2_context.Assert(ctx)
+	dubboCtx, err := dubbo2_context.Assert(ctx)
 	if err != nil {
 		return
 	}
+
 	if d.disable {
-		//httpContext.Response().SetStatus(http.StatusNotFound, "")
-		//httpContext.Response().SetBody([]byte("router disable"))
-		//httpContext.FastFinish()
+		dubboCtx.Response().SetBody(manager.Dubbo2ErrorResult(errors.New("router disable")))
 		return
 	}
 
@@ -44,5 +48,9 @@ func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
 	ctx.SetApp(d.service)
 	ctx.SetBalance(d.service)
 	ctx.SetUpstreamHostHandler(d.service)
+
+	if err = d.filters.Chain(ctx, completeCaller); err != nil {
+		dubboCtx.Response().SetBody(manager.Dubbo2ErrorResult(err))
+	}
 
 }

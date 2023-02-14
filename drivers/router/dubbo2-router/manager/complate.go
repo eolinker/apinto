@@ -1,4 +1,4 @@
-package dubbo2_router
+package manager
 
 import (
 	"errors"
@@ -17,7 +17,7 @@ type Complete struct {
 	timeOut time.Duration
 }
 
-func newComplete(retry int, timeOut time.Duration) *Complete {
+func NewComplete(retry int, timeOut time.Duration) *Complete {
 	return &Complete{retry: retry, timeOut: timeOut}
 }
 
@@ -56,4 +56,19 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 	}
 
 	return lastErr
+}
+
+type CompleteCaller struct {
+}
+
+func NewCompleteCaller() *CompleteCaller {
+	return &CompleteCaller{}
+}
+
+func (h *CompleteCaller) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
+	return ctx.GetComplete().Complete(ctx)
+}
+
+func (h *CompleteCaller) Destroy() {
+
 }

@@ -125,6 +125,7 @@ func (h *RpcServerHandler) OnMessage(session getty.Session, pkg interface{}) {
 	h.rwlock.Unlock()
 
 	decodeResult, drOK := pkg.(*remoting.DecodeResult)
+
 	if !drOK || decodeResult == ((*remoting.DecodeResult)(nil)) {
 		logger.Errorf("illegal package{%#v}", pkg)
 		return
@@ -162,6 +163,7 @@ func (h *RpcServerHandler) OnMessage(session getty.Session, pkg interface{}) {
 		panic("create invocation occur some exception for the type is not suitable one.")
 	}
 	attachments := invoc.Attachments()
+	session.LocalAddr()
 	attachments[constant.LocalAddr] = session.LocalAddr()
 	attachments[constant.RemoteAddr] = session.RemoteAddr()
 

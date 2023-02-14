@@ -1,6 +1,8 @@
 package manager
 
 import (
+	"dubbo.apache.org/dubbo-go/v3/protocol"
+	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
 	"github.com/eolinker/apinto/drivers/router"
 	getty "github.com/eolinker/apinto/dubbo-getty/server"
 	"github.com/eolinker/apinto/plugin"
@@ -19,7 +21,9 @@ func init() {
 
 	serverHandler := func(port int, listener net.Listener) {
 
-		server := getty.NewServer(manager.Handler, getty.WithListenerServer(listener))
+		server := getty.NewServer(func(req *invocation.RPCInvocation) protocol.RPCResult {
+			return manager.Handler(port, req)
+		}, getty.WithListenerServer(listener))
 		server.Start()
 	}
 	router.Register(router.Dubbo2, serverHandler)

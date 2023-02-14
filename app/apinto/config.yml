@@ -4,7 +4,7 @@ certificate: # 证书根目录
 
 client:
   advertise_urls: # open api 服务的广播地址
-    - http://192.168.198.168:9400
+    - http://192.168.198.169:9400
   certificate:  # 征对 https 的证书配置
     - cert:
       key:
@@ -12,12 +12,12 @@ client:
     - http://0.0.0.0:9400 # open api 服务的监听地址
 gateway: # 网关服务配置
 #  advertise_urls: # 广播地址
-#    - tcp://192.168.198.168:8081
+#    - tcp://192.168.198.169:8081
   listen_urls: # 监听地址
     - tcp://0.0.0.0:8099
 peer: # 节点通信配置
   advertise_urls:
-    - tcp://192.168.198.168:9401
+    - tcp://192.168.198.169:9401
   certificate:
     - cert:
       key:
