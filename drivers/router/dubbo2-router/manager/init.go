@@ -11,10 +11,10 @@ import (
 
 var (
 	chainProxy eocontext.IChainPro
+	manager    = NewManager()
 )
 
 func init() {
-	manager := NewManager()
 
 	serverHandler := func(port int, listener net.Listener) {
 
@@ -24,7 +24,7 @@ func init() {
 			if err != nil {
 				log.Errorf("dubbo-manger listener.Accept err=%v", err)
 			}
-			go manager.connHandler.Handler(conn)
+			go manager.connHandler.Handler(port, conn)
 		}
 
 	}

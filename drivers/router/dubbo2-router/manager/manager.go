@@ -9,6 +9,7 @@ import (
 	"github.com/eolinker/apinto/router"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
+	"net"
 	"sync"
 	"sync/atomic"
 )
@@ -18,7 +19,7 @@ var _ IManger = (*dubboManger)(nil)
 type IManger interface {
 	Set(id string, port int, serviceName, methodName string, rule []AppendRule, handler router.IRouterHandler) error
 	Delete(id string)
-	Handler(port int)
+	Handler(port int, conn net.Conn, result *remoting.DecodeResult)
 }
 
 func (d *dubboManger) SetGlobalFilters(globalFilters *eoscContext.IChainPro) {
@@ -29,7 +30,7 @@ func NewManager() *dubboManger {
 	return &dubboManger{
 		matcher:       nil,
 		routersData:   new(RouterData),
-		connHandler:   NewConnHandler(),
+		connHandler:   NewDubbo2Server(),
 		globalFilters: atomic.Pointer[eoscContext.IChainPro]{},
 	}
 }
@@ -38,7 +39,7 @@ type dubboManger struct {
 	lock          sync.RWMutex
 	matcher       router.IMatcher
 	routersData   IRouterData
-	connHandler   *ConnHandler
+	connHandler   *dubbo2Server
 	globalFilters atomic.Pointer[eoscContext.IChainPro]
 }
 
@@ -71,42 +72,37 @@ func (d *dubboManger) Delete(id string) {
 	return
 }
 
-func (d *dubboManger) Handler(port int) {
-	for result := range d.connHandler.GetResult() {
+func (d *dubboManger) Handler(port int, conn net.Conn, result *remoting.DecodeResult) {
 
-		if result.Result().IsRequest {
-			go func() {
-				req := result.Result().Result.(*remoting.Request)
+	if result.IsRequest {
+		req := result.Result.(*remoting.Request)
 
-				dubboPackage := impl.NewDubboPackage(nil)
+		dubboPackage := impl.NewDubboPackage(nil)
 
-				dubboPackage.Header = impl.DubboHeader{
-					SerialID: req.SerialID,
-					Type:     impl.PackageRequest,
-					ID:       req.ID,
-				}
+		dubboPackage.Header = impl.DubboHeader{
+			SerialID: req.SerialID,
+			Type:     impl.PackageRequest,
+			ID:       req.ID,
+		}
 
-				if invoc, ok := req.Data.(*protocol.Invocation); ok {
-					invocation := *invoc
+		if invoc, ok := req.Data.(*protocol.Invocation); ok {
+			invocation := *invoc
 
-					dubboPackage.Service.Path = invocation.GetAttachmentWithDefaultValue(constant.PathKey, "")
-					dubboPackage.Service.Interface = invocation.GetAttachmentWithDefaultValue(constant.InterfaceKey, "")
-					dubboPackage.Service.Version = invocation.GetAttachmentWithDefaultValue(constant.VersionKey, "")
-					dubboPackage.Service.Group = invocation.GetAttachmentWithDefaultValue(constant.GroupKey, "")
-					dubboPackage.Service.Method = invocation.MethodName()
-				}
+			dubboPackage.Service.Path = invocation.GetAttachmentWithDefaultValue(constant.PathKey, "")
+			dubboPackage.Service.Interface = invocation.GetAttachmentWithDefaultValue(constant.InterfaceKey, "")
+			dubboPackage.Service.Version = invocation.GetAttachmentWithDefaultValue(constant.VersionKey, "")
+			dubboPackage.Service.Group = invocation.GetAttachmentWithDefaultValue(constant.GroupKey, "")
+			dubboPackage.Service.Method = invocation.MethodName()
+		}
 
-				context := dubbo2_context.NewContext(dubboPackage, port, result.Conn())
+		context := dubbo2_context.NewContext(dubboPackage, port, conn)
 
-				match, has := d.matcher.Match(port, context.HeaderReader())
-				if !has {
-					//todo 怎样处理 conn.Write() ???
-				} else {
-					log.Debug("match has:", port)
-					match.ServeHTTP(context)
-				}
-			}()
-
+		match, has := d.matcher.Match(port, context.HeaderReader())
+		if !has {
+			//todo 怎样处理 conn.Write() ???
+		} else {
+			log.Debug("match has:", port)
+			match.ServeHTTP(context)
 		}
 
 	}
