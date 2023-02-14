@@ -44,7 +44,7 @@ func init() {
 	bean.Injection(&m)
 	bean.AddInitializingBeanFunc(func() {
 		log.Debug("init grpc router manager")
-		chainProxy = pluginManager.CreateRequest("global", map[string]*plugin.Config{})
+		chainProxy = pluginManager.Global()
 		routerManager.SetGlobalFilters(&chainProxy)
 	})
 

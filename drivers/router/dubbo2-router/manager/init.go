@@ -2,43 +2,38 @@ package manager
 
 import (
 	"github.com/eolinker/apinto/drivers/router"
+	getty "github.com/eolinker/apinto/dubbo-getty/server"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
-	"github.com/valyala/fasthttp"
 	"net"
 )
 
 var (
 	chainProxy eocontext.IChainPro
+	manager    = NewManager()
 )
 
 func init() {
 
-	var routerManager = NewManager()
-	serverHandler := func(port int, ln net.Listener) {
-		server := fasthttp.Server{
-			StreamRequestBody:            true,
-			DisablePreParseMultipartForm: true,
-			MaxRequestBodySize:           100 * 1024 * 1024,
-			Handler: func(ctx *fasthttp.RequestCtx) {
-				routerManager.FastHandler(port, ctx)
-			}}
-		server.Serve(ln)
+	serverHandler := func(port int, listener net.Listener) {
+
+		server := getty.NewServer(manager.Handler, getty.WithListenerServer(listener))
+		server.Start()
 	}
-	router.Register(router.Http, serverHandler)
+	router.Register(router.Dubbo2, serverHandler)
 
 	var pluginManager plugin.IPluginManager
 	bean.Autowired(&pluginManager)
 	log.Debug("new router driver: ")
 
-	var m IManger = routerManager
+	var m IManger = manager
 	bean.Injection(&m)
+
 	bean.AddInitializingBeanFunc(func() {
 		log.Debug("init router manager")
 		chainProxy = pluginManager.Global()
-		routerManager.SetGlobalFilters(&chainProxy)
-
+		manager.SetGlobalFilters(&chainProxy)
 	})
 }

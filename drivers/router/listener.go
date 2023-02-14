@@ -24,7 +24,7 @@ type RouterType int
 const (
 	GRPC RouterType = iota
 	Http
-	Dubbo
+	Dubbo2
 	TslTCP
 	AnyTCP
 	depth
@@ -51,7 +51,7 @@ func init() {
 	matchWriters[AnyTCP] = matchersToMatchWriters([]cmux.Matcher{cmux.Any()})
 	matchWriters[TslTCP] = matchersToMatchWriters([]cmux.Matcher{cmux.TLS()})
 	matchWriters[Http] = matchersToMatchWriters([]cmux.Matcher{cmux.HTTP1Fast()})
-	matchWriters[Dubbo] = matchersToMatchWriters([]cmux.Matcher{cmux.PrefixMatcher(string([]byte{0xda, 0xbb}))})
+	matchWriters[Dubbo2] = matchersToMatchWriters([]cmux.Matcher{cmux.PrefixMatcher(string([]byte{0xda, 0xbb}))})
 	matchWriters[GRPC] = []cmux.MatchWriter{cmux.HTTP2MatchHeaderFieldPrefixSendSettings("content-type", "application/grpc")}
 	var tf traffic.ITraffic
 	var listenCfg *config.ListenUrl

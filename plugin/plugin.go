@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-//Config 普通插件配置，在router、service、upstream的插件格式
+// Config 普通插件配置，在router、service、upstream的插件格式
 type Config struct {
 	Disable bool        `json:"disable"`
 	Config  interface{} `json:"config"`
@@ -13,6 +13,7 @@ type Config struct {
 
 type IPluginManager interface {
 	CreateRequest(id string, conf map[string]*Config) eocontext.IChainPro
+	Global() eocontext.IChainPro
 	GetConfigType(name string) (reflect.Type, bool)
 }
 
