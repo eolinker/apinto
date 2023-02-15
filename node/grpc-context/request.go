@@ -52,11 +52,13 @@ func NewRequest(stream grpc.ServerStream) *Request {
 	if !has {
 		md = metadata.New(map[string]string{})
 	}
+	hosts := md.Get(":authority")
 	return &Request{
 		stream:  stream,
 		service: service,
 		method:  method,
 		headers: md,
+		host:    strings.Join(hosts, ";"),
 	}
 }
 

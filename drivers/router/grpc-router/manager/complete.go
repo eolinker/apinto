@@ -24,16 +24,24 @@ func NewComplete(retry int, timeOut time.Duration) *Complete {
 }
 
 func (h *Complete) Complete(org eocontext.EoContext) error {
+
 	ctx, err := grpc_context.Assert(org)
 	if err != nil {
 		return err
 	}
+	var lastErr error
+
 	//设置响应开始时间
 	proxyTime := time.Now()
 
 	balance := ctx.GetBalance()
 	app := ctx.GetApp()
-	var lastErr error
+
+	defer func() {
+		//设置上游响应总时间, 单位为毫秒
+		ctx.Response().SetErr(lastErr)
+		ctx.SetLabel("handler", "proxy")
+	}()
 
 	timeOut := app.TimeOut()
 	for index := 0; index <= h.retry; index++ {

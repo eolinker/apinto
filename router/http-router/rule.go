@@ -150,6 +150,7 @@ func NewPaths(checker checker.Checker) *Paths {
 func NewHandler(id string, handler router.IRouterHandler, appends []router.AppendRule) *Handler {
 	return &Handler{id: id, handler: handler, rules: appends}
 }
+
 func (r *Root) Add(id string, handler router.IRouterHandler, port int, hosts []string, methods []string, path string, append []router.AppendRule) error {
 	if r.ports == nil {
 		r.ports = make(map[int]*Ports)
@@ -179,6 +180,7 @@ func (p *Ports) Add(id string, handler router.IRouterHandler, hosts []string, me
 	}
 	return nil
 }
+
 func (p *Ports) add(id string, handler router.IRouterHandler, host string, methods []string, path string, append []router.AppendRule) error {
 	hN, has := p.hosts[host]
 	if !has {
