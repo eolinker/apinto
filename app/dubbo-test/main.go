@@ -31,7 +31,7 @@ func main() {
 	//addr = "127.0.0.1:4999"
 	//addr = "127.0.0.1:20880"
 	//addr = "172.18.166.219:20880"
-	resp, err := http_dubbo.ProxyToDubbo(addr, "api.UserService", "GetUser", time.Second*3, types, valuesList)
+	resp, err := http_dubbo.ProxyToDubbo(addr, "UserService", "GetUser", time.Second*3, types, valuesList)
 	if err != nil {
 		fmt.Println(err)
 		return
