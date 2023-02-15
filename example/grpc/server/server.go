@@ -1,14 +1,15 @@
-package server
+package main
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"liujian-test/grpc-test-demo/service"
 	"log"
 	"sync"
 	"time"
+
+	service "github.com/eolinker/apinto/example/grpc/demo_service"
 
 	"google.golang.org/grpc/metadata"
 
@@ -29,19 +30,12 @@ func NewServer() *Server {
 
 func (s *Server) Hello(ctx context.Context, request *service.HelloRequest) (*service.HelloResponse, error) {
 
-	data, md, err := retrieveData("hello", request.Name)
-	if err != nil {
-		return nil, err
-	}
-	if md != nil {
-		grpc.SendHeader(ctx, md)
-	}
 	trailingMD, ok := metadata.FromIncomingContext(ctx)
 	if ok {
 		grpc.SetTrailer(ctx, trailingMD)
 	}
 	return &service.HelloResponse{
-		Msg: data,
+		Msg: "hello",
 	}, nil
 }
 
@@ -53,7 +47,6 @@ type Request struct {
 func (s *Server) StreamRequest(server service.Hello_StreamRequestServer) error {
 	requestChan := make(chan *Request)
 	return serverRcv(server, requestChan, "streamRequest")
-
 }
 
 func (s *Server) StreamResponse(request *service.HelloRequest, server service.Hello_StreamResponseServer) error {
@@ -109,19 +102,11 @@ func serverRcv(server service.Hello_StreamRequestServer, requestChan chan *Reque
 				if req.err != nil {
 					return req.err
 				}
-				tmp, md, err := retrieveData(method, req.Name)
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
-				if md != nil {
-					server.SendHeader(md)
-				}
+
 				trailingMD, ok := metadata.FromIncomingContext(server.Context())
 				if ok {
 					server.SetTrailer(trailingMD)
 				}
-				data[req.Name] = tmp
 			}
 		}
 	}
@@ -139,19 +124,13 @@ func serverSend(ctx context.Context, server service.Hello_StreamResponseServer, 
 				if req.err != nil {
 					return req.err
 				}
-				data, md, err := retrieveData(method, req.Name)
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
-				if md != nil {
-					server.SendHeader(md)
-				}
+				now := time.Now().Format("2006-01-02 15:04:05")
+
 				trailingMD, ok := metadata.FromIncomingContext(server.Context())
 				if ok {
 					server.SetTrailer(trailingMD)
 				}
-				err = server.Send(&service.HelloResponse{Msg: data})
+				err := server.Send(&service.HelloResponse{Msg: fmt.Sprintf("Welcome!Now time is %s", now)})
 				if err != nil {
 					if err != io.EOF {
 						return err

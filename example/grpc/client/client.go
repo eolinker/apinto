@@ -4,10 +4,13 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"liujian-test/grpc-test-demo/service"
 	"time"
 
+	service "github.com/eolinker/apinto/example/grpc/demo_service"
+
 	"google.golang.org/grpc/credentials"
+
+	"google.golang.org/grpc/credentials/insecure"
 
 	"google.golang.org/grpc/metadata"
 
@@ -15,32 +18,33 @@ import (
 	"google.golang.org/grpc" // 引入grpc认证包
 )
 
-const (
-	// Address gRPC服务地址
-	//Address = "120.25.14.89:9999"
-	Address = "www.choosy-liu.cn:9001"
-	//Address = "172.18.189.43:9001"
-)
-
-func CurrentRequest(names []string, md map[string]string, authority string) error {
-	var err error
+func genDialOptions() ([]grpc.DialOption, error) {
 	var opts []grpc.DialOption
+	if insecureVerify {
+		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})))
+	} else {
+		if keyFile != "" && certFIle != "" {
+			certs, err := credentials.NewClientTLSFromFile(certFIle, "")
+			if err != nil {
+				return nil, err
+			}
+			opts = append(opts, grpc.WithTransportCredentials(certs))
+		} else {
+			opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		}
+	}
+	if authority != "" {
+		opts = append(opts, grpc.WithAuthority(authority))
+	}
+	return opts, nil
+}
 
-	//opts = append(opts, grpc.WithDefaultCallOptions())
-	//opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	//opts = append(opts, grpc.WithPerRPCCredentials(new(customCredential)))
-	cerds := credentials.NewTLS(&tls.Config{})
-	//cerds, err := credentials.NewClientTLSFromFile("../nginx.pem", "")
-	//if err != nil {
-	//	return err
-	//}
-	opts = append(opts, grpc.WithTransportCredentials(cerds))
-	//opts = append(opts, grpc.WithAuthority(authority))
-	//}
-	// 指定客户端interceptor
-	opts = append(opts, grpc.WithUnaryInterceptor(interceptor))
-
-	conn, err := grpc.Dial(Address, opts...)
+func CurrentRequest(names []string, md map[string]string) error {
+	opts, err := genDialOptions()
+	if err != nil {
+		return err
+	}
+	conn, err := grpc.Dial(address, opts...)
 	if err != nil {
 		return err
 	}
@@ -52,28 +56,22 @@ func CurrentRequest(names []string, md map[string]string, authority string) erro
 	var header, trailer metadata.MD
 	for _, name := range names {
 		// 调用方法
-		_, err = c.Hello(ctx, &service.HelloRequest{Name: name}, grpc.Header(&header), grpc.Trailer(&trailer))
+		response, err := c.Hello(ctx, &service.HelloRequest{Name: name}, grpc.Header(&header), grpc.Trailer(&trailer))
 		fmt.Println("err:", err)
 		fmt.Println("header:", header)
 		fmt.Println("trailing:", trailer)
+		fmt.Println("msg:", response.GetMsg())
 	}
 
 	return nil
 }
 
-func GetStreamClient(authority string) (*grpc.ClientConn, service.HelloClient, error) {
-	var err error
-	var opts []grpc.DialOption
-
-	opts = append(opts, grpc.WithInsecure())
-	//opts = append(opts, grpc.WithPerRPCCredentials(new(customCredential)))
-	opts = append(opts, grpc.WithAuthority(authority))
-	//}
-
-	// 指定客户端interceptor
-	opts = append(opts, grpc.WithStreamInterceptor(streamInterceptor))
-
-	conn, err := grpc.Dial(Address, opts...)
+func GetStreamClient() (*grpc.ClientConn, service.HelloClient, error) {
+	opts, err := genDialOptions()
+	if err != nil {
+		return nil, nil, err
+	}
+	conn, err := grpc.Dial(address, opts...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -82,8 +80,8 @@ func GetStreamClient(authority string) (*grpc.ClientConn, service.HelloClient, e
 	return conn, service.NewHelloClient(conn), nil
 }
 
-func StreamRequest(names []string, md map[string]string, authority string) error {
-	conn, c, err := GetStreamClient(authority)
+func StreamRequest(names []string, md map[string]string) error {
+	conn, c, err := GetStreamClient()
 	if err != nil {
 		return err
 	}
@@ -112,8 +110,8 @@ func StreamRequest(names []string, md map[string]string, authority string) error
 	return nil
 }
 
-func StreamResponse(names []string, md map[string]string, authority string) error {
-	conn, c, err := GetStreamClient(authority)
+func StreamResponse(names []string, md map[string]string) error {
+	conn, c, err := GetStreamClient()
 	if err != nil {
 		return err
 	}
@@ -133,8 +131,8 @@ func StreamResponse(names []string, md map[string]string, authority string) erro
 	return nil
 }
 
-func AllStream(names []string, md map[string]string, authority string) error {
-	conn, c, err := GetStreamClient(authority)
+func AllStream(names []string, md map[string]string) error {
+	conn, c, err := GetStreamClient()
 	if err != nil {
 		return err
 	}

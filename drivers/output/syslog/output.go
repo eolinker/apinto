@@ -28,6 +28,7 @@ func (s *Output) Output(entry eosc.IEntry) error {
 }
 
 func (s *Output) Start() error {
+	scopeManager.Del(s.Id())
 	s.running = true
 	w := s.writer
 	if w == nil {

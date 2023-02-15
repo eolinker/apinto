@@ -56,6 +56,7 @@ func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 }
 
 func (a *FileOutput) Stop() error {
+	scopeManager.Del(a.Id())
 	a.isRunning = false
 	w := a.writer
 	if w != nil {

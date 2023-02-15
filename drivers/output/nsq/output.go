@@ -52,6 +52,7 @@ func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWor
 }
 
 func (n *NsqOutput) Stop() error {
+	scopeManager.Del(n.Id())
 	w := n.write
 	if w != nil {
 		return w.stop()
