@@ -29,6 +29,7 @@ var (
 type ClientOption struct {
 	ClientPoolConnSize int
 	IsTls              bool
+	Authority          string
 	DialTimeOut        time.Duration
 	KeepAlive          time.Duration
 	KeepAliveTimeout   time.Duration
@@ -120,18 +121,17 @@ func (cc *ClientPool) connect() (*grpc.ClientConn, error) {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 	opts = append(opts,
-		grpc.WithBlock(),
+		//grpc.WithBlock(),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:    cc.option.KeepAlive,
 			Timeout: cc.option.KeepAliveTimeout,
 		}),
 	)
-	conn, err := grpc.DialContext(ctx, cc.target, opts...)
-	if err != nil {
-		return nil, err
+	if cc.option.Authority != "" {
+		opts = append(opts, grpc.WithAuthority(cc.option.Authority))
 	}
 
-	return conn, nil
+	return grpc.DialContext(ctx, cc.target, opts...)
 }
 
 func (cc *ClientPool) Close() {

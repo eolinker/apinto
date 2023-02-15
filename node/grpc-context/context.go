@@ -41,8 +41,8 @@ type Context struct {
 	srv                       interface{}
 	acceptTime                time.Time
 	requestId                 string
-	request                   *Request
-	proxy                     *Request
+	request                   grpc_context.IRequest
+	proxy                     grpc_context.IRequest
 	response                  grpc_context.IResponse
 	completeHandler           eocontext.CompleteHandler
 	finishHandler             eocontext.FinishHandler
@@ -199,19 +199,18 @@ func (c *Context) SetResponse(response grpc_context.IResponse) {
 }
 
 func (c *Context) Invoke(address string, timeout time.Duration) error {
-	clientConn, err := c.dial(address)
+	passHost, targetHost := c.GetUpstreamHostHandler().PassHost()
+	switch passHost {
+	case eocontext.NodeHost:
+		c.proxy.SetHost(address)
+	case eocontext.ReWriteHost:
+		c.proxy.SetHost(targetHost)
+	}
+	clientConn, err := clientPool.Get(address, c.tls, c.proxy.Host()).Get()
 	if err != nil {
 		return err
 	}
-	passHost, targetHost := c.GetUpstreamHostHandler().PassHost()
-	switch passHost {
-	case eocontext.PassHost:
 
-	case eocontext.NodeHost:
-		c.proxy.Headers().Set(":authority", address)
-	case eocontext.ReWriteHost:
-		c.proxy.Headers().Set(":authority", targetHost)
-	}
 	c.proxy.Headers().Set("grpc-timeout", fmt.Sprintf("%dn", timeout))
 	clientCtx, _ := context.WithCancel(metadata.NewOutgoingContext(c.Context(), c.proxy.Headers().Copy()))
 	clientStream, err := grpc.NewClientStream(clientCtx, clientStreamDescForProxying, clientConn, c.proxy.FullMethodName())
@@ -255,11 +254,31 @@ func (c *Context) reset() {
 	pool.Put(c)
 }
 
-func (c *Context) dial(address string) (*grpc.ClientConn, error) {
-	p, has := clientPool.Get(address, c.tls)
-	if !has {
-		p = NewClientPoolWithOption(address, &defaultClientOption)
-		defer clientPool.Set(address, c.tls, p)
-	}
-	return p.Get()
-}
+//func (c *Context) dial(address string, timeout time.Duration) (*grpc.ClientConn, error) {
+//	return clientPool.Get(address, c.tls, c.proxy.Host()).Get()
+//
+//	//opts := make([]grpc.DialOption, 0, 5)
+//	//if c.tls {
+//	//	opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: c.insecureCertificateVerify})))
+//	//} else {
+//	//	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+//	//}
+//	//opts = append(opts,
+//	//	//grpc.WithBlock(),
+//	//	grpc.WithKeepaliveParams(keepalive.ClientParameters{
+//	//		Time:    defaultKeepAlive,
+//	//		Timeout: defaultKeepAliveTimeout,
+//	//	}),
+//	//)
+//	//
+//	//if c.proxy.Host() != "" {
+//	//	opts = append(opts, grpc.WithAuthority(c.proxy.Host()))
+//	//}
+//	////ctx, cancel := context.WithTimeout(context.TODO(), timeout)
+//	////defer cancel()
+//	//conn, err := grpc.Dial(address, opts...)
+//	//if err != nil {
+//	//	return nil, err
+//	//}
+//	//return conn, nil
+//}

@@ -1,6 +1,7 @@
 package grpc_context
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -8,25 +9,18 @@ import (
 var _ IClient = (*Client)(nil)
 
 var (
-	clientPool          IClient = NewClient()
-	defaultClientOption         = ClientOption{
-		ClientPoolConnSize: defaultClientPoolConnsSizeCap,
-		DialTimeOut:        defaultDialTimeout,
-		KeepAlive:          defaultKeepAlive,
-		KeepAliveTimeout:   defaultKeepAliveTimeout,
-	}
+	clientPool IClient = NewClient()
 )
 
 type IClient interface {
-	Get(target string, isTls bool) (IClientPool, bool)
-	Set(target string, isTls bool, pool IClientPool)
-	Del(target string, isTls bool)
+	Get(target string, isTls bool, host ...string) IClientPool
 	Close()
 }
 
 type Client struct {
 	clients    map[string]IClientPool
 	tlsClients map[string]IClientPool
+	stop       bool
 	locker     sync.RWMutex
 }
 
@@ -44,6 +38,10 @@ func (c *Client) clean() {
 	sleep := time.Second * 10
 	for {
 		c.locker.Lock()
+		if c.stop {
+			c.locker.Unlock()
+			return
+		}
 		for key, client := range c.clients {
 			if client.ConnCount() < 1 {
 				delete(c.clients, key)
@@ -59,33 +57,41 @@ func (c *Client) clean() {
 	}
 }
 
-func (c *Client) Get(target string, isTls bool) (IClientPool, bool) {
+func (c *Client) Get(target string, isTls bool, host ...string) IClientPool {
+	key := target
+	authority := ""
+	if len(host) > 0 && host[0] != "" {
+		key = fmt.Sprintf("%s|%s", target, host[0])
+		authority = host[0]
+	}
 	c.locker.RLock()
-	defer c.locker.RUnlock()
 	clients := c.clients
 	if isTls {
 		clients = c.tlsClients
 	}
-	client, ok := clients[target]
-
-	return client, ok
-}
-
-func (c *Client) Set(target string, isTls bool, pool IClientPool) {
-	c.locker.Lock()
-	defer c.locker.Unlock()
-	c.del(target, isTls)
-	clients := c.clients
-	if isTls {
-		clients = c.tlsClients
+	client, ok := clients[key]
+	c.locker.RUnlock()
+	if ok {
+		return client
 	}
-	clients[target] = pool
-}
-
-func (c *Client) Del(target string, isTls bool) {
 	c.locker.Lock()
 	defer c.locker.Unlock()
-	c.del(target, isTls)
+	client, ok = clients[key]
+	if ok {
+		return client
+	}
+	p := NewClientPoolWithOption(target, &ClientOption{
+		ClientPoolConnSize: defaultClientPoolConnsSizeCap,
+		DialTimeOut:        defaultDialTimeout,
+		KeepAlive:          defaultKeepAlive,
+		KeepAliveTimeout:   defaultKeepAliveTimeout,
+		IsTls:              isTls,
+		Authority:          authority,
+	})
+
+	clients[key] = p
+
+	return p
 }
 
 func (c *Client) del(target string, isTls bool) {
@@ -111,6 +117,7 @@ func (c *Client) Close() {
 	for _, client := range tlsClients {
 		client.Close()
 	}
+	c.stop = true
 	c.clients = nil
 	c.tlsClients = nil
 }

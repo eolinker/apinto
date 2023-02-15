@@ -21,10 +21,11 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 
 	pw := &ProxyRewrite{
 		WorkerBase:      drivers.Worker(id, name),
-		host:            strings.TrimSpace(conf.Authority),
 		headers:         conf.Headers,
 		tls:             conf.Tls,
 		skipCertificate: conf.SkipCertificate,
+		service:         conf.Service,
+		method:          conf.Method,
 	}
 
 	return pw, nil

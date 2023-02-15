@@ -1,8 +1,6 @@
 package grpc_proxy_rewrite
 
 import (
-	"strings"
-
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
 
 	"github.com/eolinker/apinto/drivers"
@@ -21,8 +19,8 @@ var (
 
 type ProxyRewrite struct {
 	drivers.WorkerBase
-
-	host            string
+	service         string
+	method          string
 	headers         map[string]string
 	tls             bool
 	skipCertificate bool
@@ -33,8 +31,12 @@ func (p *ProxyRewrite) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) 
 }
 
 func (p *ProxyRewrite) DoGrpcFilter(ctx grpc_context.IGrpcContext, next eocontext.IChain) (err error) {
-	if p.host != "" {
-		ctx.Proxy().SetHost(p.host)
+
+	if p.service != "" {
+		ctx.Proxy().SetService(p.service)
+	}
+	if p.method != "" {
+		ctx.Proxy().SetMethod(p.method)
 	}
 	ctx.EnableTls(p.tls)
 	ctx.InsecureCertificateVerify(p.skipCertificate)
@@ -59,7 +61,8 @@ func (p *ProxyRewrite) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWor
 	p.skipCertificate = conf.SkipCertificate
 	p.headers = conf.Headers
 	p.tls = conf.Tls
-	p.host = strings.TrimSpace(conf.Authority)
+	p.service = conf.Service
+	p.method = conf.Method
 	return nil
 }
 
