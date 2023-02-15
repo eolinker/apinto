@@ -2,13 +2,13 @@ package manager
 
 import (
 	"dubbo.apache.org/dubbo-go/v3/protocol"
-	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
 	"errors"
 	dubbo2_context "github.com/eolinker/apinto/node/dubbo2-context"
 	"github.com/eolinker/apinto/router"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
+	"reflect"
 	"sync"
 	"sync/atomic"
 )
@@ -98,15 +98,12 @@ func (d *dubboManger) Handler(port int, req *invocation.RPCInvocation) protocol.
 		ctx.Response().SetBody(Dubbo2ErrorResult(err))
 	}
 
+	body := ctx.Response().GetBody()
+	log.Infof("response body %v  bodyTypeOf = %v", body, reflect.TypeOf(body))
+
 	rpcResult, ok := ctx.Response().GetBody().(protocol.RPCResult)
 	if !ok {
-		payload := impl.NewResponsePayload(nil, errors.New("rpcResult"), req.Attachments())
-
-		rpcResult = protocol.RPCResult{
-			Attrs: payload.Attachments,
-			Err:   payload.Exception,
-			Rest:  payload.RspObj,
-		}
+		rpcResult = Dubbo2ErrorResult(errors.New("no result"))
 	}
 
 	return rpcResult

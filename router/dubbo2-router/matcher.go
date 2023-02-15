@@ -37,7 +37,7 @@ func newPathMatcher(children map[string]router.IMatcher) router.IMatcher {
 		children: children,
 		name:     "path",
 		read: func(port int, request dubbo2_context.IRequestReader) (string, bool) {
-			return fmt.Sprintf("%s", request.Service().Path()), true
+			return fmt.Sprintf("%s/%s", request.Service().Interface(), request.Service().Method()), true
 		},
 	}
 }

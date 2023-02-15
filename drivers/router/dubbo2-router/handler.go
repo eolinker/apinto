@@ -49,8 +49,6 @@ func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
 	ctx.SetBalance(d.service)
 	ctx.SetUpstreamHostHandler(d.service)
 
-	if err = d.filters.Chain(ctx, completeCaller); err != nil {
-		dubboCtx.Response().SetBody(manager.Dubbo2ErrorResult(err))
-	}
+	_ = d.filters.Chain(ctx, completeCaller)
 
 }

@@ -116,7 +116,7 @@ func (s *Server) newSession(session getty.Session) error {
 		session.SetWriteTimeout(conf.GettySessionParam.tcpWriteTimeout)
 		session.SetCronPeriod((int)(conf.heartbeatPeriod.Nanoseconds() / 1e6))
 		session.SetWaitTime(conf.GettySessionParam.waitTimeout)
-		log.Debug("server accepts new session:%s\n", session.Stat())
+		log.DebugF("server accepts new session:%s\n", session.Stat())
 		return nil
 	}
 
@@ -161,7 +161,7 @@ func (s *Server) newSession(session getty.Session) error {
 
 	session.SetCronPeriod(CronPeriod)
 	session.SetWaitTime(conf.GettySessionParam.waitTimeout)
-	log.Debug("server accepts new session: %s", session.Stat())
+	log.DebugF("server accepts new session: %s", session.Stat())
 	return nil
 }
 
@@ -190,7 +190,7 @@ func (s *Server) Start() {
 
 	tcpServer = getty.NewTCPServer(serverOpts...)
 	tcpServer.RunEventLoop(s.newSession)
-	log.Debug("s bind addr{%s} ok!", s.addr)
+	log.DebugF("s bind addr{%s} ok!", s.addr)
 	s.tcpServer = tcpServer
 }
 

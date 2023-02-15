@@ -6,6 +6,7 @@ import (
 	"dubbo.apache.org/dubbo-go/v3/common/constant"
 	"dubbo.apache.org/dubbo-go/v3/protocol"
 	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo"
+	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
 	"fmt"
 	hessian "github.com/apache/dubbo-go-hessian2"
@@ -181,9 +182,20 @@ func (d *DubboContext) dial(addr string, timeout time.Duration) error {
 
 	rpcResult := result.(*protocol.RPCResult)
 
-	d.response.SetBody(rpcResult)
+	val := result.Result().(*interface{})
+
+	d.response.SetBody(getResponse(formatData(*val), rpcResult.Err, rpcResult.Attachments()))
 
 	return err
+}
+
+func getResponse(obj interface{}, err error, attachments map[string]interface{}) protocol.RPCResult {
+	payload := impl.NewResponsePayload(obj, err, attachments)
+	return protocol.RPCResult{
+		Attrs: payload.Attachments,
+		Err:   payload.Exception,
+		Rest:  payload.RspObj,
+	}
 }
 
 func (d *DubboContext) RequestId() string {

@@ -26,7 +26,7 @@ func main() {
 	valuesList = append(valuesList, map[string]interface{}{"name": "123456", "id": 10})
 	//valuesList = append(valuesList, "zhangzeyi")
 	//cn.zzy.
-	addr := "192.168.198.169:8099"
+	addr := "192.168.198.170:8099"
 	//addr = "192.168.198.167:20001"
 	//addr = "127.0.0.1:4999"
 	resp, err := http_dubbo.ProxyToDubbo(addr, "api.UserService", "GetUser", time.Second*3, types, valuesList)

@@ -72,6 +72,9 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 
 	httpCtx, err := http_service.Assert(ctx)
 	if err != nil {
+		if next != nil {
+			return next.DoChain(ctx)
+		}
 		return err
 	}
 
