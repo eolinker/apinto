@@ -41,7 +41,7 @@ func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
 	ctx.SetLabel("api_id", d.routerId)
 	ctx.SetLabel("service", d.serviceName)
 	ctx.SetLabel("service_id", d.service.Id())
-	//ctx.SetLabel("ip", dubboCtx.Request().ReadIP())
+	ctx.SetLabel("ip", dubboCtx.HeaderReader().RemoteIp())
 
 	ctx.SetCompleteHandler(d.completeHandler)
 	ctx.SetFinish(d.finishHandler)

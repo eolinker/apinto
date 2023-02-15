@@ -8,7 +8,6 @@ import (
 	"github.com/eolinker/apinto/router"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
-	"reflect"
 	"sync"
 	"sync/atomic"
 )
@@ -97,9 +96,6 @@ func (d *dubboManger) Handler(port int, req *invocation.RPCInvocation) protocol.
 	if err != nil {
 		ctx.Response().SetBody(Dubbo2ErrorResult(err))
 	}
-
-	body := ctx.Response().GetBody()
-	log.Infof("response body %v  bodyTypeOf = %v", body, reflect.TypeOf(body))
 
 	rpcResult, ok := ctx.Response().GetBody().(protocol.RPCResult)
 	if !ok {

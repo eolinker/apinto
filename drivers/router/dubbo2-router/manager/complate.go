@@ -29,6 +29,10 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 
 	//设置响应开始时间
 	proxyTime := time.Now()
+	defer func() {
+		ctx.Response().SetResponseTime(time.Now().Sub(proxyTime))
+	}()
+
 	balance := ctx.GetBalance()
 	app := ctx.GetApp()
 	var lastErr error
@@ -37,13 +41,13 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 	for index := 0; index <= h.retry; index++ {
 
 		if h.timeOut > 0 && time.Now().Sub(proxyTime) > h.timeOut {
+			ctx.Response().SetBody(Dubbo2ErrorResult(ErrorTimeoutComplete))
 			return ErrorTimeoutComplete
 		}
 		node, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select error: ", err)
-			//ctx.Response().SetStatus(501, "501")
-			//ctx.Response().SetBody([]byte(err.Error()))
+			ctx.Response().SetBody(Dubbo2ErrorResult(errors.New("node is null")))
 			return err
 		}
 
@@ -54,6 +58,8 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 		}
 		log.Error("dubbo upstream send error: ", lastErr)
 	}
+
+	ctx.Response().SetBody(Dubbo2ErrorResult(lastErr))
 
 	return lastErr
 }

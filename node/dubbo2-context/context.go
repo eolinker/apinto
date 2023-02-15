@@ -18,6 +18,7 @@ import (
 	"github.com/google/uuid"
 	"net"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -74,24 +75,29 @@ func NewContext(req *invocation.RPCInvocation, port int) dubbo2_context.IDubbo2C
 
 	proxy := &Proxy{
 		serviceWriter: serviceWriter,
-		param: &DubboParamBody{
-			typesList:  typesList,
-			valuesList: valuesList,
-		},
-		attachments: req.Attachments(),
+		attachments:   req.Attachments(),
 	}
+
+	proxy.SetParam(&DubboParamBody{
+		typesList:  typesList,
+		valuesList: valuesList,
+	})
 
 	copyMaps := utils.CopyMaps(req.Attachments())
 
 	localAddr, _ := req.GetAttachment(constant.LocalAddr)
 
+	remoteAddr, _ := req.GetAttachment(constant.RemoteAddr)
+	remoteIp := remoteAddr[:strings.Index(remoteAddr, ":")]
+
 	requestReader := &RequestReader{
 		serviceReader: serviceReader,
 		host:          localAddr,
+		remoteIp:      remoteIp,
 		attachments:   copyMaps,
 	}
 
-	ip, ipNet, _ := net.ParseCIDR(localAddr)
+	netIP := net.ParseIP(localAddr[:strings.Index(localAddr, ":")])
 
 	t := time.Now()
 	dubboContext := &DubboContext{
@@ -100,8 +106,8 @@ func NewContext(req *invocation.RPCInvocation, port int) dubbo2_context.IDubbo2C
 		requestID:     uuid.New().String(),
 		proxy:         proxy,
 		requestReader: requestReader,
-		netIP:         ip,
-		localAddr:     ipNet,
+		netIP:         netIP,
+		localAddr:     &net.TCPAddr{IP: netIP, Port: port},
 		acceptTime:    t,
 		response:      &Response{},
 	}
@@ -120,12 +126,6 @@ func (d *DubboContext) Proxy() dubbo2_context.IProxy {
 }
 
 func (d *DubboContext) Invoke(address string, timeout time.Duration) error {
-
-	t := time.Now()
-	defer func() {
-		d.response.SetResponseTime(time.Now().Sub(t))
-	}()
-
 	return d.dial(address, timeout)
 }
 
@@ -175,7 +175,7 @@ func (d *DubboContext) dial(addr string, timeout time.Duration) error {
 	var resp interface{}
 	invoc.SetReply(&resp)
 
-	result := invoker.Invoke(context.Background(), invoc)
+	result := invoker.Invoke(d.Context(), invoc)
 	if result.Error() != nil {
 		return result.Error()
 	}

@@ -10,7 +10,12 @@ type RequestReader struct {
 	serviceReader dubbo2_context.IServiceReader
 	body          interface{}
 	host          string
+	remoteIp      string
 	attachments   map[string]interface{}
+}
+
+func (r *RequestReader) RemoteIp() string {
+	return r.remoteIp
 }
 
 func (r *RequestReader) Host() string {
