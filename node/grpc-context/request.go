@@ -30,6 +30,10 @@ type Request struct {
 	realIP  string
 }
 
+func (r *Request) SetHost(s string) {
+	r.host = s
+}
+
 func (r *Request) SetService(service string) {
 	r.service = service
 }

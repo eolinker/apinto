@@ -126,7 +126,6 @@ func (cc *ClientPool) connect() (*grpc.ClientConn, error) {
 			Timeout: cc.option.KeepAliveTimeout,
 		}),
 	)
-
 	conn, err := grpc.DialContext(ctx, cc.target, opts...)
 	if err != nil {
 		return nil, err

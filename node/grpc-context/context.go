@@ -203,6 +203,15 @@ func (c *Context) Invoke(address string, timeout time.Duration) error {
 	if err != nil {
 		return err
 	}
+	passHost, targetHost := c.GetUpstreamHostHandler().PassHost()
+	switch passHost {
+	case eocontext.PassHost:
+
+	case eocontext.NodeHost:
+		c.proxy.Headers().Set(":authority", address)
+	case eocontext.ReWriteHost:
+		c.proxy.Headers().Set(":authority", targetHost)
+	}
 	c.proxy.Headers().Set("grpc-timeout", fmt.Sprintf("%dn", timeout))
 	clientCtx, _ := context.WithCancel(metadata.NewOutgoingContext(c.Context(), c.proxy.Headers().Copy()))
 	clientStream, err := grpc.NewClientStream(clientCtx, clientStreamDescForProxying, clientConn, c.proxy.FullMethodName())

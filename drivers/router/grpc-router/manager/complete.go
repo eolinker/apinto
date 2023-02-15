@@ -42,7 +42,6 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 		ctx.Response().SetErr(lastErr)
 		ctx.SetLabel("handler", "proxy")
 	}()
-
 	timeOut := app.TimeOut()
 	for index := 0; index <= h.retry; index++ {
 

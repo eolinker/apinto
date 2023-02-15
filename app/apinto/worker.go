@@ -19,6 +19,7 @@ import (
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
+	grpc_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/grpc-proxy-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
 	ip_restriction "github.com/eolinker/apinto/drivers/plugins/ip-restriction"
 	"github.com/eolinker/apinto/drivers/plugins/monitor"
@@ -125,5 +126,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 
 	fuse.Register(extenderRegister)
 	fuse_strategy.Register(extenderRegister)
+
+	grpc_proxy_rewrite.Register(extenderRegister)
 
 }

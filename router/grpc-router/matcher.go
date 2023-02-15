@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
 
@@ -30,7 +31,11 @@ func newHostMatcher(children map[string]router.IMatcher) router.IMatcher {
 		children: children,
 		name:     "host",
 		read: func(port int, request grpc_context.IRequest) (string, bool) {
-			return request.Host(), true
+			orgHost := request.Host()
+			if i := strings.Index(orgHost, ":"); i > 0 {
+				return orgHost[:i], true
+			}
+			return orgHost, true
 		},
 	}
 }
