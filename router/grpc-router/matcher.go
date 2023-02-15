@@ -2,6 +2,7 @@ package grpc_router
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
@@ -24,15 +25,25 @@ func newPortMatcher(children map[string]router.IMatcher) router.IMatcher {
 	}
 }
 
-func newPathMatcher(children map[string]router.IMatcher) router.IMatcher {
+func newHostMatcher(children map[string]router.IMatcher) router.IMatcher {
 	return &SimpleMatcher{
 		children: children,
-		name:     "path",
+		name:     "host",
 		read: func(port int, request grpc_context.IRequest) (string, bool) {
-			return fmt.Sprintf("/%s/%s", request.Service(), request.Method()), true
+			return request.Host(), true
 		},
 	}
 }
+
+//func newPathMatcher(children map[string]router.IMatcher) router.IMatcher {
+//	return &SimpleMatcher{
+//		children: children,
+//		name:     "path",
+//		read: func(port int, request grpc_context.IRequest) (string, bool) {
+//			return fmt.Sprintf("%s/%s", request.Service(), request.Method()), true
+//		},
+//	}
+//}
 
 type SimpleMatcher struct {
 	children map[string]router.IMatcher
@@ -69,6 +80,21 @@ func (s *SimpleMatcher) Match(port int, req interface{}) (router.IRouterHandler,
 
 	return nil, false
 
+}
+
+func NewPathMatcher(equals map[string]router.IMatcher, checkers []*CheckerHandler, all router.IMatcher) *CheckMatcher {
+	read := func(port int, request grpc_context.IRequest) (string, bool) {
+		return fmt.Sprintf("%s/%s", request.Service(), request.Method()), true
+	}
+	sort.Sort(CheckerSort(checkers))
+
+	return &CheckMatcher{
+		name:     "path",
+		equals:   equals,
+		checkers: checkers,
+		read:     read,
+		all:      all,
+	}
 }
 
 type CheckMatcher struct {

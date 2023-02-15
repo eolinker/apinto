@@ -203,7 +203,7 @@ func (c *Context) Invoke(address string, timeout time.Duration) error {
 	if err != nil {
 		return err
 	}
-
+	c.proxy.Headers().Set("grpc-timeout", fmt.Sprintf("%dn", timeout))
 	clientCtx, _ := context.WithCancel(metadata.NewOutgoingContext(c.Context(), c.proxy.Headers().Copy()))
 	clientStream, err := grpc.NewClientStream(clientCtx, clientStreamDescForProxying, clientConn, c.proxy.FullMethodName())
 	if err != nil {

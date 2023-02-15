@@ -20,7 +20,7 @@ var _ IManger = (*Manager)(nil)
 var completeCaller = NewCompleteCaller()
 
 type IManger interface {
-	Set(id string, port int, service string, method string, append []AppendRule, router router.IRouterHandler) error
+	Set(id string, port int, hosts []string, service string, method string, append []AppendRule, router router.IRouterHandler) error
 	Delete(id string)
 }
 type Manager struct {
@@ -40,10 +40,10 @@ func NewManager() *Manager {
 	return &Manager{routersData: new(RouterData)}
 }
 
-func (m *Manager) Set(id string, port int, service string, method string, append []AppendRule, router router.IRouterHandler) error {
+func (m *Manager) Set(id string, port int, hosts []string, service string, method string, append []AppendRule, router router.IRouterHandler) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	routersData := m.routersData.Set(id, port, service, method, append, router)
+	routersData := m.routersData.Set(id, port, hosts, service, method, append, router)
 	matchers, err := routersData.Parse()
 	if err != nil {
 		log.Error("parse router data error: ", err)
