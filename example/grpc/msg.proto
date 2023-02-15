@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "liujian-test/grpc-test-demo/service";
+option go_package = "github.com/eolinker/apinto/example/grpc/demo_service";
 
 package Service;
 
