@@ -19,6 +19,7 @@ import (
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
+	grpc_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/grpc-proxy-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
 	ip_restriction "github.com/eolinker/apinto/drivers/plugins/ip-restriction"
 	"github.com/eolinker/apinto/drivers/plugins/monitor"
@@ -34,6 +35,8 @@ import (
 	"github.com/eolinker/apinto/drivers/plugins/strategy/visit"
 	"github.com/eolinker/apinto/drivers/resources/datasource/influxdbv2"
 	"github.com/eolinker/apinto/drivers/resources/redis"
+	dubbo2_router "github.com/eolinker/apinto/drivers/router/dubbo2-router"
+	grpc_router "github.com/eolinker/apinto/drivers/router/grpc-router"
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
 	service "github.com/eolinker/apinto/drivers/service"
 	cache_strategy "github.com/eolinker/apinto/drivers/strategy/cache-strategy"
@@ -58,6 +61,9 @@ func registerInnerExtenders() {
 func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	// router
 	http_router.Register(extenderRegister)
+	grpc_router.Register(extenderRegister)
+	dubbo2_router.Register(extenderRegister)
+
 	template.Register(extenderRegister)
 
 	// service
@@ -120,5 +126,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 
 	fuse.Register(extenderRegister)
 	fuse_strategy.Register(extenderRegister)
+
+	grpc_proxy_rewrite.Register(extenderRegister)
 
 }

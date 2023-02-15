@@ -1,12 +1,25 @@
-certificate: null
+version: 2 # 配置版本，新版本为2，非 2 当做旧版本
+certificate: # 证书根目录
+  dir: /etc/apinto/cert
+
 client:
+  advertise_urls: # open api 服务的广播地址
+    - http://192.168.198.168:9400
+  certificate:  # 征对 https 的证书配置
+    - cert:
+      key:
   listen_urls:
-  - http://0.0.0.0:9400
-gateway:
-  listen_urls:
-  - https://0.0.0.0:8099
-  - http://0.0.0.0:8099
-peer:
-  listen_urls:
-  - http://0.0.0.0:9401
-version: 2
+    - http://0.0.0.0:9400 # open api 服务的监听地址
+gateway: # 网关服务配置
+#  advertise_urls: # 广播地址
+#    - tcp://192.168.198.168:8081
+  listen_urls: # 监听地址
+    - tcp://0.0.0.0:8099
+peer: # 节点通信配置
+  advertise_urls:
+    - tcp://192.168.198.168:9401
+  certificate:
+    - cert:
+      key:
+  listen_urls: # 监听地址
+    - http://0.0.0.0:9401

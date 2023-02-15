@@ -36,6 +36,8 @@ builds:
       - -X "github.com/eolinker/apinto/utils/version.buildUser=goreleaser"
       - -X "github.com/eolinker/apinto/utils/version.goVersion={{.Env.GOVERSION}}"
       - -X "github.com/eolinker/apinto/utils/version.eoscVersion={{.Env.EoscVersion}}"
+    env:
+      - CGO_ENABLED=0
 archives:
   - id: default
     format: tar.gz
