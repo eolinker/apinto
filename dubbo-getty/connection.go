@@ -22,6 +22,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/eolinker/eosc/log"
+	"github.com/soheilhy/cmux"
 	"io"
 	"net"
 	"sync"
@@ -314,7 +315,7 @@ func (t *gettyTCPConn) send(pkg interface{}) (int, error) {
 			t.writeBytes.Add((uint32)(lg))
 			t.writePkgNum.Add((uint32)(len(buffers)))
 		}
-		log.Debug("localAddr: %s, remoteAddr:%s, now:%s, length:%d, err:%s",
+		log.DebugF("localAddr: %s, remoteAddr:%s, now:%s, length:%d, err:%s",
 			t.conn.LocalAddr(), t.conn.RemoteAddr(), currentTime, length, err)
 		return int(lg), perrors.WithStack(err)
 	}
@@ -325,7 +326,7 @@ func (t *gettyTCPConn) send(pkg interface{}) (int, error) {
 			t.writeBytes.Add((uint32)(len(p)))
 			t.writePkgNum.Add(1)
 		}
-		log.Debug("localAddr: %s, remoteAddr:%s, now:%s, length:%d, err:%v",
+		log.DebugF("localAddr: %s, remoteAddr:%s, now:%s, length:%d, err:%v",
 			t.conn.LocalAddr(), t.conn.RemoteAddr(), currentTime, length, err)
 		return length, perrors.WithStack(err)
 	}
@@ -348,6 +349,8 @@ func (t *gettyTCPConn) close(waitSec int) {
 		if conn, ok := t.conn.(*net.TCPConn); ok {
 			_ = conn.SetLinger(waitSec)
 			_ = conn.Close()
+		} else if muxConn, mOk := t.conn.(*cmux.MuxConn); mOk {
+			_ = muxConn.Close()
 		} else {
 			_ = t.conn.(*tls.Conn).Close()
 		}
@@ -429,7 +432,7 @@ func (u *gettyUDPConn) recv(p []byte) (int, *net.UDPAddr, error) {
 	}
 
 	length, addr, err := u.conn.ReadFromUDP(p) // connected udp also can get return @addr
-	log.Debug("ReadFromUDP(p:%d) = {length:%d, peerAddr:%s, error:%v}", len(p), length, addr, err)
+	log.DebugF("ReadFromUDP(p:%d) = {length:%d, peerAddr:%s, error:%v}", len(p), length, addr, err)
 	if err == nil {
 		u.readBytes.Add(uint32(length))
 	}
@@ -479,7 +482,7 @@ func (u *gettyUDPConn) send(udpCtx interface{}) (int, error) {
 		u.writeBytes.Add((uint32)(len(buf)))
 		u.writePkgNum.Add(1)
 	}
-	log.Debug("WriteMsgUDP(peerAddr:%s) = {length:%d, error:%v}", peerAddr, length, err)
+	log.DebugF("WriteMsgUDP(peerAddr:%s) = {length:%d, error:%v}", peerAddr, length, err)
 
 	return length, perrors.WithStack(err)
 }

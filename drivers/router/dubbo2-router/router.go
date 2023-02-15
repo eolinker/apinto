@@ -5,7 +5,9 @@ import (
 	"github.com/eolinker/apinto/drivers/router/dubbo2-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/service"
+	"github.com/eolinker/apinto/template"
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/eocontext"
 	"strings"
 	"time"
 )
@@ -43,12 +45,13 @@ func (h *DubboRouter) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IW
 func (h *DubboRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 
 	handler := &dubboHandler{
-		completeHandler: newComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
+		completeHandler: manager.NewComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
 		finishHandler:   newFinishHandler(),
 		routerName:      h.name,
 		routerId:        h.id,
 		serviceName:     strings.TrimSuffix(string(cfg.Service), "@service"),
 		disable:         cfg.Disable,
+		filters:         nil,
 	}
 
 	if !cfg.Disable {
@@ -62,10 +65,22 @@ func (h *DubboRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker
 			cfg.Plugins = map[string]*plugin.Config{}
 		}
 
+		var plugins eocontext.IChainPro
+		if cfg.Template != "" {
+			templateWorker, has := workers[cfg.Template]
+			if !has || !templateWorker.CheckSkill(template.TemplateSkill) {
+				return eosc.ErrorNotGetSillForRequire
+			}
+			tp := templateWorker.(template.ITemplate)
+			plugins = tp.Create(h.id, cfg.Plugins)
+		} else {
+			plugins = h.pluginManager.CreateRequest(h.id, cfg.Plugins)
+		}
+
 		serviceHandler := serviceWorker.(service.IService)
 
 		handler.service = serviceHandler
-
+		handler.filters = plugins
 	}
 
 	appendRule := make([]manager.AppendRule, 0, len(cfg.Rules))

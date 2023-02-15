@@ -3,6 +3,8 @@ package manager
 import (
 	"dubbo.apache.org/dubbo-go/v3/protocol"
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
+	"errors"
+	dubbo2_context "github.com/eolinker/apinto/node/dubbo2-context"
 	"github.com/eolinker/apinto/router"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
@@ -11,6 +13,8 @@ import (
 )
 
 var _ IManger = (*dubboManger)(nil)
+
+var completeCaller = NewCompleteCaller()
 
 type IManger interface {
 	Set(id string, port int, serviceName, methodName string, rule []AppendRule, handler router.IRouterHandler) error
@@ -65,18 +69,54 @@ func (d *dubboManger) Delete(id string) {
 	return
 }
 
-func (d *dubboManger) Handler(req *invocation.RPCInvocation) protocol.RPCResult {
+func (d *dubboManger) Handler(port int, req *invocation.RPCInvocation) protocol.RPCResult {
 
-	//	context := dubbo2_context.NewContext(dubboPackage, port, conn)
-	//
-	//	match, has := d.matcher.Match(port, context.HeaderReader())
-	//	if !has {
-	//		//todo 怎样处理 conn.Write() ???
-	//	} else {
-	//		log.Debug("match has:", port)
-	//		match.ServeHTTP(context)
-	//	}
-	//
-	//}
-	return protocol.RPCResult{}
+	ctx := dubbo2_context.NewContext(req, port)
+
+	match, has := d.matcher.Match(port, ctx.HeaderReader())
+	if !has {
+		errHandler := NewErrHandler(errors.New("not found"))
+		ctx.SetFinish(errHandler)
+		ctx.SetCompleteHandler(errHandler)
+
+		globalFilters := d.globalFilters.Load()
+		if globalFilters != nil {
+			if err := (*globalFilters).Chain(ctx, completeCaller); err != nil {
+				ctx.Response().SetBody(Dubbo2ErrorResult(err))
+			}
+		}
+
+	} else {
+		log.Debug("match has:", port)
+		match.ServeHTTP(ctx)
+	}
+
+	finish := ctx.GetFinish()
+	err := finish.Finish(ctx)
+	if err != nil {
+		ctx.Response().SetBody(Dubbo2ErrorResult(err))
+	}
+
+	rpcResult, ok := ctx.Response().GetBody().(protocol.RPCResult)
+	if !ok {
+		rpcResult = Dubbo2ErrorResult(errors.New("no result"))
+	}
+
+	return rpcResult
+}
+
+type ErrHandler struct {
+	err error
+}
+
+func (e *ErrHandler) Complete(ctx eoscContext.EoContext) error {
+	return e.err
+}
+
+func NewErrHandler(err error) *ErrHandler {
+	return &ErrHandler{err: err}
+}
+
+func (e *ErrHandler) Finish(ctx eoscContext.EoContext) error {
+	return e.err
 }

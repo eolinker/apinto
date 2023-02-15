@@ -7,11 +7,15 @@ import (
 var _ dubbo2_context.IRequestReader = (*RequestReader)(nil)
 
 type RequestReader struct {
-	headerReader  dubbo2_context.IHeaderReader
 	serviceReader dubbo2_context.IServiceReader
 	body          interface{}
 	host          string
+	remoteIp      string
 	attachments   map[string]interface{}
+}
+
+func (r *RequestReader) RemoteIp() string {
+	return r.remoteIp
 }
 
 func (r *RequestReader) Host() string {
@@ -25,10 +29,6 @@ func (r *RequestReader) Attachments() map[string]interface{} {
 func (r *RequestReader) Attachment(s string) (interface{}, bool) {
 	v, ok := r.attachments[s]
 	return v, ok
-}
-
-func (r *RequestReader) Header() dubbo2_context.IHeaderReader {
-	return r.headerReader
 }
 
 func (r *RequestReader) Service() dubbo2_context.IServiceReader {

@@ -21,7 +21,7 @@ type Config struct {
 
 // Rule 规则
 type Rule struct {
-	Type  string `json:"type" yaml:"type" label:"类型" enum:"header,query,cookie"`
+	Type  string `json:"type" yaml:"type" label:"类型" enum:"header"`
 	Name  string `json:"name" yaml:"name" label:"参数名"`
 	Value string `json:"value" yaml:"value" label:"值规" `
 }

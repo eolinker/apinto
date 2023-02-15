@@ -18,6 +18,7 @@
 package getty
 
 import (
+	"github.com/eolinker/eosc/log"
 	"reflect"
 )
 
@@ -28,7 +29,6 @@ import (
 )
 
 import (
-	"dubbo.apache.org/dubbo-go/v3/common/logger"
 	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
 	"dubbo.apache.org/dubbo-go/v3/remoting"
 )
@@ -66,11 +66,11 @@ func (p *RpcServerPackageHandler) Write(ss getty.Session, pkg interface{}) ([]by
 		buf, err := (p.server.codec).EncodeResponse(res)
 		bufLength := buf.Len()
 		if bufLength > maxBufLength {
-			logger.Errorf("Data length %d too large, max payload %d", bufLength-impl.HEADER_LENGTH, p.server.conf.GettySessionParam.MaxMsgLen)
+			log.Errorf("Data length %d too large, max payload %d", bufLength-impl.HEADER_LENGTH, p.server.conf.GettySessionParam.MaxMsgLen)
 			return nil, perrors.Errorf("Data length %d too large, max payload %d", bufLength-impl.HEADER_LENGTH, p.server.conf.GettySessionParam.MaxMsgLen)
 		}
 		if err != nil {
-			logger.Warnf("binary.Write(res{%#v}) = err{%#v}", res, perrors.WithStack(err))
+			log.Warnf("binary.Write(res{%#v}) = err{%#v}", res, perrors.WithStack(err))
 			return nil, perrors.WithStack(err)
 		}
 		return buf.Bytes(), nil
@@ -81,16 +81,16 @@ func (p *RpcServerPackageHandler) Write(ss getty.Session, pkg interface{}) ([]by
 		buf, err := (p.server.codec).EncodeRequest(req)
 		bufLength := buf.Len()
 		if bufLength > maxBufLength {
-			logger.Errorf("Data length %d too large, max payload %d", bufLength-impl.HEADER_LENGTH, p.server.conf.GettySessionParam.MaxMsgLen)
+			log.Errorf("Data length %d too large, max payload %d", bufLength-impl.HEADER_LENGTH, p.server.conf.GettySessionParam.MaxMsgLen)
 			return nil, perrors.Errorf("Data length %d too large, max payload %d", bufLength-impl.HEADER_LENGTH, p.server.conf.GettySessionParam.MaxMsgLen)
 		}
 		if err != nil {
-			logger.Warnf("binary.Write(req{%#v}) = err{%#v}", res, perrors.WithStack(err))
+			log.Warnf("binary.Write(req{%#v}) = err{%#v}", res, perrors.WithStack(err))
 			return nil, perrors.WithStack(err)
 		}
 		return buf.Bytes(), nil
 	}
 
-	logger.Errorf("illegal pkg:%+v\n, it is %+v", pkg, reflect.TypeOf(pkg))
+	log.Errorf("illegal pkg:%+v\n, it is %+v", pkg, reflect.TypeOf(pkg))
 	return nil, perrors.New("invalid rpc response")
 }
