@@ -1,16 +1,12 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
 	"io"
+	"log"
 	"time"
 
 	service "github.com/eolinker/apinto/example/grpc/demo_service"
-
-	"google.golang.org/grpc/credentials"
-
-	"google.golang.org/grpc/credentials/insecure"
 
 	"google.golang.org/grpc/metadata"
 
@@ -18,28 +14,9 @@ import (
 	"google.golang.org/grpc" // 引入grpc认证包
 )
 
-func genDialOptions() ([]grpc.DialOption, error) {
-	var opts []grpc.DialOption
-	if insecureVerify {
-		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})))
-	} else {
-		if keyFile != "" && certFIle != "" {
-			certs, err := credentials.NewClientTLSFromFile(certFIle, "")
-			if err != nil {
-				return nil, err
-			}
-			opts = append(opts, grpc.WithTransportCredentials(certs))
-		} else {
-			opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		}
-	}
-	if authority != "" {
-		opts = append(opts, grpc.WithAuthority(authority))
-	}
-	return opts, nil
-}
-
 func CurrentRequest(names []string, md map[string]string) error {
+	log.Println("start current request client,please wait...")
+	defer log.Println("end current request")
 	opts, err := genDialOptions()
 	if err != nil {
 		return err
@@ -81,6 +58,8 @@ func GetStreamClient() (*grpc.ClientConn, service.HelloClient, error) {
 }
 
 func StreamRequest(names []string, md map[string]string) error {
+	log.Println("start stream request client,please wait...")
+	defer log.Println("end stream request")
 	conn, c, err := GetStreamClient()
 	if err != nil {
 		return err

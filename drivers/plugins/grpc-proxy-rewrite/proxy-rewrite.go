@@ -6,7 +6,6 @@ import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 var _ eocontext.IFilter = (*ProxyRewrite)(nil)
@@ -76,5 +75,5 @@ func (p *ProxyRewrite) Destroy() {
 }
 
 func (p *ProxyRewrite) CheckSkill(skill string) bool {
-	return http_service.FilterSkillName == skill
+	return grpc_context.FilterSkillName == skill
 }
