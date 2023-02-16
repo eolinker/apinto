@@ -1,12 +1,9 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
-	"log"
-	"sync"
+	"strings"
 	"time"
 
 	service "github.com/eolinker/apinto/example/grpc/demo_service"
@@ -45,103 +42,81 @@ type Request struct {
 }
 
 func (s *Server) StreamRequest(server service.Hello_StreamRequestServer) error {
-	requestChan := make(chan *Request)
-	return serverRcv(server, requestChan, "streamRequest")
+	trailingMD, ok := metadata.FromIncomingContext(server.Context())
+	if ok {
+		grpc.SetTrailer(server.Context(), trailingMD)
+	}
+	msg := make([]string, 0, 10)
+	for {
+		req, err := server.Recv()
+		if err == io.EOF {
+			// 开始返回数据
+			server.SendMsg(&service.HelloResponse{Msg: strings.Join(msg, "\n")})
+			return nil
+		}
+		if err != nil {
+			return nil
+		}
+		msg = append(msg, req.Name)
+	}
 }
 
 func (s *Server) StreamResponse(request *service.HelloRequest, server service.Hello_StreamResponseServer) error {
-
-	requestChan := make(chan *Request)
-	ticket := time.NewTicker(1 * time.Second)
-	defer ticket.Stop()
-	ctx, _ := context.WithTimeout(server.Context(), 10*time.Second)
-	go func() {
-		for {
-			select {
-			case <-ticket.C:
-				requestChan <- &Request{Name: request.Name}
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-	return serverSend(ctx, server, requestChan, "streamResponse")
-}
-
-func serverRcv(server service.Hello_StreamRequestServer, requestChan chan *Request, method string) error {
-	go func() {
-		for {
-			req, err := server.Recv()
-			if err != nil {
-				close(requestChan)
-				return
-			}
-			requestChan <- &Request{
-				Name: req.Name,
-				err:  nil,
-			}
-		}
-	}()
-	ticket := time.NewTicker(3 * time.Second)
-	data := map[string]string{}
+	trailingMD, ok := metadata.FromIncomingContext(server.Context())
+	if ok {
+		grpc.SetTrailer(server.Context(), trailingMD)
+	}
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	ticker := time.NewTicker(1 * time.Second)
 	for {
 		select {
-		case <-ticket.C:
-			// 超时客户端未关闭，则服务端自行关闭，且将数据返回
-			content, _ := json.Marshal(data)
-			err := server.SendAndClose(&service.HelloResponse{Msg: string(content)})
-			if err != nil {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			err := server.Send(&service.HelloResponse{
+				Msg: fmt.Sprintf("now is %s,name is %s", time.Now().Format("2006-01-02 15:04:05"), request.Name),
+			})
+			if err != nil && err != io.EOF {
 				return err
 			}
 			return nil
-		case req, ok := <-requestChan:
-			{
-				if !ok {
-					continue
-				}
-				if req.err != nil {
-					return req.err
-				}
-
-				trailingMD, ok := metadata.FromIncomingContext(server.Context())
-				if ok {
-					server.SetTrailer(trailingMD)
-				}
-			}
 		}
 	}
 }
 
-func serverSend(ctx context.Context, server service.Hello_StreamResponseServer, requestChan chan *Request, method string) error {
-	newCtx, _ := context.WithTimeout(ctx, 3*time.Second)
+func serverStream(server service.Hello_StreamRequestServer, responseServer service.Hello_StreamResponseServer) error {
+	ret := make(chan error)
+	go func() {
+		defer close(ret)
+		for {
+			req, err := server.Recv()
+			if err != nil {
+				ret <- err
+				return
+			}
+			err = responseServer.Send(&service.HelloResponse{
+				Msg: req.Name,
+			})
+			if err != nil {
+				ret <- err
+				return
+			}
+		}
+	}()
+	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 	for {
 		select {
-		case req, ok := <-requestChan:
-			{
-				if !ok {
-					continue
-				}
-				if req.err != nil {
-					return req.err
-				}
-				now := time.Now().Format("2006-01-02 15:04:05")
-
-				trailingMD, ok := metadata.FromIncomingContext(server.Context())
-				if ok {
-					server.SetTrailer(trailingMD)
-				}
-				err := server.Send(&service.HelloResponse{Msg: fmt.Sprintf("Welcome!Now time is %s", now)})
-				if err != nil {
-					if err != io.EOF {
-						return err
-					}
-					return errors.New("close stream")
-				}
-			}
-		case <-newCtx.Done():
-			{
+		case <-ctx.Done():
+			server.SendAndClose(&service.HelloResponse{Msg: "close stream"})
+			return nil
+		case err, ok := <-ret:
+			if !ok {
 				return nil
 			}
+			if err != io.EOF {
+				return err
+			}
+			return nil
 		}
 	}
 }
@@ -155,27 +130,9 @@ func (s *AllStreamRequestServer) SendAndClose(r *service.HelloResponse) error {
 }
 
 func (s *Server) AllStream(server service.Hello_AllStreamServer) error {
-	requestChan := make(chan *Request)
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		err := serverSend(server.Context(), server, requestChan, "allStream")
-		if err != nil {
-			log.Println(err)
-			return
-		}
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		err := serverRcv(&AllStreamRequestServer{server}, requestChan, "allStream")
-		if err != nil {
-			log.Println(err)
-			return
-		}
-	}()
-	wg.Wait()
-	return nil
+	trailingMD, ok := metadata.FromIncomingContext(server.Context())
+	if ok {
+		grpc.SetTrailer(server.Context(), trailingMD)
+	}
+	return serverStream(&AllStreamRequestServer{server}, server)
 }

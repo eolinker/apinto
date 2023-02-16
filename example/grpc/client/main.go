@@ -1,14 +1,19 @@
 package main
 
-var requestFunc = []func([]string, map[string]string) error{
-	CurrentRequest,
-	StreamRequest,
-	StreamResponse,
-	AllStream,
-}
+import "log"
 
 func main() {
 	Parse()
+	conn, client, err := NewClient()
+	if err != nil {
+		log.Println("create grpc client error:", err)
+		return
+	}
+	grpcClient := &Client{
+		client: client,
+		conn:   conn,
+	}
+	defer grpcClient.Close()
 	md := map[string]string{
 		"app": "apinto",
 	}
@@ -16,7 +21,8 @@ func main() {
 		"apinto",
 		"eolink",
 	}
-	for _, f := range requestFunc {
-		f(names, md)
-	}
+	grpcClient.CurrentRequest(names, md)
+	grpcClient.StreamRequest(names, md)
+	grpcClient.StreamResponse(names, md)
+	grpcClient.AllStream(names, md)
 }
