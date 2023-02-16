@@ -18,6 +18,7 @@ import (
 	plugin_app "github.com/eolinker/apinto/drivers/plugins/app"
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
+	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
 	grpc_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/grpc-proxy-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
@@ -128,5 +129,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	fuse_strategy.Register(extenderRegister)
 
 	grpc_proxy_rewrite.Register(extenderRegister)
+
+	dubbo2_proxy_rewrite.Register(extenderRegister)
 
 }
