@@ -4,11 +4,10 @@
 // - protoc             v3.19.4
 // source: service.proto
 
-package service
+package demo_service
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
