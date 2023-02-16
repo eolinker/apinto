@@ -1,0 +1,10 @@
+dubbo:
+  registry: none
+  protocols:
+    dubbo:
+      name: dubbo
+      port: 20000
+  provider:
+    services:
+      Server:
+        interface: "api.Server"
