@@ -1,16 +1,12 @@
 package main
 
 import (
-	"crypto/tls"
-	"fmt"
 	"io"
+	"log"
+	"strings"
 	"time"
 
 	service "github.com/eolinker/apinto/example/grpc/demo_service"
-
-	"google.golang.org/grpc/credentials"
-
-	"google.golang.org/grpc/credentials/insecure"
 
 	"google.golang.org/grpc/metadata"
 
@@ -18,55 +14,34 @@ import (
 	"google.golang.org/grpc" // 引入grpc认证包
 )
 
-func genDialOptions() ([]grpc.DialOption, error) {
-	var opts []grpc.DialOption
-	if insecureVerify {
-		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})))
-	} else {
-		if keyFile != "" && certFIle != "" {
-			certs, err := credentials.NewClientTLSFromFile(certFIle, "")
-			if err != nil {
-				return nil, err
-			}
-			opts = append(opts, grpc.WithTransportCredentials(certs))
-		} else {
-			opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		}
-	}
-	if authority != "" {
-		opts = append(opts, grpc.WithAuthority(authority))
-	}
-	return opts, nil
+type Client struct {
+	client service.HelloClient
+	conn   *grpc.ClientConn
 }
 
-func CurrentRequest(names []string, md map[string]string) error {
-	opts, err := genDialOptions()
-	if err != nil {
-		return err
-	}
-	conn, err := grpc.Dial(address, opts...)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
+func (c *Client) Close() {
+	c.conn.Close()
+}
 
-	// 初始化客户端
-	c := service.NewHelloClient(conn)
+func (c *Client) CurrentRequest(names []string, md map[string]string) error {
+	log.Println("start current request client,please wait...")
+	defer log.Println("end current request")
+
 	ctx := metadata.NewOutgoingContext(context.Background(), metadata.New(md))
 	var header, trailer metadata.MD
 	for _, name := range names {
 		// 调用方法
-		response, err := c.Hello(ctx, &service.HelloRequest{Name: name}, grpc.Header(&header), grpc.Trailer(&trailer))
-		fmt.Println("err:", err)
-		fmt.Println("header:", header)
-		fmt.Println("trailing:", trailer)
-		fmt.Println("msg:", response.GetMsg())
+		response, err := c.client.Hello(ctx, &service.HelloRequest{Name: name}, grpc.Header(&header), grpc.Trailer(&trailer))
+		log.Println("err:", err)
+		log.Println("header:", header)
+		log.Println("trailing:", trailer)
+		log.Println("msg:", response.GetMsg())
 	}
 
 	return nil
 }
 
-func GetStreamClient() (*grpc.ClientConn, service.HelloClient, error) {
+func NewClient() (*grpc.ClientConn, service.HelloClient, error) {
 	opts, err := genDialOptions()
 	if err != nil {
 		return nil, nil, err
@@ -80,102 +55,103 @@ func GetStreamClient() (*grpc.ClientConn, service.HelloClient, error) {
 	return conn, service.NewHelloClient(conn), nil
 }
 
-func StreamRequest(names []string, md map[string]string) error {
-	conn, c, err := GetStreamClient()
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
+func (c *Client) StreamRequest(names []string, md map[string]string) error {
+	log.Println("start stream request client,please wait...")
+	defer log.Println("end stream request")
+
 	ctx := metadata.NewOutgoingContext(context.Background(), metadata.New(md))
 	var header, trailer metadata.MD
 	// 调用方法
-	client, err := c.StreamRequest(ctx, grpc.Header(&header), grpc.Trailer(&trailer))
+	client, err := c.client.StreamRequest(ctx, grpc.Header(&header), grpc.Trailer(&trailer))
 	if err != nil {
 		return err
 	}
-	defer func() {
-		reply, err := client.CloseAndRecv()
-		fmt.Println("err:", err)
-		fmt.Println("header:", header)
-		fmt.Println("trailing:", trailer)
-		fmt.Println("reply", reply)
-	}()
+
 	for _, name := range names {
 		err = client.Send(&service.HelloRequest{Name: name})
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 	}
-	time.Sleep(5 * time.Second)
+	reply, err := client.CloseAndRecv()
+	log.Println("err:", err)
+	log.Println("header:", header)
+	log.Println("trailing:", trailer)
+	log.Println("reply", reply.GetMsg())
 	return nil
 }
 
-func StreamResponse(names []string, md map[string]string) error {
-	conn, c, err := GetStreamClient()
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
+func (c *Client) StreamResponse(names []string, md map[string]string) error {
+	log.Println("start stream response client,please wait...")
+	defer log.Println("end stream response")
 	ctx := metadata.NewOutgoingContext(context.Background(), metadata.New(md))
 
 	// 调用方法
-	for _, name := range names {
-		var header, trailer metadata.MD
-		client, err := c.StreamResponse(ctx, &service.HelloRequest{Name: name}, grpc.Header(&header), grpc.Trailer(&trailer))
-		if err != nil {
-			return err
-		}
-		doAcceptResponse(client, header, trailer)
-	}
-
-	return nil
-}
-
-func AllStream(names []string, md map[string]string) error {
-	conn, c, err := GetStreamClient()
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	ctx := metadata.NewOutgoingContext(context.Background(), metadata.New(md))
-
 	var header, trailer metadata.MD
-	client, err := c.AllStream(ctx, grpc.Header(&header), grpc.Trailer(&trailer))
+	client, err := c.client.StreamResponse(ctx, &service.HelloRequest{Name: strings.Join(names, ",")}, grpc.Header(&header), grpc.Trailer(&trailer))
 	if err != nil {
 		return err
 	}
-	// 调用方法
-	for _, name := range names {
-		err = client.Send(&service.HelloRequest{Name: name})
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-	doAcceptResponse(client, header, trailer)
-	return nil
-}
-
-func doAcceptResponse(client service.Hello_StreamResponseClient, header, trailer metadata.MD) {
 	data := make(map[string]string)
-	defer func() {
-		err := client.CloseSend()
-		if err != nil {
-			fmt.Println("close stream response error:", err)
-		}
-		fmt.Println("header:", header)
-		fmt.Println("trailing:", trailer)
-		fmt.Println("reply", data)
-
-	}()
 	for {
 		reply, err := client.Recv()
 		if err != nil {
 			if err != io.EOF {
-				fmt.Println(err)
+				log.Println("err:", err)
 			}
-			return
+			break
 		}
 		now := time.Now()
 		data[now.Format("2006-01-02 15:04:05.000")] = reply.Msg
 	}
+
+	log.Println("header:", header)
+	log.Println("trailing:", trailer)
+	log.Println("reply", data)
+	return nil
+}
+
+func (c *Client) AllStream(names []string, md map[string]string) error {
+	log.Println("start all stream client,please wait...")
+	defer log.Println("end all stream")
+	ctx := metadata.NewOutgoingContext(context.Background(), metadata.New(md))
+
+	var header, trailer metadata.MD
+	client, err := c.client.AllStream(ctx, grpc.Header(&header), grpc.Trailer(&trailer))
+	if err != nil {
+		return err
+	}
+	go func() {
+		for {
+			// 调用方法
+			for _, name := range names {
+				err = client.Send(&service.HelloRequest{Name: name})
+				if err != nil {
+					if err != io.EOF {
+						log.Println("err:", err)
+					}
+					return
+				}
+			}
+			time.Sleep(1 * time.Second)
+		}
+	}()
+
+	data := make(map[string]string)
+	for {
+		reply, err := client.Recv()
+		if err != nil {
+			if err != io.EOF {
+				log.Println("err:", err)
+			}
+			break
+		}
+		now := time.Now()
+		data[now.Format("2006-01-02 15:04:05.000")] = reply.Msg
+	}
+
+	log.Println("header:", header)
+	log.Println("trailing:", trailer)
+	log.Println("reply", data)
+	return nil
 }
