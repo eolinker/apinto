@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"google.golang.org/grpc/metadata"
 
 	"google.golang.org/grpc/peer"
@@ -66,13 +68,16 @@ func (c *Context) InsecureCertificateVerify(b bool) {
 }
 
 func NewContext(srv interface{}, stream grpc.ServerStream) *Context {
+	now := time.Now()
 	ctx, cancel := context.WithCancel(stream.Context())
 	var addr net.Addr = zeroTCPAddr
 	p, has := peer.FromContext(ctx)
 	if has {
 		addr = p.Addr
 	}
-	return &Context{
+
+	newCtx := &Context{
+		requestId:    uuid.New().String(),
 		ctx:          ctx,
 		cancel:       cancel,
 		addr:         addr,
@@ -84,6 +89,8 @@ func NewContext(srv interface{}, stream grpc.ServerStream) *Context {
 		labels:       map[string]string{},
 		errChan:      make(chan error),
 	}
+	newCtx.WithValue("request_time", now)
+	return newCtx
 }
 
 func (c *Context) RequestId() string {

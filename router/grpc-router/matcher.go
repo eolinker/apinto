@@ -10,7 +10,6 @@ import (
 
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/router"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
 )
 
@@ -180,7 +179,7 @@ func (as AppendMatchers) Swap(i, j int) {
 }
 
 func (a *AppendMatcher) Match(port int, req interface{}) (router.IRouterHandler, bool) {
-	request, ok := req.(http_service.IRequestReader)
+	request, ok := req.(grpc_context.IRequest)
 	if !ok {
 		return nil, false
 	}
