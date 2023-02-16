@@ -51,8 +51,8 @@ type ClientPool struct {
 	next     int64
 	cap      int64
 	connCont int64
-	sync.Mutex
-	conns []*grpc.ClientConn
+	locker   sync.Mutex
+	conns    []*grpc.ClientConn
 }
 
 func (cc *ClientPool) ConnCount() int64 {
@@ -84,8 +84,8 @@ func (cc *ClientPool) getConn() (*grpc.ClientConn, error) {
 		atomic.AddInt64(&cc.connCont, -1)
 	}
 
-	cc.Lock()
-	defer cc.Unlock()
+	cc.locker.Lock()
+	defer cc.locker.Unlock()
 
 	//double check, Prevent have been initialized
 	if conn != nil && cc.checkState(conn) == nil {
@@ -135,8 +135,8 @@ func (cc *ClientPool) connect() (*grpc.ClientConn, error) {
 }
 
 func (cc *ClientPool) Close() {
-	cc.Lock()
-	defer cc.Unlock()
+	cc.locker.Lock()
+	defer cc.locker.Unlock()
 
 	for _, conn := range cc.conns {
 		if conn == nil {

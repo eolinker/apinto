@@ -4,9 +4,10 @@ import (
 	"sort"
 	"strings"
 
+	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
+
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/router"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 type RuleType = string
@@ -46,11 +47,11 @@ func (h *HeaderChecker) Weight() int {
 }
 
 func (h *HeaderChecker) MatchCheck(req interface{}) bool {
-	request, ok := req.(http_service.IRequestReader)
+	request, ok := req.(grpc_context.IRequest)
 	if !ok {
 		return false
 	}
-	v := request.Header().GetHeader(h.name)
+	v := request.Headers().Get(h.name)
 	has := len(v) > 0
-	return h.Checker.Check(v, has)
+	return h.Checker.Check(strings.Join(v, ";"), has)
 }
