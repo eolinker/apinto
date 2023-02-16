@@ -14,7 +14,7 @@ func genDialOptions() ([]grpc.DialOption, error) {
 	if insecureVerify {
 		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})))
 	} else {
-		if keyFile != "" && certFIle != "" {
+		if certFIle != "" {
 			certs, err := credentials.NewClientTLSFromFile(certFIle, "")
 			if err != nil {
 				return nil, err
