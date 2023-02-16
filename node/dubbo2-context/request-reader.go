@@ -14,7 +14,11 @@ type RequestReader struct {
 	attachments   map[string]interface{}
 }
 
-func (r *RequestReader) RemoteIp() string {
+func NewRequestReader(serviceReader dubbo2_context.IServiceReader, host string, remoteIp string, attachments map[string]interface{}) *RequestReader {
+	return &RequestReader{serviceReader: serviceReader, host: host, remoteIp: remoteIp, attachments: attachments}
+}
+
+func (r *RequestReader) RemoteIP() string {
 	return r.remoteIp
 }
 

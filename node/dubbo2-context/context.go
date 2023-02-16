@@ -17,6 +17,7 @@ import (
 	"github.com/eolinker/eosc/utils/config"
 	"github.com/google/uuid"
 	"net"
+	"net/netip"
 	"reflect"
 	"strings"
 	"time"
@@ -25,6 +26,10 @@ import (
 type DubboParamBody struct {
 	typesList  []string
 	valuesList []hessian.Object
+}
+
+func NewDubboParamBody(typesList []string, valuesList []hessian.Object) *DubboParamBody {
+	return &DubboParamBody{typesList: typesList, valuesList: valuesList}
 }
 
 var _ dubbo2_context.IDubbo2Context = (*DubboContext)(nil)
@@ -54,34 +59,21 @@ func (d *DubboContext) Response() dubbo2_context.IResponse {
 
 func NewContext(req *invocation.RPCInvocation, port int) dubbo2_context.IDubbo2Context {
 
+	t := time.Now()
+
 	method, typesList, valuesList := argumentsUnmarshal(req.Arguments())
 
-	serviceReader := &RequestServiceReader{
-		path:        req.GetAttachmentWithDefaultValue(constant.PathKey, ""),
-		serviceName: req.GetAttachmentWithDefaultValue(constant.InterfaceKey, ""),
-		group:       req.GetAttachmentWithDefaultValue(constant.GroupKey, ""),
-		version:     req.GetAttachmentWithDefaultValue(constant.VersionKey, ""),
-		method:      method,
-	}
+	path := req.GetAttachmentWithDefaultValue(constant.PathKey, "")
+	serviceName := req.GetAttachmentWithDefaultValue(constant.InterfaceKey, "")
+	group := req.GetAttachmentWithDefaultValue(constant.GroupKey, "")
+	version := req.GetAttachmentWithDefaultValue(constant.VersionKey, "")
 
-	serviceWriter := &RequestServiceWrite{
-		path:        serviceReader.path,
-		serviceName: serviceReader.serviceName,
-		group:       serviceReader.group,
-		version:     serviceReader.version,
-		method:      serviceReader.method,
-		timeout:     serviceReader.timeout,
-	}
+	serviceReader := NewRequestServiceReader(path, serviceName, group, version, method)
 
-	proxy := &Proxy{
-		serviceWriter: serviceWriter,
-		attachments:   req.Attachments(),
-	}
+	serviceWriter := NewRequestServiceWrite(path, serviceName, group, version, method)
 
-	proxy.SetParam(&DubboParamBody{
-		typesList:  typesList,
-		valuesList: valuesList,
-	})
+	paramBody := NewDubboParamBody(typesList, valuesList)
+	proxy := NewProxy(serviceWriter, paramBody, req.Attachments())
 
 	copyMaps := utils.CopyMaps(req.Attachments())
 
@@ -90,24 +82,20 @@ func NewContext(req *invocation.RPCInvocation, port int) dubbo2_context.IDubbo2C
 	remoteAddr, _ := req.GetAttachment(constant.RemoteAddr)
 	remoteIp := remoteAddr[:strings.Index(remoteAddr, ":")]
 
-	requestReader := &RequestReader{
-		serviceReader: serviceReader,
-		host:          localAddr,
-		remoteIp:      remoteIp,
-		attachments:   copyMaps,
-	}
+	requestReader := NewRequestReader(serviceReader, localAddr, remoteIp, copyMaps)
 
-	netIP := net.ParseIP(localAddr[:strings.Index(localAddr, ":")])
+	addr, _ := netip.ParseAddrPort(localAddr)
 
-	t := time.Now()
+	addrPort := net.TCPAddrFromAddrPort(addr)
+
 	dubboContext := &DubboContext{
 		labels:        make(map[string]string),
 		port:          port,
 		requestID:     uuid.New().String(),
 		proxy:         proxy,
 		requestReader: requestReader,
-		netIP:         netIP,
-		localAddr:     &net.TCPAddr{IP: netIP, Port: port},
+		netIP:         addrPort.IP,
+		localAddr:     addrPort,
 		acceptTime:    t,
 		response:      &Response{},
 	}

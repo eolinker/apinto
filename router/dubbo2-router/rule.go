@@ -3,10 +3,13 @@ package dubbo2_router
 import (
 	"errors"
 	"fmt"
-	"github.com/eolinker/apinto/checker"
-	"github.com/eolinker/apinto/router"
 	"sort"
 	"strconv"
+
+	"github.com/eolinker/eosc/log"
+
+	"github.com/eolinker/apinto/checker"
+	"github.com/eolinker/apinto/router"
 )
 
 var ErrorDuplicate = errors.New("duplicate")
@@ -15,11 +18,56 @@ type Root struct {
 	ports map[int]*Ports
 }
 
+func (r *Root) Build() router.IMatcher {
+
+	portsHandlers := make(map[string]router.IMatcher)
+	for p, c := range r.ports {
+		name := strconv.Itoa(p)
+		if p == 0 {
+			name = router.All
+		}
+		portsHandlers[name] = c.Build()
+	}
+	return newPortMatcher(portsHandlers)
+}
+
 type Ports struct {
 	hosts map[string]*Hosts
 }
+
+func (p *Ports) Build() router.IMatcher {
+	hostMatchers := make(map[string]router.IMatcher)
+	for h, c := range p.hosts {
+		hostMatchers[h] = c.Build()
+	}
+	return newHostMatcher(hostMatchers)
+}
+
 type Hosts struct {
 	paths map[string]*Paths
+}
+
+func (h *Hosts) Build() router.IMatcher {
+	checkers := make([]*CheckerHandler, 0, len(h.paths))
+	equals := make(map[string]router.IMatcher, len(h.paths))
+	var all router.IMatcher
+	for _, next := range h.paths {
+		matcher := next.Build()
+		if next.checker.CheckType() == checker.CheckTypeEqual {
+			equals[next.checker.Value()] = matcher
+			continue
+		}
+		if next.checker.CheckType() == checker.CheckTypeAll {
+			all = next.Build()
+			continue
+		}
+
+		checkers = append(checkers, &CheckerHandler{
+			checker: next.checker,
+			next:    matcher,
+		})
+	}
+	return NewPathMatcher(equals, checkers, all)
 }
 
 type Paths struct {
@@ -27,10 +75,39 @@ type Paths struct {
 	checker  checker.Checker
 }
 
+func (p *Paths) Build() router.IMatcher {
+	if len(p.handlers) == 0 {
+		return &EmptyMatcher{handler: nil, has: false}
+	}
+
+	if all, has := p.handlers[router.All]; has {
+		if len(p.handlers) == 1 {
+			return &EmptyMatcher{handler: all.handler, has: true}
+		}
+	}
+
+	nexts := make(AppendMatchers, 0, len(p.handlers))
+	for _, h := range p.handlers {
+		nexts = append(nexts, &AppendMatcher{
+			handler:  h.handler,
+			checkers: Parse(h.rules),
+		})
+	}
+	sort.Sort(nexts)
+	return nexts
+}
+
 type Handler struct {
 	id      string
 	handler router.IRouterHandler
 	rules   []router.AppendRule
+}
+
+func (h *Handler) Build() router.IMatcher {
+	return &AppendMatcher{
+		handler:  h.handler,
+		checkers: Parse(h.rules),
+	}
 }
 
 func NewRoot() *Root {
@@ -60,58 +137,6 @@ func NewPaths(checker checker.Checker) *Paths {
 func NewHandler(id string, handler router.IRouterHandler, appends []router.AppendRule) *Handler {
 	return &Handler{id: id, handler: handler, rules: appends}
 }
-
-func (r *Root) Build() router.IMatcher {
-
-	portsHandlers := make(map[string]router.IMatcher)
-	for p, c := range r.ports {
-		name := strconv.Itoa(p)
-		if p == 0 {
-			name = router.All
-		}
-		portsHandlers[name] = c.Build()
-	}
-	return newPortMatcher(portsHandlers)
-}
-
-func (p *Ports) Build() router.IMatcher {
-	hostMatchers := make(map[string]router.IMatcher)
-	for h, c := range p.hosts {
-		hostMatchers[h] = c.Build()
-	}
-	return newHostMatcher(hostMatchers)
-}
-
-func (h *Hosts) Build() router.IMatcher {
-	pathMatcher := make(map[string]router.IMatcher)
-	for m, c := range h.paths {
-		pathMatcher[m] = c.Build()
-	}
-	return newPathMatcher(pathMatcher)
-}
-
-func (p *Paths) Build() router.IMatcher {
-	if len(p.handlers) == 0 {
-		return &EmptyMatcher{handler: nil, has: false}
-	}
-
-	if all, has := p.handlers[router.All]; has {
-		if len(p.handlers) == 1 {
-			return &EmptyMatcher{handler: all.handler, has: true}
-		}
-	}
-
-	nexts := make(AppendMatchers, 0, len(p.handlers))
-	for _, h := range p.handlers {
-		nexts = append(nexts, &AppendMatcher{
-			handler:  h.handler,
-			checkers: Parse(h.rules),
-		})
-	}
-	sort.Sort(nexts)
-	return nexts
-}
-
 func (r *Root) Add(id string, handler router.IRouterHandler, port int, service string, method string, append []router.AppendRule) error {
 	if r.ports == nil {
 		r.ports = make(map[int]*Ports)
@@ -130,7 +155,6 @@ func (r *Root) Add(id string, handler router.IRouterHandler, port int, service s
 
 func (p *Ports) Add(id string, handler router.IRouterHandler, service string, method string, append []router.AppendRule) error {
 	return p.add(id, handler, router.All, service, method, append)
-
 }
 func (p *Ports) add(id string, handler router.IRouterHandler, host string, services string, method string, append []router.AppendRule) error {
 	hN, has := p.hosts[host]
@@ -146,15 +170,19 @@ func (p *Ports) add(id string, handler router.IRouterHandler, host string, servi
 }
 
 func (h *Hosts) add(id string, handler router.IRouterHandler, service string, method string, append []router.AppendRule) error {
+	if method == "" {
+		method = "*"
+	}
 	path := fmt.Sprintf("%s/%s", service, method)
 	ck, err := checker.Parse(path)
 	if err != nil {
 		return fmt.Errorf("path=%s %w", path, err)
 	}
-	p, has := h.paths[path]
+	log.Debug("path key is:", ck.Key())
+	p, has := h.paths[ck.Key()]
 	if !has {
 		p = NewPaths(ck)
-		h.paths[path] = p
+		h.paths[ck.Key()] = p
 	}
 
 	err = p.Add(id, handler, append)
@@ -184,4 +212,8 @@ func (p *Paths) Add(id string, handler router.IRouterHandler, append []router.Ap
 	}
 	p.handlers[key] = NewHandler(id, handler, append)
 	return nil
+}
+
+type IBuilder interface {
+	Build() router.IMatcher
 }

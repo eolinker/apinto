@@ -2,7 +2,6 @@ package dubbo2_context
 
 import (
 	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
-	"time"
 )
 
 var _ dubbo2_context.IServiceWriter = (*RequestServiceWrite)(nil)
@@ -13,7 +12,10 @@ type RequestServiceWrite struct {
 	group       string
 	version     string
 	method      string
-	timeout     time.Duration
+}
+
+func NewRequestServiceWrite(path string, serviceName string, group string, version string, method string) *RequestServiceWrite {
+	return &RequestServiceWrite{path: path, serviceName: serviceName, group: group, version: version, method: method}
 }
 
 func (r *RequestServiceWrite) Path() string {
@@ -36,10 +38,6 @@ func (r *RequestServiceWrite) Method() string {
 	return r.method
 }
 
-func (r *RequestServiceWrite) Timeout() time.Duration {
-	return r.timeout
-}
-
 func (r *RequestServiceWrite) SetPath(path string) {
 	r.path = path
 
@@ -59,8 +57,4 @@ func (r *RequestServiceWrite) SetVersion(s string) {
 
 func (r *RequestServiceWrite) SetMethod(s string) {
 	r.method = s
-}
-
-func (r *RequestServiceWrite) SetTimeout(t time.Duration) {
-	r.timeout = t
 }

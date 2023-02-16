@@ -10,6 +10,10 @@ type Proxy struct {
 	attachments   map[string]interface{}
 }
 
+func NewProxy(serviceWriter dubbo2_context.IServiceWriter, param interface{}, attachments map[string]interface{}) *Proxy {
+	return &Proxy{serviceWriter: serviceWriter, param: param, attachments: attachments}
+}
+
 func (p *Proxy) GetParam() interface{} {
 	return p.param
 }
