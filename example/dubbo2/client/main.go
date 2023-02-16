@@ -72,7 +72,7 @@ func ComplexServer() {
 
 	valuesList = append(valuesList, map[string]interface{}{"time": time.Now(), "addr": "192.168.0.1", "server": server})
 
-	resp, err := client("172.18.166.219:20000", "api.Server", "ComplexServer", time.Second*3, types, valuesList)
+	resp, err := client("127.0.0.1:20000", "api.Server", "ComplexServer", time.Second*3, types, valuesList)
 
 	if err != nil {
 		fmt.Println(err)
