@@ -12,6 +12,7 @@ import (
 	"github.com/eolinker/apinto/drivers/output/httpoutput"
 	"github.com/eolinker/apinto/drivers/output/kafka"
 	"github.com/eolinker/apinto/drivers/output/nsq"
+	"github.com/eolinker/apinto/drivers/output/prometheus"
 	"github.com/eolinker/apinto/drivers/output/syslog"
 	plugin_manager "github.com/eolinker/apinto/drivers/plugin-manager"
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
@@ -78,6 +79,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	httpoutput.Register(extenderRegister)
 	kafka.Register(extenderRegister)
 	syslog.Register(extenderRegister)
+	prometheus.Register(extenderRegister)
 
 	//app
 	app.Register(extenderRegister)
