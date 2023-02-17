@@ -72,6 +72,7 @@ func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 }
 
 func (h *HttpOutput) Stop() error {
+	scopeManager.Del(h.Id())
 	hd := h.handler
 	if hd != nil {
 		h.handler = nil

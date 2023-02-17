@@ -1,12 +1,11 @@
-package http_router
+package router
 
 import (
 	eoscContext "github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 type IMatcher interface {
-	Match(port int, request http_service.IRequestReader) (IRouterHandler, bool)
+	Match(port int, request interface{}) (IRouterHandler, bool)
 }
 
 type IRouterHandler interface {

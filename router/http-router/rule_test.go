@@ -2,18 +2,20 @@ package http_router
 
 import (
 	"testing"
+
+	"github.com/eolinker/apinto/router"
 )
 
 func TestRoot_Add(t *testing.T) {
 
 	type args struct {
 		id      string
-		handler IRouterHandler
+		handler router.IRouterHandler
 		port    int
 		hosts   []string
 		methods []string
 		path    string
-		append  []AppendRule
+		append  []router.AppendRule
 	}
 	var tests = []struct {
 		name    string
