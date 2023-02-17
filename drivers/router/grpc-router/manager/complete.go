@@ -36,7 +36,9 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 
 	balance := ctx.GetBalance()
 	app := ctx.GetApp()
-
+	if app.Scheme() == "https" {
+		ctx.EnableTls(true)
+	}
 	defer func() {
 		//设置上游响应总时间, 单位为毫秒
 		ctx.Response().SetErr(lastErr)

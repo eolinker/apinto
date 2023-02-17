@@ -20,12 +20,11 @@ func check(v interface{}) (*Config, error) {
 func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
 	pw := &ProxyRewrite{
-		WorkerBase:      drivers.Worker(id, name),
-		headers:         conf.Headers,
-		tls:             conf.Tls,
-		skipCertificate: conf.SkipCertificate,
-		service:         conf.Service,
-		method:          conf.Method,
+		WorkerBase: drivers.Worker(id, name),
+		headers:    conf.Headers,
+		service:    conf.Service,
+		method:     conf.Method,
+		authority:  strings.TrimSpace(conf.Authority),
 	}
 
 	return pw, nil

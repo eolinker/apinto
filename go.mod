@@ -6,7 +6,7 @@ require (
 	github.com/Shopify/sarama v1.32.0
 	github.com/coocood/freecache v1.2.2
 	github.com/dubbogo/gost v1.11.25
-	github.com/eolinker/eosc v0.9.0
+	github.com/eolinker/eosc v0.9.1
 	github.com/fasthttp/websocket v1.5.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/google/uuid v1.3.0

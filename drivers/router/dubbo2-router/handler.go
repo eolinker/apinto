@@ -2,6 +2,7 @@ package dubbo2_router
 
 import (
 	"errors"
+
 	"github.com/eolinker/apinto/drivers/router/dubbo2-router/manager"
 	"github.com/eolinker/apinto/router"
 	"github.com/eolinker/apinto/service"
@@ -41,7 +42,7 @@ func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
 	ctx.SetLabel("api_id", d.routerId)
 	ctx.SetLabel("service", d.serviceName)
 	ctx.SetLabel("service_id", d.service.Id())
-	ctx.SetLabel("ip", dubboCtx.HeaderReader().RemoteIp())
+	ctx.SetLabel("ip", dubboCtx.HeaderReader().RemoteIP())
 
 	ctx.SetCompleteHandler(d.completeHandler)
 	ctx.SetFinish(d.finishHandler)

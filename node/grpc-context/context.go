@@ -260,32 +260,3 @@ func (c *Context) reset() {
 
 	pool.Put(c)
 }
-
-//func (c *Context) dial(address string, timeout time.Duration) (*grpc.ClientConn, error) {
-//	return clientPool.Get(address, c.tls, c.proxy.Host()).Get()
-//
-//	//opts := make([]grpc.DialOption, 0, 5)
-//	//if c.tls {
-//	//	opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: c.insecureCertificateVerify})))
-//	//} else {
-//	//	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-//	//}
-//	//opts = append(opts,
-//	//	//grpc.WithBlock(),
-//	//	grpc.WithKeepaliveParams(keepalive.ClientParameters{
-//	//		Time:    defaultKeepAlive,
-//	//		Timeout: defaultKeepAliveTimeout,
-//	//	}),
-//	//)
-//	//
-//	//if c.proxy.Host() != "" {
-//	//	opts = append(opts, grpc.WithAuthority(c.proxy.Host()))
-//	//}
-//	////ctx, cancel := context.WithTimeout(context.TODO(), timeout)
-//	////defer cancel()
-//	//conn, err := grpc.Dial(address, opts...)
-//	//if err != nil {
-//	//	return nil, err
-//	//}
-//	//return conn, nil
-//}
