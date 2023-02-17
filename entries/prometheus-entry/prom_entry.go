@@ -1,20 +1,20 @@
 package prometheus_entry
 
 import (
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 type IPromEntry interface {
 	GetValue(key string) float64
 	GetLabel(key string) string
-	Proxy() []IPromEntry
+	Proxies() []IPromEntry
 }
 
 type promEntry struct {
-	context http_service.IHttpContext
+	context http_context.IHttpContext
 }
 
-func NewPromEntry(context http_service.IHttpContext) IPromEntry {
+func NewPromEntry(context http_context.IHttpContext) IPromEntry {
 	return &promEntry{
 		context: context,
 	}
@@ -26,17 +26,28 @@ func (p *promEntry) GetValue(key string) float64 {
 }
 
 func (p *promEntry) GetLabel(key string) string {
-	//TODO implement me
-	panic("implement me")
+	label := p.context.GetLabel(key)
+	if label == "" {
+		label = "-"
+	}
+	return label
 }
 
-func (p *promEntry) Proxy() []IPromEntry {
-	//TODO implement me
-	panic("implement me")
+func (p *promEntry) Proxies() []IPromEntry {
+	ctxProxies := p.context.Proxies()
+
+	proxyEntries := make([]IPromEntry, 0, len(ctxProxies))
+
+	for _, proxy := range ctxProxies {
+		proxyEntries = append(proxyEntries, newProxyPromEntry(p, proxy))
+	}
+
+	return proxyEntries
 }
 
 type proxyPromEntry struct {
 	parent *promEntry
+	proxy  http_context.IProxy
 	//childReader IReaderIndex
 }
 
@@ -50,11 +61,13 @@ func (p *proxyPromEntry) GetLabel(key string) string {
 	panic("implement me")
 }
 
-func (p proxyPromEntry) Proxy() []IPromEntry {
-	//TODO implement me
-	panic("implement me")
+func (p proxyPromEntry) Proxies() []IPromEntry {
+	return nil
 }
 
-func NewProxyPromEntry(parent *promEntry) *proxyPromEntry {
-	return &proxyPromEntry{parent: parent}
+func newProxyPromEntry(parent *promEntry, proxy http_context.IProxy) *proxyPromEntry {
+	return &proxyPromEntry{
+		parent: parent,
+		proxy:  proxy,
+	}
 }
