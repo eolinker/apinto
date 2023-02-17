@@ -17,8 +17,15 @@ type PromeOutput struct {
 	drivers.WorkerBase
 	config *Config
 
-	registry *prometheus.Registry
-	Metrics  map[string]iMetric
+	registry     *prometheus.Registry
+	Metrics      map[string]iMetric
+	MetricLabels map[string][]labelConfig
+}
+
+type labelConfig struct {
+	Name  string
+	Type  string
+	Value string
 }
 
 func (p *PromeOutput) Output(entry eosc.IEntry) error {
@@ -28,10 +35,12 @@ func (p *PromeOutput) Output(entry eosc.IEntry) error {
 }
 
 func (p *PromeOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
-	cfg, err := check(conf)
-	if err != nil {
-		return err
+	cfg, ok := conf.(*Config)
+	if !ok {
+		return errorConfigType
 	}
+
+	metricLabels, err := doCheck(cfg)
 
 	//TODO 检查新旧配置的指标，若有变化，才替换Register和handler
 	if reflect.DeepEqual(cfg, p.config) {

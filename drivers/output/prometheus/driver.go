@@ -5,68 +5,114 @@ import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
+	"strings"
 )
 
 func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
-	return doCheck(v)
+	_, err := doCheck(v)
+	return err
 }
 
-func doCheck(v *Config) error {
-	promConf := v
+// doCheck 检查配置并返回指标的标签配置列表
+func doCheck(promConf *Config) (map[string][]labelConfig, error) {
+	metricLabels := make(map[string][]labelConfig, len(promConf.Metrics))
 
 	if match := utils.CheckUrlPath(promConf.Path); !match {
-		return fmt.Errorf(errorPathFormat, promConf.Path)
+		return nil, fmt.Errorf(errorPathFormat, promConf.Path)
 	}
 
 	if len(promConf.Metrics) == 0 {
-		return errorNullMetrics
+		return nil, errorNullMetrics
 	}
 
-	//先校验指标，再校验指标的标签
+	tmpMetric := make(map[string]struct{}, len(promConf.Metrics))
 	for _, metricConf := range promConf.Metrics {
-		if metricType, exist := metricSet[metricConf.Metric]; exist {
+		//指标名不能为空
+		if metricConf.Metric == "" {
+			return nil, errorNullMetric
+		}
+		//指标名查重
+		if _, exist := tmpMetric[metricConf.Metric]; exist {
+			return nil, fmt.Errorf(errorMetricReduplicatedFormat, metricConf.Metric)
+		}
+		tmpMetric[metricConf.Metric] = struct{}{}
+
+		//校验收集类型合不合法
+		if _, exist := collectorSet[metricConf.Collector]; exist {
+			//指标标签不能为空
 			if len(metricConf.Labels) == 0 {
-				return fmt.Errorf(errorNullLabelsFormat, metricConf.Metric)
+				return nil, fmt.Errorf(errorNullLabelsFormat, metricConf.Metric)
 			}
 
+			labels := make([]labelConfig, 0, len(metricConf.Labels))
+			tmpLabels := make(map[string]struct{}, len(metricConf.Labels))
 			for _, label := range metricConf.Labels {
-				if _, has := metricLabelSet[metricType][label]; !has {
-					return fmt.Errorf(errorLabelFormat, label)
+				//标签名查重
+				if _, isExist := tmpLabels[metricConf.Metric]; isExist {
+					return nil, fmt.Errorf(errorLabelReduplicatedFormat, metricConf.Metric, label)
 				}
+				tmpLabels[label] = struct{}{}
+
+				cLabel, err := formatLabel(label)
+				if err != nil {
+					return nil, err
+				}
+				labels = append(labels, cLabel)
 			}
+
+			metricLabels[metricConf.Metric] = labels
 		} else {
-			return fmt.Errorf(errorMetricFormat, metricConf.Metric)
+			return nil, fmt.Errorf(errorCollectorFormat, metricConf.Metric)
 		}
+		//校验指标类型
+		if _, exist := metricTypeSet[metricConf.MetricType]; !exist {
+			return nil, fmt.Errorf(errorMetricTypeFormat, metricConf.MetricType)
+		}
+
 	}
 
 	//TODO 对标签进行排序
 
-	return nil
-}
-
-func check(v interface{}) (*Config, error) {
-	conf, ok := v.(*Config)
-	if !ok {
-		return nil, errorConfigType
-	}
-	err := doCheck(conf)
-	if err != nil {
-		return nil, err
-	}
-	return conf, nil
-
+	return nil, nil
 }
 
 func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
-	err := doCheck(cfg)
+	metricLabels, err := doCheck(cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	worker := &PromeOutput{
-		WorkerBase: drivers.Worker(id, name),
-		config:     cfg,
+		WorkerBase:   drivers.Worker(id, name),
+		config:       cfg,
+		MetricLabels: metricLabels,
 	}
 	return worker, err
+}
+
+func formatLabel(labelExp string) (labelConfig, error) {
+	label := strings.TrimSpace(labelExp)
+
+	c := labelConfig{
+		Name:  "",
+		Type:  labelTypeConst,
+		Value: "",
+	}
+
+	if strings.HasPrefix(label, "$") {
+		c.Type = labelTypeVar
+		label = label[1:]
+	}
+
+	asIdx := strings.Index(label, " as ")
+	if asIdx != -1 {
+		c.Name = label[:asIdx]
+		c.Value = label[asIdx+4:]
+	} else {
+		c.Name = label
+		c.Value = label
+	}
+
+	return c, nil
 }
