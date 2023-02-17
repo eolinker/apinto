@@ -113,6 +113,9 @@ func formatLabel(labelExp string) (labelConfig, error) {
 		c.Name = label
 		c.Value = label
 	}
+	if c.Name == "" || c.Value == "" {
+		return labelConfig{}, fmt.Errorf(errorLabelFormat, labelExp)
+	}
 
 	return c, nil
 }

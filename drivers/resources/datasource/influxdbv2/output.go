@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	monitor_entry "github.com/eolinker/apinto/monitor-entry"
+	monitor_entry "github.com/eolinker/apinto/entries/monitor-entry"
 
 	"github.com/eolinker/eosc/log"
 
