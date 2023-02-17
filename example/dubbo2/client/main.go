@@ -4,15 +4,19 @@ import (
 	"context"
 	"dubbo.apache.org/dubbo-go/v3/common"
 	"dubbo.apache.org/dubbo-go/v3/common/constant"
+	"dubbo.apache.org/dubbo-go/v3/common/logger"
 	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo"
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
 	"encoding/json"
-	"fmt"
 	hessian "github.com/apache/dubbo-go-hessian2"
 	"github.com/eolinker/apinto/utils"
 	"reflect"
 	"time"
 )
+
+func init() {
+	logger.InitLogger(nil)
+}
 
 func client(addr string, serviceName, methodName string, timeout time.Duration, typesList []string, valuesList []hessian.Object) (interface{}, error) {
 	arguments := make([]interface{}, 3)
@@ -58,8 +62,10 @@ func client(addr string, serviceName, methodName string, timeout time.Duration, 
 
 func main() {
 	ComplexServer()
-	//List()
-	//GetById(101)
+	List()
+	GetById(101)
+	UpdateList()
+	Update()
 }
 
 func ComplexServer() {
@@ -72,18 +78,17 @@ func ComplexServer() {
 
 	valuesList = append(valuesList, map[string]interface{}{"time": time.Now(), "addr": "192.168.0.1", "server": server})
 
-	resp, err := client("127.0.0.1:20000", "api.Server", "ComplexServer", time.Second*3, types, valuesList)
+	resp, err := client(address, "api.Server", "ComplexServer", time.Second*3, types, valuesList)
 
 	if err != nil {
-		fmt.Println(err)
+		logger.Errorf("ComplexServer err=%s", err.Error())
 		return
 	}
 	v := resp.(*interface{})
 	vvv := formatData(*v)
 
-	bytes, err := json.Marshal(vvv)
-
-	fmt.Println(string(bytes), err)
+	bytes, _ := json.Marshal(vvv)
+	logger.Infof("ComplexServer result=%s", string(bytes))
 }
 
 func UpdateList() {
@@ -95,18 +100,17 @@ func UpdateList() {
 	val2 := map[string]interface{}{"id": 16, "name": "apinto", "email": "1324204490@qq.com"}
 	valuesList = append(valuesList, []interface{}{val1, val2})
 
-	resp, err := client("127.0.0.1:20000", "api.Server", "UpdateList", time.Second*3, types, valuesList)
+	resp, err := client(address, "api.Server", "UpdateList", time.Second*3, types, valuesList)
 
 	if err != nil {
-		fmt.Println(err)
+		logger.Errorf("UpdateList err=%s", err.Error())
 		return
 	}
 	v := resp.(*interface{})
 	vvv := formatData(*v)
 
-	bytes, err := json.Marshal(vvv)
-
-	fmt.Println(string(bytes), err)
+	bytes, _ := json.Marshal(vvv)
+	logger.Infof("UpdateList result=%s", string(bytes))
 }
 
 func Update() {
@@ -115,18 +119,18 @@ func Update() {
 
 	types = append(types, "object")
 	valuesList = append(valuesList, map[string]interface{}{"id": 16, "name": "apinto", "email": "1324204490@qq.com"})
-	resp, err := client("127.0.0.1:20000", "api.Server", "Update", time.Second*3, types, valuesList)
+	resp, err := client(address, "api.Server", "Update", time.Second*3, types, valuesList)
 
 	if err != nil {
-		fmt.Println(err)
+		logger.Errorf("Update err=%s", err.Error())
 		return
 	}
 	v := resp.(*interface{})
 	vvv := formatData(*v)
 
-	bytes, err := json.Marshal(vvv)
+	bytes, _ := json.Marshal(vvv)
 
-	fmt.Println(string(bytes), err)
+	logger.Infof("Update result=%s", string(bytes))
 }
 
 func List() {
@@ -135,18 +139,18 @@ func List() {
 
 	types = append(types, "object")
 	valuesList = append(valuesList, map[string]interface{}{"id": 16, "name": "apinto", "email": "1324204490@qq.com"})
-	resp, err := client("127.0.0.1:20000", "api.Server", "List", time.Second*3, types, valuesList)
+	resp, err := client(address, "api.Server", "List", time.Second*3, types, valuesList)
 
 	if err != nil {
-		fmt.Println(err)
+		logger.Errorf("List err=%s", err.Error())
 		return
 	}
 	v := resp.(*interface{})
 	vvv := formatData(*v)
 
-	bytes, err := json.Marshal(vvv)
+	bytes, _ := json.Marshal(vvv)
 
-	fmt.Println(string(bytes), err)
+	logger.Infof("List result=%s", string(bytes))
 }
 
 func GetById(id int64) {
@@ -156,18 +160,18 @@ func GetById(id int64) {
 	types = append(types, "int64")
 	valuesList = append(valuesList, id)
 
-	resp, err := client("127.0.0.1:20000", "api.Server", "GetById", time.Second*3, types, valuesList)
+	resp, err := client(address, "api.Server", "GetById", time.Second*3, types, valuesList)
 
 	if err != nil {
-		fmt.Println(err)
+		logger.Errorf("List err=%s", err.Error())
 		return
 	}
 	v := resp.(*interface{})
 	vvv := formatData(*v)
 
-	bytes, err := json.Marshal(vvv)
+	bytes, _ := json.Marshal(vvv)
 
-	fmt.Println(string(bytes), err)
+	logger.Infof("GetById result=%s", string(bytes))
 }
 
 func formatData(value interface{}) interface{} {
