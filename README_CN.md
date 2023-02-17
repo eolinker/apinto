@@ -52,7 +52,7 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 | SSL证书      | 管理多个证书                                                 |
 | 访问域名     | 可为网关设置访问域名                                         |
 | 健康检查     | 支持对负载的节点进行健康检查，确保服务健壮性                 |
-| 协议         | HTTP/HTTPS、Webservice、Restful                              |
+| 协议         | HTTP/HTTPS、Webservice、Restful、gRPC、Dubbo2、SOAP                              |
 | 插件化       | 流程插件化，按需加载所需模块                                 |
 | OPEN API     | 支持使用open api配置网关                                     |
 | 日志         | 提供节点的运行日志，可根据日志设置的等级输出                 |
@@ -95,10 +95,10 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 ### 启动
 
-1.下载安装包并解压（此处以v0.9.0版本的安装包示例）
+1.下载安装包并解压（此处以v0.10.0版本的安装包示例）
 
 ```
-wget https://github.com/eolinker/apinto/releases/download/v0.9.0/apinto_v0.9.0_linux_amd64.tar.gz && tar -zxvf apinto_v0.9.0_linux_amd64.tar.gz && cd apinto
+wget https://github.com/eolinker/apinto/releases/download/v0.10.0/apinto_v0.10.0_linux_amd64.tar.gz && tar -zxvf apinto_v0.10.0_linux_amd64.tar.gz && cd apinto
 ```
 
 Apinto支持在arm64、i386、amd64架构上运行。
