@@ -14,8 +14,8 @@ func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 }
 
 // doCheck 检查配置并返回指标的标签配置列表
-func doCheck(promConf *Config) (map[string][]labelConfig, error) {
-	metricLabels := make(map[string][]labelConfig, len(promConf.Metrics))
+func doCheck(promConf *Config) (map[string]*metricInfo, error) {
+	metricLabels := make(map[string]*metricInfo, len(promConf.Metrics))
 
 	if match := utils.CheckUrlPath(promConf.Path); !match {
 		return nil, fmt.Errorf(errorPathFormat, promConf.Path)
@@ -60,7 +60,10 @@ func doCheck(promConf *Config) (map[string][]labelConfig, error) {
 				labels = append(labels, cLabel)
 			}
 
-			metricLabels[metricConf.Metric] = labels
+			metricLabels[metricConf.Metric] = &metricInfo{
+				collector: metricConf.Collector,
+				labels:    labels,
+			}
 		} else {
 			return nil, fmt.Errorf(errorCollectorFormat, metricConf.Metric)
 		}
@@ -73,20 +76,20 @@ func doCheck(promConf *Config) (map[string][]labelConfig, error) {
 
 	//TODO 对标签进行排序
 
-	return nil, nil
+	return metricLabels, nil
 }
 
 func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
-	metricLabels, err := doCheck(cfg)
+	metricsInfo, err := doCheck(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	worker := &PromeOutput{
-		WorkerBase:   drivers.Worker(id, name),
-		config:       cfg,
-		MetricLabels: metricLabels,
+	worker := &PromOutput{
+		WorkerBase:  drivers.Worker(id, name),
+		config:      cfg,
+		metricsInfo: metricsInfo,
 	}
 	return worker, err
 }

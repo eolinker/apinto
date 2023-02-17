@@ -1,25 +1,30 @@
 package prometheus
 
 import (
+	prometheus_entry "github.com/eolinker/apinto/entries/prometheus-entry"
 	"reflect"
 
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var _ output.IEntryOutput = (*PromeOutput)(nil)
-var _ eosc.IWorker = (*PromeOutput)(nil)
+var _ prometheus_entry.IOutput = (*PromOutput)(nil)
+var _ eosc.IWorker = (*PromOutput)(nil)
 
-type PromeOutput struct {
+type PromOutput struct {
 	drivers.WorkerBase
 	config *Config
 
-	registry     *prometheus.Registry
-	Metrics      map[string]iMetric
-	MetricLabels map[string][]labelConfig
+	registry    *prometheus.Registry
+	metrics     map[string]iMetric
+	metricsInfo map[string]*metricInfo
+}
+
+type metricInfo struct {
+	collector string
+	labels    []labelConfig
 }
 
 type labelConfig struct {
@@ -28,19 +33,18 @@ type labelConfig struct {
 	Value string
 }
 
-func (p *PromeOutput) Output(entry eosc.IEntry) error {
+func (p *PromOutput) Output(metrics []string, entry prometheus_entry.IPromEntry) {
 	//TODO
 
-	return nil
 }
 
-func (p *PromeOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
+func (p *PromOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
 	cfg, ok := conf.(*Config)
 	if !ok {
 		return errorConfigType
 	}
 
-	metricLabels, err := doCheck(cfg)
+	metricsInfo, err := doCheck(cfg)
 
 	//TODO 检查新旧配置的指标，若有变化，才替换Register和handler
 	if reflect.DeepEqual(cfg, p.config) {
@@ -57,7 +61,7 @@ func (p *PromeOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IW
 	return nil
 }
 
-func (p *PromeOutput) Stop() error {
+func (p *PromOutput) Stop() error {
 	//TODO 注销指标
 
 	//TODO 注销路由
@@ -65,7 +69,7 @@ func (p *PromeOutput) Stop() error {
 	return nil
 }
 
-func (p *PromeOutput) Start() error {
+func (p *PromOutput) Start() error {
 	//TODO 注册指标
 
 	//TODO 注册路由
@@ -77,7 +81,6 @@ func (p *PromeOutput) Start() error {
 	return nil
 }
 
-func (p *PromeOutput) CheckSkill(skill string) bool {
-	//TODO
-	return true
+func (p *PromOutput) CheckSkill(skill string) bool {
+	return skill == prometheus_entry.Skill
 }
