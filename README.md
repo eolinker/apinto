@@ -92,12 +92,12 @@ In a word, Apinto API gateway enables the business development team to focus mor
 
 ### Get start
 
-1. Download and unzip the installation package (here is an example of the installation package of version v0.9.0)
+1. Download and unzip the installation package (here is an example of the installation package of version v0.10.0)
 
 ```
-wget https://github.com/eolinker/apinto/releases/download/v0.8.4/apinto_v0.9.0_linux_amd64.tar.gz && tar -zxvf apinto_v0.9.0_linux_amd64.tar.gz && cd apinto
+wget https://github.com/eolinker/apinto/releases/download/v0.10.0/apinto_v0.10.0_linux_amd64.tar.gz && tar -zxvf apinto_v0.10.0_linux_amd64.tar.gz && cd apinto
 ```
-Apinto supports running on the arm64, i386 and amd64 architectures. 
+Apinto supports running on the arm64 and amd64 architectures. 
 
 Please download the installation package of the corresponding architecture and system as required. [Click](https://github.com/eolinker/apinto/releases/) to jump to download the installation package.
 
