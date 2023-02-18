@@ -23,6 +23,11 @@ const (
 
 	labelTypeVar   = "variable"
 	labelTypeConst = "const"
+
+	typeCounter   = "Counter"
+	typeGauge     = "Gauge"
+	typeHistogram = "Histogram"
+	typeSummary   = "Summary"
 )
 
 var (
@@ -60,9 +65,9 @@ var (
 	//	},
 	//}
 	metricTypeSet = map[string]struct{}{
-		"Counter":   {},
-		"Gauge":     {},
-		"Histogram": {},
-		"Summary":   {},
+		typeCounter:   {},
+		typeGauge:     {},
+		typeHistogram: {},
+		typeSummary:   {},
 	}
 )
