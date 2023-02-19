@@ -79,21 +79,6 @@ func doCheck(promConf *Config) (map[string]*metricInfo, error) {
 	return metricLabels, nil
 }
 
-func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-
-	metricsInfo, err := doCheck(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	worker := &PromOutput{
-		WorkerBase:  drivers.Worker(id, name),
-		config:      cfg,
-		metricsInfo: metricsInfo,
-	}
-	return worker, err
-}
-
 func formatLabel(labelExp string) (labelConfig, error) {
 	label := strings.TrimSpace(labelExp)
 
@@ -121,4 +106,19 @@ func formatLabel(labelExp string) (labelConfig, error) {
 	}
 
 	return c, nil
+}
+
+func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+
+	metricsInfo, err := doCheck(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	worker := &PromOutput{
+		WorkerBase:  drivers.Worker(id, name),
+		config:      cfg,
+		metricsInfo: metricsInfo,
+	}
+	return worker, err
 }
