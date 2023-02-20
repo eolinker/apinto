@@ -1,15 +1,10 @@
 package http_to_dubbo2
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	hessian "github.com/apache/dubbo-go-hessian2"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
-	"github.com/eolinker/eosc/log"
 	"time"
 )
 
@@ -25,69 +20,7 @@ type ToDubbo2 struct {
 
 func (p *ToDubbo2) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IChain) error {
 
-	var err error
-	defer func() {
-		if err != nil {
-			ctx.Response().SetStatus(400, "400")
-			ctx.Response().SetBody([]byte(err.Error()))
-		}
-	}()
-
-	body, _ := ctx.Request().Body().RawBody()
-
-	var types []string
-	var valuesList []hessian.Object
-
-	for _, v := range p.params {
-		types = append(types, v.className)
-	}
-
-	//从body中提取内容
-	if len(p.params) == 1 && p.params[0].fieldName == "" {
-		var val interface{}
-
-		if err = json.Unmarshal(body, &val); err != nil {
-			log.Errorf("doHttpFilter jsonUnmarshal err:%v body:%v", err, body)
-			return err
-		}
-
-		valuesList = append(valuesList, val)
-	} else if len(p.params) == 1 && p.params[0].fieldName != "" {
-		var maps map[string]interface{}
-
-		if err = json.Unmarshal(body, &maps); err != nil {
-			log.Errorf("doHttpFilter jsonUnmarshal err:%v body:%v", err, body)
-			return err
-		}
-
-		if val, ok := maps[p.params[0].fieldName]; ok {
-			valuesList = append(valuesList, val)
-		} else {
-			err = errors.New(fmt.Sprintf("参数解析错误，body中未包含%s的参数名", p.params[0].fieldName))
-			return err
-		}
-
-	} else {
-		var maps map[string]interface{}
-
-		if err = json.Unmarshal(body, &maps); err != nil {
-			log.Errorf("doHttpFilter jsonUnmarshal err:%v body:%v", err, body)
-			return err
-		}
-
-		for _, v := range p.params {
-			if val, ok := maps[v.fieldName]; ok {
-				valuesList = append(valuesList, val)
-			} else {
-				err = errors.New(fmt.Sprintf("参数解析错误，body中未包含%s的参数名", p.params[0].fieldName))
-				return err
-			}
-		}
-
-	}
-
-	client := newDubbo2Client(p.service, p.method, types, valuesList)
-	complete := NewComplete(0, time.Second*30, client)
+	complete := NewComplete(0, time.Second*30, p.service, p.method, p.params)
 	ctx.SetCompleteHandler(complete)
 
 	if next != nil {
