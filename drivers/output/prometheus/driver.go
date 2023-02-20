@@ -14,8 +14,8 @@ func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 }
 
 // doCheck 检查配置并返回指标的标签配置列表
-func doCheck(promConf *Config) (map[string]*metricInfo, error) {
-	metricLabels := make(map[string]*metricInfo, len(promConf.Metrics))
+func doCheck(promConf *Config) (map[string]*metricInfoCfg, error) {
+	metricLabels := make(map[string]*metricInfoCfg, len(promConf.Metrics))
 
 	if match := utils.CheckUrlPath(promConf.Path); !match {
 		return nil, fmt.Errorf(errorPathFormat, promConf.Path)
@@ -60,7 +60,7 @@ func doCheck(promConf *Config) (map[string]*metricInfo, error) {
 				labels = append(labels, cLabel)
 			}
 
-			metricLabels[metricConf.Metric] = &metricInfo{
+			metricLabels[metricConf.Metric] = &metricInfoCfg{
 				collector: metricConf.Collector,
 				labels:    labels,
 			}
@@ -95,8 +95,8 @@ func formatLabel(labelExp string) (labelConfig, error) {
 
 	asIdx := strings.Index(label, " as ")
 	if asIdx != -1 {
-		c.Name = label[:asIdx]
-		c.Value = label[asIdx+4:]
+		c.Name = label[asIdx+4:]
+		c.Value = label[:asIdx]
 	} else {
 		c.Name = label
 		c.Value = label

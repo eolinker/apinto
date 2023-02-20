@@ -6,6 +6,7 @@ import (
 	prometheus_entry "github.com/eolinker/apinto/entries/prometheus-entry"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/router"
+	"github.com/eolinker/eosc/utils"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -19,10 +20,10 @@ type PromOutput struct {
 
 	registry    *prometheus.Registry
 	metrics     map[string]iMetric
-	metricsInfo map[string]*metricInfo
+	metricsInfo map[string]*metricInfoCfg
 }
 
-type metricInfo struct {
+type metricInfoCfg struct {
 	collector string
 	labels    []labelConfig
 }
@@ -34,8 +35,53 @@ type labelConfig struct {
 }
 
 func (p *PromOutput) Output(metrics []string, entry prometheus_entry.IPromEntry) {
-	//TODO
+	//集群信息
+	globalLabels := utils.GlobalLabelGet()
+	clustersInfo := map[string]string{
+		"cluster": globalLabels["cluster_id"],
+		"node":    globalLabels["node_id"],
+	}
+
+	proxyEntries := entry.Proxies()
+
 	for _, metric := range metrics {
+		//若prometheus插件的metric 在output中不存在则跳过
+		metricInfo, exist := p.metricsInfo[metric]
+		if !exist {
+			continue
+		}
+
+		//判断是请求collector还是转发collector
+		switch collectorSet[metricInfo.collector] {
+		case typeRequestMetric:
+			p.writeMetric(p.metrics[metric], metricInfo, clustersInfo, []prometheus_entry.IPromEntry{entry})
+		case typeProxyMetric:
+			p.writeMetric(p.metrics[metric], metricInfo, clustersInfo, proxyEntries)
+
+		}
+
+	}
+
+}
+
+func (p *PromOutput) writeMetric(metric iMetric, metricInfo *metricInfoCfg, clustersInfo map[string]string, entries []prometheus_entry.IPromEntry) {
+	for _, entry := range entries {
+		labels := make(map[string]string, len(metricInfo.labels))
+		for _, l := range metricInfo.labels {
+			switch l.Type {
+			case labelTypeVar:
+				if vClu, has := clustersInfo[l.Value]; has {
+					labels[l.Name] = vClu
+				} else {
+					labels[l.Name] = entry.GetLabel(l.Value)
+				}
+			case labelTypeConst:
+				//常量标签
+				labels[l.Name] = l.Value
+			}
+
+		}
+		metric.Observe(entry.GetValue(metricInfo.collector), labels)
 
 	}
 }
