@@ -1,77 +1,85 @@
 package prometheus_entry
 
 import (
+	"fmt"
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
 )
 
-type IPromEntry interface {
-	GetValue(key string) float64
-	GetLabel(key string) string
-	Proxies() []IPromEntry
+type metricEntry struct {
+	entry     eosc.IEntry
+	eoContext eocontext.EoContext
 }
 
-type promEntry struct {
-	context http_context.IHttpContext
-}
+func NewMetricEntry(context interface{}) (eosc.IMetricEntry, error) {
+	switch v := context.(type) {
+	case http_context.IHttpContext:
+		eoCtx := v.(eocontext.EoContext)
+		return &metricEntry{
+			entry:     http_entry.NewEntry(v),
+			eoContext: eoCtx,
+		}, nil
 
-func NewPromEntry(context http_context.IHttpContext) IPromEntry {
-	return &promEntry{
-		context: context,
+	default:
+		return nil, fmt.Errorf("NewMetricEntry fail. Unsupport type: %T", v)
 	}
+
 }
 
-func (p *promEntry) GetValue(key string) float64 {
-	f, exist := reqColRead[key]
+func (p *metricEntry) GetFloat(pattern string) (float64, bool) {
+	f, exist := reqColRead[pattern]
 	if !exist {
-		log.Error("missing function belong to ", key)
+		log.Error("missing function belong to ", pattern)
 		return 0
 	}
-	return f(p.context)
+	return f(p.eoContext)
 }
 
-func (p *promEntry) GetLabel(key string) string {
-	f, exist := reqLabelRead[key]
+func (p *metricEntry) Read(pattern string) string {
+	f, exist := reqLabelRead[pattern]
 	if !exist {
-		label := p.context.GetLabel(key)
+		label := p.eoContext.GetLabel(pattern)
 		if label == "" {
 			label = "-"
 		}
 		return label
 	}
-	return f(p.context)
+	return f(p.eoContext)
 }
 
-func (p *promEntry) Proxies() []IPromEntry {
-	ctxProxies := p.context.Proxies()
+func (p *metricEntry) Children(child string) []eosc.IMetricEntry {
+	ctxProxies := p.entry.Children(child)
 
-	proxyEntries := make([]IPromEntry, 0, len(ctxProxies))
+	proxyEntries := make([]eosc.IMetricEntry, 0, len(ctxProxies))
 
 	for _, proxy := range ctxProxies {
-		proxyEntries = append(proxyEntries, newProxyPromEntry(p, proxy))
+		proxyEntries = append(proxyEntries, newProxyPromEntry(p.entry, proxy))
 	}
 
 	return proxyEntries
 }
 
 type proxyPromEntry struct {
-	parent *promEntry
-	proxy  http_context.IProxy
+	entry eosc.IEntry
+	proxy http_context.IProxy
 }
 
-func (p *proxyPromEntry) GetValue(key string) float64 {
-	f, exist := proxyColRead[key]
+func (p *proxyPromEntry) GetFloat(pattern string) (float64, bool) {
+	f, exist := proxyColRead[pattern]
 	if !exist {
-		log.Error("missing function belong to ", key)
+		log.Error("missing function belong to ", pattern)
 		return 0
 	}
 	return f(p.proxy)
 }
 
-func (p *proxyPromEntry) GetLabel(key string) string {
-	f, exist := proxyLabelRead[key]
+func (p *proxyPromEntry) Read(pattern string) string {
+	f, exist := proxyLabelRead[pattern]
 	if !exist {
-		label := p.parent.context.GetLabel(key)
+		label := p.parent.context.GetLabel(pattern)
 		if label == "" {
 			label = "-"
 		}
@@ -80,13 +88,13 @@ func (p *proxyPromEntry) GetLabel(key string) string {
 	return f(p.proxy)
 }
 
-func (p proxyPromEntry) Proxies() []IPromEntry {
+func (p proxyPromEntry) Children(child string) []eosc.IMetricEntry {
 	return nil
 }
 
-func newProxyPromEntry(parent *promEntry, proxy http_context.IProxy) *proxyPromEntry {
+func newProxyPromEntry(parent eosc.IEntry, proxy http_context.IProxy) *proxyPromEntry {
 	return &proxyPromEntry{
-		parent: parent,
-		proxy:  proxy,
+		entry: parent,
+		proxy: proxy,
 	}
 }

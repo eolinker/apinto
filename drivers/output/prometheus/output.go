@@ -34,7 +34,7 @@ type labelConfig struct {
 	Value string
 }
 
-func (p *PromOutput) Output(metrics []string, entry prometheus_entry.IPromEntry) {
+func (p *PromOutput) Output(metrics []string, entry eosc.IMetricEntry) {
 	//集群信息
 	globalLabels := utils.GlobalLabelGet()
 	clustersInfo := map[string]string{
@@ -42,7 +42,7 @@ func (p *PromOutput) Output(metrics []string, entry prometheus_entry.IPromEntry)
 		"node":    globalLabels["node_id"],
 	}
 
-	proxyEntries := entry.Proxies()
+	proxyEntries := entry.Children("proxies")
 
 	for _, metric := range metrics {
 		//若prometheus插件的metric 在output中不存在则跳过
@@ -54,7 +54,7 @@ func (p *PromOutput) Output(metrics []string, entry prometheus_entry.IPromEntry)
 		//判断是请求collector还是转发collector
 		switch collectorSet[metricInfo.collector] {
 		case typeRequestMetric:
-			p.writeMetric(p.metrics[metric], metricInfo, clustersInfo, []prometheus_entry.IPromEntry{entry})
+			p.writeMetric(p.metrics[metric], metricInfo, clustersInfo, []eosc.IMetricEntry{entry})
 		case typeProxyMetric:
 			p.writeMetric(p.metrics[metric], metricInfo, clustersInfo, proxyEntries)
 
@@ -64,7 +64,7 @@ func (p *PromOutput) Output(metrics []string, entry prometheus_entry.IPromEntry)
 
 }
 
-func (p *PromOutput) writeMetric(metric iMetric, metricInfo *metricInfoCfg, clustersInfo map[string]string, entries []prometheus_entry.IPromEntry) {
+func (p *PromOutput) writeMetric(metric iMetric, metricInfo *metricInfoCfg, clustersInfo map[string]string, entries []eosc.IMetricEntry) {
 	for _, entry := range entries {
 		labels := make(map[string]string, len(metricInfo.labels))
 		for _, l := range metricInfo.labels {
