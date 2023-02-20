@@ -1,25 +1,25 @@
-package prometheus_entry
+package metric_entry
 
 import (
 	"fmt"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
-type proxyCollectorReadFunc func(request http_context.IProxy) float64
+type proxyCollectorReadFunc func(request http_context.IProxy) (float64, bool)
 type proxyLabelReadFunc func(request http_context.IProxy) string
 
 var proxyColRead = map[string]proxyCollectorReadFunc{
-	"proxy_total": func(proxy http_context.IProxy) float64 {
-		return 1
+	"proxy_total": func(proxy http_context.IProxy) (float64, bool) {
+		return 1, true
 	},
-	"proxy_timing": func(proxy http_context.IProxy) float64 {
-		return float64(proxy.ResponseTime())
+	"proxy_timing": func(proxy http_context.IProxy) (float64, bool) {
+		return float64(proxy.ResponseTime()), true
 	},
-	"proxy_req": func(proxy http_context.IProxy) float64 {
-		return float64(proxy.ContentLength())
+	"proxy_req": func(proxy http_context.IProxy) (float64, bool) {
+		return float64(proxy.ContentLength()), true
 	},
-	"proxy_resp": func(proxy http_context.IProxy) float64 {
-		return float64(proxy.ResponseLength())
+	"proxy_resp": func(proxy http_context.IProxy) (float64, bool) {
+		return float64(proxy.ResponseLength()), true
 	},
 }
 

@@ -1,4 +1,4 @@
-package prometheus_entry
+package metric_entry
 
 import (
 	"github.com/eolinker/eosc"
