@@ -16,6 +16,9 @@ type counterVec struct {
 
 func (c *counterVec) Observe(value float64, labels map[string]string) {
 	//counter的value必须大于0
+	if value < 0 {
+		return
+	}
 	c.counter.With(labels).Add(value)
 }
 
@@ -78,6 +81,14 @@ type summaryVec struct {
 	summary *prometheus.SummaryVec
 }
 
+var (
+	defaultObjectives = map[float64]float64{
+		0.5:  0.05,
+		0.9:  0.01,
+		0.99: 0.001,
+	}
+)
+
 func (s *summaryVec) Observe(value float64, labels map[string]string) {
 	s.summary.With(labels).Observe(value)
 }
@@ -86,17 +97,26 @@ func (s *summaryVec) Register(registry *prometheus.Registry) error {
 	return registry.Register(s.summary)
 }
 
-func newSummaryVec(name, description string, labels []string) iMetric {
+func newSummaryVec(name, description string, labels []string, objectives map[float64]float64) iMetric {
+	if objectives == nil || len(objectives) == 0 {
+		objectives = defaultObjectives
+	}
 	return &summaryVec{
 		summary: prometheus.NewSummaryVec(prometheus.SummaryOpts{
-			Name: name,
-			Help: description,
+			Name:       name,
+			Help:       description,
+			Objectives: objectives,
 		}, labels),
 	}
 }
 
-func newIMetric(metricType, name, description string, labels []string) (iMetric, error) {
-	switch metricType {
+func newIMetric(collector, name, description string, metricInfo *metricInfoCfg, objectives map[float64]float64) (iMetric, error) {
+	labels := make([]string, 0, len(metricInfo.labels))
+	for _, l := range metricInfo.labels {
+		labels = append(labels, l.Name)
+	}
+
+	switch collectorTypeSet[collector] {
 	case typeCounter:
 		return newCounterVec(name, description, labels), nil
 	case typeGauge:
@@ -104,8 +124,8 @@ func newIMetric(metricType, name, description string, labels []string) (iMetric,
 	case typeHistogram:
 		return newHistogramVec(name, description, labels), nil
 	case typeSummary:
-		return newSummaryVec(name, description, labels), nil
+		return newSummaryVec(name, description, labels, objectives), nil
 	default:
-		return nil, fmt.Errorf(errorMetricTypeFormat, metricType)
+		return nil, fmt.Errorf(errorMetricTypeFormat, collectorTypeSet[collector])
 	}
 }

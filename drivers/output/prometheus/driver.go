@@ -67,10 +67,6 @@ func doCheck(promConf *Config) (map[string]*metricInfoCfg, error) {
 		} else {
 			return nil, fmt.Errorf(errorCollectorFormat, metricConf.Metric)
 		}
-		//校验指标类型
-		if _, exist := metricTypeSet[metricConf.MetricType]; !exist {
-			return nil, fmt.Errorf(errorMetricTypeFormat, metricConf.MetricType)
-		}
 
 	}
 

@@ -8,19 +8,6 @@ import (
 type proxyCollectorReadFunc func(request http_context.IProxy) float64
 type proxyLabelReadFunc func(request http_context.IProxy) string
 
-var proxyMetrics = []string{
-	"method",
-	"host",
-	"addr",
-}
-
-var proxyFields = []string{
-	"timing",
-	"request",
-	"response",
-	"status",
-}
-
 var proxyColRead = map[string]proxyCollectorReadFunc{
 	"proxy_total": func(proxy http_context.IProxy) float64 {
 		return 1

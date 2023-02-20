@@ -97,7 +97,7 @@ func (p *PromOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	registry := prometheus.NewPedanticRegistry()
 	metrics := make(map[string]iMetric, len(p.config.Metrics))
 	for _, metric := range cfg.Metrics {
-		m, err := newIMetric(metric.MetricType, metric.Metric, metric.Description, metric.Labels)
+		m, err := newIMetric(metric.Collector, metric.Metric, metric.Description, metricsInfo[metric.Metric], metric.Objectives)
 		if err != nil {
 			return fmt.Errorf("reset output %s fail: %w", p.Id(), err)
 		}
@@ -148,7 +148,7 @@ func (p *PromOutput) Start() error {
 
 	metrics := make(map[string]iMetric, len(p.config.Metrics))
 	for _, metric := range p.config.Metrics {
-		m, err := newIMetric(metric.MetricType, metric.Metric, metric.Description, metric.Labels)
+		m, err := newIMetric(metric.Collector, metric.Metric, metric.Description, p.metricsInfo[metric.Metric], metric.Objectives)
 		if err != nil {
 			return fmt.Errorf("start output %s fail: %w", p.Id(), err)
 		}

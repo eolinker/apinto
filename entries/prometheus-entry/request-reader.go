@@ -6,19 +6,6 @@ import (
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
-var requestMetrics = []string{
-	"method",
-	"host",
-}
-
-var requestFields = []string{
-	"request",
-	"response",
-	"retry",
-	"timing",
-	"status",
-}
-
 type reqCollectorReadFunc func(ctx http_context.IHttpContext) float64
 type reqLabelReadFunc func(ctx http_context.IHttpContext) string
 
@@ -53,9 +40,6 @@ var reqLabelRead = map[string]reqLabelReadFunc{
 	},
 	"path": func(ctx http_context.IHttpContext) string {
 		return ctx.Request().URI().Path()
-	},
-	"ip": func(ctx http_context.IHttpContext) string {
-		return ctx.GetLabel("ip")
 	},
 	"status": func(ctx http_context.IHttpContext) string {
 		return ctx.Response().Status()
