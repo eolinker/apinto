@@ -3,6 +3,8 @@ package prometheus
 import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
+	"strconv"
+	"strings"
 )
 
 type iMetric interface {
@@ -26,13 +28,13 @@ func (c *counterVec) Register(registry *prometheus.Registry) error {
 	return registry.Register(c.counter)
 }
 
-func newCounterVec(name, description string, labels []string) iMetric {
+func newCounterVec(name, description string, labels []string) (iMetric, error) {
 	return &counterVec{
 		counter: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: name,
 			Help: description,
 		}, labels),
-	}
+	}, nil
 }
 
 type gaugeVec struct {
@@ -47,13 +49,13 @@ func (g *gaugeVec) Register(registry *prometheus.Registry) error {
 	return registry.Register(g.gauge)
 }
 
-func newGaugeVec(name, description string, labels []string) iMetric {
+func newGaugeVec(name, description string, labels []string) (iMetric, error) {
 	return &gaugeVec{
 		gauge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: name,
 			Help: description,
 		}, labels),
-	}
+	}, nil
 }
 
 type histogramVec struct {
@@ -68,13 +70,13 @@ func (h *histogramVec) Register(registry *prometheus.Registry) error {
 	return registry.Register(h.histogram)
 }
 
-func newHistogramVec(name, description string, labels []string) iMetric {
+func newHistogramVec(name, description string, labels []string) (iMetric, error) {
 	return &histogramVec{
 		histogram: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Name: name,
 			Help: description,
 		}, labels),
-	}
+	}, nil
 }
 
 type summaryVec struct {
@@ -82,11 +84,7 @@ type summaryVec struct {
 }
 
 var (
-	defaultObjectives = map[float64]float64{
-		0.5:  0.05,
-		0.9:  0.01,
-		0.99: 0.001,
-	}
+	defaultObjectives = "0.5:0.05,0.9:0.01,0.99:0.001"
 )
 
 func (s *summaryVec) Observe(value float64, labels map[string]string) {
@@ -97,20 +95,36 @@ func (s *summaryVec) Register(registry *prometheus.Registry) error {
 	return registry.Register(s.summary)
 }
 
-func newSummaryVec(name, description string, labels []string, objectives map[float64]float64) iMetric {
-	if objectives == nil || len(objectives) == 0 {
-		objectives = defaultObjectives
+func newSummaryVec(name, description string, labels []string, objectives string) (iMetric, error) {
+	objectivesList := strings.Split(objectives, ",")
+
+	objectivesCfg := make(map[float64]float64, len(objectivesList))
+	for _, obj := range objectivesList {
+		if obj == "" {
+			continue
+		}
+		idx := strings.Index(obj, ":")
+		quantile, err := strconv.ParseFloat(obj[:idx], 64)
+		if err != nil {
+			return nil, err
+		}
+		estimate, err := strconv.ParseFloat(obj[idx+1:], 64)
+		if err != nil {
+			return nil, err
+		}
+		objectivesCfg[quantile] = estimate
 	}
+
 	return &summaryVec{
 		summary: prometheus.NewSummaryVec(prometheus.SummaryOpts{
 			Name:       name,
 			Help:       description,
-			Objectives: objectives,
+			Objectives: objectivesCfg,
 		}, labels),
-	}
+	}, nil
 }
 
-func newIMetric(collector, name, description string, metricInfo *metricInfoCfg, objectives map[float64]float64) (iMetric, error) {
+func newIMetric(collector, name, description string, metricInfo *metricInfoCfg, objectives string) (iMetric, error) {
 	labels := make([]string, 0, len(metricInfo.labels))
 	for _, l := range metricInfo.labels {
 		labels = append(labels, l.Name)
@@ -118,13 +132,13 @@ func newIMetric(collector, name, description string, metricInfo *metricInfoCfg, 
 
 	switch collectorTypeSet[collector] {
 	case typeCounter:
-		return newCounterVec(name, description, labels), nil
+		return newCounterVec(name, description, labels)
 	case typeGauge:
-		return newGaugeVec(name, description, labels), nil
+		return newGaugeVec(name, description, labels)
 	case typeHistogram:
-		return newHistogramVec(name, description, labels), nil
+		return newHistogramVec(name, description, labels)
 	case typeSummary:
-		return newSummaryVec(name, description, labels, objectives), nil
+		return newSummaryVec(name, description, labels, objectives)
 	default:
 		return nil, fmt.Errorf(errorMetricTypeFormat, collectorTypeSet[collector])
 	}

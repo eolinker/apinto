@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+const objectivesExp = `^((0\.[0-9]+)\:(0\.[0-9]+)(\,)?)+$`
+
 func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 	_, err := doCheck(v)
 	return err
@@ -36,6 +38,17 @@ func doCheck(promConf *Config) (map[string]*metricInfoCfg, error) {
 			return nil, fmt.Errorf(errorMetricReduplicatedFormat, metricConf.Metric)
 		}
 		tmpMetric[metricConf.Metric] = struct{}{}
+
+		//校验objectives
+		if metricConf.Objectives != "" {
+			isMatch := utils.CheckObjectives(metricConf.Objectives)
+			if !isMatch {
+				return nil, fmt.Errorf(errorObjectivesFormat, metricConf.Metric, metricConf.Objectives)
+			}
+
+		} else {
+			metricConf.Objectives = defaultObjectives
+		}
 
 		//校验收集类型合不合法
 		if _, exist := collectorSet[metricConf.Collector]; exist {

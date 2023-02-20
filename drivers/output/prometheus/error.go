@@ -14,4 +14,5 @@ var (
 	errorMetricReduplicatedFormat = `error metric %s is reduplicated. `
 	errorLabelFormat              = `error label %s is illegal. `
 	errorLabelReduplicatedFormat  = `error metric %s's label %s is reduplicated. `
+	errorObjectivesFormat         = `error metric %s's objectives %s is illegal. `
 )
