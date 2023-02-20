@@ -8,6 +8,7 @@ require (
 	github.com/dubbogo/gost v1.11.25
 	github.com/eolinker/eosc v0.9.1
 	github.com/fasthttp/websocket v1.5.0
+	github.com/fullstorydev/grpcurl v1.8.7
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.4.2
