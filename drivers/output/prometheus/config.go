@@ -43,28 +43,28 @@ var (
 		"proxy_resp":     typeProxyMetric,
 	}
 
-	metricLabelSet = map[string]map[string]struct{}{
-		typeRequestMetric: {
-			"node":     {},
-			"cluster":  {},
-			"method":   {},
-			"upstream": {},
-			"status":   {},
-			"api":      {},
-			"app":      {},
-			"host":     {},
-			"handler":  {},
-		},
-		typeProxyMetric: {
-			"node":     {},
-			"cluster":  {},
-			"method":   {},
-			"upstream": {},
-			"status":   {},
-			"addr":     {},
-			"path":     {},
-		},
-	}
+	//metricLabelSet = map[string]map[string]struct{}{
+	//	typeRequestMetric: {
+	//		"node":     {},
+	//		"cluster":  {},
+	//		"method":   {},
+	//		"upstream": {},
+	//		"status":   {},
+	//		"api":      {},
+	//		"app":      {},
+	//		"host":     {},
+	//		"handler":  {},
+	//	},
+	//	typeProxyMetric: {
+	//		"node":     {},
+	//		"cluster":  {},
+	//		"method":   {},
+	//		"upstream": {},
+	//		"status":   {},
+	//		"addr":     {},
+	//		"path":     {},
+	//	},
+	//}
 	//collectorTypeSet collector对应的指标类型
 	collectorTypeSet = map[string]string{
 		"request_total":  typeCounter,

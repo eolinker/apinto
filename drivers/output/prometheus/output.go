@@ -3,15 +3,14 @@ package prometheus
 import (
 	"fmt"
 	"github.com/eolinker/apinto/drivers"
-	prometheus_entry "github.com/eolinker/apinto/entries/prometheus-entry"
+	"github.com/eolinker/apinto/entries/metric-entry"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/router"
-	"github.com/eolinker/eosc/utils"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var _ prometheus_entry.IOutput = (*PromOutput)(nil)
+var _ metric_entry.IOutput = (*PromOutput)(nil)
 var _ eosc.IWorker = (*PromOutput)(nil)
 
 type PromOutput struct {
@@ -35,13 +34,6 @@ type labelConfig struct {
 }
 
 func (p *PromOutput) Output(metrics []string, entry eosc.IMetricEntry) {
-	//集群信息
-	globalLabels := utils.GlobalLabelGet()
-	clustersInfo := map[string]string{
-		"cluster": globalLabels["cluster_id"],
-		"node":    globalLabels["node_id"],
-	}
-
 	proxyEntries := entry.Children("proxies")
 
 	for _, metric := range metrics {
@@ -54,9 +46,9 @@ func (p *PromOutput) Output(metrics []string, entry eosc.IMetricEntry) {
 		//判断是请求collector还是转发collector
 		switch collectorSet[metricInfo.collector] {
 		case typeRequestMetric:
-			p.writeMetric(p.metrics[metric], metricInfo, clustersInfo, []eosc.IMetricEntry{entry})
+			p.writeMetric(p.metrics[metric], metricInfo, []eosc.IMetricEntry{entry})
 		case typeProxyMetric:
-			p.writeMetric(p.metrics[metric], metricInfo, clustersInfo, proxyEntries)
+			p.writeMetric(p.metrics[metric], metricInfo, proxyEntries)
 
 		}
 
@@ -64,24 +56,21 @@ func (p *PromOutput) Output(metrics []string, entry eosc.IMetricEntry) {
 
 }
 
-func (p *PromOutput) writeMetric(metric iMetric, metricInfo *metricInfoCfg, clustersInfo map[string]string, entries []eosc.IMetricEntry) {
+func (p *PromOutput) writeMetric(metric iMetric, metricInfo *metricInfoCfg, entries []eosc.IMetricEntry) {
 	for _, entry := range entries {
 		labels := make(map[string]string, len(metricInfo.labels))
 		for _, l := range metricInfo.labels {
 			switch l.Type {
 			case labelTypeVar:
-				if vClu, has := clustersInfo[l.Value]; has {
-					labels[l.Name] = vClu
-				} else {
-					labels[l.Name] = entry.GetLabel(l.Value)
-				}
+				labels[l.Name] = entry.Read(l.Value)
 			case labelTypeConst:
 				//常量标签
 				labels[l.Name] = l.Value
 			}
 
 		}
-		metric.Observe(entry.GetValue(metricInfo.collector), labels)
+		value, _ := entry.GetFloat(metricInfo.collector)
+		metric.Observe(value, labels)
 
 	}
 }
@@ -177,5 +166,5 @@ func (p *PromOutput) Start() error {
 }
 
 func (p *PromOutput) CheckSkill(skill string) bool {
-	return skill == prometheus_entry.Skill
+	return skill == metric_entry.Skill
 }

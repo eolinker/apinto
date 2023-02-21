@@ -8,8 +8,6 @@ import (
 	"strings"
 )
 
-const objectivesExp = `^((0\.[0-9]+)\:(0\.[0-9]+)(\,)?)+$`
-
 func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 	_, err := doCheck(v)
 	return err
