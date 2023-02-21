@@ -1,4 +1,4 @@
-package grpc_proxy_rewrite
+package http_to_grpc
 
 import (
 	"github.com/eolinker/apinto/drivers"
@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	Name = "grpc-proxy_write"
+	Name = "http_to_grpc"
 )
 
 func Register(register eosc.IExtenderDriverRegister) {
