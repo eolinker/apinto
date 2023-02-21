@@ -38,15 +38,15 @@ func (p *metricEntry) GetFloat(pattern string) (float64, bool) {
 }
 
 func (p *metricEntry) Read(pattern string) string {
-	f, exist := reqLabelRead[pattern]
-	if !exist {
-		label := p.httpCtx.GetLabel(pattern)
-		if label == "" {
-			label = "-"
+	value := p.iEntry.Read(pattern)
+	if value == "" {
+		value = p.httpCtx.GetLabel(pattern)
+		if value == "" {
+			value = "-"
 		}
-		return label
 	}
-	return f(p.httpCtx)
+
+	return value
 }
 
 func (p *metricEntry) Children(child string) []eosc.IMetricEntry {
@@ -54,19 +54,20 @@ func (p *metricEntry) Children(child string) []eosc.IMetricEntry {
 	case http_entry.ProxiesChild:
 		fallthrough
 	default:
+		p.iEntry.Children(child)
 		proxies := p.httpCtx.Proxies()
 		length := len(proxies)
 		entries := make([]eosc.IMetricEntry, 0, length)
 		for _, proxy := range proxies {
-			entries = append(entries, newProxyMetricEntry(p.iEntry, proxy))
+			entries = append(entries, newProxyMetricEntry(p, proxy))
 		}
 		return entries
 	}
 }
 
 type proxyMetricEntry struct {
-	entry eosc.IEntry
-	proxy http_context.IProxy
+	parent eosc.IMetricEntry
+	proxy  http_context.IProxy
 }
 
 func (p *proxyMetricEntry) GetFloat(pattern string) (float64, bool) {
@@ -79,24 +80,16 @@ func (p *proxyMetricEntry) GetFloat(pattern string) (float64, bool) {
 }
 
 func (p *proxyMetricEntry) Read(pattern string) string {
-	f, exist := proxyLabelRead[pattern]
-	if !exist {
-		label := p.parent.context.GetLabel(pattern)
-		if label == "" {
-			label = "-"
-		}
-		return label
-	}
-	return f(p.proxy)
+	return p.parent.Read(pattern)
 }
 
 func (p proxyMetricEntry) Children(child string) []eosc.IMetricEntry {
 	return nil
 }
 
-func newProxyMetricEntry(parent eosc.IEntry, proxy http_context.IProxy) eosc.IMetricEntry {
+func newProxyMetricEntry(parent eosc.IMetricEntry, proxy http_context.IProxy) eosc.IMetricEntry {
 	return &proxyMetricEntry{
-		entry: parent,
-		proxy: proxy,
+		parent: parent,
+		proxy:  proxy,
 	}
 }
