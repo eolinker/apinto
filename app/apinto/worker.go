@@ -12,7 +12,7 @@ import (
 	"github.com/eolinker/apinto/drivers/output/httpoutput"
 	"github.com/eolinker/apinto/drivers/output/kafka"
 	"github.com/eolinker/apinto/drivers/output/nsq"
-	"github.com/eolinker/apinto/drivers/output/prometheus"
+	prometheus_output "github.com/eolinker/apinto/drivers/output/prometheus"
 	"github.com/eolinker/apinto/drivers/output/syslog"
 	plugin_manager "github.com/eolinker/apinto/drivers/plugin-manager"
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
@@ -24,6 +24,7 @@ import (
 	ip_restriction "github.com/eolinker/apinto/drivers/plugins/ip-restriction"
 	"github.com/eolinker/apinto/drivers/plugins/monitor"
 	params_transformer "github.com/eolinker/apinto/drivers/plugins/params-transformer"
+	prometheus_plugin "github.com/eolinker/apinto/drivers/plugins/prometheus"
 	proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/proxy-rewrite"
 	proxy_rewriteV2 "github.com/eolinker/apinto/drivers/plugins/proxy_rewrite_v2"
 	rate_limiting "github.com/eolinker/apinto/drivers/plugins/rate-limiting"
@@ -79,7 +80,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	httpoutput.Register(extenderRegister)
 	kafka.Register(extenderRegister)
 	syslog.Register(extenderRegister)
-	prometheus.Register(extenderRegister)
+	prometheus_output.Register(extenderRegister)
 
 	//app
 	app.Register(extenderRegister)
@@ -105,6 +106,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	circuit_breaker.Register(extenderRegister)
 
 	access_log.Register(extenderRegister)
+	prometheus_plugin.Register(extenderRegister)
 	monitor.Register(extenderRegister)
 	proxy_rewriteV2.Register(extenderRegister)
 
