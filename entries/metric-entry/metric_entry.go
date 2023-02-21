@@ -7,6 +7,7 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
+	"strings"
 )
 
 type metricEntry struct {
@@ -38,12 +39,10 @@ func (p *metricEntry) GetFloat(pattern string) (float64, bool) {
 }
 
 func (p *metricEntry) Read(pattern string) string {
+	//会先从rule里面读，若rule没有相应的pattern，会从ctx里面读label
 	value := p.iEntry.Read(pattern)
 	if value == "" {
-		value = p.httpCtx.GetLabel(pattern)
-		if value == "" {
-			value = "-"
-		}
+		value = "-"
 	}
 
 	return value
@@ -59,7 +58,7 @@ func (p *metricEntry) Children(child string) []eosc.IMetricEntry {
 		length := len(proxies)
 		entries := make([]eosc.IMetricEntry, 0, length)
 		for _, proxy := range proxies {
-			entries = append(entries, newProxyMetricEntry(p, proxy))
+			entries = append(entries, newProxyMetricEntry(p, proxy, "proxy_"))
 		}
 		return entries
 	}
@@ -68,6 +67,9 @@ func (p *metricEntry) Children(child string) []eosc.IMetricEntry {
 type proxyMetricEntry struct {
 	parent eosc.IMetricEntry
 	proxy  http_context.IProxy
+
+	prefix       string
+	proxyReaders http_entry.ProxyReaders
 }
 
 func (p *proxyMetricEntry) GetFloat(pattern string) (float64, bool) {
@@ -80,6 +82,18 @@ func (p *proxyMetricEntry) GetFloat(pattern string) (float64, bool) {
 }
 
 func (p *proxyMetricEntry) Read(pattern string) string {
+	if strings.HasPrefix(pattern, p.prefix) {
+		name := strings.TrimPrefix(pattern, p.prefix)
+		f, exist := p.proxyReaders[name]
+		if exist {
+			value, has := f.ReadProxy(name, p.proxy)
+			if !has {
+				value = "-"
+			}
+			return value
+		}
+	}
+
 	return p.parent.Read(pattern)
 }
 
@@ -87,9 +101,11 @@ func (p proxyMetricEntry) Children(child string) []eosc.IMetricEntry {
 	return nil
 }
 
-func newProxyMetricEntry(parent eosc.IMetricEntry, proxy http_context.IProxy) eosc.IMetricEntry {
+func newProxyMetricEntry(parent eosc.IMetricEntry, proxy http_context.IProxy, prefix string) eosc.IMetricEntry {
 	return &proxyMetricEntry{
-		parent: parent,
-		proxy:  proxy,
+		parent:       parent,
+		proxy:        proxy,
+		prefix:       prefix,
+		proxyReaders: http_entry.GetProxyReaders(),
 	}
 }
