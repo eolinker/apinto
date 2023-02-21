@@ -24,7 +24,7 @@ func NewMetricEntry(context eocontext.EoContext) (eosc.IMetricEntry, error) {
 		}, nil
 
 	default:
-		return nil, fmt.Errorf("NewMetricEntry fail. Unsupport type: %T", v)
+		return nil, fmt.Errorf("NewMetricEntry fail. Unsupported type: %T", v)
 	}
 
 }
