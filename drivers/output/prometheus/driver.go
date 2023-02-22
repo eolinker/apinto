@@ -58,16 +58,16 @@ func doCheck(promConf *Config) (map[string]*metricInfoCfg, error) {
 			labels := make([]labelConfig, 0, len(metricConf.Labels))
 			tmpLabels := make(map[string]struct{}, len(metricConf.Labels))
 			for _, label := range metricConf.Labels {
-				//标签名查重
-				if _, isExist := tmpLabels[metricConf.Metric]; isExist {
-					return nil, fmt.Errorf(errorLabelReduplicatedFormat, metricConf.Metric, label)
-				}
-				tmpLabels[label] = struct{}{}
-
 				cLabel, err := formatLabel(label)
 				if err != nil {
 					return nil, err
 				}
+				//标签名查重
+				if _, isExist := tmpLabels[cLabel.Name]; isExist {
+					return nil, fmt.Errorf(errorLabelReduplicatedFormat, metricConf.Metric, cLabel.Name)
+				}
+				tmpLabels[cLabel.Name] = struct{}{}
+
 				labels = append(labels, cLabel)
 			}
 

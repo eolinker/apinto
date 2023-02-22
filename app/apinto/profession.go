@@ -200,7 +200,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Desc:  "influxdbv2输出",
 				},
 				{
-					Id:    "eolinker.com:apinto:prometheus",
+					Id:    "eolinker.com:apinto:prometheus_output",
 					Name:  "prometheus",
 					Label: "prometheus输出",
 					Desc:  "prometheus输出",
