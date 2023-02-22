@@ -49,6 +49,7 @@ type complete struct {
 	authority  string
 	service    string
 	method     string
+	headers    map[string]string
 	retry      int
 	reflect    bool
 }
@@ -63,6 +64,7 @@ func newComplete(descSource grpcurl.DescriptorSource, conf *Config) *complete {
 		service:    conf.Service,
 		method:     conf.Method,
 		reflect:    conf.Reflect,
+		headers:    conf.Headers,
 	}
 }
 
@@ -81,7 +83,7 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	balance := ctx.GetBalance()
 	app := ctx.GetApp()
 
-	md := httpHeaderToMD(ctx.Proxy().Header().Headers())
+	md := httpHeaderToMD(ctx.Proxy().Header().Headers(), h.headers)
 
 	opts := genDialOpts(app.Scheme() == "https", h.authority)
 	newCtx := metadata.NewOutgoingContext(ctx.Context(), md)
@@ -150,17 +152,7 @@ type StatusErr struct {
 	Msg  string `json:"msg"`
 }
 
-var skipHeaderKey = map[string]struct{}{
-	//"user-agent": struct{}{},
-	//"host":           struct{}{},
-	//"origin":     struct{}{},
-	//"connection": struct{}{},
-	//"content-length": struct{}{},
-	//"accept": struct{}{},
-	//"cookie": struct{}{},
-}
-
-func httpHeaderToMD(headers http.Header) metadata.MD {
+func httpHeaderToMD(headers http.Header, additionalHeader map[string]string) metadata.MD {
 	md := metadata.New(map[string]string{})
 	for key, value := range headers {
 		if strings.ToLower(key) == "user-agent" {
@@ -169,6 +161,9 @@ func httpHeaderToMD(headers http.Header) metadata.MD {
 		}
 
 		md.Set(key, value...)
+	}
+	for key, value := range additionalHeader {
+		md.Set(key, value)
 	}
 	md.Set("content-type", "application/grpc")
 	md.Delete("connection")
@@ -185,6 +180,7 @@ func genDialOpts(isTLS bool, authority string) []grpc.DialOption {
 	if authority != "" {
 		opts = append(opts, grpc.WithAuthority(authority))
 	}
+
 	return opts
 }
 
