@@ -16,6 +16,11 @@ var _ IManger = (*dubboManger)(nil)
 
 var completeCaller = NewCompleteCaller()
 
+var (
+	errNoResult = errors.New("no result")
+	errNotFound = errors.New("not found")
+)
+
 type IManger interface {
 	Set(id string, port int, serviceName, methodName string, rule []AppendRule, handler router.IRouterHandler) error
 	Delete(id string)
@@ -75,7 +80,7 @@ func (d *dubboManger) Handler(port int, req *invocation.RPCInvocation) protocol.
 
 	match, has := d.matcher.Match(port, ctx.HeaderReader())
 	if !has {
-		errHandler := NewErrHandler(errors.New("not found"))
+		errHandler := NewErrHandler(errNotFound)
 		ctx.SetFinish(errHandler)
 		ctx.SetCompleteHandler(errHandler)
 
@@ -99,7 +104,7 @@ func (d *dubboManger) Handler(port int, req *invocation.RPCInvocation) protocol.
 
 	rpcResult, ok := ctx.Response().GetBody().(protocol.RPCResult)
 	if !ok {
-		rpcResult = Dubbo2ErrorResult(errors.New("no result"))
+		rpcResult = Dubbo2ErrorResult(errNoResult)
 	}
 
 	return rpcResult

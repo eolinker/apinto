@@ -19,6 +19,7 @@ import (
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
+	dubbo2_to_http "github.com/eolinker/apinto/drivers/plugins/dubbo2-to-http"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
 	grpc_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/grpc-proxy-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
@@ -133,5 +134,6 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 
 	dubbo2_proxy_rewrite.Register(extenderRegister)
 	http_to_dubbo2.Register(extenderRegister)
+	dubbo2_to_http.Register(extenderRegister)
 
 }

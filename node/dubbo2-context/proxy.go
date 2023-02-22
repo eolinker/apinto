@@ -6,19 +6,19 @@ var _ dubbo2_context.IProxy = (*Proxy)(nil)
 
 type Proxy struct {
 	serviceWriter dubbo2_context.IServiceWriter
-	param         interface{}
+	param         *dubbo2_context.Dubbo2ParamBody
 	attachments   map[string]interface{}
 }
 
-func NewProxy(serviceWriter dubbo2_context.IServiceWriter, param interface{}, attachments map[string]interface{}) *Proxy {
+func NewProxy(serviceWriter dubbo2_context.IServiceWriter, param *dubbo2_context.Dubbo2ParamBody, attachments map[string]interface{}) *Proxy {
 	return &Proxy{serviceWriter: serviceWriter, param: param, attachments: attachments}
 }
 
-func (p *Proxy) GetParam() interface{} {
+func (p *Proxy) GetParam() *dubbo2_context.Dubbo2ParamBody {
 	return p.param
 }
 
-func (p *Proxy) SetParam(param interface{}) {
+func (p *Proxy) SetParam(param *dubbo2_context.Dubbo2ParamBody) {
 	p.param = param
 }
 
