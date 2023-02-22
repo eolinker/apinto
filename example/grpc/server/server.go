@@ -32,7 +32,7 @@ func (s *Server) Hello(ctx context.Context, request *service.HelloRequest) (*ser
 		grpc.SetTrailer(ctx, trailingMD)
 	}
 	return &service.HelloResponse{
-		Msg: "hello",
+		Msg: fmt.Sprintf("hello,%s", request.Name),
 	}, nil
 }
 
