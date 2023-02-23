@@ -5,6 +5,9 @@ import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/router"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"strings"
 )
 
@@ -92,13 +95,23 @@ func doCheck(promConf *Config) (map[string]*metricInfoCfg, error) {
 
 	}
 
-	//TODO 对标签进行排序
+	scopes := make([]string, 0, len(promConf.Scopes))
+	for _, scope := range promConf.Scopes {
+		s := strings.TrimSpace(scope)
+		if s == "" {
+			return nil, errorNullScopeMetric
+		}
+		scopes = append(scopes, scope)
+	}
+	promConf.Scopes = scopes
 
 	return metricLabels, nil
 }
 
-func formatLabel(labelExp string) (labelConfig, error) {
-	label := strings.TrimSpace(labelExp)
+func formatLabel(label string) (labelConfig, error) {
+	if label == "" {
+		return labelConfig{}, fmt.Errorf(errorNullLabelFormat, label)
+	}
 
 	c := labelConfig{
 		Name:  "",
@@ -120,7 +133,7 @@ func formatLabel(labelExp string) (labelConfig, error) {
 		c.Value = label
 	}
 	if c.Name == "" || c.Value == "" {
-		return labelConfig{}, fmt.Errorf(errorLabelFormat, labelExp)
+		return labelConfig{}, fmt.Errorf(errorLabelFormat, label)
 	}
 
 	return c, nil
@@ -133,10 +146,42 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 		return nil, err
 	}
 
-	worker := &PromOutput{
+	p := &PromOutput{
 		WorkerBase:  drivers.Worker(id, name),
 		config:      cfg,
 		metricsInfo: metricsInfo,
 	}
-	return worker, err
+
+	//注册指标
+	registry := prometheus.NewPedanticRegistry()
+
+	metrics := make(map[string]iMetric, len(p.config.Metrics))
+	for _, metric := range p.config.Metrics {
+		m, err := newIMetric(p.metricsInfo[metric.Metric], metric.Metric, metric.Description, metric.Objectives)
+		if err != nil {
+			return nil, fmt.Errorf("create output %s fail: %w", p.Id(), err)
+		}
+		err = m.Register(registry)
+		if err != nil {
+			return nil, fmt.Errorf("create output %s fail: %w", p.Id(), err)
+		}
+		metrics[metric.Metric] = m
+	}
+
+	//注册路由
+	p.registry = registry
+	p.handler = promhttp.InstrumentMetricHandler(
+		p.registry, promhttp.HandlerFor(p.registry, promhttp.HandlerOpts{}),
+	)
+
+	err = router.SetPath(p.Id(), p.config.Path, p)
+	if err != nil {
+		return nil, fmt.Errorf("create output %s fail: %w", p.Id(), err)
+	}
+
+	p.metrics = metrics
+
+	scopeManager.Set(p.Id(), p, p.config.Scopes)
+
+	return p, err
 }

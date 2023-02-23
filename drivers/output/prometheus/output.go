@@ -89,6 +89,26 @@ func (p *PromOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 
 	metricsInfo, err := doCheck(cfg)
 
+	//若指标配置有变动，更新metrics和registry的配置
+	allMetrics, isMetricsUpdate, err := p.FormatUpdateMetrics(p.config.Metrics, cfg.Metrics, metricsInfo)
+	if err != nil {
+		return fmt.Errorf("reset output %s fail: %w", p.Id(), err)
+	}
+	var newRegistry *prometheus.Registry
+	var handler http.Handler
+	if isMetricsUpdate {
+		newRegistry = prometheus.NewPedanticRegistry()
+		for _, m := range allMetrics {
+			err = m.Register(newRegistry)
+			if err != nil {
+				return fmt.Errorf("reset output %s register metric fail: %w", p.Id(), err)
+			}
+		}
+		handler = promhttp.InstrumentMetricHandler(
+			newRegistry, promhttp.HandlerFor(newRegistry, promhttp.HandlerOpts{}),
+		)
+	}
+
 	//若path有变，更新router
 	if checkPathChange(p.config.Path, cfg.Path) {
 		//重新设置路由
@@ -98,20 +118,9 @@ func (p *PromOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		}
 	}
 
-	//若指标配置有变动，更新metrics和registry的配置
-	toDelMetrics, toAddMetrics, allMetrics, err := p.FormatUpdateMetrics(p.config.Metrics, cfg.Metrics, metricsInfo)
-	if err != nil {
-		return fmt.Errorf("reset output %s fail: %w", p.Id(), err)
-	}
-	for _, toDel := range toDelMetrics {
-		toDel.UnRegister(p.registry)
-	}
-
-	for _, toAdd := range toAddMetrics {
-		err = toAdd.Register(p.registry)
-		if err != nil {
-			return fmt.Errorf("reset output %s register metric fail: %w", p.Id(), err)
-		}
+	if isMetricsUpdate {
+		p.registry = newRegistry
+		p.handler = handler
 	}
 
 	//若Scopes有变,更新scopeManager
@@ -126,11 +135,10 @@ func (p *PromOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	return nil
 }
 
-// FormatUpdateMetrics 分别返回待注销的metric，待注册的metric，以及更新后的metric配置
-func (p *PromOutput) FormatUpdateMetrics(oldMetrics, newMetrics []*MetricConfig, newMetricsInfo map[string]*metricInfoCfg) ([]iMetric, []iMetric, map[string]iMetric, error) {
-	toDeleteIMetrics := make([]iMetric, 0, len(oldMetrics))
-	toAddIMetrics := make([]iMetric, 0, len(newMetrics))
+// FormatUpdateMetrics 返回更新后的metrics配置
+func (p *PromOutput) FormatUpdateMetrics(oldMetrics, newMetrics []*MetricConfig, newMetricsInfo map[string]*metricInfoCfg) (map[string]iMetric, bool, error) {
 	allMetrics := make(map[string]iMetric, len(newMetrics))
+	isMetricsUpdate := false
 
 	oldMetricsMap := make(map[string]*MetricConfig)
 	newMetricsMap := make(map[string]*MetricConfig)
@@ -141,21 +149,17 @@ func (p *PromOutput) FormatUpdateMetrics(oldMetrics, newMetrics []*MetricConfig,
 		newMetricsMap[mc.Metric] = mc
 	}
 
-	/*找出待注销的metric,和待注册的metric.
-	若旧metric在新metric配置中不存在则注销;
-	若旧metric在新metric配置中存在且配置不一致，则将旧metric注销，并且注册新的同名metric
-	*/
+	//对比新旧metric配置，若某个旧metric配置有改动，则New一个新的IMetric；若没有改变，则继续使用旧的IMetric
 	for m, oldMC := range oldMetricsMap {
 		if newMC, exist := newMetricsMap[m]; !exist {
-			toDeleteIMetrics = append(toDeleteIMetrics, p.metrics[m])
+			isMetricsUpdate = true
 		} else {
 			if checkMetricConfigChange(oldMC, newMC) {
-				toDeleteIMetrics = append(toDeleteIMetrics, p.metrics[m])
+				isMetricsUpdate = true
 				newIMC, err := newIMetric(newMetricsInfo[newMC.Metric], newMC.Metric, newMC.Description, newMC.Objectives)
 				if err != nil {
-					return nil, nil, nil, err
+					return nil, false, err
 				}
-				toAddIMetrics = append(toAddIMetrics, newIMC)
 				allMetrics[m] = newIMC
 			} else {
 				allMetrics[m] = p.metrics[m]
@@ -164,19 +168,18 @@ func (p *PromOutput) FormatUpdateMetrics(oldMetrics, newMetrics []*MetricConfig,
 		}
 	}
 
-	// 找出新metric配置中待注册的metric
 	for m, newMC := range newMetricsMap {
 		if _, exist := oldMetricsMap[m]; !exist {
 			newIMC, err := newIMetric(newMetricsInfo[newMC.Metric], newMC.Metric, newMC.Description, newMC.Objectives)
 			if err != nil {
-				return nil, nil, nil, err
+				return nil, false, err
 			}
-			toAddIMetrics = append(toAddIMetrics, newIMC)
+			isMetricsUpdate = true
 			allMetrics[m] = newIMC
 		}
 	}
 
-	return toDeleteIMetrics, toAddIMetrics, allMetrics, nil
+	return allMetrics, isMetricsUpdate, nil
 }
 
 func (p *PromOutput) Stop() error {
@@ -190,36 +193,7 @@ func (p *PromOutput) Stop() error {
 }
 
 func (p *PromOutput) Start() error {
-	//注册指标
-	registry := prometheus.NewPedanticRegistry()
 
-	metrics := make(map[string]iMetric, len(p.config.Metrics))
-	for _, metric := range p.config.Metrics {
-		m, err := newIMetric(p.metricsInfo[metric.Metric], metric.Metric, metric.Description, metric.Objectives)
-		if err != nil {
-			return fmt.Errorf("start output %s fail: %w", p.Id(), err)
-		}
-		err = m.Register(registry)
-		if err != nil {
-			return fmt.Errorf("start output %s fail: %w", p.Id(), err)
-		}
-		metrics[metric.Metric] = m
-	}
-
-	//注册路由
-	p.handler = promhttp.InstrumentMetricHandler(
-		registry, promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
-	)
-
-	err := router.SetPath(p.Id(), p.config.Path, p)
-	if err != nil {
-		return fmt.Errorf("start output %s fail: %w", p.Id(), err)
-	}
-
-	p.registry = registry
-	p.metrics = metrics
-
-	scopeManager.Set(p.Id(), p, p.config.Scopes)
 	return nil
 }
 

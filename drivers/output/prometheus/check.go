@@ -7,7 +7,7 @@ import (
 
 // checkScopesChange 检查scopes配置是否有改变
 func checkScopesChange(oldScopes, newScopes []string) bool {
-	if len(oldScopes) != len(oldScopes) {
+	if len(oldScopes) != len(newScopes) {
 		return true
 	}
 
