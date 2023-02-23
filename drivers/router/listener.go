@@ -48,10 +48,10 @@ func Register(tp RouterType, handler RouterServerHandler) error {
 type RouterServerHandler func(port int, listener net.Listener)
 
 func init() {
-	matchWriters[AnyTCP] = matchersToMatchWriters([]cmux.Matcher{cmux.Any()})
-	matchWriters[TslTCP] = matchersToMatchWriters([]cmux.Matcher{cmux.TLS()})
-	matchWriters[Http] = matchersToMatchWriters([]cmux.Matcher{cmux.HTTP1Fast()})
-	matchWriters[Dubbo2] = matchersToMatchWriters([]cmux.Matcher{cmux.PrefixMatcher(string([]byte{0xda, 0xbb}))})
+	matchWriters[AnyTCP] = matchersToMatchWriters(cmux.Any())
+	matchWriters[TslTCP] = matchersToMatchWriters(cmux.TLS())
+	matchWriters[Http] = matchersToMatchWriters(cmux.HTTP1Fast())
+	matchWriters[Dubbo2] = matchersToMatchWriters(cmux.PrefixMatcher(string([]byte{0xda, 0xbb})))
 	matchWriters[GRPC] = []cmux.MatchWriter{cmux.HTTP2MatchHeaderFieldPrefixSendSettings("content-type", "application/grpc")}
 	var tf traffic.ITraffic
 	var listenCfg *config.ListenUrl
@@ -113,7 +113,7 @@ func readPort(addr net.Addr) int {
 	return pv
 }
 
-func matchersToMatchWriters(matchers []cmux.Matcher) []cmux.MatchWriter {
+func matchersToMatchWriters(matchers ...cmux.Matcher) []cmux.MatchWriter {
 	mws := make([]cmux.MatchWriter, 0, len(matchers))
 	for _, m := range matchers {
 		cm := m
