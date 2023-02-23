@@ -46,8 +46,9 @@ import (
 	grey_strategy "github.com/eolinker/apinto/drivers/strategy/grey-strategy"
 	limiting_strategy "github.com/eolinker/apinto/drivers/strategy/limiting-strategy"
 	visit_strategy "github.com/eolinker/apinto/drivers/strategy/visit-strategy"
-	template "github.com/eolinker/apinto/drivers/template"
+	"github.com/eolinker/apinto/drivers/template"
 
+	"github.com/eolinker/apinto/drivers/transcode/protobuf"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/extends"
 	process_worker "github.com/eolinker/eosc/process-worker"
@@ -134,5 +135,5 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	dubbo2_proxy_rewrite.Register(extenderRegister)
 
 	http_to_grpc.Register(extenderRegister)
-
+	protocbuf.Register(extenderRegister)
 }
