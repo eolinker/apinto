@@ -78,7 +78,7 @@ func (p *PromOutput) writeMetric(metric iMetric, metricInfo *metricInfoCfg, entr
 }
 
 func (p *PromOutput) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	p.handler(writer, request)
+	p.handler.ServeHTTP(writer, request)
 }
 
 func (p *PromOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
