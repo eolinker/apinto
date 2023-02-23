@@ -10,6 +10,7 @@ import (
 type iMetric interface {
 	Observe(value float64, labels map[string]string)
 	Register(registry *prometheus.Registry) error
+	UnRegister(registry *prometheus.Registry)
 }
 
 type counterVec struct {
@@ -26,6 +27,10 @@ func (c *counterVec) Observe(value float64, labels map[string]string) {
 
 func (c *counterVec) Register(registry *prometheus.Registry) error {
 	return registry.Register(c.counter)
+}
+
+func (c *counterVec) UnRegister(registry *prometheus.Registry) {
+	registry.Unregister(c.counter)
 }
 
 func newCounterVec(name, description string, labels []string) (iMetric, error) {
@@ -49,6 +54,10 @@ func (g *gaugeVec) Register(registry *prometheus.Registry) error {
 	return registry.Register(g.gauge)
 }
 
+func (g *gaugeVec) UnRegister(registry *prometheus.Registry) {
+	registry.Unregister(g.gauge)
+}
+
 func newGaugeVec(name, description string, labels []string) (iMetric, error) {
 	return &gaugeVec{
 		gauge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -68,6 +77,10 @@ func (h *histogramVec) Observe(value float64, labels map[string]string) {
 
 func (h *histogramVec) Register(registry *prometheus.Registry) error {
 	return registry.Register(h.histogram)
+}
+
+func (h *histogramVec) UnRegister(registry *prometheus.Registry) {
+	registry.Unregister(h.histogram)
 }
 
 func newHistogramVec(name, description string, labels []string) (iMetric, error) {
@@ -93,6 +106,10 @@ func (s *summaryVec) Observe(value float64, labels map[string]string) {
 
 func (s *summaryVec) Register(registry *prometheus.Registry) error {
 	return registry.Register(s.summary)
+}
+
+func (s *summaryVec) UnRegister(registry *prometheus.Registry) {
+	registry.Unregister(s.summary)
 }
 
 func newSummaryVec(name, description string, labels []string, objectives string) (iMetric, error) {
@@ -124,13 +141,13 @@ func newSummaryVec(name, description string, labels []string, objectives string)
 	}, nil
 }
 
-func newIMetric(collector, name, description string, metricInfo *metricInfoCfg, objectives string) (iMetric, error) {
+func newIMetric(metricInfo *metricInfoCfg, name, description string, objectives string) (iMetric, error) {
 	labels := make([]string, 0, len(metricInfo.labels))
 	for _, l := range metricInfo.labels {
 		labels = append(labels, l.Name)
 	}
 
-	switch collectorTypeSet[collector] {
+	switch collectorTypeSet[metricInfo.collector] {
 	case typeCounter:
 		return newCounterVec(name, description, labels)
 	case typeGauge:
@@ -140,6 +157,6 @@ func newIMetric(collector, name, description string, metricInfo *metricInfoCfg, 
 	case typeSummary:
 		return newSummaryVec(name, description, labels, objectives)
 	default:
-		return nil, fmt.Errorf(errorMetricTypeFormat, collectorTypeSet[collector])
+		return nil, fmt.Errorf(errorMetricTypeFormat, collectorTypeSet[metricInfo.collector])
 	}
 }

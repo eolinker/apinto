@@ -27,6 +27,17 @@ func doCheck(promConf *Config) (map[string]*metricInfoCfg, error) {
 
 	tmpMetric := make(map[string]struct{}, len(promConf.Metrics))
 	for _, metricConf := range promConf.Metrics {
+		//格式化配置，去除空格
+		metricConf.Metric = strings.TrimSpace(metricConf.Metric)
+		metricConf.Collector = strings.TrimSpace(metricConf.Collector)
+		metricConf.Objectives = strings.TrimSpace(metricConf.Objectives)
+		metricConf.Description = strings.TrimSpace(metricConf.Description)
+		formatLabels := make([]string, 0, len(metricConf.Labels))
+		for _, l := range metricConf.Labels {
+			formatLabels = append(formatLabels, strings.TrimSpace(l))
+		}
+		metricConf.Labels = formatLabels
+
 		//指标名不能为空
 		if metricConf.Metric == "" {
 			return nil, errorNullMetric

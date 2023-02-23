@@ -6,7 +6,6 @@ type Config struct {
 	Metrics []*MetricConfig `json:"metrics" yaml:"metrics" required:"true" label:"指标列表"`
 }
 
-// TODO Labels枚举根据Metric是请求指标还是转发指标，显示的enum需要不一样
 type MetricConfig struct {
 	Metric      string   `json:"metric" yaml:"metric" required:"true" label:"指标名"`
 	Description string   `json:"description" yaml:"description" required:"true" label:"指标描述"`
@@ -43,28 +42,6 @@ var (
 		"proxy_resp":     typeProxyMetric,
 	}
 
-	//metricLabelSet = map[string]map[string]struct{}{
-	//	typeRequestMetric: {
-	//		"node":     {},
-	//		"cluster":  {},
-	//		"method":   {},
-	//		"upstream": {},
-	//		"status":   {},
-	//		"api":      {},
-	//		"app":      {},
-	//		"host":     {},
-	//		"handler":  {},
-	//	},
-	//	typeProxyMetric: {
-	//		"node":     {},
-	//		"cluster":  {},
-	//		"method":   {},
-	//		"upstream": {},
-	//		"status":   {},
-	//		"addr":     {},
-	//		"path":     {},
-	//	},
-	//}
 	//collectorTypeSet collector对应的指标类型
 	collectorTypeSet = map[string]string{
 		"request_total":  typeCounter,
@@ -76,11 +53,5 @@ var (
 		"proxy_timing":   typeSummary,
 		"proxy_req":      typeSummary,
 		"proxy_resp":     typeSummary,
-	}
-	metricTypeSet = map[string]struct{}{
-		typeCounter:   {},
-		typeGauge:     {},
-		typeHistogram: {},
-		typeSummary:   {},
 	}
 )

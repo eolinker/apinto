@@ -18,6 +18,7 @@ func CheckUrlPath(path string) bool {
 	return regexUrlPath.MatchString(path)
 }
 
+// CheckObjectives 检查prometheus objectives配置 校验0.5:0.1,0.9:0.001的格式
 func CheckObjectives(objectives string) bool {
 	return objectivesRegexp.MatchString(objectives)
 }
