@@ -14,6 +14,7 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
+	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
 	"github.com/google/uuid"
 	"net"
@@ -57,6 +58,9 @@ func NewContext(req *invocation.RPCInvocation, port int) dubbo2_context.IDubbo2C
 	t := time.Now()
 
 	method, typesList, valuesList := argumentsUnmarshal(req.Arguments())
+	if method == "" || len(typesList) == 0 || len(valuesList) == 0 {
+		log.Errorf("dubbo2 NewContext method=%s typesList=%v valuesList=%v req=%v", method, typesList, valuesList, req)
+	}
 
 	path := req.GetAttachmentWithDefaultValue(constant.PathKey, "")
 	serviceName := req.GetAttachmentWithDefaultValue(constant.InterfaceKey, "")

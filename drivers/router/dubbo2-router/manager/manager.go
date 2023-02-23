@@ -75,7 +75,7 @@ func (d *dubboManger) Delete(id string) {
 }
 
 func (d *dubboManger) Handler(port int, req *invocation.RPCInvocation) protocol.RPCResult {
-
+	log.DebugF("dubbo2 Handler port=%d req=%v", port, req)
 	ctx := dubbo2_context.NewContext(req, port)
 
 	match, has := d.matcher.Match(port, ctx.HeaderReader())
