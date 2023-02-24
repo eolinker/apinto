@@ -2,20 +2,13 @@ package protocbuf
 
 import (
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/drivers/discovery/static"
 	round_robin "github.com/eolinker/apinto/upstream/round-robin"
 	"github.com/eolinker/eosc"
 )
 
 var DriverName = "protobuf_transcode"
-var (
-	defaultHttpDiscovery = static.CreateAnonymous(&static.Config{
-		Health:   nil,
-		HealthOn: false,
-	})
-)
 
-// Register 注册service_http驱动工厂
+// Register 注册protobuf驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
 	register.RegisterExtenderDriver(DriverName, NewFactory())
 }

@@ -2,10 +2,13 @@ package protocbuf
 
 import (
 	"encoding/json"
+
+	"github.com/eolinker/eosc"
 )
 
-// Config service_http驱动配置
+// Config protobuf驱动配置
 type Config struct {
+	ProtoFiles eosc.EoFiles `json:"proto_files" label:"proto文件列表"`
 }
 
 func (c *Config) String() string {
