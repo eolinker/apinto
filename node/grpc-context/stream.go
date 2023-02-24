@@ -72,24 +72,22 @@ func forwardClientToServer(src grpc.ClientStream, dst grpc.ServerStream) chan er
 	ret := make(chan error, 1)
 	go func() {
 		f := &anypb.Any{}
-		for i := 0; ; i++ {
+		// This is a bit of a hack, but client to server headers are only readable after first client msg is
+		// received but must be written to server stream before the first msg is flushed.
+		// This is the only place to do it nicely.
+		md, err := src.Header()
+		if err != nil {
+			ret <- err
+			return
+		}
+		if err := dst.SendHeader(md); err != nil {
+			ret <- err
+			return
+		}
+		for {
 			if err := src.RecvMsg(f); err != nil {
 				ret <- err // this can be io.EOF which is happy case
 				break
-			}
-			if i == 0 {
-				// This is a bit of a hack, but client to server headers are only readable after first client msg is
-				// received but must be written to server stream before the first msg is flushed.
-				// This is the only place to do it nicely.
-				md, err := src.Header()
-				if err != nil {
-					ret <- err
-					break
-				}
-				if err := dst.SendHeader(md); err != nil {
-					ret <- err
-					break
-				}
 			}
 			if err := dst.SendMsg(f); err != nil {
 				ret <- err
@@ -104,7 +102,7 @@ func forwardServerToClient(src grpc.ServerStream, dst grpc.ClientStream) chan er
 	ret := make(chan error, 1)
 	go func() {
 		f := &anypb.Any{}
-		for i := 0; ; i++ {
+		for {
 			if err := src.RecvMsg(f); err != nil {
 				ret <- err // this can be io.EOF which is happy case
 				break

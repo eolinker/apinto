@@ -3,8 +3,11 @@ package grpc_to_http
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
+
+	grpc_descriptor "github.com/eolinker/apinto/grpc-descriptor"
 
 	"github.com/jhump/protoreflect/dynamic"
 
@@ -21,8 +24,6 @@ import (
 
 	"github.com/eolinker/eosc/log"
 
-	"github.com/fullstorydev/grpcurl"
-
 	"google.golang.org/grpc/metadata"
 
 	"github.com/eolinker/eosc/eocontext"
@@ -35,7 +36,7 @@ var (
 )
 
 type complete struct {
-	descSource grpcurl.DescriptorSource
+	descriptor grpc_descriptor.IDescriptor
 	headers    map[string]string
 	rawQuery   string
 	path       string
@@ -43,11 +44,18 @@ type complete struct {
 	timeout    time.Duration
 }
 
-func newComplete(descSource grpcurl.DescriptorSource, conf *Config) *complete {
+func newComplete(descriptor grpc_descriptor.IDescriptor, conf *Config) *complete {
+	query := url.Values{}
+	for key, value := range conf.Query {
+		query.Set(key, value)
+	}
 	timeout := defaultTimeout
 	return &complete{
-		descSource: descSource,
+		descriptor: descriptor,
 		timeout:    timeout,
+		rawQuery:   query.Encode(),
+		path:       conf.Path,
+		headers:    conf.Headers,
 	}
 }
 
@@ -57,16 +65,14 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	desc, err := h.descSource.FindSymbol(fmt.Sprintf("%s.%s", ctx.Proxy().Service(), ctx.Proxy().Method()))
+	descriptor, err := h.descriptor.Descriptor().FindSymbol(fmt.Sprintf("%s.%s", ctx.Proxy().Service(), ctx.Proxy().Method()))
 	if err != nil {
 		return err
 	}
-	methodDesc := desc.GetFile().FindService(ctx.Proxy().Service()).FindMethodByName(ctx.Proxy().Method())
+	methodDesc := descriptor.GetFile().FindService(ctx.Proxy().Service()).FindMethodByName(ctx.Proxy().Method())
 	message := ctx.Proxy().Message(methodDesc.GetInputType())
-	if err != nil {
-		return err
-	}
-	body, err := message.Marshal()
+
+	body, err := message.MarshalJSON()
 	if err != nil {
 		return err
 	}
@@ -81,7 +87,11 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 		scheme = "https"
 
 	}
-	request := newRequest(ctx.Proxy().Headers(), body, h.headers, h.rawQuery)
+	path := h.path
+	if path == "" {
+		path = fmt.Sprintf("/%s/%s", ctx.Proxy().Service(), ctx.Proxy().Method())
+	}
+	request := newRequest(ctx.Proxy().Headers(), body, h.headers, path, h.rawQuery)
 	defer fasthttp.ReleaseRequest(request)
 	var lastErr error
 	timeOut := app.TimeOut()
@@ -95,8 +105,18 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 		if err != nil {
 			return status.Error(codes.NotFound, err.Error())
 		}
-
-		log.Debug("node: ", node.Addr())
+		addr := node.Addr()
+		log.Debug("node: ", addr)
+		request.URI()
+		passHost, targetHost := ctx.GetUpstreamHostHandler().PassHost()
+		switch passHost {
+		case eocontext.PassHost:
+			request.URI().SetHost(strings.Join(ctx.Proxy().Headers().Get(":authority"), ","))
+		case eocontext.NodeHost:
+			request.URI().SetHost(node.Addr())
+		case eocontext.ReWriteHost:
+			request.URI().SetHost(targetHost)
+		}
 		response := fasthttp.AcquireResponse()
 		lastErr = fasthttp_client.ProxyTimeout(fmt.Sprintf("%s://%s", scheme, node.Addr()), request, response, timeOut)
 		if lastErr == nil {
@@ -111,8 +131,9 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 func newGRPCResponse(ctx grpc_context.IGrpcContext, response *fasthttp.Response, methodDesc *desc.MethodDescriptor) error {
 	defer fasthttp.ReleaseResponse(response)
 	message := dynamic.NewMessage(methodDesc.GetOutputType())
-	err := message.Unmarshal(response.Body())
+	err := message.UnmarshalJSON(response.Body())
 	if err != nil {
+		log.Debug("body is: ", string(response.Body()))
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -133,7 +154,7 @@ func newGRPCResponse(ctx grpc_context.IGrpcContext, response *fasthttp.Response,
 	return nil
 }
 
-func newRequest(headers metadata.MD, body []byte, additionalHeader map[string]string, rawQuery string) *fasthttp.Request {
+func newRequest(headers metadata.MD, body []byte, additionalHeader map[string]string, path, rawQuery string) *fasthttp.Request {
 	request := fasthttp.AcquireRequest()
 	for key, value := range headers {
 		if strings.ToLower(key) == "grpc-go" {
@@ -146,6 +167,8 @@ func newRequest(headers metadata.MD, body []byte, additionalHeader map[string]st
 	for key, value := range additionalHeader {
 		request.Header.Add(key, value)
 	}
+	request.Header.Set("content-type", "application/json")
+	request.URI().SetPath(path)
 	request.URI().SetQueryString(rawQuery)
 	request.SetBody(body)
 	return request

@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
+
+	grpc_descriptor "github.com/eolinker/apinto/grpc-descriptor"
 
 	"google.golang.org/grpc/codes"
 
@@ -27,16 +28,13 @@ import (
 
 	"github.com/fullstorydev/grpcurl"
 
-	"google.golang.org/grpc/metadata"
-
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 
 	"github.com/eolinker/eosc/eocontext"
 )
 
 var (
-	ErrorTimeoutComplete = errors.New("complete timeout")
-	options              = grpcurl.FormatOptions{
+	options = grpcurl.FormatOptions{
 		AllowUnknownFields: true,
 	}
 	defaultTimeout = 10 * time.Second
@@ -44,7 +42,7 @@ var (
 
 type complete struct {
 	format     grpcurl.Format
-	descSource grpcurl.DescriptorSource
+	descriptor grpc_descriptor.IDescriptor
 	timeout    time.Duration
 	authority  string
 	service    string
@@ -54,11 +52,11 @@ type complete struct {
 	reflect    bool
 }
 
-func newComplete(descSource grpcurl.DescriptorSource, conf *Config) *complete {
+func newComplete(descriptor grpc_descriptor.IDescriptor, conf *Config) *complete {
 	timeout := defaultTimeout
 	return &complete{
 		format:     grpcurl.Format(conf.Format),
-		descSource: descSource,
+		descriptor: descriptor,
 		timeout:    timeout,
 		authority:  conf.Authority,
 		service:    conf.Service,
@@ -66,6 +64,20 @@ func newComplete(descSource grpcurl.DescriptorSource, conf *Config) *complete {
 		reflect:    conf.Reflect,
 		headers:    conf.Headers,
 	}
+}
+
+func getSymbol(path string, service string, method string) string {
+	ps := strings.Split(strings.TrimPrefix(path, "/"), "/")
+	if service == "" {
+		service = ps[0]
+	}
+	if method == "" {
+		if len(ps) > 1 {
+			method = ps[1]
+		}
+	}
+	return fmt.Sprintf("%s/%s", service, method)
+
 }
 
 func (h *complete) Complete(org eocontext.EoContext) error {
@@ -84,11 +96,10 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	app := ctx.GetApp()
 
 	md := httpHeaderToMD(ctx.Proxy().Header().Headers(), h.headers)
-
+	newCtx := ctx.Context()
 	opts := genDialOpts(app.Scheme() == "https", h.authority)
-	newCtx := metadata.NewOutgoingContext(ctx.Context(), md)
-	symbol := fmt.Sprintf("%s/%s", h.service, h.method)
 
+	symbol := getSymbol(ctx.Proxy().URI().Path(), h.service, h.method)
 	var lastErr error
 	var conn *grpc.ClientConn
 	for i := h.retry + 1; i > 0; i-- {
@@ -102,15 +113,17 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 			log.Error("dial error: ", lastErr)
 			continue
 		}
-		descSource := h.descSource
+		var descSource grpcurl.DescriptorSource
 		if h.reflect {
 			refClient := grpcreflect.NewClientV1Alpha(newCtx, reflectpb.NewServerReflectionClient(conn))
 			refSource := grpcurl.DescriptorSourceFromServer(newCtx, refClient)
-			if h.descSource == nil {
+			if descSource == nil {
 				descSource = refSource
 			} else {
-				descSource = &compositeSource{reflection: refSource, file: h.descSource}
+				descSource = &compositeSource{reflection: refSource, file: descSource}
 			}
+		} else {
+			descSource = h.descriptor.Descriptor()
 		}
 
 		rf, formatter, err := grpcurl.RequestParserAndFormatter(h.format, descSource, in, options)
@@ -123,7 +136,7 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 			Out:            response,
 			Formatter:      formatter,
 		}
-		err = grpcurl.InvokeRPC(newCtx, descSource, conn, symbol, []string{}, handler, rf.Next)
+		err = grpcurl.InvokeRPC(newCtx, descSource, conn, symbol, md, handler, rf.Next)
 		if err != nil {
 			if errStatus, ok := status.FromError(err); ok {
 				data, _ := json.Marshal(StatusErr{
@@ -157,21 +170,25 @@ type StatusErr struct {
 	Msg  string `json:"msg"`
 }
 
-func httpHeaderToMD(headers http.Header, additionalHeader map[string]string) metadata.MD {
-	md := metadata.New(map[string]string{})
+func httpHeaderToMD(headers http.Header, additionalHeader map[string]string) []string {
+	headers.Set("content-type", "application/grpc")
+	headers.Del("connection")
+	md := make([]string, len(headers)+len(additionalHeader))
+	//md := metadata.New(map[string]string{})
 	for key, value := range headers {
 		if strings.ToLower(key) == "user-agent" {
-			md.Set("grpc-go", value...)
+			for _, v := range value {
+				md = append(md, fmt.Sprintf("%s: %s", key, v))
+			}
 			continue
 		}
-
-		md.Set(key, value...)
+		for _, v := range value {
+			md = append(md, fmt.Sprintf("%s: %s", key, v))
+		}
 	}
 	for key, value := range additionalHeader {
-		md.Set(key, value)
+		md = append(md, fmt.Sprintf("%s: %s", key, value))
 	}
-	md.Set("content-type", "application/grpc")
-	md.Delete("connection")
 	return md
 }
 

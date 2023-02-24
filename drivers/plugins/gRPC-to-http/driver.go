@@ -9,7 +9,6 @@ import (
 
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
-	"github.com/fullstorydev/grpcurl"
 )
 
 func check(v interface{}) (*Config, error) {
@@ -38,7 +37,7 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 	}, nil
 }
 
-func getDescSource(protobufID string) (grpcurl.DescriptorSource, error) {
+func getDescSource(protobufID string) (grpc_descriptor.IDescriptor, error) {
 
 	w, ok := worker.Get(protobufID)
 	if ok {
@@ -46,7 +45,7 @@ func getDescSource(protobufID string) (grpcurl.DescriptorSource, error) {
 		if !ok {
 			return nil, fmt.Errorf("invalid protobuf id: %s", protobufID)
 		}
-		return v.Descriptor(), nil
+		return v, nil
 	}
 	return nil, fmt.Errorf("protobuf worker(%s) is not exist", protobufID)
 
