@@ -1,12 +1,13 @@
-package http_to_grpc
+package grpc_to_http
 
 import (
 	"fmt"
 
 	"github.com/eolinker/eosc/common/bean"
 
-	"github.com/eolinker/apinto/drivers"
 	grpc_descriptor "github.com/eolinker/apinto/grpc-descriptor"
+
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/fullstorydev/grpcurl"
 )
@@ -16,6 +17,9 @@ func check(v interface{}) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	if conf.ProtobufID == "" {
+		return nil, fmt.Errorf("protobuf id is empty")
+	}
 
 	return conf, nil
 }
@@ -24,24 +28,17 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 	once.Do(func() {
 		bean.Autowired(&worker)
 	})
-
-	descSource, err := getDescSource(string(conf.ProtobufID), conf.Reflect)
+	descSource, err := getDescSource(string(conf.ProtobufID))
 	if err != nil {
 		return nil, err
 	}
-	return &toGRPC{
+	return &toHttp{
 		WorkerBase: drivers.Worker(id, name),
 		handler:    newComplete(descSource, conf),
 	}, nil
 }
 
-func getDescSource(protobufID string, reflect bool) (grpcurl.DescriptorSource, error) {
-	if reflect {
-		return nil, nil
-	}
-	if protobufID == "" {
-		return nil, fmt.Errorf("protobuf id is empty")
-	}
+func getDescSource(protobufID string) (grpcurl.DescriptorSource, error) {
 
 	w, ok := worker.Get(protobufID)
 	if ok {
@@ -52,4 +49,5 @@ func getDescSource(protobufID string, reflect bool) (grpcurl.DescriptorSource, e
 		return v.Descriptor(), nil
 	}
 	return nil, fmt.Errorf("protobuf worker(%s) is not exist", protobufID)
+
 }

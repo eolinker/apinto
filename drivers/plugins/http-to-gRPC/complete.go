@@ -119,8 +119,9 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 		}
 		response := NewResponse()
 		handler := &grpcurl.DefaultEventHandler{
-			Out:       response,
-			Formatter: formatter,
+			VerbosityLevel: 2,
+			Out:            response,
+			Formatter:      formatter,
 		}
 		err = grpcurl.InvokeRPC(newCtx, descSource, conn, symbol, []string{}, handler, rf.Next)
 		if err != nil {
@@ -141,6 +142,10 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 			ctx.Response().SetBody(data)
 			return err
 		}
+		for key, value := range response.Header() {
+			ctx.Response().SetHeader(key, value)
+		}
+		ctx.Response().SetHeader("content-type", "application/json")
 		ctx.Response().SetBody(response.Body())
 		return nil
 	}

@@ -110,6 +110,7 @@ func (r *Request) Message(msgDesc *desc.MessageDescriptor) *dynamic.Message {
 			var err error
 			for {
 				err = r.stream.RecvMsg(msg)
+				r.message = msg
 				if err != nil {
 					errChan <- err
 				}
@@ -118,16 +119,19 @@ func (r *Request) Message(msgDesc *desc.MessageDescriptor) *dynamic.Message {
 		for {
 			select {
 			case <-ctx.Done():
-				break
-			case err := <-errChan:
+				r.message = msg
+				return r.message
+			case err, ok := <-errChan:
+				if !ok {
+					return r.message
+				}
 				if err == io.EOF {
 					log.Debug("read message eof.")
 				}
-				break
+				return r.message
 			}
 		}
 	}
-	r.message = msg
 
 	return msg
 }
