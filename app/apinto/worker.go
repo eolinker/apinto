@@ -20,9 +20,12 @@ import (
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
+	dubbo2_to_http "github.com/eolinker/apinto/drivers/plugins/dubbo2-to-http"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
 	grpc_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/grpc-proxy-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
+	http_to_dubbo2 "github.com/eolinker/apinto/drivers/plugins/http-to-dubbo2"
+	http_to_grpc "github.com/eolinker/apinto/drivers/plugins/http-to-gRPC"
 	ip_restriction "github.com/eolinker/apinto/drivers/plugins/ip-restriction"
 	"github.com/eolinker/apinto/drivers/plugins/monitor"
 	params_transformer "github.com/eolinker/apinto/drivers/plugins/params-transformer"
@@ -135,5 +138,9 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	grpc_proxy_rewrite.Register(extenderRegister)
 
 	dubbo2_proxy_rewrite.Register(extenderRegister)
+	http_to_dubbo2.Register(extenderRegister)
+	dubbo2_to_http.Register(extenderRegister)
+
+	http_to_grpc.Register(extenderRegister)
 
 }
