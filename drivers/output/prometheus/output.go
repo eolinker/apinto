@@ -3,7 +3,7 @@ package prometheus
 import (
 	"fmt"
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/entries/metric-entry"
+	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/router"
 	"github.com/prometheus/client_golang/prometheus"
@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-var _ metric_entry.IMetrics = (*PromOutput)(nil)
+var _ output.IMetrics = (*PromOutput)(nil)
 var _ eosc.IWorker = (*PromOutput)(nil)
 
 type PromOutput struct {
@@ -198,5 +198,5 @@ func (p *PromOutput) Start() error {
 }
 
 func (p *PromOutput) CheckSkill(skill string) bool {
-	return skill == metric_entry.Skill
+	return skill == output.Skill
 }

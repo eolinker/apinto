@@ -2,6 +2,7 @@ package prometheus
 
 import (
 	metric_entry "github.com/eolinker/apinto/entries/metric-entry"
+	"github.com/eolinker/apinto/output"
 	"reflect"
 
 	scope_manager "github.com/eolinker/apinto/scope-manager"
@@ -40,7 +41,7 @@ func (p *prometheus) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.
 
 	outputs := p.proxy.List()
 	for _, v := range outputs {
-		o, ok := v.(metric_entry.IMetrics)
+		o, ok := v.(output.IMetrics)
 		if !ok {
 			log.Error("prometheus output type error,type is ", reflect.TypeOf(v))
 			continue

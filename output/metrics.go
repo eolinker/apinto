@@ -1,4 +1,4 @@
-package metric_entry
+package output
 
 import (
 	"github.com/eolinker/eosc"

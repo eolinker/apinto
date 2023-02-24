@@ -2,7 +2,7 @@ package prometheus
 
 import (
 	"fmt"
-	metric_entry "github.com/eolinker/apinto/entries/metric-entry"
+	metric_entry "github.com/eolinker/apinto/output"
 
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
