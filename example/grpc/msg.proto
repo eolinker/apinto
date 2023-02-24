@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "github.com/eolinker/apinto/example/grpc/demo_service";
+
+package Service;
+
+// HelloRequest 请求
+message HelloRequest {
+  string name = 1;
+  int32 num=2;
+  string isUser=3;
+}
+
+// HelloResponse 响应，成功消息时，msg为json数据
+message HelloResponse {
+  string msg = 1;
+  string err = 2;
+}
+

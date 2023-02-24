@@ -53,6 +53,7 @@ func (o *output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 }
 
 func (o *output) Stop() error {
+	scopeManager.Del(o.Id())
 	o.client.Close()
 	o.cancel()
 	close(o.metrics)

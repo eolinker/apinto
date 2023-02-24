@@ -1,10 +1,12 @@
 package http_router
 
 import (
-	"github.com/eolinker/apinto/drivers"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/eolinker/apinto/drivers"
+	http_router "github.com/eolinker/apinto/router"
 
 	"github.com/eolinker/apinto/drivers/router/http-router/websocket"
 
@@ -12,7 +14,6 @@ import (
 
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
 	"github.com/eolinker/apinto/plugin"
-	http_router "github.com/eolinker/apinto/router/http-router"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/template"
 
