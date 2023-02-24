@@ -1,6 +1,7 @@
-package http_to_grpc
+package grpc_to_http
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/eolinker/apinto/drivers"
@@ -8,7 +9,7 @@ import (
 )
 
 const (
-	Name = "http_to_grpc"
+	Name = "grpc_to_http"
 )
 
 var (
@@ -21,5 +22,13 @@ func Register(register eosc.IExtenderDriverRegister) {
 }
 
 func NewFactory() eosc.IExtenderDriverFactory {
-	return drivers.NewFactory[Config](Create)
+	return drivers.NewFactory[Config](Create, Check)
+}
+
+func Check(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+	if cfg.ProtobufID == "" {
+		return fmt.Errorf("protobuf id is empty")
+	}
+
+	return nil
 }

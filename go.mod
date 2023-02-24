@@ -198,4 +198,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-//replace github.com/eolinker/eosc => ../eosc
+replace github.com/eolinker/eosc => ../eosc

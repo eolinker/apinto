@@ -21,6 +21,7 @@ import (
 	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
 	dubbo2_to_http "github.com/eolinker/apinto/drivers/plugins/dubbo2-to-http"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
+	grpc_to_http "github.com/eolinker/apinto/drivers/plugins/gRPC-to-http"
 	grpc_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/grpc-proxy-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
 	http_to_dubbo2 "github.com/eolinker/apinto/drivers/plugins/http-to-dubbo2"
@@ -48,8 +49,9 @@ import (
 	grey_strategy "github.com/eolinker/apinto/drivers/strategy/grey-strategy"
 	limiting_strategy "github.com/eolinker/apinto/drivers/strategy/limiting-strategy"
 	visit_strategy "github.com/eolinker/apinto/drivers/strategy/visit-strategy"
-	template "github.com/eolinker/apinto/drivers/template"
+	"github.com/eolinker/apinto/drivers/template"
 
+	"github.com/eolinker/apinto/drivers/transcode/protobuf"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/extends"
 	process_worker "github.com/eolinker/eosc/process-worker"
@@ -138,5 +140,6 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	dubbo2_to_http.Register(extenderRegister)
 
 	http_to_grpc.Register(extenderRegister)
-
+	protocbuf.Register(extenderRegister)
+	grpc_to_http.Register(extenderRegister)
 }

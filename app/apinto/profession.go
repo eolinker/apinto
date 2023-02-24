@@ -231,5 +231,21 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
+		{
+			Name:         "transcode",
+			Label:        "编码器",
+			Desc:         "编码器",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:apinto:protobuf_transcode",
+					Name:  "protobuf",
+					Label: "protobuf编码器",
+					Desc:  "protobuf编码器",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		},
 	}
 }

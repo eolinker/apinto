@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	Name = "dubbo2-to-http"
+	Name = "dubbo2_to_http"
 )
 
 func Register(register eosc.IExtenderDriverRegister) {

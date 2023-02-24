@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"sync"
 
 	"github.com/eolinker/eosc/log"
@@ -19,7 +20,7 @@ var _ http_context.IWebsocketContext = (*WebsocketContext)(nil)
 
 type WebsocketContext struct {
 	*HttpContext
-	upstreamConn *websocket.Conn
+	upstreamConn net.Conn
 }
 
 var upgrader = websocket.FastHTTPUpgrader{}
@@ -36,12 +37,12 @@ func (w *WebsocketContext) Upgrade() error {
 		wg := &sync.WaitGroup{}
 		wg.Add(2)
 		go func() {
-			size, err := io.Copy(conn.UnderlyingConn(), w.upstreamConn.UnderlyingConn())
+			size, err := io.Copy(conn.UnderlyingConn(), w.upstreamConn)
 			log.Infof("finish copy upstream: size is %d,err is %v", size, err)
 			wg.Done()
 		}()
 		go func() {
-			size, err := io.Copy(w.upstreamConn.UnderlyingConn(), conn.UnderlyingConn())
+			size, err := io.Copy(w.upstreamConn, conn.UnderlyingConn())
 			log.Infof("finish copy upstream: size is %d,err is %v", size, err)
 			wg.Done()
 		}()
@@ -63,7 +64,7 @@ func NewWebsocketContext(ctx http_context.IHttpContext) (*WebsocketContext, erro
 	return &WebsocketContext{HttpContext: httpCtx}, nil
 }
 
-func (w *WebsocketContext) SetUpstreamConn(conn *websocket.Conn) {
+func (w *WebsocketContext) SetUpstreamConn(conn net.Conn) {
 	w.upstreamConn = conn
 }
 

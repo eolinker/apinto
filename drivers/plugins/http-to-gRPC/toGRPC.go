@@ -39,7 +39,7 @@ func (t *toGRPC) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 	if err != nil {
 		return err
 	}
-	descSource, err := getDescSource(cfg.ProtobufID, workers)
+	descSource, err := getDescSource(string(cfg.ProtobufID), cfg.Reflect)
 	if err != nil {
 		return err
 	}
