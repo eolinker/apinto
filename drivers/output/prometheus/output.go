@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-var _ metric_entry.IOutput = (*PromOutput)(nil)
+var _ metric_entry.IMetrics = (*PromOutput)(nil)
 var _ eosc.IWorker = (*PromOutput)(nil)
 
 type PromOutput struct {
@@ -35,7 +35,7 @@ type labelConfig struct {
 	Value string
 }
 
-func (p *PromOutput) Output(metrics []string, entry eosc.IMetricEntry) {
+func (p *PromOutput) Collect(metrics []string, entry eosc.IMetricEntry) {
 	proxyEntries := entry.Children("proxies")
 
 	for _, metric := range metrics {
