@@ -6,7 +6,7 @@ require (
 	github.com/Shopify/sarama v1.32.0
 	github.com/coocood/freecache v1.2.2
 	github.com/dubbogo/gost v1.13.1
-	github.com/eolinker/eosc v0.9.1
+	github.com/eolinker/eosc v0.10.1
 	github.com/fasthttp/websocket v1.5.0
 	github.com/fullstorydev/grpcurl v1.8.7
 	github.com/go-redis/redis/v8 v8.11.5
@@ -164,7 +164,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.12.2 // indirect
+	github.com/prometheus/client_golang v1.12.2
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
@@ -188,14 +188,13 @@ require (
 	go.opentelemetry.io/otel/trace v1.7.0 // indirect
 	go.uber.org/atomic v1.9.0
 	go.uber.org/multierr v1.6.0 // indirect
-	go.uber.org/zap v1.23.0 // indirect
+	go.uber.org/zap v1.23.0
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	google.golang.org/genproto v0.0.0-20211104193956-4c6863e31247 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 //replace github.com/eolinker/eosc => ../eosc
