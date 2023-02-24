@@ -39,7 +39,7 @@ func getList(ids []eosc.RequireId) ([]interface{}, error) {
 			return nil, fmt.Errorf("%s:%w", id, eosc.ErrorWorkerNotExits)
 		}
 
-		_, ok := worker.(metric_entry.IOutput)
+		_, ok := worker.(metric_entry.IMetrics)
 		if !ok {
 			return nil, fmt.Errorf(errNotImpEntryFormat, string(id))
 		}

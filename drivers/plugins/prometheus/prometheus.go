@@ -40,12 +40,12 @@ func (p *prometheus) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.
 
 	outputs := p.proxy.List()
 	for _, v := range outputs {
-		o, ok := v.(metric_entry.IOutput)
+		o, ok := v.(metric_entry.IMetrics)
 		if !ok {
 			log.Error("prometheus output type error,type is ", reflect.TypeOf(v))
 			continue
 		}
-		o.Output(p.metrics, metricEntry)
+		o.Collect(p.metrics, metricEntry)
 	}
 
 	return nil
