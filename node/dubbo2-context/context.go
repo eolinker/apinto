@@ -25,7 +25,12 @@ import (
 )
 
 func NewDubboParamBody(typesList []string, valuesList []hessian.Object) *dubbo2_context.Dubbo2ParamBody {
-	return &dubbo2_context.Dubbo2ParamBody{TypesList: typesList, ValuesList: valuesList}
+
+	valList := make([]interface{}, 0, len(valuesList))
+	for _, v := range valuesList {
+		valList = append(valList, v)
+	}
+	return &dubbo2_context.Dubbo2ParamBody{TypesList: typesList, ValuesList: valList}
 }
 
 var _ dubbo2_context.IDubbo2Context = (*DubboContext)(nil)
@@ -120,9 +125,17 @@ func (d *DubboContext) dial(addr string, timeout time.Duration) error {
 	arguments := make([]interface{}, 3)
 	parameterValues := make([]reflect.Value, 3)
 
+	valuesList := make([]hessian.Object, 0, len(d.proxy.GetParam().ValuesList))
+
+	for _, v := range d.proxy.GetParam().ValuesList {
+		if object, ok := v.(hessian.Object); ok {
+			valuesList = append(valuesList, object)
+		}
+	}
+
 	arguments[0] = d.proxy.Service().Method()
 	arguments[1] = d.proxy.GetParam().TypesList
-	arguments[2] = d.proxy.GetParam().ValuesList
+	arguments[2] = valuesList
 
 	parameterValues[0] = reflect.ValueOf(arguments[0])
 	parameterValues[1] = reflect.ValueOf(arguments[1])
