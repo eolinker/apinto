@@ -10,7 +10,7 @@ import (
 
 var (
 	_            eosc.IEntry = (*Entry)(nil)
-	proxiesChild             = "proxies"
+	ProxiesChild             = "proxies"
 )
 
 type Entry struct {
@@ -31,7 +31,7 @@ func (e *Entry) Read(pattern string) string {
 
 func (e *Entry) Children(child string) []eosc.IEntry {
 	switch child {
-	case proxiesChild:
+	case ProxiesChild:
 		fallthrough
 	default:
 		length := len(e.ctx.Proxies())

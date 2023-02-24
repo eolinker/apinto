@@ -1,18 +1,35 @@
-package monitor
+package prometheus
 
 import (
 	"fmt"
-	"reflect"
+	metric_entry "github.com/eolinker/apinto/output"
 
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
-	monitor_entry "github.com/eolinker/apinto/entries/monitor-entry"
-	"github.com/eolinker/eosc/log"
-
 	"github.com/eolinker/apinto/drivers"
-
 	"github.com/eolinker/eosc"
 )
+
+func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
+	return doCheck(v)
+}
+
+func check(v interface{}) (*Config, error) {
+	cfg, ok := v.(*Config)
+	if !ok {
+		return nil, eosc.ErrorConfigType
+	}
+
+	err := doCheck(cfg)
+	return cfg, err
+}
+
+func doCheck(cfg *Config) error {
+	if len(cfg.Metrics) == 0 {
+		return errNullMetric
+	}
+	return nil
+}
 
 func getList(ids []eosc.RequireId) ([]interface{}, error) {
 	ls := make([]interface{}, 0, len(ids))
@@ -22,9 +39,9 @@ func getList(ids []eosc.RequireId) ([]interface{}, error) {
 			return nil, fmt.Errorf("%s:%w", id, eosc.ErrorWorkerNotExits)
 		}
 
-		_, ok := worker.(monitor_entry.IOutput)
+		_, ok := worker.(metric_entry.IMetrics)
 		if !ok {
-			return nil, fmt.Errorf("%s:worker d not implement IEntryOutput,now %v", string(id), reflect.TypeOf(worker))
+			return nil, fmt.Errorf(errNotImpEntryFormat, string(id))
 		}
 
 		ls = append(ls, worker)
@@ -34,22 +51,23 @@ func getList(ids []eosc.RequireId) ([]interface{}, error) {
 }
 
 func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	log.Info("create monitor worker...")
+
 	list, err := getList(conf.Output)
 	if err != nil {
 		return nil, err
 	}
 
-	o := &worker{
+	p := &prometheus{
 		WorkerBase: drivers.Worker(id, name),
+		metrics:    conf.Metrics,
 	}
 	if len(list) > 0 {
 		proxy := scope_manager.NewProxy()
 		proxy.Set(list)
-		monitorManager.SetProxyOutput(id, proxy)
+		p.proxy = proxy
 	} else {
-		monitorManager.SetProxyOutput(id, scopeManager.Get("monitor"))
+		p.proxy = scopeManager.Get(globalScopeName)
 	}
 
-	return o, nil
+	return p, nil
 }
