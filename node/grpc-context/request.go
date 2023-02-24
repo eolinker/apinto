@@ -11,9 +11,8 @@ import (
 
 	"github.com/jhump/protoreflect/desc"
 
-	"github.com/eolinker/eosc/log"
-
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
+	"github.com/eolinker/eosc/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -101,33 +100,41 @@ func (r *Request) Message(msgDesc *desc.MessageDescriptor) *dynamic.Message {
 	if r.message != nil {
 		return r.message
 	}
-	msg := dynamic.NewMessage(msgDesc)
-	if r.stream != nil {
-		ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-		errChan := make(chan error)
-		defer close(errChan)
-		go func() {
-			var err error
-			for {
-				err = r.stream.RecvMsg(msg)
-				if err != nil {
-					errChan <- err
-				}
-			}
-		}()
+	r.message = dynamic.NewMessage(msgDesc)
+	if r.stream == nil {
+		return r.message
+	}
+
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	errChan := make(chan error)
+
+	go func() {
+		var err error
 		for {
-			select {
-			case <-ctx.Done():
-				break
-			case err := <-errChan:
-				if err == io.EOF {
-					log.Debug("read message eof.")
-				}
-				break
+			err = r.stream.RecvMsg(r.message)
+			if err != nil {
+				errChan <- err
+				close(errChan)
+				return
 			}
 		}
+	}()
+	for {
+		select {
+		case <-ctx.Done():
+			return r.message
+		case err, ok := <-errChan:
+			if !ok {
+				return r.message
+			}
+			if err != nil {
+				if err == io.EOF {
+					log.Debug("read message eof.")
+				} else {
+					log.Debug("read message error: ", err)
+				}
+			}
+			return r.message
+		}
 	}
-	r.message = msg
-
-	return msg
 }

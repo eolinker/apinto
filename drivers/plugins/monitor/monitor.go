@@ -1,7 +1,7 @@
 package monitor
 
 import (
-	monitor_entry "github.com/eolinker/apinto/monitor-entry"
+	monitor_entry "github.com/eolinker/apinto/entries/monitor-entry"
 
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
