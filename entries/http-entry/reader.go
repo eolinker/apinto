@@ -10,6 +10,7 @@ import (
 	"github.com/eolinker/apinto/utils/version"
 
 	"github.com/eolinker/apinto/utils"
+	eosc_utils "github.com/eolinker/eosc/utils"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -50,6 +51,20 @@ var (
 	rule Fields = map[string]IReader{
 		"request_id": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.RequestId(), true
+		}),
+		"node": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+			if value := ctx.GetLabel(name); value != "" {
+				return value, true
+			}
+			globalLabels := eosc_utils.GlobalLabelGet()
+			return globalLabels["node_id"], true
+		}),
+		"cluster": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
+			if value := ctx.GetLabel(name); value != "" {
+				return value, true
+			}
+			globalLabels := eosc_utils.GlobalLabelGet()
+			return globalLabels["cluster_id"], true
 		}),
 		"api_id": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 			return ctx.GetLabel("api_id"), true
@@ -204,5 +219,18 @@ var (
 		"method": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
 			return proxy.Method(), true
 		}),
+		"status": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
+			return proxy.Status(), true
+		}),
+		"path": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
+			return proxy.URI().Path(), true
+		}),
+		"host": ProxyReadFunc(func(name string, proxy http_service.IProxy) (string, bool) {
+			return proxy.Header().Host(), true
+		}),
 	}
 )
+
+func GetProxyReaders() ProxyReaders {
+	return proxyFields
+}

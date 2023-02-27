@@ -1,7 +1,7 @@
 package monitor_manager
 
 import (
-	"github.com/eolinker/apinto/monitor-entry"
+	"github.com/eolinker/apinto/entries/monitor-entry"
 	"github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"

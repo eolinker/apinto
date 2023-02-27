@@ -62,10 +62,10 @@ func client(addr string, serviceName, methodName string, timeout time.Duration, 
 
 func main() {
 	ComplexServer()
-	List()
-	GetById(101)
-	UpdateList()
-	Update()
+	//List()
+	//GetById(101)
+	//UpdateList()
+	//Update()
 }
 
 func ComplexServer() {

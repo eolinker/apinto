@@ -242,13 +242,16 @@ func (b *BodyRequestHandler) resetFile() error {
 	}
 
 	for key, values := range multipartForm.Value {
-		temp := make(url.Values)
-		temp[key] = values
-		value := temp.Encode()
-		err := writer.WriteField(key, value)
-		if err != nil {
-			return err
+		//temp := make(url.Values)
+		//temp[key] = values
+		//value := temp.Encode()
+		for _, value := range values {
+			err := writer.WriteField(key, value)
+			if err != nil {
+				return err
+			}
 		}
+
 	}
 	err := writer.Close()
 	if err != nil {
