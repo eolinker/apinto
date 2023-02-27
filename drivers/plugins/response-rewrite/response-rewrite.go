@@ -4,6 +4,7 @@ import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc/eocontext"
+	log "github.com/eolinker/goku-api-gateway/goku-log"
 	"strconv"
 
 	"github.com/eolinker/eosc"
@@ -66,9 +67,12 @@ func (r *ResponseRewrite) CheckSkill(skill string) bool {
 	return http_service.FilterSkillName == skill
 }
 
-func (r *ResponseRewrite) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
+func (r *ResponseRewrite) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
 	if next != nil {
-		err = next.DoChain(ctx)
+		err := next.DoChain(ctx)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 
 	return r.rewrite(ctx)
