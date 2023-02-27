@@ -55,7 +55,10 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 	ctx.SetLabel("api", h.routerName)
 	ctx.SetLabel("api_id", h.routerId)
 	ctx.SetLabel("service", h.serviceName)
-	ctx.SetLabel("service_id", h.service.Id())
+	if h.service != nil {
+		ctx.SetLabel("service_id", h.service.Id())
+	}
+
 	ctx.SetLabel("ip", httpContext.Request().ReadIP())
 
 	ctx.SetCompleteHandler(h.completeHandler)

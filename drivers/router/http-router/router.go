@@ -5,20 +5,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/eolinker/apinto/drivers"
-	http_router "github.com/eolinker/apinto/router"
-
 	"github.com/eolinker/apinto/drivers/router/http-router/websocket"
 
-	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
+	"github.com/eolinker/apinto/service"
 
+	"github.com/eolinker/eosc/eocontext"
+
+	"github.com/eolinker/apinto/drivers"
+	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
 	"github.com/eolinker/apinto/plugin"
-	"github.com/eolinker/apinto/service"
+	http_router "github.com/eolinker/apinto/router"
 	"github.com/eolinker/apinto/template"
-
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/eocontext"
 )
 
 type HttpRouter struct {
@@ -55,23 +54,15 @@ func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 	methods := cfg.Method
 
 	handler := &httpHandler{
-		routerName:      h.name,
-		routerId:        h.id,
-		serviceName:     strings.TrimSuffix(string(cfg.Service), "@service"),
-		completeHandler: http_complete.NewHttpComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond),
-		finisher:        defaultFinisher,
-		service:         nil,
-		filters:         nil,
-		disable:         cfg.Disable,
-		websocket:       cfg.Websocket,
+		routerName:  h.name,
+		routerId:    h.id,
+		serviceName: strings.TrimSuffix(string(cfg.Service), "@service"),
+		finisher:    defaultFinisher,
+		disable:     cfg.Disable,
+		websocket:   cfg.Websocket,
 	}
 
 	if !cfg.Disable {
-
-		serviceWorker, has := workers[cfg.Service]
-		if !has || !serviceWorker.CheckSkill(service.ServiceSkill) {
-			return eosc.ErrorNotGetSillForRequire
-		}
 
 		if cfg.Plugins == nil {
 			cfg.Plugins = map[string]*plugin.Config{}
@@ -87,16 +78,24 @@ func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 		} else {
 			plugins = h.pluginManager.CreateRequest(h.id, cfg.Plugins)
 		}
-
-		serviceHandler := serviceWorker.(service.IService)
-
-		handler.service = serviceHandler
 		handler.filters = plugins
 
-		if cfg.Websocket {
-			handler.completeHandler = websocket.NewComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond)
-			methods = []string{http.MethodGet}
-			//handler.finisher = &websocket.Finisher{}
+		if cfg.Service == "" {
+			// 当service未指定，使用默认返回
+			handler.completeHandler = http_complete.NewNoServiceCompleteHandler(cfg.Status, cfg.Header, cfg.Body)
+		} else {
+			serviceWorker, has := workers[cfg.Service]
+			if !has || !serviceWorker.CheckSkill(service.ServiceSkill) {
+				return eosc.ErrorNotGetSillForRequire
+			}
+			serviceHandler := serviceWorker.(service.IService)
+			handler.service = serviceHandler
+			if cfg.Websocket {
+				handler.completeHandler = websocket.NewComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond)
+				methods = []string{http.MethodGet}
+			} else {
+				handler.completeHandler = http_complete.NewHttpComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond)
+			}
 		}
 	}
 
