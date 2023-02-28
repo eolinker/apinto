@@ -27,8 +27,8 @@ import (
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
 	http_to_dubbo2 "github.com/eolinker/apinto/drivers/plugins/http-to-dubbo2"
 	http_to_grpc "github.com/eolinker/apinto/drivers/plugins/http-to-gRPC"
+	"github.com/eolinker/apinto/drivers/plugins/http_mocking"
 	ip_restriction "github.com/eolinker/apinto/drivers/plugins/ip-restriction"
-	"github.com/eolinker/apinto/drivers/plugins/mocking"
 	"github.com/eolinker/apinto/drivers/plugins/monitor"
 	params_transformer "github.com/eolinker/apinto/drivers/plugins/params-transformer"
 	prometheus_plugin "github.com/eolinker/apinto/drivers/plugins/prometheus"
@@ -148,5 +148,5 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	protocbuf.Register(extenderRegister)
 	grpc_to_http.Register(extenderRegister)
 
-	mocking.Register(extenderRegister)
+	http_mocking.Register(extenderRegister)
 }

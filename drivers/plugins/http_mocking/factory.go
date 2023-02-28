@@ -1,4 +1,4 @@
-package mocking
+package http_mocking
 
 import (
 	"sync"
@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	Name = "mocking"
+	Name = "http_mocking"
 )
 
 var (

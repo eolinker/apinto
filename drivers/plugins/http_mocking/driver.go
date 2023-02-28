@@ -1,4 +1,4 @@
-package mocking
+package http_mocking
 
 import (
 	"encoding/json"
@@ -46,9 +46,6 @@ func check(v interface{}) (*Config, error) {
 			}
 
 		}
-	} else if conf.ContentType == contentTypeGrpc && conf.ProtobufID == "" {
-		log.Errorf("mocking check ProtobufID is null ")
-		return nil, errors.New("param err protobufID is null")
 	}
 
 	return conf, nil
@@ -59,15 +56,6 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 	once.Do(func() {
 		bean.Autowired(&worker)
 	})
-
-	var descriptor grpc_descriptor.IDescriptor
-	if conf.ContentType == contentTypeGrpc {
-		descSource, err := getDescSource(string(conf.ProtobufID))
-		if err != nil {
-			return nil, err
-		}
-		descriptor = descSource
-	}
 
 	jsonSchema := make(map[string]interface{})
 
@@ -80,7 +68,7 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 
 	return &Mocking{
 		WorkerBase: drivers.Worker(id, name),
-		handler:    NewComplete(conf.ResponseStatus, conf.ContentType, conf.ResponseExample, jsonSchema, descriptor),
+		handler:    NewComplete(conf.ResponseStatus, conf.ContentType, conf.ResponseExample, jsonSchema),
 	}, nil
 }
 
