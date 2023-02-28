@@ -6,6 +6,8 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
+	"math/rand"
+	"time"
 )
 
 var _ eocontext.IFilter = (*proxyMirror)(nil)
@@ -27,11 +29,24 @@ func (p *proxyMirror) DoHttpFilter(ctx http_service.IHttpContext, next eocontext
 			log.Error(err)
 		}
 	}
-	//进行采样, 生成随机数判断
-
-	//进行转发
+	if p.proxyConf != nil {
+		//进行采样, 生成随机数判断
+		rand.Seed(time.Now().UnixNano())
+		randomNum := rand.Intn(p.proxyConf.SampleConf.RandomRange + 1) //[0,range]范围内整型
+		if randomNum <= p.proxyConf.SampleConf.RandomPivot {           //若随机数在[0,pivot]范围内则进行转发
+			//进行转发
+			go sendMirrorProxy(p.proxyConf, ctx)
+		}
+	}
 
 	return nil
+}
+
+func sendMirrorProxy(proxyCfg *Config, ctx http_service.IHttpContext) {
+	//先判断当前Ctx是否能Copy,若可以就进行copy并且设置新的APP
+
+	//send
+
 }
 
 func (p *proxyMirror) Start() error {
@@ -53,6 +68,7 @@ func (p *proxyMirror) Stop() error {
 }
 
 func (p *proxyMirror) Destroy() {
+	p.proxyConf = nil
 }
 
 func (p *proxyMirror) CheckSkill(skill string) bool {
