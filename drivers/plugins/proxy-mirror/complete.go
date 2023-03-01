@@ -49,9 +49,9 @@ func (h *httpComplete) Complete(org eocontext.EoContext) error {
 			path = fmt.Sprintf("%s%s", h.proxyCfg.Path, path)
 		}
 	}
-	addr := fmt.Sprintf("%s%s", h.proxyCfg.Host, path)
+	ctx.Proxy().URI().SetPath(path)
 
-	lastErr = ctx.SendTo(addr, timeOut)
+	lastErr = ctx.SendTo(h.proxyCfg.Host, timeOut)
 	if lastErr == nil {
 		return nil
 	}

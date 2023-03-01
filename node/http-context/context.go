@@ -153,6 +153,7 @@ func (ctx *HttpContext) SendTo(address string, timeout time.Duration) error {
 
 func (ctx *HttpContext) Context() context.Context {
 	if ctx.ctx == nil {
+
 		ctx.ctx = context.Background()
 	}
 	return ctx.ctx

@@ -34,19 +34,20 @@ func newMirrorHandler(eoCtx eocontext.EoContext, proxyCfg *Config) (eocontext.Co
 }
 
 func (p *proxyMirrorCompleteHandler) Complete(ctx eocontext.EoContext) error {
-	//执行镜像请求的Complete
 	cloneCtx, err := ctx.Clone()
 	if err != nil {
 		return err
 	}
 
+	//先执行原始Complete, 再执行镜像请求的Complete
+	err = p.orgComplete.Complete(ctx)
+
 	go func() {
-		err = p.mirrorComplete.Complete(cloneCtx)
-		if err != nil {
-			log.Error(err)
+		mErr := p.mirrorComplete.Complete(cloneCtx)
+		if mErr != nil {
+			log.Error(mErr)
 		}
 	}()
 
-	//执行原始Complete
-	return p.orgComplete.Complete(ctx)
+	return err
 }
