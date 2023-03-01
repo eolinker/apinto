@@ -7,6 +7,7 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"math/rand"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/robertkrimen/otto"
@@ -57,36 +58,7 @@ func JsonSchemaMockJsUnmarshal(valueMap interface{}) interface{} {
 						rule, ruleOk := m["rule"].(map[string]interface{})
 						if !ruleOk || len(rule) == 0 {
 							if template != nil {
-								if templateStr, ok := template.(string); ok {
-									switch templateStr {
-									case "@cname":
-										resultMap[name] = gofakeit.Username()
-									case "@cfirst":
-										resultMap[name] = gofakeit.FirstName()
-									case "@clast":
-										resultMap[name] = gofakeit.LastName()
-									case "@name", "@name(true)":
-										resultMap[name] = gofakeit.Name()
-									case "@first":
-										resultMap[name] = gofakeit.FirstName()
-									case "@last":
-										resultMap[name] = gofakeit.LastName()
-									case "@email":
-										resultMap[name] = gofakeit.Email()
-									case "@ip":
-										resultMap[name] = gofakeit.IPv4Address()
-									case "@zip":
-										resultMap[name] = gofakeit.Address().Zip
-									case "@city", "@city(true)":
-										resultMap[name] = gofakeit.Address().Address
-									case "@url":
-										resultMap[name] = gofakeit.URL()
-									default:
-										resultMap[name] = template
-									}
-									continue
-								}
-								resultMap[name] = template
+								resultMap[name] = mockConstant(template)
 								continue
 							}
 						}
@@ -146,7 +118,7 @@ func JsonSchemaMockJsUnmarshal(valueMap interface{}) interface{} {
 								floats := RandFloats(dminVal, dmaxVal)
 								randomValue, _ = strconv.ParseFloat(strconv.FormatFloat(randomValue, 'f', int(floats), 64), 64)
 							} else {
-
+								randomValue, _ = strconv.ParseFloat(strconv.FormatFloat(randomValue, 'f', 0, 64), 64)
 							}
 
 							resultMap[name] = randomValue
@@ -170,8 +142,11 @@ func JsonSchemaMockJsUnmarshal(valueMap interface{}) interface{} {
 								}
 								tempMap := make(map[string]interface{})
 								i := 1
-								for k, v := range templateMap {
-									tempMap[k] = v
+								for key, val := range templateMap {
+
+									split := strings.Split(key, "|")
+									tempMap[split[0]] = mockConstant(val)
+
 									if i == randomNum {
 										break
 									}
@@ -190,17 +165,37 @@ func JsonSchemaMockJsUnmarshal(valueMap interface{}) interface{} {
 								}
 
 								randomNum := 0
-								if minVal > 0 && maxVal == 0 {
+								if minVal > 0.0 && maxVal == 0.0 {
 									randomNum = int(minVal)
 								}
 
-								if minVal > 0 && maxVal > 0 {
+								if minVal > 0.0 && maxVal > 0.0 {
 									randomNum = int(RandInt64(int64(minVal), int64(maxVal)))
 								}
+
+								if randomNum == 1 { //随机选取一个
+									resultMap[name] = templateList[rand.Intn(len(templateList))]
+									continue
+								}
+
 								tempList := make([]interface{}, 0)
 
 								for i := 0; i < randomNum; i++ {
-									tempList = append(tempList, templateList[rand.Intn(len(templateList))])
+
+									for _, templateType := range templateList {
+										switch templateVal := templateType.(type) {
+										case map[string]interface{}:
+											tempMap := make(map[string]interface{})
+											for key, val := range templateVal {
+												split := strings.Split(key, "|")
+												tempMap[split[0]] = mockConstant(val)
+											}
+											tempList = append(tempList, tempMap)
+										default:
+											tempList = append(tempList, templateType)
+										}
+									}
+
 								}
 
 								resultMap[name] = tempList
@@ -214,6 +209,39 @@ func JsonSchemaMockJsUnmarshal(valueMap interface{}) interface{} {
 		}
 	}
 	return jsonSchemaUnmarshal(value)
+}
+
+func mockConstant(v interface{}) interface{} {
+	if templateStr, ok := v.(string); ok {
+		templateStr = strings.ToLower(templateStr)
+		switch templateStr {
+		case "@cname":
+			return gofakeit.Username()
+		case "@cfirst":
+			return gofakeit.FirstName()
+		case "@clast":
+			return gofakeit.LastName()
+		case "@name", "@name(true)":
+			return gofakeit.Name()
+		case "@first":
+			return gofakeit.FirstName()
+		case "@last":
+			return gofakeit.LastName()
+		case "@email":
+			return gofakeit.Email()
+		case "@ip":
+			return gofakeit.IPv4Address()
+		case "@zip":
+			return gofakeit.Address().Zip
+		case "@city", "@city(true)":
+			return gofakeit.Address().Address
+		case "@url":
+			return gofakeit.URL()
+		default:
+			return v
+		}
+	}
+	return v
 }
 
 var jsonSchemaFormat = errors.New("json schema format err")

@@ -18,6 +18,7 @@ type Mocking struct {
 	contentType     string
 	responseExample string
 	responseSchema  string
+	responseHeader  map[string]string
 	handler         eocontext.CompleteHandler
 }
 
@@ -54,6 +55,7 @@ func (m *Mocking) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) 
 	m.responseExample = conf.ResponseExample
 	m.contentType = conf.ContentType
 	m.responseStatus = conf.ResponseStatus
+	m.responseHeader = conf.ResponseHeader
 
 	jsonSchema := make(map[string]interface{})
 
@@ -64,7 +66,7 @@ func (m *Mocking) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) 
 		}
 	}
 
-	m.handler = NewComplete(m.responseStatus, m.contentType, m.responseExample, jsonSchema)
+	m.handler = NewComplete(m.responseStatus, m.contentType, m.responseExample, jsonSchema, m.responseHeader)
 
 	return nil
 }

@@ -13,10 +13,11 @@ type complete struct {
 	contentType     string
 	responseExample string
 	responseSchema  map[string]interface{}
+	responseHeader  map[string]string
 }
 
-func NewComplete(responseStatus int, contentType string, responseExample string, responseSchema map[string]interface{}) *complete {
-	return &complete{responseStatus: responseStatus, contentType: contentType, responseExample: responseExample, responseSchema: responseSchema}
+func NewComplete(responseStatus int, contentType string, responseExample string, responseSchema map[string]interface{}, responseHeader map[string]string) *complete {
+	return &complete{responseStatus: responseStatus, contentType: contentType, responseExample: responseExample, responseSchema: responseSchema, responseHeader: responseHeader}
 }
 
 func (c *complete) Complete(org eocontext.EoContext) error {
@@ -30,6 +31,10 @@ func (c *complete) Complete(org eocontext.EoContext) error {
 func (c *complete) writeHttp(ctx http_context.IHttpContext) error {
 	ctx.Response().SetHeader("Content-Type", c.contentType)
 	ctx.Response().SetStatus(c.responseStatus, "")
+
+	for k, v := range c.responseHeader {
+		ctx.Response().SetHeader(k, v)
+	}
 
 	if c.responseExample != "" {
 		ctx.Response().SetBody([]byte(c.responseExample))

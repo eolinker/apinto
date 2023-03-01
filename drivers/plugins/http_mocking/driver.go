@@ -68,7 +68,7 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 
 	return &Mocking{
 		WorkerBase: drivers.Worker(id, name),
-		handler:    NewComplete(conf.ResponseStatus, conf.ContentType, conf.ResponseExample, jsonSchema),
+		handler:    NewComplete(conf.ResponseStatus, conf.ContentType, conf.ResponseExample, jsonSchema, conf.ResponseHeader),
 	}, nil
 }
 
