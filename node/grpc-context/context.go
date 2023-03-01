@@ -260,3 +260,15 @@ func (c *Context) reset() {
 
 	pool.Put(c)
 }
+
+func (c *Context) IsCloneable() bool {
+	return false
+}
+
+func (c *Context) Clone() (eocontext.EoContext, error) {
+	if !c.IsCloneable() {
+		return nil, fmt.Errorf("%s %w", "GrpcContext", eocontext.ErrEoCtxUnCloneable)
+	}
+	//TODO
+	return nil, nil
+}

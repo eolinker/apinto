@@ -290,6 +290,18 @@ func (d *DubboContext) LocalPort() int {
 	return d.port
 }
 
+func (d *DubboContext) IsCloneable() bool {
+	return false
+}
+
+func (d *DubboContext) Clone() (eocontext.EoContext, error) {
+	if !d.IsCloneable() {
+		return nil, fmt.Errorf("%s %w", "DubboContext", eocontext.ErrEoCtxUnCloneable)
+	}
+	//TODO
+	return nil, nil
+}
+
 func addrToIP(addr net.Addr) net.IP {
 	x, ok := addr.(*net.TCPAddr)
 	if !ok {

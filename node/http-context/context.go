@@ -179,6 +179,18 @@ func (ctx *HttpContext) Request() http_service.IRequestReader {
 	return &ctx.requestReader
 }
 
+func (ctx *HttpContext) IsCloneable() bool {
+	return true
+}
+
+func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
+	if !ctx.IsCloneable() {
+		return nil, fmt.Errorf("%s %w", "HttpContext", eoscContext.ErrEoCtxUnCloneable)
+	}
+	//TODO
+	return nil, nil
+}
+
 // NewContext 创建Context
 func NewContext(ctx *fasthttp.RequestCtx, port int) *HttpContext {
 
