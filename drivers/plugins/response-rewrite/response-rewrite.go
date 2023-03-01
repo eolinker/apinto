@@ -4,7 +4,7 @@ import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc/eocontext"
-	log "github.com/eolinker/goku-api-gateway/goku-log"
+	"github.com/eolinker/eosc/log"
 	"strconv"
 
 	"github.com/eolinker/eosc"

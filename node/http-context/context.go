@@ -187,8 +187,38 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 	if !ctx.IsCloneable() {
 		return nil, fmt.Errorf("%s %w", "HttpContext", eoscContext.ErrEoCtxUnCloneable)
 	}
-	//TODO
-	return nil, nil
+
+	cloneCtx := pool.Get().(*HttpContext)
+	remoteAddr := ctx.fastHttpRequestCtx.RemoteAddr().String()
+
+	cloneReq := fasthttp.AcquireRequest()
+	ctx.proxyRequest.Request().CopyTo(cloneReq)
+	cloneResp := fasthttp.AcquireResponse()
+	ctx.response.Response.CopyTo(cloneResp)
+
+	cloneCtx.fastHttpRequestCtx = ctx.fastHttpRequestCtx //TODO
+	cloneCtx.requestID = ctx.requestID                   //TODO
+	cloneCtx.requestReader.reset(cloneReq, remoteAddr)
+	cloneCtx.proxyRequest.reset(cloneReq, remoteAddr)
+	cloneCtx.proxyRequests = cloneCtx.proxyRequests[:0]
+	cloneCtx.response.reset(cloneResp)
+
+	cloneCtx.port = ctx.port
+	cloneCtx.ctx = ctx.ctx
+
+	cloneCtx.completeHandler = ctx.completeHandler
+	cloneCtx.finishHandler = ctx.finishHandler
+	cloneCtx.upstreamHostHandler = ctx.upstreamHostHandler
+	cloneCtx.app = ctx.app
+	cloneCtx.balance = ctx.balance
+
+	cLabels := make(map[string]string, len(ctx.labels))
+	for k, v := range ctx.labels {
+		cLabels[k] = v
+	}
+	cloneCtx.labels = cLabels
+
+	return cloneCtx, nil
 }
 
 // NewContext 创建Context
