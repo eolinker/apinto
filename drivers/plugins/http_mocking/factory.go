@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	Name = "http_mocking"
+	Name = "http-mocking"
 )
 
 var (
