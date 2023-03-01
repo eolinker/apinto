@@ -196,8 +196,12 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 	cloneResp := fasthttp.AcquireResponse()
 	ctx.response.Response.CopyTo(cloneResp)
 
+	//cloneRequestCtx := new(fasthttp.RequestCtx)
+	//cloneRequestCtx.Request = *cloneReq
+	//cloneRequestCtx.Response = *cloneResp
 	cloneCtx.fastHttpRequestCtx = ctx.fastHttpRequestCtx //TODO
-	cloneCtx.requestID = ctx.requestID                   //TODO
+
+	cloneCtx.requestID = ctx.requestID //TODO
 	cloneCtx.requestReader.reset(cloneReq, remoteAddr)
 	cloneCtx.proxyRequest.reset(cloneReq, remoteAddr)
 	cloneCtx.proxyRequests = cloneCtx.proxyRequests[:0]

@@ -11,7 +11,6 @@ import (
 )
 
 var _ eocontext.IFilter = (*proxyMirror)(nil)
-var _ http_service.HttpFilter = (*proxyMirror)(nil)
 
 type proxyMirror struct {
 	drivers.WorkerBase
@@ -19,10 +18,6 @@ type proxyMirror struct {
 }
 
 func (p *proxyMirror) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) error {
-	return http_service.DoHttpFilter(p, ctx, next)
-}
-
-func (p *proxyMirror) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
 	if next != nil {
 		err := next.DoChain(ctx)
 		if err != nil {
@@ -34,19 +29,26 @@ func (p *proxyMirror) DoHttpFilter(ctx http_service.IHttpContext, next eocontext
 		rand.Seed(time.Now().UnixNano())
 		randomNum := rand.Intn(p.proxyConf.SampleConf.RandomRange + 1) //[0,range]范围内整型
 		if randomNum <= p.proxyConf.SampleConf.RandomPivot {           //若随机数在[0,pivot]范围内则进行转发
-			//进行转发
-			go sendMirrorProxy(p.proxyConf, ctx)
+			setMirrorProxy(p.proxyConf, ctx)
 		}
 	}
 
 	return nil
 }
 
-func sendMirrorProxy(proxyCfg *Config, ctx http_service.IHttpContext) {
-	//先判断当前Ctx是否能Copy,若可以就进行copy并且设置新的APP
-
-	//send
-
+func setMirrorProxy(proxyCfg *Config, ctx eocontext.EoContext) {
+	//先判断当前Ctx是否能Copy
+	if !ctx.IsCloneable() {
+		log.Info(ErrUnsupportedType)
+		return
+	}
+	//给ctx设置新的FinishHandler
+	newCompleteHandler, err := newMirrorHandler(ctx, proxyCfg)
+	if err != nil {
+		log.Info(err)
+		return
+	}
+	ctx.SetCompleteHandler(newCompleteHandler)
 }
 
 func (p *proxyMirror) Start() error {

@@ -13,6 +13,11 @@ type SampleConfig struct {
 	RandomPivot int `json:"random_pivot" label:"随机数锚点"`
 }
 
+const (
+	pathModeReplace = "replace"
+	pathModePrefix  = "prefix"
+)
+
 func (c *Config) doCheck() error {
 	//TODO
 
