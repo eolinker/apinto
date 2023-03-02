@@ -3,6 +3,7 @@ package proxy_mirror
 import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
+	"time"
 )
 
 func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
@@ -31,8 +32,10 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 	}
 
 	pm := &proxyMirror{
-		WorkerBase: drivers.Worker(id, name),
-		proxyConf:  conf,
+		WorkerBase:  drivers.Worker(id, name),
+		randomRange: conf.SampleConf.RandomRange,
+		randomPivot: conf.SampleConf.RandomPivot,
+		service:     newMirrorService(conf.Addr, conf.PassHost, conf.Host, time.Duration(conf.Timeout)),
 	}
 
 	return pm, nil

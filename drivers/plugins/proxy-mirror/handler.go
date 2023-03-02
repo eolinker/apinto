@@ -2,32 +2,18 @@ package proxy_mirror
 
 import (
 	"github.com/eolinker/eosc/eocontext"
-	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
-	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	log "github.com/eolinker/goku-api-gateway/goku-log"
+	"github.com/eolinker/eosc/log"
 )
 
 type proxyMirrorCompleteHandler struct {
-	orgComplete    eocontext.CompleteHandler
-	mirrorComplete eocontext.CompleteHandler
+	orgComplete eocontext.CompleteHandler
+	app         eocontext.EoApp
 }
 
-func newMirrorHandler(eoCtx eocontext.EoContext, proxyCfg *Config) (eocontext.CompleteHandler, error) {
+func newMirrorHandler(eoCtx eocontext.EoContext, app eocontext.EoApp) (eocontext.CompleteHandler, error) {
 	handler := &proxyMirrorCompleteHandler{
 		orgComplete: eoCtx.GetComplete(),
-	}
-
-	if _, success := eoCtx.(http_service.IHttpContext); success {
-		handler.mirrorComplete = newHttpMirrorComplete(proxyCfg)
-	} else if _, success = eoCtx.(grpc_context.IGrpcContext); success {
-		handler.mirrorComplete = newGrpcMirrorComplete(proxyCfg)
-	} else if _, success = eoCtx.(dubbo2_context.IDubbo2Context); success {
-		handler.mirrorComplete = newDubbo2MirrorComplete(proxyCfg)
-	} else if _, success = eoCtx.(http_service.IWebsocketContext); success {
-		handler.mirrorComplete = newWebsocketMirrorComplete(proxyCfg)
-	} else {
-		return nil, ErrUnsupportedType
+		app:         app,
 	}
 
 	return handler, nil
@@ -35,19 +21,22 @@ func newMirrorHandler(eoCtx eocontext.EoContext, proxyCfg *Config) (eocontext.Co
 
 func (p *proxyMirrorCompleteHandler) Complete(ctx eocontext.EoContext) error {
 	cloneCtx, err := ctx.Clone()
-	if err != nil {
-		return err
-	}
 
 	//先执行原始Complete, 再执行镜像请求的Complete
-	err = p.orgComplete.Complete(ctx)
+	orgErr := p.orgComplete.Complete(ctx)
 
-	go func() {
-		mErr := p.mirrorComplete.Complete(cloneCtx)
-		if mErr != nil {
-			log.Error(mErr)
-		}
-	}()
+	if err == nil {
+		cloneCtx.SetApp(p.app)
 
-	return err
+		go func() {
+			err = p.orgComplete.Complete(cloneCtx)
+			if err != nil {
+				log.Error(err)
+			}
+		}()
+	} else {
+		log.Error(err)
+	}
+
+	return orgErr
 }

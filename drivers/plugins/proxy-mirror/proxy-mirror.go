@@ -14,29 +14,27 @@ var _ eocontext.IFilter = (*proxyMirror)(nil)
 
 type proxyMirror struct {
 	drivers.WorkerBase
-	proxyConf *Config
+	randomRange int
+	randomPivot int
+	service     *mirrorService
 }
 
 func (p *proxyMirror) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) error {
-	if next != nil {
-		err := next.DoChain(ctx)
-		if err != nil {
-			log.Error(err)
-		}
+	//进行采样, 生成随机数判断
+	rand.Seed(time.Now().UnixNano())
+	randomNum := rand.Intn(p.randomRange + 1) //[0,range]范围内整型
+	if randomNum <= p.randomPivot {           //若随机数在[0,pivot]范围内则进行转发
+		setMirrorProxy(p.service, ctx)
 	}
-	if p.proxyConf != nil {
-		//进行采样, 生成随机数判断
-		rand.Seed(time.Now().UnixNano())
-		randomNum := rand.Intn(p.proxyConf.SampleConf.RandomRange + 1) //[0,range]范围内整型
-		if randomNum <= p.proxyConf.SampleConf.RandomPivot {           //若随机数在[0,pivot]范围内则进行转发
-			setMirrorProxy(p.proxyConf, ctx)
-		}
+
+	if next != nil {
+		return next.DoChain(ctx)
 	}
 
 	return nil
 }
 
-func setMirrorProxy(proxyCfg *Config, ctx eocontext.EoContext) {
+func setMirrorProxy(proxyCfg *mirrorService, ctx eocontext.EoContext) {
 	//先判断当前Ctx是否能Copy
 	if !ctx.IsCloneable() {
 		log.Info(ErrUnsupportedType)
@@ -60,7 +58,10 @@ func (p *proxyMirror) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWork
 	if err != nil {
 		return err
 	}
-	p.proxyConf = conf
+
+	p.service = newMirrorService(conf.Addr, conf.PassHost, conf.Host, time.Duration(conf.Timeout))
+	p.randomRange = conf.SampleConf.RandomRange
+	p.randomPivot = conf.SampleConf.RandomPivot
 
 	return nil
 }
@@ -70,7 +71,6 @@ func (p *proxyMirror) Stop() error {
 }
 
 func (p *proxyMirror) Destroy() {
-	p.proxyConf = nil
 }
 
 func (p *proxyMirror) CheckSkill(skill string) bool {
