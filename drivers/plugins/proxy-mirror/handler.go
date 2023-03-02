@@ -7,13 +7,13 @@ import (
 
 type proxyMirrorCompleteHandler struct {
 	orgComplete eocontext.CompleteHandler
-	app         eocontext.EoApp
+	service     *mirrorService
 }
 
-func newMirrorHandler(eoCtx eocontext.EoContext, app eocontext.EoApp) (eocontext.CompleteHandler, error) {
+func newMirrorHandler(eoCtx eocontext.EoContext, service *mirrorService) (eocontext.CompleteHandler, error) {
 	handler := &proxyMirrorCompleteHandler{
 		orgComplete: eoCtx.GetComplete(),
-		app:         app,
+		service:     service,
 	}
 
 	return handler, nil
@@ -26,7 +26,9 @@ func (p *proxyMirrorCompleteHandler) Complete(ctx eocontext.EoContext) error {
 	orgErr := p.orgComplete.Complete(ctx)
 
 	if err == nil {
-		cloneCtx.SetApp(p.app)
+		cloneCtx.SetApp(p.service)
+		cloneCtx.SetBalance(p.service)
+		cloneCtx.SetUpstreamHostHandler(p.service)
 
 		go func() {
 			err = p.orgComplete.Complete(cloneCtx)
