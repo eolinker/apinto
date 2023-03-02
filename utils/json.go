@@ -173,8 +173,23 @@ func JsonSchemaMockJsUnmarshal(valueMap interface{}) interface{} {
 									randomNum = int(RandInt64(int64(minVal), int64(maxVal)))
 								}
 
-								if randomNum == 1 { //随机选取一个
-									resultMap[name] = templateList[rand.Intn(len(templateList))]
+								if randomNum == 1 {
+									if len(templateList) > 1 {
+										resultMap[name] = templateList[rand.Intn(len(templateList))]
+										continue
+									}
+									switch templateVal := templateList[0].(type) {
+									case map[string]interface{}:
+										tempMap := make(map[string]interface{})
+										for key, val := range templateVal {
+											split := strings.Split(key, "|")
+											tempMap[split[0]] = mockConstant(val)
+										}
+										resultMap[name] = tempMap
+									default:
+										resultMap[name] = templateVal
+									}
+
 									continue
 								}
 

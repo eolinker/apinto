@@ -1299,13 +1299,187 @@ var mock5 = `{
     ]
 }`
 
+var mock6 = `{
+    "template": {
+        "users|1": [
+            {
+                "email": "@email",
+                "name": "@name",
+                "ip": "@ip"
+            }
+        ]
+    },
+    "type": "object",
+    "rule": {},
+    "path": [
+        "ROOT"
+    ],
+    "properties": [
+        {
+            "name": "users",
+            "template": [
+                {
+                    "email": "@email",
+                    "name": "@name",
+                    "ip": "@ip"
+                }
+            ],
+            "type": "array",
+            "rule": {
+                "parameters": [
+                    "users|1",
+                    "users",
+                    null,
+                    "1",
+                    null
+                ],
+                "range": [
+                    "1",
+                    "1",
+                    null
+                ],
+                "min": 1,
+                "count": 1
+            },
+            "path": [
+                "ROOT",
+                "users"
+            ],
+            "items": [
+                {
+                    "name": 0,
+                    "template": {
+                        "email": "@email",
+                        "name": "@name",
+                        "ip": "@ip"
+                    },
+                    "type": "object",
+                    "rule": {},
+                    "path": [
+                        "ROOT",
+                        "users",
+                        0
+                    ],
+                    "properties": [
+                        {
+                            "name": "email",
+                            "template": "@email",
+                            "type": "string",
+                            "rule": {},
+                            "path": [
+                                "ROOT",
+                                "users",
+                                0,
+                                "email"
+                            ]
+                        },
+                        {
+                            "name": "name",
+                            "template": "@name",
+                            "type": "string",
+                            "rule": {},
+                            "path": [
+                                "ROOT",
+                                "users",
+                                0,
+                                "name"
+                            ]
+                        },
+                        {
+                            "name": "ip",
+                            "template": "@ip",
+                            "type": "string",
+                            "rule": {},
+                            "path": [
+                                "ROOT",
+                                "users",
+                                0,
+                                "ip"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}`
+
+var mock7 = `{
+    "template": {
+        "users|1-10": [
+            10,
+            20
+        ]
+    },
+    "type": "object",
+    "rule": {},
+    "path": [
+        "ROOT"
+    ],
+    "properties": [
+        {
+            "name": "users",
+            "template": [
+                10,
+                20
+            ],
+            "type": "array",
+            "rule": {
+                "parameters": [
+                    "users|1-10",
+                    "users",
+                    null,
+                    "1-10",
+                    null
+                ],
+                "range": [
+                    "1-10",
+                    "1",
+                    "10"
+                ],
+                "min": 1,
+                "max": 10,
+                "count": 2
+            },
+            "path": [
+                "ROOT",
+                "users"
+            ],
+            "items": [
+                {
+                    "name": 0,
+                    "template": 10,
+                    "type": "number",
+                    "rule": {},
+                    "path": [
+                        "ROOT",
+                        "users",
+                        0
+                    ]
+                },
+                {
+                    "name": 1,
+                    "template": 20,
+                    "type": "number",
+                    "rule": {},
+                    "path": [
+                        "ROOT",
+                        "users",
+                        1
+                    ]
+                }
+            ]
+        }
+    ]
+}`
+
 func TestJsonSchemaMockJsUnmarshal(t *testing.T) {
 	type args struct {
 		valueMap interface{}
 	}
 
 	valueMap := make(map[string]interface{})
-	json.Unmarshal([]byte(mock5), &valueMap)
+	json.Unmarshal([]byte(mock7), &valueMap)
 	tests := []struct {
 		name string
 		args args
