@@ -12,17 +12,20 @@ import (
 	"github.com/eolinker/eosc/log"
 )
 
+const (
+	KeyHttpRetry   = "http_retry"
+	KeyHttpTimeout = "http_timeout"
+)
+
 var (
 	ErrorTimeoutComplete = errors.New("complete timeout")
 )
 
 type HttpComplete struct {
-	retry   int
-	timeOut time.Duration
 }
 
-func NewHttpComplete(retry int, timeOut time.Duration) *HttpComplete {
-	return &HttpComplete{retry: retry, timeOut: timeOut}
+func NewHttpComplete() *HttpComplete {
+	return &HttpComplete{}
 }
 
 func (h *HttpComplete) Complete(org eocontext.EoContext) error {
@@ -56,9 +59,22 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 
 	}
 	timeOut := app.TimeOut()
-	for index := 0; index <= h.retry; index++ {
 
-		if h.timeOut > 0 && time.Now().Sub(proxyTime) > h.timeOut {
+	retryValue := ctx.Value(KeyHttpRetry)
+	retry, ok := retryValue.(int)
+	if !ok {
+		retry = 1
+	}
+
+	timeoutValue := ctx.Value(KeyHttpTimeout)
+	timeout, ok := timeoutValue.(time.Duration)
+	if !ok {
+		timeout = 3000 * time.Millisecond
+	}
+
+	for index := 0; index <= retry; index++ {
+
+		if timeout > 0 && time.Now().Sub(proxyTime) > timeout {
 			return ErrorTimeoutComplete
 		}
 		node, err := balance.Select(ctx)
