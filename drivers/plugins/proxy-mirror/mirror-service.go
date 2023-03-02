@@ -1,11 +1,17 @@
 package proxy_mirror
 
 import (
+	"errors"
 	"fmt"
+	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/eosc/eocontext"
 	"strconv"
 	"strings"
 	"time"
+)
+
+var (
+	errNoValidNode = errors.New("no valid node")
 )
 
 type mirrorService struct {
@@ -32,7 +38,7 @@ func newMirrorService(target, passHost, host string, timeout time.Duration) *mir
 		port, _ = strconv.Atoi(portStr)
 	}
 
-	inode := newNode(labels, fmt.Sprintf("%s:%d", ip, port), ip, port)
+	inode := discovery.NewNode(labels, fmt.Sprintf("%s:%d", ip, port), ip, port)
 
 	var mode eocontext.PassHostMod
 	switch passHost {

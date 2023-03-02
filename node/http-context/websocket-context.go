@@ -86,9 +86,6 @@ func (w *WebsocketContext) IsCloneable() bool {
 }
 
 func (w *WebsocketContext) Clone() (eoscContext.EoContext, error) {
-	if !w.IsCloneable() {
-		return nil, fmt.Errorf("%s %w", "WebsocketContext", eoscContext.ErrEoCtxUnCloneable)
-	}
 	//TODO
-	return nil, nil
+	return nil, fmt.Errorf("%s %w", "WebsocketContext", eoscContext.ErrEoCtxUnCloneable)
 }

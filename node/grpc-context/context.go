@@ -266,9 +266,6 @@ func (c *Context) IsCloneable() bool {
 }
 
 func (c *Context) Clone() (eocontext.EoContext, error) {
-	if !c.IsCloneable() {
-		return nil, fmt.Errorf("%s %w", "GrpcContext", eocontext.ErrEoCtxUnCloneable)
-	}
 	//TODO
-	return nil, nil
+	return nil, fmt.Errorf("%s %w", "GrpcContext", eocontext.ErrEoCtxUnCloneable)
 }

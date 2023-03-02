@@ -179,9 +179,7 @@ func (ctx *cloneContext) IsCloneable() bool {
 }
 
 func (ctx *cloneContext) Clone() (eoscContext.EoContext, error) {
-
 	return nil, fmt.Errorf("%s %w", "HttpContext", eoscContext.ErrEoCtxUnCloneable)
-
 }
 
 var copyKey = struct{}{}

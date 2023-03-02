@@ -295,11 +295,8 @@ func (d *DubboContext) IsCloneable() bool {
 }
 
 func (d *DubboContext) Clone() (eocontext.EoContext, error) {
-	if !d.IsCloneable() {
-		return nil, fmt.Errorf("%s %w", "DubboContext", eocontext.ErrEoCtxUnCloneable)
-	}
 	//TODO
-	return nil, nil
+	return nil, fmt.Errorf("%s %w", "DubboContext", eocontext.ErrEoCtxUnCloneable)
 }
 
 func addrToIP(addr net.Addr) net.IP {
