@@ -37,7 +37,7 @@ func (p *proxyMirror) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) e
 func setMirrorProxy(proxyCfg *mirrorService, ctx eocontext.EoContext) {
 	//先判断当前Ctx是否能Copy
 	if !ctx.IsCloneable() {
-		log.Info(ErrUnsupportedType)
+		log.Info(errUnsupportedContextType)
 		return
 	}
 	//给ctx设置新的FinishHandler
