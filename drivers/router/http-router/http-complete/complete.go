@@ -12,11 +12,6 @@ import (
 	"github.com/eolinker/eosc/log"
 )
 
-const (
-	KeyHttpRetry   = "http_retry"
-	KeyHttpTimeout = "http_timeout"
-)
-
 var (
 	ErrorTimeoutComplete = errors.New("complete timeout")
 )
@@ -60,13 +55,13 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	}
 	timeOut := app.TimeOut()
 
-	retryValue := ctx.Value(KeyHttpRetry)
+	retryValue := ctx.Value(http_service.KeyHttpRetry)
 	retry, ok := retryValue.(int)
 	if !ok {
 		retry = 1
 	}
 
-	timeoutValue := ctx.Value(KeyHttpTimeout)
+	timeoutValue := ctx.Value(http_service.KeyHttpTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
 		timeout = 3000 * time.Millisecond

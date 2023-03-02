@@ -2,12 +2,11 @@ package http_context
 
 import (
 	"bytes"
+	"io"
 	"strings"
 
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/valyala/fasthttp"
-
-	"io/ioutil"
 
 	"mime"
 	"mime/multipart"
@@ -227,7 +226,7 @@ func (b *BodyRequestHandler) resetFile() error {
 				return err
 			}
 
-			data, err := ioutil.ReadAll(fio)
+			data, err := io.ReadAll(fio)
 			if err != nil {
 				fio.Close()
 				return err
@@ -288,6 +287,5 @@ func (b *BodyRequestHandler) SetForm(values url.Values) error {
 func (b *BodyRequestHandler) SetRaw(contentType string, body []byte) {
 	b.request.SetBodyRaw(body)
 	b.request.Header.SetContentType(contentType)
-	return
 
 }

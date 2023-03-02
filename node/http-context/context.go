@@ -3,7 +3,6 @@ package http_context
 import (
 	"context"
 	"fmt"
-	http_context_copy "github.com/eolinker/apinto/node/http-context/http-context-copy"
 	"net"
 	"strings"
 	"time"
@@ -186,21 +185,25 @@ func (ctx *HttpContext) IsCloneable() bool {
 }
 
 func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
-	if !ctx.IsCloneable() {
-		return nil, fmt.Errorf("%s %w", "HttpContext", eoscContext.ErrEoCtxUnCloneable)
+
+	copyContext := &cloneContext{
+		org:           ctx,
+		proxyRequests: make([]http_service.IProxy, 0, 5),
 	}
 
-	ctxCopy := http_context_copy.NewContextCopy(ctx.fastHttpRequestCtx, ctx.requestID, ctx.port, ctx.labels)
+	req := fasthttp.AcquireRequest()
+	ctx.fastHttpRequestCtx.Request.CopyTo(req)
 
-	ctxCopy.SetCompleteHandler(ctx.completeHandler)
-	ctxCopy.SetFinish(ctx.finishHandler)
-	ctxCopy.SetUpstreamHostHandler(ctx.upstreamHostHandler)
-	ctxCopy.SetApp(ctx.app)
-	ctxCopy.SetBalance(ctx.balance)
+	copyContext.proxyRequest.reset(req, ctx.requestReader.remoteAddr)
+	copyContext.proxyRequests = copyContext.proxyRequests[:0]
 
-	//Ctx set retry,timeout TODO
+	copyContext.labels = ctx.Labels()
 
-	return ctxCopy, nil
+	//记录请求时间
+	copyContext.ctx = context.WithValue(ctx.Context(), copyKey, true)
+	copyContext.WithValue(http_service.KeyHttpRetry, 0)
+	copyContext.WithValue(http_service.KeyHttpTimeout, time.Duration(0))
+	return copyContext, nil
 }
 
 // NewContext 创建Context
@@ -253,7 +256,7 @@ func (ctx *HttpContext) FastFinish() {
 	ctx.response.Finish()
 	ctx.fastHttpRequestCtx = nil
 	pool.Put(ctx)
-	return
+
 }
 
 func NotFound(ctx *HttpContext) {
