@@ -3,6 +3,7 @@ package http_context
 import (
 	"bytes"
 	"fmt"
+	"github.com/eolinker/eosc/log"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/valyala/fasthttp"
@@ -20,7 +21,10 @@ type ProxyRequest struct {
 
 func (r *ProxyRequest) Finish() error {
 	fasthttp.ReleaseRequest(r.req)
-	r.RequestReader.Finish()
+	err := r.RequestReader.Finish()
+	if err != nil {
+		log.Warn(err)
+	}
 	return nil
 }
 func (r *ProxyRequest) Header() http_service.IHeaderWriter {

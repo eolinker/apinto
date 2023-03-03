@@ -3,6 +3,7 @@ package http_context
 import (
 	"errors"
 	"fmt"
+	eoscContext "github.com/eolinker/eosc/eocontext"
 	"io"
 	"net"
 	"sync"
@@ -78,4 +79,13 @@ func (w *WebsocketContext) Assert(i interface{}) error {
 		return nil
 	}
 	return fmt.Errorf("not suport:%s", config.TypeNameOf(i))
+}
+
+func (w *WebsocketContext) IsCloneable() bool {
+	return false
+}
+
+func (w *WebsocketContext) Clone() (eoscContext.EoContext, error) {
+	//TODO
+	return nil, fmt.Errorf("%s %w", "WebsocketContext", eoscContext.ErrEoCtxUnCloneable)
 }
