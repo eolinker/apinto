@@ -192,7 +192,11 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 	req := fasthttp.AcquireRequest()
 	ctx.fastHttpRequestCtx.Request.CopyTo(req)
 
+	resp := fasthttp.AcquireResponse()
+	ctx.fastHttpRequestCtx.Response.CopyTo(resp)
+
 	copyContext.proxyRequest.reset(req, ctx.requestReader.remoteAddr)
+	copyContext.response.reset(resp)
 
 	copyContext.completeHandler = ctx.completeHandler
 	copyContext.finishHandler = ctx.finishHandler
@@ -204,7 +208,7 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 	copyContext.labels = cloneLabels
 
 	//记录请求时间
-	copyContext.ctx = context.WithValue(ctx.Context(), copyKey, true)
+	copyContext.ctx = context.WithValue(ctx.Context(), http_service.KeyCloneCtx, true)
 	copyContext.WithValue(http_service.KeyHttpRetry, 0)
 	copyContext.WithValue(http_service.KeyHttpTimeout, time.Duration(0))
 	return copyContext, nil

@@ -1,6 +1,9 @@
 package proxy_mirror
 
-import "github.com/eolinker/apinto/utils"
+import (
+	"github.com/eolinker/apinto/utils"
+	"strings"
+)
 
 type Config struct {
 	Addr       string        `json:"Addr" label:"服务地址" description:"镜像服务地址, 需要包含scheme"`
@@ -26,6 +29,9 @@ func (c *Config) doCheck() error {
 	if !utils.IsMatchSchemeIpPort(c.Addr) && !utils.IsMatchSchemeDomainPort(c.Addr) {
 		return errAddr
 	}
+	//scheme小写
+	schemeIdx := strings.Index(c.Addr, "://")
+	c.Addr = strings.ToLower(c.Addr[:schemeIdx]) + c.Addr[schemeIdx:]
 
 	//校验采样配置
 	if c.SampleConf.RandomRange <= 0 {
@@ -53,11 +59,12 @@ func (c *Config) doCheck() error {
 	}
 
 	//校验host
-	if c.PassHost == modeRewrite && c.Host == "" {
-		return errHostNull
-	}
-	if !utils.IsMatchIpPort(c.Addr) && !utils.IsMatchDomainPort(c.Addr) {
-		return errAddr
+	if c.PassHost == modeRewrite {
+		if c.Host == "" {
+			return errHostNull
+		} else if !utils.IsMatchIpPort(c.Host) && !utils.IsMatchDomainPort(c.Host) {
+			return errAddr
+		}
 	}
 
 	return nil

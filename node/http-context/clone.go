@@ -3,7 +3,6 @@ package http_context
 import (
 	"context"
 	"fmt"
-	"github.com/valyala/fasthttp"
 	"net"
 	"time"
 
@@ -19,10 +18,10 @@ var _ http_service.IHttpContext = (*cloneContext)(nil)
 
 // HttpContext fasthttpRequestCtx
 type cloneContext struct {
-	org           *HttpContext
-	proxyRequest  ProxyRequest
-	proxyRequests []http_service.IProxy
-
+	org                 *HttpContext
+	proxyRequest        ProxyRequest
+	response            Response
+	proxyRequests       []http_service.IProxy
 	ctx                 context.Context
 	completeHandler     eoscContext.CompleteHandler
 	finishHandler       eoscContext.FinishHandler
@@ -115,7 +114,7 @@ func (ctx *cloneContext) Proxies() []http_service.IProxy {
 }
 
 func (ctx *cloneContext) Response() http_service.IResponse {
-	return nil
+	return &ctx.response
 }
 
 func (ctx *cloneContext) SendTo(address string, timeout time.Duration) error {
@@ -131,17 +130,17 @@ func (ctx *cloneContext) SendTo(address string, timeout time.Duration) error {
 	case eoscContext.ReWriteHost:
 		request.URI().SetHost(targetHost)
 	}
-	response := fasthttp.AcquireResponse()
+
 	beginTime := time.Now()
-	ctx.responseError = fasthttp_client.ProxyTimeout(address, request, response, timeout)
+	ctx.responseError = fasthttp_client.ProxyTimeout(address, request, ctx.response.Response, timeout)
 	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, beginTime, time.Now())
 	if ctx.responseError != nil {
 		agent.setStatusCode(504)
 	} else {
-		agent.setStatusCode(response.StatusCode())
+		agent.setStatusCode(ctx.response.Response.StatusCode())
 	}
 
-	agent.setResponseLength(response.Header.ContentLength())
+	agent.setResponseLength(ctx.response.Response.Header.ContentLength())
 
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)
 	return ctx.responseError
@@ -158,7 +157,7 @@ func (ctx *cloneContext) AcceptTime() time.Time {
 }
 
 func (ctx *cloneContext) Value(key interface{}) interface{} {
-	return ctx.org.Value(key)
+	return ctx.ctx.Value(key)
 }
 
 func (ctx *cloneContext) WithValue(key, val interface{}) {
