@@ -181,8 +181,6 @@ func (ctx *cloneContext) Clone() (eoscContext.EoContext, error) {
 	return nil, fmt.Errorf("%s %w", "HttpContext", eoscContext.ErrEoCtxUnCloneable)
 }
 
-var copyKey = struct{}{}
-
 // RequestId 请求ID
 func (ctx *cloneContext) RequestId() string {
 	return ctx.org.requestID
