@@ -60,6 +60,8 @@ func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 		finisher:    defaultFinisher,
 		disable:     cfg.Disable,
 		websocket:   cfg.Websocket,
+		retry:       cfg.Retry,
+		timeout:     time.Duration(cfg.TimeOut) * time.Millisecond,
 	}
 
 	if !cfg.Disable {
@@ -94,7 +96,7 @@ func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 				handler.completeHandler = websocket.NewComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond)
 				methods = []string{http.MethodGet}
 			} else {
-				handler.completeHandler = http_complete.NewHttpComplete(cfg.Retry, time.Duration(cfg.TimeOut)*time.Millisecond)
+				handler.completeHandler = http_complete.NewHttpComplete()
 			}
 		}
 	}

@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/Shopify/sarama v1.32.0
+	github.com/brianvoe/gofakeit/v6 v6.20.1
 	github.com/coocood/freecache v1.2.2
 	github.com/dubbogo/gost v1.13.1
 	github.com/eolinker/eosc v0.10.1
@@ -197,4 +198,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-//replace github.com/eolinker/eosc => ../eosc
+replace github.com/eolinker/eosc => ../eosc
