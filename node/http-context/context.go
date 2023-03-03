@@ -193,9 +193,7 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 	ctx.fastHttpRequestCtx.Request.CopyTo(req)
 
 	copyContext.proxyRequest.reset(req, ctx.requestReader.remoteAddr)
-	copyContext.app = ctx.app
-	copyContext.balance = ctx.balance
-	copyContext.upstreamHostHandler = ctx.upstreamHostHandler
+
 	copyContext.completeHandler = ctx.completeHandler
 	copyContext.finishHandler = ctx.finishHandler
 

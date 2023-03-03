@@ -40,7 +40,7 @@ func (c *Config) doCheck() error {
 
 	//校验镜像请求超时时间
 	if c.Timeout < 0 {
-		return errTimeout
+		c.Timeout = 3000
 	}
 
 	//校验passHost
