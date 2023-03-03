@@ -36,11 +36,6 @@ func (s *Server) Hello(ctx context.Context, request *service.HelloRequest) (*ser
 	}, nil
 }
 
-type Request struct {
-	Name string
-	err  error
-}
-
 func (s *Server) StreamRequest(server service.Hello_StreamRequestServer) error {
 	trailingMD, ok := metadata.FromIncomingContext(server.Context())
 	if ok {

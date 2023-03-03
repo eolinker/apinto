@@ -17,6 +17,7 @@ install() {
 upgrade() {
 	apinto stop
 	install
+	sleep 10s
 	apinto start
 }
 
