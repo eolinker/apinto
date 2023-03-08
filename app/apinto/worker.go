@@ -12,6 +12,7 @@ import (
 	"github.com/eolinker/apinto/drivers/output/httpoutput"
 	"github.com/eolinker/apinto/drivers/output/kafka"
 	"github.com/eolinker/apinto/drivers/output/nsq"
+	prometheus_output "github.com/eolinker/apinto/drivers/output/prometheus"
 	"github.com/eolinker/apinto/drivers/output/syslog"
 	plugin_manager "github.com/eolinker/apinto/drivers/plugin-manager"
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
@@ -19,12 +20,19 @@ import (
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
+	dubbo2_to_http "github.com/eolinker/apinto/drivers/plugins/dubbo2-to-http"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
+	grpc_to_http "github.com/eolinker/apinto/drivers/plugins/gRPC-to-http"
 	grpc_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/grpc-proxy-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
+	http_to_dubbo2 "github.com/eolinker/apinto/drivers/plugins/http-to-dubbo2"
+	http_to_grpc "github.com/eolinker/apinto/drivers/plugins/http-to-gRPC"
+	"github.com/eolinker/apinto/drivers/plugins/http_mocking"
 	ip_restriction "github.com/eolinker/apinto/drivers/plugins/ip-restriction"
 	"github.com/eolinker/apinto/drivers/plugins/monitor"
 	params_transformer "github.com/eolinker/apinto/drivers/plugins/params-transformer"
+	prometheus_plugin "github.com/eolinker/apinto/drivers/plugins/prometheus"
+	proxy_mirror "github.com/eolinker/apinto/drivers/plugins/proxy-mirror"
 	proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/proxy-rewrite"
 	proxy_rewriteV2 "github.com/eolinker/apinto/drivers/plugins/proxy_rewrite_v2"
 	rate_limiting "github.com/eolinker/apinto/drivers/plugins/rate-limiting"
@@ -45,8 +53,9 @@ import (
 	grey_strategy "github.com/eolinker/apinto/drivers/strategy/grey-strategy"
 	limiting_strategy "github.com/eolinker/apinto/drivers/strategy/limiting-strategy"
 	visit_strategy "github.com/eolinker/apinto/drivers/strategy/visit-strategy"
-	template "github.com/eolinker/apinto/drivers/template"
+	"github.com/eolinker/apinto/drivers/template"
 
+	"github.com/eolinker/apinto/drivers/transcode/protobuf"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/extends"
 	process_worker "github.com/eolinker/eosc/process-worker"
@@ -85,6 +94,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	httpoutput.Register(extenderRegister)
 	kafka.Register(extenderRegister)
 	syslog.Register(extenderRegister)
+	prometheus_output.Register(extenderRegister)
 
 	//app
 	app.Register(extenderRegister)
@@ -110,6 +120,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	circuit_breaker.Register(extenderRegister)
 
 	access_log.Register(extenderRegister)
+	prometheus_plugin.Register(extenderRegister)
 	monitor.Register(extenderRegister)
 	proxy_rewriteV2.Register(extenderRegister)
 
@@ -131,5 +142,13 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	grpc_proxy_rewrite.Register(extenderRegister)
 
 	dubbo2_proxy_rewrite.Register(extenderRegister)
+	http_to_dubbo2.Register(extenderRegister)
+	dubbo2_to_http.Register(extenderRegister)
 
+	http_to_grpc.Register(extenderRegister)
+	protocbuf.Register(extenderRegister)
+	grpc_to_http.Register(extenderRegister)
+
+	proxy_mirror.Register(extenderRegister)
+	http_mocking.Register(extenderRegister)
 }

@@ -6,7 +6,7 @@ import (
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/apinto/drivers"
-	http_entry "github.com/eolinker/apinto/http-entry"
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
 	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"

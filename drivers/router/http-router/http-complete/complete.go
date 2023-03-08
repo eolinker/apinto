@@ -3,6 +3,7 @@ package http_complete
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,12 +17,10 @@ var (
 )
 
 type HttpComplete struct {
-	retry   int
-	timeOut time.Duration
 }
 
-func NewHttpComplete(retry int, timeOut time.Duration) *HttpComplete {
-	return &HttpComplete{retry: retry, timeOut: timeOut}
+func NewHttpComplete() *HttpComplete {
+	return &HttpComplete{}
 }
 
 func (h *HttpComplete) Complete(org eocontext.EoContext) error {
@@ -55,9 +54,22 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 
 	}
 	timeOut := app.TimeOut()
-	for index := 0; index <= h.retry; index++ {
 
-		if h.timeOut > 0 && time.Now().Sub(proxyTime) > h.timeOut {
+	retryValue := ctx.Value(http_service.KeyHttpRetry)
+	retry, ok := retryValue.(int)
+	if !ok {
+		retry = 1
+	}
+
+	timeoutValue := ctx.Value(http_service.KeyHttpTimeout)
+	timeout, ok := timeoutValue.(time.Duration)
+	if !ok {
+		timeout = 3000 * time.Millisecond
+	}
+
+	for index := 0; index <= retry; index++ {
+
+		if timeout > 0 && time.Now().Sub(proxyTime) > timeout {
 			return ErrorTimeoutComplete
 		}
 		node, err := balance.Select(ctx)
@@ -78,6 +90,40 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	}
 
 	return lastErr
+}
+
+type NoServiceCompleteHandler struct {
+	status int
+	header map[string]string
+	body   string
+}
+
+func NewNoServiceCompleteHandler(status int, header map[string]string, body string) *NoServiceCompleteHandler {
+	return &NoServiceCompleteHandler{status: status, header: header, body: body}
+}
+
+func (n *NoServiceCompleteHandler) Complete(org eocontext.EoContext) error {
+	ctx, err := http_service.Assert(org)
+	if err != nil {
+		return err
+	}
+	//设置响应开始时间
+	proxyTime := time.Now()
+
+	defer func() {
+		//设置原始响应状态码
+		ctx.Response().SetProxyStatus(ctx.Response().StatusCode(), "")
+		//设置上游响应总时间, 单位为毫秒
+		//ctx.WithValue("response_time", time.Now().Sub(proxyTime).Milliseconds())
+		ctx.Response().SetResponseTime(time.Now().Sub(proxyTime))
+		ctx.SetLabel("handler", "proxy")
+	}()
+	for key, value := range n.header {
+		ctx.Response().SetHeader(key, value)
+	}
+	ctx.Response().SetBody([]byte(n.body))
+	ctx.Response().SetStatus(n.status, strconv.Itoa(n.status))
+	return nil
 }
 
 type httpCompleteCaller struct {

@@ -48,5 +48,8 @@ func (h *grpcRouter) ServeHTTP(ctx eocontext.EoContext) {
 	ctx.SetBalance(h.service)
 	ctx.SetUpstreamHostHandler(h.service)
 	ctx.SetFinish(h.finisher)
-	h.filters.Chain(ctx, completeCaller)
+	err = h.filters.Chain(ctx, completeCaller)
+	if err != nil {
+		grpcContext.Response().SetErr(err)
+	}
 }

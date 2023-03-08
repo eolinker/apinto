@@ -13,7 +13,7 @@ import (
 
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	uuid "github.com/google/uuid"
+	"github.com/google/uuid"
 	"github.com/valyala/fasthttp"
 )
 
@@ -153,6 +153,7 @@ func (ctx *HttpContext) SendTo(address string, timeout time.Duration) error {
 
 func (ctx *HttpContext) Context() context.Context {
 	if ctx.ctx == nil {
+
 		ctx.ctx = context.Background()
 	}
 	return ctx.ctx
@@ -177,6 +178,40 @@ func (ctx *HttpContext) Proxy() http_service.IRequest {
 func (ctx *HttpContext) Request() http_service.IRequestReader {
 
 	return &ctx.requestReader
+}
+
+func (ctx *HttpContext) IsCloneable() bool {
+	return true
+}
+
+func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
+	copyContext := copyPool.Get().(*cloneContext)
+	copyContext.org = ctx
+	copyContext.proxyRequests = make([]http_service.IProxy, 0, 2)
+
+	req := fasthttp.AcquireRequest()
+	ctx.fastHttpRequestCtx.Request.CopyTo(req)
+
+	resp := fasthttp.AcquireResponse()
+	ctx.fastHttpRequestCtx.Response.CopyTo(resp)
+
+	copyContext.proxyRequest.reset(req, ctx.requestReader.remoteAddr)
+	copyContext.response.reset(resp)
+
+	copyContext.completeHandler = ctx.completeHandler
+	copyContext.finishHandler = ctx.finishHandler
+
+	cloneLabels := make(map[string]string, len(ctx.labels))
+	for k, v := range ctx.labels {
+		cloneLabels[k] = v
+	}
+	copyContext.labels = cloneLabels
+
+	//记录请求时间
+	copyContext.ctx = context.WithValue(ctx.Context(), http_service.KeyCloneCtx, true)
+	copyContext.WithValue(http_service.KeyHttpRetry, 0)
+	copyContext.WithValue(http_service.KeyHttpTimeout, time.Duration(0))
+	return copyContext, nil
 }
 
 // NewContext 创建Context
@@ -229,7 +264,7 @@ func (ctx *HttpContext) FastFinish() {
 	ctx.response.Finish()
 	ctx.fastHttpRequestCtx = nil
 	pool.Put(ctx)
-	return
+
 }
 
 func NotFound(ctx *HttpContext) {

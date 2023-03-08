@@ -14,6 +14,7 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
+	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
 	"github.com/google/uuid"
 	"net"
@@ -23,13 +24,13 @@ import (
 	"time"
 )
 
-type DubboParamBody struct {
-	typesList  []string
-	valuesList []hessian.Object
-}
+func NewDubboParamBody(typesList []string, valuesList []hessian.Object) *dubbo2_context.Dubbo2ParamBody {
 
-func NewDubboParamBody(typesList []string, valuesList []hessian.Object) *DubboParamBody {
-	return &DubboParamBody{typesList: typesList, valuesList: valuesList}
+	valList := make([]interface{}, 0, len(valuesList))
+	for _, v := range valuesList {
+		valList = append(valList, v)
+	}
+	return &dubbo2_context.Dubbo2ParamBody{TypesList: typesList, ValuesList: valList}
 }
 
 var _ dubbo2_context.IDubbo2Context = (*DubboContext)(nil)
@@ -62,6 +63,9 @@ func NewContext(req *invocation.RPCInvocation, port int) dubbo2_context.IDubbo2C
 	t := time.Now()
 
 	method, typesList, valuesList := argumentsUnmarshal(req.Arguments())
+	if method == "" || len(typesList) == 0 || len(valuesList) == 0 {
+		log.Errorf("dubbo2 NewContext method=%s typesList=%v valuesList=%v req=%v", method, typesList, valuesList, req)
+	}
 
 	path := req.GetAttachmentWithDefaultValue(constant.PathKey, "")
 	serviceName := req.GetAttachmentWithDefaultValue(constant.InterfaceKey, "")
@@ -121,15 +125,16 @@ func (d *DubboContext) dial(addr string, timeout time.Duration) error {
 	arguments := make([]interface{}, 3)
 	parameterValues := make([]reflect.Value, 3)
 
-	typesList := make([]string, 0)
-	valuesList := make([]hessian.Object, 0)
-	if param, ok := d.proxy.GetParam().(*DubboParamBody); ok {
-		typesList = param.typesList
-		valuesList = param.valuesList
+	valuesList := make([]hessian.Object, 0, len(d.proxy.GetParam().ValuesList))
+
+	for _, v := range d.proxy.GetParam().ValuesList {
+		if object, ok := v.(hessian.Object); ok {
+			valuesList = append(valuesList, object)
+		}
 	}
 
 	arguments[0] = d.proxy.Service().Method()
-	arguments[1] = typesList
+	arguments[1] = d.proxy.GetParam().TypesList
 	arguments[2] = valuesList
 
 	parameterValues[0] = reflect.ValueOf(arguments[0])
@@ -283,6 +288,15 @@ func (d *DubboContext) LocalAddr() net.Addr {
 
 func (d *DubboContext) LocalPort() int {
 	return d.port
+}
+
+func (d *DubboContext) IsCloneable() bool {
+	return false
+}
+
+func (d *DubboContext) Clone() (eocontext.EoContext, error) {
+	//TODO
+	return nil, fmt.Errorf("%s %w", "DubboContext", eocontext.ErrEoCtxUnCloneable)
 }
 
 func addrToIP(addr net.Addr) net.IP {
