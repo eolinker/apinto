@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "github.com/eolinker/apinto/example/grpc/demo_service";
+import "msg.proto";
+
+package Service;
+
+service Hello {
+  rpc Hello(HelloRequest) returns (HelloResponse){};
+  rpc StreamRequest(stream HelloRequest) returns (HelloResponse){};
+  rpc StreamResponse(HelloRequest) returns (stream HelloResponse) {};
+  rpc AllStream(stream HelloRequest)returns (stream HelloResponse) {};
+}

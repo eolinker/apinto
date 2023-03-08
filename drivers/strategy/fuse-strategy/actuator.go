@@ -78,6 +78,9 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cac
 
 	httpCtx, err := http_service.Assert(ctx)
 	if err != nil {
+		if next != nil {
+			return next.DoChain(ctx)
+		}
 		return err
 	}
 	a.lock.RLock()
@@ -111,9 +114,7 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cac
 	}
 
 	if next != nil {
-		if err = next.DoChain(ctx); err != nil {
-			return err
-		}
+		return next.DoChain(ctx)
 	}
 
 	return nil

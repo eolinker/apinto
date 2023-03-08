@@ -27,6 +27,15 @@ type PluginManager struct {
 	plugins         Plugins
 	pluginObjs      eosc.Untyped[string, *PluginObj]
 	workers         eosc.IWorkers
+
+	global eocontext.IChainPro
+}
+
+func (p *PluginManager) Global() eocontext.IChainPro {
+	if p.global == nil {
+		p.global = p.createChain("global", map[string]*plugin.Config{})
+	}
+	return p.global
 }
 
 func (p *PluginManager) Check(cfg interface{}) (profession, name, driver, desc string, err error) {

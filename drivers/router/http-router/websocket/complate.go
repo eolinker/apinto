@@ -69,7 +69,7 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 		conn, resp, lastErr = DialWithTimeout(u.String(), ctx.Proxy().Header().Headers(), timeOut)
 		if lastErr == nil {
 			resp.Body.Close()
-			ctx.SetUpstreamConn(conn)
+			ctx.SetUpstreamConn(&Conn{conn})
 			break
 		}
 		log.Error("websocket upstream send error: ", lastErr)
@@ -79,4 +79,25 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 	}
 
 	return lastErr
+}
+
+type Conn struct {
+	*websocket.Conn
+}
+
+func (c *Conn) Read(b []byte) (n int, err error) {
+	return c.Conn.UnderlyingConn().Read(b)
+}
+
+func (c *Conn) Write(b []byte) (n int, err error) {
+	return c.Conn.UnderlyingConn().Write(b)
+}
+
+func (c *Conn) SetDeadline(t time.Time) error {
+	err := c.Conn.SetWriteDeadline(t)
+	if err != nil {
+		return err
+	}
+
+	return c.Conn.SetReadDeadline(t)
 }

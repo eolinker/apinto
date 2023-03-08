@@ -7,17 +7,16 @@ builds:
     goarch:
       - amd64
       - arm64
-      - "386"
     goarm:
       - "6"
     gomips:
       - hardfloat
     goamd64:
-      - v1
+      - v2
+      - v3
     targets:
       - linux_arm64
       - linux_amd64
-      - linux_386
       - darwin_arm64
       - darwin_amd64
     dir: ./app/apinto
@@ -36,6 +35,8 @@ builds:
       - -X "github.com/eolinker/apinto/utils/version.buildUser=goreleaser"
       - -X "github.com/eolinker/apinto/utils/version.goVersion={{.Env.GOVERSION}}"
       - -X "github.com/eolinker/apinto/utils/version.eoscVersion={{.Env.EoscVersion}}"
+    env:
+      - CGO_ENABLED=0
 archives:
   - id: default
     format: tar.gz
