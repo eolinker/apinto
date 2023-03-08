@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	monitor_entry "github.com/eolinker/apinto/monitor-entry"
+	monitor_entry "github.com/eolinker/apinto/entries/monitor-entry"
 
 	"github.com/eolinker/eosc/log"
 
@@ -53,6 +53,7 @@ func (o *output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 }
 
 func (o *output) Stop() error {
+	scopeManager.Del(o.Id())
 	o.client.Close()
 	o.cancel()
 	close(o.metrics)

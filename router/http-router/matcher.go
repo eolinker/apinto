@@ -1,19 +1,19 @@
 package http_router
 
 import (
-	"github.com/eolinker/apinto/checker"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"github.com/eolinker/eosc/log"
 	"sort"
 	"strconv"
 	"strings"
-)
 
-const All = "*"
+	"github.com/eolinker/apinto/checker"
+	"github.com/eolinker/apinto/router"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/eosc/log"
+)
 
 type readerHandler func(port int, request http_service.IRequestReader) (string, bool)
 
-func newPortMatcher(children map[string]IMatcher) IMatcher {
+func newPortMatcher(children map[string]router.IMatcher) router.IMatcher {
 	return &SimpleMatcher{
 		children: children,
 		name:     "port",
@@ -22,7 +22,7 @@ func newPortMatcher(children map[string]IMatcher) IMatcher {
 		},
 	}
 }
-func newMethodMatcher(children map[string]IMatcher, handler IRouterHandler) IMatcher {
+func newMethodMatcher(children map[string]router.IMatcher, handler router.IRouterHandler) router.IMatcher {
 	return &SimpleMatcher{
 		children: children,
 		name:     "method",
@@ -31,7 +31,7 @@ func newMethodMatcher(children map[string]IMatcher, handler IRouterHandler) IMat
 		},
 	}
 }
-func newHostMatcher(children map[string]IMatcher) IMatcher {
+func newHostMatcher(children map[string]router.IMatcher) router.IMatcher {
 	return &SimpleMatcher{
 		children: children,
 		name:     "host",
@@ -46,12 +46,16 @@ func newHostMatcher(children map[string]IMatcher) IMatcher {
 }
 
 type SimpleMatcher struct {
-	children map[string]IMatcher
+	children map[string]router.IMatcher
 	read     readerHandler
 	name     string
 }
 
-func (s *SimpleMatcher) Match(port int, request http_service.IRequestReader) (IRouterHandler, bool) {
+func (s *SimpleMatcher) Match(port int, req interface{}) (router.IRouterHandler, bool) {
+	request, ok := req.(http_service.IRequestReader)
+	if !ok {
+		return nil, false
+	}
 	log.Debug("SimpleMatcher:", s.name)
 	if s == nil || s.children == nil || len(s.children) == 0 {
 		return nil, false
@@ -66,7 +70,7 @@ func (s *SimpleMatcher) Match(port int, request http_service.IRequestReader) (IR
 			return handler, true
 		}
 	}
-	next, has = s.children[All]
+	next, has = s.children[router.All]
 	if has {
 		handler, ok := next.Match(port, request)
 		if ok {
@@ -79,14 +83,14 @@ func (s *SimpleMatcher) Match(port int, request http_service.IRequestReader) (IR
 }
 
 type CheckMatcher struct {
-	equals   map[string]IMatcher //存放使用全等匹配的指标节点
+	equals   map[string]router.IMatcher //存放使用全等匹配的指标节点
 	read     readerHandler
 	checkers []*CheckerHandler //按优先顺序存放除全等匹配外的checker，顺序与nodes对应
-	all      IMatcher
+	all      router.IMatcher
 	name     string
 }
 
-func NewPathMatcher(equals map[string]IMatcher, checkers []*CheckerHandler, all IMatcher) *CheckMatcher {
+func NewPathMatcher(equals map[string]router.IMatcher, checkers []*CheckerHandler, all router.IMatcher) *CheckMatcher {
 	read := func(port int, request http_service.IRequestReader) (string, bool) {
 		return request.URI().Path(), true
 	}
@@ -101,8 +105,11 @@ func NewPathMatcher(equals map[string]IMatcher, checkers []*CheckerHandler, all 
 	}
 }
 
-func (c *CheckMatcher) Match(port int, request http_service.IRequestReader) (IRouterHandler, bool) {
-
+func (c *CheckMatcher) Match(port int, req interface{}) (router.IRouterHandler, bool) {
+	request, ok := req.(http_service.IRequestReader)
+	if !ok {
+		return nil, false
+	}
 	value, hasvalue := c.read(port, request)
 	log.Debug("CheckMatcher::Match", "(", len(c.checkers), ")", c.name, "=", value)
 
@@ -132,21 +139,21 @@ func (c *CheckMatcher) Match(port int, request http_service.IRequestReader) (IRo
 }
 
 type EmptyMatcher struct {
-	handler IRouterHandler
+	handler router.IRouterHandler
 	has     bool
 }
 
-func (e *EmptyMatcher) Match(port int, request http_service.IRequestReader) (IRouterHandler, bool) {
+func (e *EmptyMatcher) Match(port int, request interface{}) (router.IRouterHandler, bool) {
 	return e.handler, e.has
 }
 
 type AppendMatcher struct {
-	handler  IRouterHandler
-	checkers MatcherChecker
+	handler  router.IRouterHandler
+	checkers router.MatcherChecker
 }
 type AppendMatchers []*AppendMatcher
 
-func (as AppendMatchers) Match(port int, request http_service.IRequestReader) (IRouterHandler, bool) {
+func (as AppendMatchers) Match(port int, request interface{}) (router.IRouterHandler, bool) {
 	for _, m := range as {
 		if h, ok := m.Match(port, request); ok {
 			return h, true
@@ -160,14 +167,18 @@ func (as AppendMatchers) Len() int {
 }
 
 func (as AppendMatchers) Less(i, j int) bool {
-	return as[i].checkers.weight() < as[j].checkers.weight()
+	return as[i].checkers.Weight() < as[j].checkers.Weight()
 }
 
 func (as AppendMatchers) Swap(i, j int) {
 	as[i], as[j] = as[j], as[i]
 }
 
-func (a *AppendMatcher) Match(port int, request http_service.IRequestReader) (IRouterHandler, bool) {
+func (a *AppendMatcher) Match(port int, req interface{}) (router.IRouterHandler, bool) {
+	request, ok := req.(http_service.IRequestReader)
+	if !ok {
+		return nil, false
+	}
 	log.Debug("AppendMatcher")
 	if a.checkers.MatchCheck(request) {
 		return a.handler, true
@@ -177,7 +188,7 @@ func (a *AppendMatcher) Match(port int, request http_service.IRequestReader) (IR
 
 type CheckerHandler struct {
 	checker checker.Checker
-	next    IMatcher
+	next    router.IMatcher
 }
 type CheckerSort []*CheckerHandler
 

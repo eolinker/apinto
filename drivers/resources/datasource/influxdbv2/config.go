@@ -1,7 +1,7 @@
 package influxdbv2
 
 type Config struct {
-	Scopes []string `json:"scopes"`
+	Scopes []string `json:"scopes" label:"作用域"`
 	Url    string   `json:"url"`
 	Org    string   `json:"org"`
 	Bucket string   `json:"bucket"`

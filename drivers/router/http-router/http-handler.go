@@ -2,6 +2,7 @@ package http_router
 
 import (
 	"net/http"
+	"time"
 
 	http_service "github.com/eolinker/apinto/node/http-context"
 
@@ -26,10 +27,12 @@ type httpHandler struct {
 	filters   eocontext.IChainPro
 	disable   bool
 	websocket bool
+
+	retry   int
+	timeout time.Duration
 }
 
 func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
-
 	httpContext, err := http_context.Assert(ctx)
 	if err != nil {
 		return
@@ -50,12 +53,18 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 		}
 		ctx = wsCtx
 	}
+	//set retry timeout
+	ctx.WithValue(http_context.KeyHttpRetry, h.retry)
+	ctx.WithValue(http_context.KeyHttpTimeout, h.timeout)
 
 	//Set Label
 	ctx.SetLabel("api", h.routerName)
 	ctx.SetLabel("api_id", h.routerId)
 	ctx.SetLabel("service", h.serviceName)
-	ctx.SetLabel("service_id", h.service.Id())
+	if h.service != nil {
+		ctx.SetLabel("service_id", h.service.Id())
+	}
+
 	ctx.SetLabel("ip", httpContext.Request().ReadIP())
 
 	ctx.SetCompleteHandler(h.completeHandler)

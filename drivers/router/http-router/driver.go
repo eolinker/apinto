@@ -2,13 +2,14 @@ package http_router
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/template"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
-	"sync"
 
 	"github.com/eolinker/eosc"
 )
@@ -50,14 +51,16 @@ func check(v interface{}, workers map[eosc.RequireId]eosc.IWorker) (*Config, ser
 	if !ok {
 		return nil, nil, nil, fmt.Errorf("get %s but %s %w", config.TypeNameOf(v), config.TypeNameOf(new(Config)), eosc.ErrorRequire)
 	}
+	var target service.IService
 	ser, has := workers[conf.Service]
-	if !has {
-		return nil, nil, nil, fmt.Errorf("target %s: %w", conf.Service, eosc.ErrorRequire)
+	if has {
+		target, ok = ser.(service.IService)
+		if !ok {
+			return nil, nil, nil, fmt.Errorf("target name: %s type of %s,target %w", conf.Service, config.TypeNameOf(ser), eosc.ErrorNotGetSillForRequire)
+		}
+		//return nil, nil, nil, fmt.Errorf("target %s: %w", conf.Service, eosc.ErrorRequire)
 	}
-	target, ok := ser.(service.IService)
-	if !ok {
-		return nil, nil, nil, fmt.Errorf("target name: %s type of %s,target %w", conf.Service, config.TypeNameOf(ser), eosc.ErrorNotGetSillForRequire)
-	}
+
 	var tmp template.ITemplate
 	if conf.Template != "" {
 		tp, has := workers[conf.Template]

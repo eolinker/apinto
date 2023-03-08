@@ -74,6 +74,7 @@ func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 }
 
 func (o *Output) Stop() error {
+	scopeManager.Del(o.Id())
 	producer := o.producer
 	if producer != nil {
 		o.producer = nil
