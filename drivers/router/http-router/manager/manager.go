@@ -67,7 +67,7 @@ func (m *Manager) Delete(id string) {
 }
 
 func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
-
+	ctx.Request.Body()
 	httpContext := http_context.NewContext(ctx, port)
 	if m.matcher == nil {
 		httpContext.SetFinish(notFound)
