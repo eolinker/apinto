@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-const BuffSize = 4096
+const BuffSize = 8192
 
 var (
 	poolBuff = sync.Pool{
