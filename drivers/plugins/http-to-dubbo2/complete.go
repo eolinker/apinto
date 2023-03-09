@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	hessian "github.com/apache/dubbo-go-hessian2"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
-	"time"
 )
 
 var (
@@ -46,7 +47,7 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 		ctx.Response().SetResponseTime(time.Now().Sub(proxyTime))
 		ctx.SetLabel("handler", "proxy")
 	}()
-	body, _ := ctx.Request().Body().RawBody()
+	body, _ := ctx.Proxy().Body().RawBody()
 
 	var types []string
 	var valuesList []hessian.Object
