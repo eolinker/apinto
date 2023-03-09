@@ -15,9 +15,7 @@ func Clone(r io.Reader, size int) []io.Reader {
 	rs := make([]io.Reader, size)
 	ws := make([]*io.PipeWriter, size)
 	for i := 0; i < size; i++ {
-		reader, writer := io.Pipe()
-		rs = append(rs, reader)
-		ws = append(ws, writer)
+		rs[i], ws[i] = io.Pipe()
 	}
 	go copyTo(r, ws...)
 	return rs

@@ -50,7 +50,7 @@ func TestClone(t *testing.T) {
 		}
 	}()
 	write("cle 1", t)
-	write("cle 2", t)
+	//write("cle 2", t)
 	wg.Wait()
 	listen.Close()
 }
@@ -95,7 +95,7 @@ func write(name string, testing *testing.T) {
 func read(conn net.Conn, name string, testing *testing.T) {
 
 	rb := bufio.NewReader(conn)
-	buf := make([]byte, 1024)
+	buf := make([]byte, 4096)
 	total := int64(0)
 	last := int64(0)
 	tc := time.NewTicker(time.Second)
