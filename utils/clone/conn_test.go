@@ -1,4 +1,4 @@
-package conn_clone
+package clone
 
 import (
 	"bufio"
@@ -39,8 +39,8 @@ func TestClone(t *testing.T) {
 			} else {
 
 				go func() {
-					rw, r := Clone(accept)
-					go read(r, "clone", t)
+					rw, r := CloneConn(accept, 1)
+					go read(r[0], "clone", t)
 					read(rw, "main.", t)
 
 					wg.Done()

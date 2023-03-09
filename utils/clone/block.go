@@ -1,4 +1,4 @@
-package conn_clone
+package clone
 
 import (
 	"io"
