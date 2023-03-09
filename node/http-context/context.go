@@ -190,10 +190,12 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 	copyContext.proxyRequests = make([]http_service.IProxy, 0, 2)
 
 	req := fasthttp.AcquireRequest()
-	ctx.fastHttpRequestCtx.Request.CopyTo(req)
+	// 当body未读取，调用Body方法读出stream中当所有body内容，避免请求体被截断
+	ctx.proxyRequest.req.Body()
+	ctx.proxyRequest.req.CopyTo(req)
 
 	resp := fasthttp.AcquireResponse()
-	ctx.fastHttpRequestCtx.Response.CopyTo(resp)
+	//ctx.fastHttpRequestCtx.Response.CopyTo(resp)
 
 	copyContext.proxyRequest.reset(req, ctx.requestReader.remoteAddr)
 	copyContext.response.reset(resp)
@@ -224,7 +226,12 @@ func NewContext(ctx *fasthttp.RequestCtx, port int) *HttpContext {
 	httpContext.fastHttpRequestCtx = ctx
 	httpContext.requestID = uuid.New().String()
 
-	httpContext.requestReader.reset(&ctx.Request, remoteAddr)
+	// 原始请求最大读取body为8k，使用clone request
+	request := fasthttp.AcquireRequest()
+	ctx.Request.CopyTo(request)
+	httpContext.requestReader.reset(request, remoteAddr)
+
+	// proxyRequest保留原始请求
 	httpContext.proxyRequest.reset(&ctx.Request, remoteAddr)
 	httpContext.proxyRequests = httpContext.proxyRequests[:0]
 	httpContext.response.reset(&ctx.Response)

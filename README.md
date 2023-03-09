@@ -105,10 +105,16 @@ Apinto支持在arm64、amd64架构上运行。
 
 请根据需要下载对应架构及系统的安装包，安装包下载请[点击](https://github.com/eolinker/apinto/releases/)跳转
 
-2.启动网关：
+2. 安装网关：
+```shell
+./install.sh install
+```
+执行该步骤将会生成配置文件`/etc/apinto/apinto.yml`和`/etc/apinto/config.yml`，可根据需要修改。
+
+3.启动网关：
 
 ```
-./apinto start
+apinto start
 ```
 
 3.如需可视化界面请点击[Apinto Dashboard](https://github.com/eolinker/apinto-dashboard)

@@ -101,10 +101,20 @@ Apinto supports running on the arm64 and amd64 architectures.
 
 Please download the installation package of the corresponding architecture and system as required. [Click](https://github.com/eolinker/apinto/releases/) to jump to download the installation package.
 
-2. Start gateway：
+2. Install the gateway:
+
+```shell
+
+./install.sh install
 
 ```
-./apinto start
+
+Executing this step will generate configuration files'/etc/apinto/apinto. yml 'and'/etc/apinto/config. yml ', which can be modified as needed.
+
+3. Start gateway：
+
+```
+apinto start
 ```
 
 3.To configure the gateway through the visual interface, click [apinto dashboard](https://github.com/eolinker/apinto-dashboard)
