@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"math/rand"
 	"net"
 	"sync"
@@ -11,7 +12,7 @@ import (
 	"time"
 )
 
-func TestClone(t *testing.T) {
+func TestCloneTcp(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 
@@ -49,52 +50,53 @@ func TestClone(t *testing.T) {
 			}
 		}
 	}()
-	write("cle 1", t)
+	writeTcp("cle 1", "127.0.0.1:9988", t)
 	//write("cle 2", t)
 	wg.Wait()
 	listen.Close()
 }
-func write(name string, testing *testing.T) {
+func writeTcp(name string, addr string, t *testing.T) {
 	buf := bytes.Buffer{}
 	for i := 0; i < 4096; i++ {
 		buf.WriteString(fmt.Sprint(rand.Int(), ","))
 	}
-
-	conn, err := net.Dial("tcp", "127.0.0.1:9988")
+	data := buf.Bytes()
+	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 
 		return
 	}
 
-	go func() {
-		data := buf.Bytes()
-		tc := time.NewTicker(time.Second)
-		te := time.NewTimer(time.Second * 5)
-		total := int64(0)
-		last := int64(0)
-		for {
-			select {
-			case t := <-tc.C:
-				testing.Logf("\t[%s] %s\twrite %dk/s\n", t.Format(time.RFC3339), name, (total-last)/1024)
-				last = total
-			case <-te.C:
-				conn.Close()
-				return
-			default:
-				n, err := conn.Write(data)
-				if err != nil {
-					return
-				}
-				total += int64(n)
-			}
-
-		}
-	}()
+	go doWrite(name, conn, data, t)
 
 }
-func read(conn net.Conn, name string, testing *testing.T) {
+func doWrite(name string, w io.WriteCloser, data []byte, testing *testing.T) {
 
-	rb := bufio.NewReader(conn)
+	tc := time.NewTicker(time.Second)
+	te := time.NewTimer(time.Second * 5)
+	total := int64(0)
+	last := int64(0)
+	for {
+		select {
+		case t := <-tc.C:
+			testing.Logf("\t[%s] %s\twrite %dk/s\n", t.Format(time.RFC3339), name, (total-last)/1024)
+			last = total
+		case <-te.C:
+			w.Close()
+			return
+		default:
+			n, err := w.Write(data)
+			if err != nil {
+				return
+			}
+			total += int64(n)
+		}
+
+	}
+}
+func read(r io.Reader, name string, testing *testing.T) {
+
+	rb := bufio.NewReader(r)
 	buf := make([]byte, 4096)
 	total := int64(0)
 	last := int64(0)
@@ -114,4 +116,26 @@ func read(conn net.Conn, name string, testing *testing.T) {
 			total += int64(r)
 		}
 	}
+}
+
+func TestClonePipe(t *testing.T) {
+	buf := bytes.Buffer{}
+	for i := 0; i < 8192; i++ {
+		buf.WriteString(fmt.Sprint(rand.Int(), ","))
+	}
+	data := buf.Bytes()
+	reader, writer := io.Pipe()
+
+	readers := Clone(reader, 3)
+	wg := sync.WaitGroup{}
+
+	for i, r := range readers {
+		wg.Add(1)
+		go func(i int, r io.Reader) {
+			read(r, fmt.Sprintf("reader-%d", i+1), t)
+			wg.Done()
+		}(i, r)
+	}
+
+	doWrite("write", writer, data, t)
 }
