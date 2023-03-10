@@ -117,7 +117,18 @@ func read(r io.Reader, name string, testing *testing.T) {
 		}
 	}
 }
+func TestClonePipe2(t *testing.T) {
+	wg := sync.WaitGroup{}
+	for i := 0; i < 6; i++ {
+		wg.Add(1)
+		go func() {
+			TestClonePipe(t)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
 
+}
 func TestClonePipe(t *testing.T) {
 	buf := bytes.Buffer{}
 	for i := 0; i < 8192; i++ {
@@ -126,7 +137,7 @@ func TestClonePipe(t *testing.T) {
 	data := buf.Bytes()
 	reader, writer := io.Pipe()
 
-	readers := Clone(reader, 3)
+	readers := Clone(reader, 2)
 	wg := sync.WaitGroup{}
 
 	for i, r := range readers {
