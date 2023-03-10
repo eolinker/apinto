@@ -267,6 +267,7 @@ func (ctx *HttpContext) FastFinish() {
 	ctx.completeHandler = nil
 
 	ctx.requestReader.Finish()
+	fasthttp.ReleaseRequest(ctx.requestReader.req)
 	ctx.proxyRequest.Finish()
 	ctx.response.Finish()
 	ctx.fastHttpRequestCtx = nil
