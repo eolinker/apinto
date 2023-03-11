@@ -66,11 +66,11 @@ func CloneConn(conn net.Conn, count int) (rw net.Conn, r []net.Conn) {
 	}
 	rs = rs[1:]
 	crs := make([]net.Conn, count)
-	for _, r := range rs {
-		crs = append(crs, &connReader{
+	for i, r := range rs {
+		crs[i] = &connReader{
 			conn:   conn,
 			reader: r,
-		})
+		}
 	}
 	return cw, crs
 

@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"io"
 	"sync"
+	"time"
 )
 
 func Clone(r io.Reader, size int) []io.Reader {
@@ -15,9 +16,7 @@ func Clone(r io.Reader, size int) []io.Reader {
 	rs := make([]io.Reader, size)
 	ws := make([]*io.PipeWriter, size)
 	for i := 0; i < size; i++ {
-		reader, writer := io.Pipe()
-		rs = append(rs, reader)
-		ws = append(ws, writer)
+		rs[i], ws[i] = io.Pipe()
 	}
 	go copyTo(r, ws...)
 	return rs
@@ -32,11 +31,12 @@ type blockChan struct {
 
 func newBlockChan(w *io.PipeWriter) *blockChan {
 	bc := &blockChan{w: w, ls: list.New()}
-	go rc(bc)
+
 	return bc
 }
 func rc(bc *blockChan) {
 
+	retry := 0
 	for {
 		bc.lock.Lock()
 
@@ -44,10 +44,17 @@ func rc(bc *blockChan) {
 		if e == nil {
 			bc.isRun = false
 			bc.lock.Unlock()
-			return
+
+			retry++
+			if retry >= 3 {
+				break
+			}
+			time.Sleep(time.Millisecond * time.Duration(retry))
+			continue
 		}
 		d := bc.ls.Remove(e).(*block)
 		bc.lock.Unlock()
+
 		data, n, err := d.Data()
 
 		for i := 0; i < n; {
@@ -65,11 +72,13 @@ func rc(bc *blockChan) {
 
 }
 func (b *blockChan) write(d *block) {
+	//fmt.Println("write")
 	b.lock.Lock()
 
 	b.ls.PushBack(d)
 	if !b.isRun {
 		b.isRun = true
+		//fmt.Println("run rc")
 		go rc(b)
 	}
 	b.lock.Unlock()

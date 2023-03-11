@@ -3,6 +3,7 @@ package http_context
 import (
 	"context"
 	"fmt"
+	"github.com/valyala/fasthttp"
 	"net"
 	"time"
 
@@ -195,7 +196,9 @@ func (ctx *cloneContext) FastFinish() {
 	ctx.upstreamHostHandler = nil
 	ctx.finishHandler = nil
 	ctx.completeHandler = nil
-
+	fasthttp.ReleaseRequest(ctx.proxyRequest.req)
+	fasthttp.ReleaseResponse(ctx.response.Response)
+	ctx.response.Finish()
 	ctx.proxyRequest.Finish()
 
 }
