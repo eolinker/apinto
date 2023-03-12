@@ -21,7 +21,7 @@ type ProxyRequest struct {
 //}
 
 func (r *ProxyRequest) Finish() error {
-	fasthttp.ReleaseRequest(r.req)
+	//fasthttp.ReleaseRequest(r.req)
 	err := r.RequestReader.Finish()
 	if err != nil {
 		log.Warn(err)
