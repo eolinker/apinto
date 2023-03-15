@@ -40,8 +40,6 @@ type complete struct {
 	headers    map[string]string
 	rawQuery   string
 	path       string
-	retry      int
-	timeout    time.Duration
 }
 
 func newComplete(descriptor grpc_descriptor.IDescriptor, conf *Config) *complete {
@@ -49,10 +47,8 @@ func newComplete(descriptor grpc_descriptor.IDescriptor, conf *Config) *complete
 	for key, value := range conf.Query {
 		query.Set(key, value)
 	}
-	timeout := defaultTimeout
 	return &complete{
 		descriptor: descriptor,
-		timeout:    timeout,
 		rawQuery:   query.Encode(),
 		path:       conf.Path,
 		headers:    conf.Headers,
@@ -65,6 +61,19 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
+
+	retryValue := ctx.Value(grpc_context.KeyGrpcRetry)
+	retry, ok := retryValue.(int)
+	if !ok {
+		retry = 0
+	}
+
+	timeoutValue := ctx.Value(grpc_context.KeyGrpcTimeout)
+	timeout, ok := timeoutValue.(time.Duration)
+	if !ok {
+		timeout = defaultTimeout
+	}
+
 	descriptor, err := h.descriptor.Descriptor().FindSymbol(fmt.Sprintf("%s.%s", ctx.Proxy().Service(), ctx.Proxy().Method()))
 	if err != nil {
 		return err
@@ -96,9 +105,9 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	var lastErr error
 	timeOut := app.TimeOut()
 	balance := ctx.GetBalance()
-	for index := 0; index <= h.retry; index++ {
+	for index := 0; index <= retry; index++ {
 
-		if h.timeout > 0 && time.Now().Sub(proxyTime) > h.timeout {
+		if timeout > 0 && time.Now().Sub(proxyTime) > timeout {
 			return ErrorTimeoutComplete
 		}
 		node, err := balance.Select(ctx)

@@ -6,6 +6,7 @@ import (
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"time"
 
 	"github.com/eolinker/eosc/eocontext"
 )
@@ -23,6 +24,8 @@ type grpcRouter struct {
 	service  service.IService
 	filters  eocontext.IChainPro
 	disable  bool
+	retry    int
+	timeout  time.Duration
 }
 
 func (h *grpcRouter) ServeHTTP(ctx eocontext.EoContext) {
@@ -35,6 +38,10 @@ func (h *grpcRouter) ServeHTTP(ctx eocontext.EoContext) {
 		grpcContext.FastFinish()
 		return
 	}
+
+	//set retry timeout
+	ctx.WithValue(grpc_context.KeyGrpcRetry, h.retry)
+	ctx.WithValue(grpc_context.KeyGrpcTimeout, h.timeout)
 
 	//Set Label
 	ctx.SetLabel("api", h.routerName)

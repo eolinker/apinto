@@ -43,21 +43,17 @@ var (
 type complete struct {
 	format     grpcurl.Format
 	descriptor grpc_descriptor.IDescriptor
-	timeout    time.Duration
 	authority  string
 	service    string
 	method     string
 	headers    map[string]string
-	retry      int
 	reflect    bool
 }
 
 func newComplete(descriptor grpc_descriptor.IDescriptor, conf *Config) *complete {
-	timeout := defaultTimeout
 	return &complete{
 		format:     grpcurl.Format(conf.Format),
 		descriptor: descriptor,
-		timeout:    timeout,
 		authority:  conf.Authority,
 		service:    conf.Service,
 		method:     conf.Method,
@@ -90,6 +86,19 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
+
+	retryValue := ctx.Value(http_context.KeyHttpRetry)
+	retry, ok := retryValue.(int)
+	if !ok {
+		retry = 1
+	}
+
+	timeoutValue := ctx.Value(http_context.KeyHttpTimeout)
+	timeout, ok := timeoutValue.(time.Duration)
+	if !ok {
+		timeout = defaultTimeout
+	}
+
 	in := strings.NewReader(string(body))
 
 	balance := ctx.GetBalance()
@@ -102,13 +111,13 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	symbol := getSymbol(ctx.Proxy().URI().Path(), h.service, h.method)
 	var lastErr error
 	var conn *grpc.ClientConn
-	for i := h.retry + 1; i > 0; i-- {
+	for i := retry + 1; i > 0; i-- {
 		node, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select node error: ", err)
 			return err
 		}
-		conn, lastErr = dial(node.Addr(), h.timeout, opts...)
+		conn, lastErr = dial(node.Addr(), timeout, opts...)
 		if lastErr != nil {
 			log.Error("dial error: ", lastErr)
 			continue
