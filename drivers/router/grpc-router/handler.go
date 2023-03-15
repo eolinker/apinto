@@ -2,6 +2,7 @@ package grpc_router
 
 import (
 	"github.com/eolinker/apinto/drivers/router/grpc-router/manager"
+	"github.com/eolinker/apinto/entries/ctx_key"
 	"github.com/eolinker/apinto/service"
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
 	"google.golang.org/grpc/codes"
@@ -40,8 +41,8 @@ func (h *grpcRouter) ServeHTTP(ctx eocontext.EoContext) {
 	}
 
 	//set retry timeout
-	ctx.WithValue(eocontext.CtxKeyRetry, h.retry)
-	ctx.WithValue(eocontext.CtxKeyTimeout, h.timeout)
+	ctx.WithValue(ctx_key.CtxKeyRetry, h.retry)
+	ctx.WithValue(ctx_key.CtxKeyTimeout, h.timeout)
 
 	//Set Label
 	ctx.SetLabel("api", h.routerName)

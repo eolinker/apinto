@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/eolinker/apinto/entries/ctx_key"
 	"net/http"
 	"strings"
 	"time"
@@ -87,13 +88,13 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 		return err
 	}
 
-	retryValue := ctx.Value(eocontext.CtxKeyRetry)
+	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
 	retry, ok := retryValue.(int)
 	if !ok {
 		retry = 1
 	}
 
-	timeoutValue := ctx.Value(eocontext.CtxKeyTimeout)
+	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
 		timeout = defaultTimeout

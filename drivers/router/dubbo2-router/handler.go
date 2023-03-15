@@ -2,6 +2,7 @@ package dubbo2_router
 
 import (
 	"errors"
+	"github.com/eolinker/apinto/entries/ctx_key"
 	"time"
 
 	"github.com/eolinker/apinto/drivers/router/dubbo2-router/manager"
@@ -41,8 +42,8 @@ func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
 	}
 
 	//set retry timeout
-	ctx.WithValue(eocontext.CtxKeyRetry, d.retry)
-	ctx.WithValue(eocontext.CtxKeyTimeout, d.timeout)
+	ctx.WithValue(ctx_key.CtxKeyRetry, d.retry)
+	ctx.WithValue(ctx_key.CtxKeyTimeout, d.timeout)
 
 	//Set Label
 	ctx.SetLabel("api", d.routerName)

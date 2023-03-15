@@ -3,6 +3,7 @@ package grpc_to_http
 import (
 	"errors"
 	"fmt"
+	"github.com/eolinker/apinto/entries/ctx_key"
 	"net/url"
 	"strings"
 	"time"
@@ -62,13 +63,13 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 		return err
 	}
 
-	retryValue := ctx.Value(eocontext.CtxKeyRetry)
+	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
 	retry, ok := retryValue.(int)
 	if !ok {
 		retry = 0
 	}
 
-	timeoutValue := ctx.Value(eocontext.CtxKeyTimeout)
+	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
 		timeout = defaultTimeout

@@ -3,6 +3,7 @@ package http_context
 import (
 	"context"
 	"fmt"
+	"github.com/eolinker/apinto/entries/ctx_key"
 	"net"
 	"strings"
 	"time"
@@ -211,8 +212,8 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 
 	//记录请求时间
 	copyContext.ctx = context.WithValue(ctx.Context(), http_service.KeyCloneCtx, true)
-	copyContext.WithValue(eoscContext.CtxKeyRetry, 0)
-	copyContext.WithValue(eoscContext.CtxKeyRetry, time.Duration(0))
+	copyContext.WithValue(ctx_key.CtxKeyRetry, 0)
+	copyContext.WithValue(ctx_key.CtxKeyRetry, time.Duration(0))
 	return copyContext, nil
 }
 

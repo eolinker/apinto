@@ -3,6 +3,7 @@ package http_complete
 import (
 	"errors"
 	"fmt"
+	"github.com/eolinker/apinto/entries/ctx_key"
 	"strconv"
 	"strings"
 	"time"
@@ -55,13 +56,13 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	}
 	timeOut := app.TimeOut()
 
-	retryValue := ctx.Value(eocontext.CtxKeyRetry)
+	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
 	retry, ok := retryValue.(int)
 	if !ok {
 		retry = 1
 	}
 
-	timeoutValue := ctx.Value(eocontext.CtxKeyTimeout)
+	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
 		timeout = 3000 * time.Millisecond
