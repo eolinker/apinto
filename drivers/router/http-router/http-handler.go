@@ -65,6 +65,8 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 		ctx.SetLabel("service_id", h.service.Id())
 	}
 
+	ctx.SetLabel("method", httpContext.Request().Method())
+	ctx.SetLabel("path", httpContext.Request().URI().RequestURI())
 	ctx.SetLabel("ip", httpContext.Request().ReadIP())
 
 	ctx.SetCompleteHandler(h.completeHandler)
