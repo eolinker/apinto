@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/eolinker/apinto/entries/ctx_key"
+	"github.com/eolinker/apinto/entries/router"
 	"net/http"
 	"strings"
 	"time"
@@ -38,7 +39,6 @@ var (
 	options = grpcurl.FormatOptions{
 		AllowUnknownFields: true,
 	}
-	defaultTimeout = 10 * time.Second
 )
 
 type complete struct {
@@ -91,13 +91,13 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
 	retry, ok := retryValue.(int)
 	if !ok {
-		retry = 1
+		retry = router.DefaultRetry
 	}
 
 	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
-		timeout = defaultTimeout
+		timeout = router.DefaultTimeout
 	}
 
 	in := strings.NewReader(string(body))

@@ -3,6 +3,7 @@ package http_to_dubbo2
 import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/entries/ctx_key"
+	"github.com/eolinker/apinto/entries/router"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
@@ -24,13 +25,13 @@ func (p *ToDubbo2) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
 	retry, ok := retryValue.(int)
 	if !ok {
-		retry = 1
+		retry = router.DefaultRetry
 	}
 
 	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
-		timeout = 3000 * time.Millisecond
+		timeout = router.DefaultTimeout
 	}
 
 	complete := NewComplete(retry, timeout, p.service, p.method, p.params)

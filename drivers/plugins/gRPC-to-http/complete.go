@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/eolinker/apinto/entries/ctx_key"
+	"github.com/eolinker/apinto/entries/router"
 	"net/url"
 	"strings"
 	"time"
@@ -66,13 +67,13 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
 	retry, ok := retryValue.(int)
 	if !ok {
-		retry = 0
+		retry = router.DefaultRetry
 	}
 
 	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
-		timeout = defaultTimeout
+		timeout = router.DefaultTimeout
 	}
 
 	descriptor, err := h.descriptor.Descriptor().FindSymbol(fmt.Sprintf("%s.%s", ctx.Proxy().Service(), ctx.Proxy().Method()))

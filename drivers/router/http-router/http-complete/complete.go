@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/eolinker/apinto/entries/ctx_key"
+	"github.com/eolinker/apinto/entries/router"
 	"strconv"
 	"strings"
 	"time"
@@ -59,13 +60,13 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
 	retry, ok := retryValue.(int)
 	if !ok {
-		retry = 1
+		retry = router.DefaultRetry
 	}
 
 	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
-		timeout = 3000 * time.Millisecond
+		timeout = router.DefaultTimeout
 	}
 
 	for index := 0; index <= retry; index++ {
