@@ -54,8 +54,8 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 		ctx = wsCtx
 	}
 	//set retry timeout
-	ctx.WithValue(http_context.KeyHttpRetry, h.retry)
-	ctx.WithValue(http_context.KeyHttpTimeout, h.timeout)
+	ctx.WithValue(eocontext.CtxKeyRetry, h.retry)
+	ctx.WithValue(eocontext.CtxKeyTimeout, h.timeout)
 
 	//Set Label
 	ctx.SetLabel("api", h.routerName)

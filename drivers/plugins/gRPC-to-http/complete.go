@@ -62,13 +62,13 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 		return err
 	}
 
-	retryValue := ctx.Value(grpc_context.KeyGrpcRetry)
+	retryValue := ctx.Value(eocontext.CtxKeyRetry)
 	retry, ok := retryValue.(int)
 	if !ok {
 		retry = 0
 	}
 
-	timeoutValue := ctx.Value(grpc_context.KeyGrpcTimeout)
+	timeoutValue := ctx.Value(eocontext.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
 		timeout = defaultTimeout

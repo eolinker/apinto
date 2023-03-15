@@ -87,13 +87,13 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 		return err
 	}
 
-	retryValue := ctx.Value(http_context.KeyHttpRetry)
+	retryValue := ctx.Value(eocontext.CtxKeyRetry)
 	retry, ok := retryValue.(int)
 	if !ok {
 		retry = 1
 	}
 
-	timeoutValue := ctx.Value(http_context.KeyHttpTimeout)
+	timeoutValue := ctx.Value(eocontext.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
 		timeout = defaultTimeout

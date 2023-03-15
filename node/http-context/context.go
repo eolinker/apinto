@@ -211,8 +211,8 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 
 	//记录请求时间
 	copyContext.ctx = context.WithValue(ctx.Context(), http_service.KeyCloneCtx, true)
-	copyContext.WithValue(http_service.KeyHttpRetry, 0)
-	copyContext.WithValue(http_service.KeyHttpTimeout, time.Duration(0))
+	copyContext.WithValue(eoscContext.CtxKeyRetry, 0)
+	copyContext.WithValue(eoscContext.CtxKeyRetry, time.Duration(0))
 	return copyContext, nil
 }
 

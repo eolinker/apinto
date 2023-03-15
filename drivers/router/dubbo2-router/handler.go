@@ -41,8 +41,8 @@ func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
 	}
 
 	//set retry timeout
-	ctx.WithValue(dubbo2_context.KeyDubbo2Retry, d.retry)
-	ctx.WithValue(dubbo2_context.KeyDubbo2Timeout, d.timeout)
+	ctx.WithValue(eocontext.CtxKeyRetry, d.retry)
+	ctx.WithValue(eocontext.CtxKeyTimeout, d.timeout)
 
 	//Set Label
 	ctx.SetLabel("api", d.routerName)

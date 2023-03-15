@@ -40,8 +40,8 @@ func (h *grpcRouter) ServeHTTP(ctx eocontext.EoContext) {
 	}
 
 	//set retry timeout
-	ctx.WithValue(grpc_context.KeyGrpcRetry, h.retry)
-	ctx.WithValue(grpc_context.KeyGrpcTimeout, h.timeout)
+	ctx.WithValue(eocontext.CtxKeyRetry, h.retry)
+	ctx.WithValue(eocontext.CtxKeyTimeout, h.timeout)
 
 	//Set Label
 	ctx.SetLabel("api", h.routerName)

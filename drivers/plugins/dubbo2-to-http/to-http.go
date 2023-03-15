@@ -21,13 +21,13 @@ type ToHttp struct {
 
 func (t *ToHttp) DoDubboFilter(ctx dubbo2_context.IDubbo2Context, next eocontext.IChain) (err error) {
 
-	retryValue := ctx.Value(dubbo2_context.KeyDubbo2Retry)
+	retryValue := ctx.Value(eocontext.CtxKeyRetry)
 	retry, ok := retryValue.(int)
 	if !ok {
 		retry = 0
 	}
 
-	timeoutValue := ctx.Value(dubbo2_context.KeyDubbo2Timeout)
+	timeoutValue := ctx.Value(eocontext.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
 		timeout = 3000 * time.Millisecond
