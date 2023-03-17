@@ -1,4 +1,4 @@
-## Apinto
+# Apinto
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/eolinker/apinto)](https://goreportcard.com/report/github.com/eolinker/apinto) [![Releases](https://img.shields.io/github/release/eolinker/apinto/all.svg?style=flat-square)](https://github.com/eolinker/apinto/releases) [![LICENSE](https://img.shields.io/github/license/eolinker/apinto.svg?style=flat-square)](https://github.com/eolinker/apinto/blob/main/LICENSE)![](https://shields.io/github/downloads/eolinker/apinto/total)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT_CN.md)
@@ -6,35 +6,28 @@
 ------------
 ![](http://data.eolinker.com/course/eaC48Js3400ffd03c21e36b3eea434dce22d7877a3194f6.png)
 
-Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HTTP API 转发、多租户管理、API 访问权限控制等目的，拥有强大的自定义插件系统可以自行扩展，能够快速帮助企业进行 API 服务治理、提高 API 服务的稳定性和安全性。未来我们将提供插件市场，通过**Apinto**强大的插件拓展能力，用户可像乐高积木一样根据需要自行拓展**Apinto**的插件，丰富**Apinto**的能力。
+**Apinto是一款高性能、可扩展、易维护的API网关。**
 
-注意：**main**分支为开发主要分支，频繁更新可能导致使用不稳定，若需要使用稳定版本，请查看[release](https://github.com/eolinker/apinto/releases)
+Apinto网关基于GO语言模块化开发，5分钟极速部署，配置简单、易于维护，支持集群与动态扩容，企业级开箱即用。Apinto除了提供丰富的网关插件外，还将提供监控告警、用户角色等企业插件，同时支持自定义网关插件和可扩展企业插件，满足我们企业的定制化需求。
+Apinto支持代理外部流量，转发给内部服务，也支持内部服务之间的通信代理。
 
-**Apinto** 集合了配置和转发功能，使用者可以通过openAPI进行配置，也可通过可视化UI项目[Apinto Dashboard](https://github.com/eolinker/apinto-dashboard)进行配置，相关文档可点击[Apinto Dashboard部署文档](https://help.apinto.com/docs/dashboard/quick/arrange)
-### 概况 | [English Introduction](https://github.com/eolinker/apinto/blob/main/README_EN.md)
-
-- [为什么要使用Apinto](#为什么要使用Apinto "Apinto")
-- [产品特性](#产品特性 "产品特性")
-- [基准测试](#基准测试 "基准测试")
-- [部署](#部署 "部署")
-- [启动](#启动 "启动")
-- [联系我们](#联系我们 "联系我们")
-- [关于我们](#关于我们 "关于我们")
-- [授权协议](#授权协议 "授权协议")
-
-### 为什么要使用Apinto
-
-**Apinto**是运行在企业系统服务边界上的API网关。当您构建网站、App、IOT甚至是开放API交易时，Apinto 能够帮你将内部系统中重复的组件抽取出来并放置在Apinto网关上运行，如进行用户授权、访问控制、防火墙、数据转换等；并且Apinto 提供服务编排的功能，让企业可以快速从各类服务上获取需要的数据，对业务实现快速响应。
-
-**Apinto**具有以下优势：
-
-- 完全开源：Apinto 项目由 Eolinker 发起并长期维护，我们希望与全球开发者共同打造微服务生态的基础设施。
-- 优异的性能表现：相同环境下，Apinto比Nginx、Kong等产品快约50%，并且在稳定性上也有所优化。
-- 丰富的功能：Apinto 提供了一个标准网关应有的所有功能，并且你可以快速连接你的各个微服务以及管理网络流量。
-- 极低的使用和维护成本：Apinto 是纯 Go 语言开发的开源网关，没有繁琐的部署，没有外部产品依赖，只需要下载并运行即可，极为简单。
-- 良好的扩展性：Apinto 的绝大部分功能都是模块化的，因此你可以很容易扩展它的能力。
-
-总而言之，Apinto 能让业务开发团队更加专注地实现业务。
+Apinto功能架构图：
+![](http://data.eolinker.com/course/QSgDqEKb311ec59fb0052436e0d3bdbacdc2b984b71cc25.png)
+## Apinto亮点特性
+Apinto API 网关不仅具有其他开源网关的高性能、可扩展性、动态路由和丰富的网关插件，还提供出色的用户体验和适用于各种企业级业务场景的控制台。这个控制台包括集群管理、应用程序管理、精细服务治理和企业插件等四大亮点功能，可以满足企业对 API 网关更高级场景化需求的要求。
+### 集群管理
+Apinto开源网关不同于其他开源网关，提供网关集群统一管理，一次性配置业务可发布上线到相应的集群，解决多集群维护多套业务配置的问题，极大提高运维效率，降低繁杂配置事故率。
+![](http://data.eolinker.com/course/Cdkvdtkdcc50a65d3e5b068bae658c343d7b6a188730218.png)
+### 应用管理
+Apint网关提出应用管理概念，统一管理应用及其生命周期。应用作为业务通讯的发起者角色，始终贯穿着整个调用链，Apinto网关对应用请求的流量进行鉴权认证，并对其所请求的流量进行服务治理，同时还对其监控告警，统计应用调用情况。
+### 精细化服务治理
+Apinto提出精细化流量管理方案，即所有调用方的请求流量都经过网关，通过对应用、API、上游服务、请求方式、IP、请求路径、应用自定义标签等组合条件筛选请求流量，执行限量、访问、熔断、灰度、缓存等策略规则，帮助企业快速、灵活地制定策略，以满足不同业务场景的需求，并全方位治理好服务。
+![](http://data.eolinker.com/course/zqIaYaa0ac1273511504a4bad96e0e78de56e8e12850677.png)
+### 企业插件
+Apinto网关即将推出企业插件模块，并且陆续提供业务型企业插件如：用户角色权限、监控告警、日志、API文档、开放平台、安全防护、数据分析、调用链、mock、在线调测、安全测试、国密、多协议等。支持用户自定义企业插件，支持独立部署。
+## Apinto功能
+Apinto网关可以作为业务流量的入口，可以对业务流量进行处理，如动态路由、负载均衡、服务发现、熔断降级、身份认证、监控与告警等。
+Apinto网关不受云平台限制，也能在Kubernetes运行。
 
 ### Star 历史
 
@@ -45,6 +38,7 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 
 | 功能         | 描述                                                         |
 | ------------ | ------------------------------------------------------------ |
+| 集群     | 集群不限制网关节点，自由剔除或加入网关节点，主从网关节点具备无缝切换功能，提升网关高可用性 |
 | 动态路由     | 可通过设置location、query、header、host、method等参数匹配对应的服务 |
 | 服务发现     | 支持对接Eureka、Nacos、Consul                                |
 | 负载均衡     | 支持轮询权重算法                                             |
@@ -58,29 +52,27 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 | 日志         | 提供节点的运行日志，可根据日志设置的等级输出                 |
 | 多种日志输出 | 可将节点的请求日志输出到不同的日志接收器，如file、nsq、kafka等 |
 | Cli命令支持  | 通过Cli命令操控网关，插件安装、下载和网关的开启、关闭等操作均可使用一键命令操控 |
-| 黑白名单     | 支持设置黑白名单IP，拦截非法IP                               |
+| 黑白名单     | 支持多维度筛选流量，设置黑白名单IP，拦截非法IP                               |
+| 访问策略     | 支持多维度筛选流量，可针对应用、IP、应用与IP、应用与API、应用与上游等多维组合设置黑白名单                               |
+| 流量策略     | 支持多维度筛选流量，控制应用、应用与API、应用与上游之间的请求次数和请求报文大小限制                               |
+| 熔断策略     | 支持多维度筛选流量，熔断上游或API                               |
+| 灰度策略     | 支持多维度筛选流量，按百分比或高级规则灰度流量到目标节点                               |
+| 缓存策略     | 支持多维度筛选流量，缓存API响应内容                               |
 | 参数映射     | 将客户端的请求参数映射到转发请求中，可按需改变参数的位置及名称 |
 | 额外参数     | 转发请求时，额外加上后端验证参数，如apikey等                 |
 | 转发重写     | 支持对 `scheme`、`uri`、`host` 的重写，同时支持对转发请求的请求头部header的值进行新增或者删除 |
-| 流量控制     | 拦截异常流量                                                 |
+| 流量镜像     | 线上流量或请求内容进行拷贝到镜像服务中                 |
+| MOCK     | 模拟web服务器端API的响应                 |
+| CORS     | 支持api请求跨域                |
+| 同步API     | 提供OpenAPI同步API文档，支持swagger3.0 json或yaml格式文件      |
 
-#### 迭代计划
+## 迭代计划
+![](http://data.eolinker.com/course/gydll750fcfc7874b12137c49566f71a586dc093887aa93.png)
+如果您是个人开发者，可基于API网关相关的业务场景开发有价值的网关插件或企业级插件，并且愿意分享给Apinto，您将会成为Apinto的杰出贡献者或得到一定的收益。
+如果您是企业，可基于Apinto网关开发企业级插件，成为Apinto的合作伙伴。
 
-- **UI界面支持**： 通过UI界面操作网关配置，可以通过需要加载定制不同的UI界面（主题）
 
-- **多协议支持**：支持多种协议，包括但不限于：gRPC、Websocket、tcp/udp、Dubbo
-
-- **插件市场**：由于apinto主要是通过插件加载的方式加载所需模块，用户可将所需功能编译成插件，也可从插件市场中下载更新贡献者开发的插件，一键安装使用
-
-- **服务编排**：一个编排API对应多个backend，backend的入参支持客户端传入，也支持backend间的参数传递；backend的返回数据支持字段的过滤、删除、移动、重命名、拆包和封包；编排API能够设定编排调用失败时的异常返回
-
-- **监控**：捕获网关请求数据，并可将其导出到promethus、Graphite中进行分析
-- .....
-
-#### 2022年迭代计划
-![roadmap_cn](https://user-images.githubusercontent.com/14105999/170409057-407055ef-2d30-4272-ae8c-3c46b95af8d1.jpeg)
-
-### 基准测试
+## 基准测试
 
 
 ![image](https://user-images.githubusercontent.com/25589530/149748340-dc544f79-a8f9-46f5-903d-a3af4fb8b16e.png)
@@ -88,7 +80,7 @@ Apinto是一个基于 Golang 开发的微服务网关，能够实现高性能 HT
 ### 部署
 
 * 直接部署：[部署教程](https://help.apinto.com/docs/apinto/quick/arrange)
-* [快速入门教程](https://help.apinto.com/docs/apinto/quick/quick_course)
+* [快速入门教程](https://help.apinto.com/docs/dashboard-v2/quick/quick_start.html)
 * [源码编译教程](https://help.apinto.com/docs/apinto/quick/arrange)
 * [Docker部署](https://hub.docker.com/r/eolinker/apinto-gateway)
 * Kubernetes部署：后续支持
