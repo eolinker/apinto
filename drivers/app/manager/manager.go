@@ -105,17 +105,21 @@ func (m *Manager) Set(app application.IApp, filters []application.IAuth, users m
 		}
 		idMap[filter.Driver()] = append(idMap[filter.Driver()], filter.ID())
 	}
+	idArr := make([]string, 0, len(idMap))
 	for driver, ids := range idMap {
-		old := m.appManager.GetByAppID(app.Id())
 		m.appManager.Set(app.Id(), driver, ids)
-		cs := compareArray(old, ids)
-		for id := range cs {
-			filter, has := m.Untyped.Get(id)
-			if has {
-				filter.Del(app.Id())
-				if filter.UserCount() == 0 {
-					m.Untyped.Del(id)
-				}
+		idArr = append(idArr, ids...)
+	}
+
+	// 比较新旧id，删除旧配置
+	old := m.appManager.GetByAppID(app.Id())
+	cs := compareArray(old, idArr)
+	for id := range cs {
+		filter, has := m.Untyped.Get(id)
+		if has {
+			filter.Del(app.Id())
+			if filter.UserCount() == 0 {
+				m.Untyped.Del(id)
 			}
 		}
 	}
