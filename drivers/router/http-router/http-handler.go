@@ -1,6 +1,7 @@
 package http_router
 
 import (
+	"github.com/eolinker/apinto/entries/ctx_key"
 	"net/http"
 	"time"
 
@@ -54,8 +55,8 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 		ctx = wsCtx
 	}
 	//set retry timeout
-	ctx.WithValue(http_context.KeyHttpRetry, h.retry)
-	ctx.WithValue(http_context.KeyHttpTimeout, h.timeout)
+	ctx.WithValue(ctx_key.CtxKeyRetry, h.retry)
+	ctx.WithValue(ctx_key.CtxKeyTimeout, h.timeout)
 
 	//Set Label
 	ctx.SetLabel("api", h.routerName)
@@ -65,6 +66,8 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 		ctx.SetLabel("service_id", h.service.Id())
 	}
 
+	ctx.SetLabel("method", httpContext.Request().Method())
+	ctx.SetLabel("path", httpContext.Request().URI().RequestURI())
 	ctx.SetLabel("ip", httpContext.Request().ReadIP())
 
 	ctx.SetCompleteHandler(h.completeHandler)
