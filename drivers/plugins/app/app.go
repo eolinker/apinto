@@ -72,7 +72,7 @@ func anonymousAppHandler(ctx http_service.IHttpContext) (bool, error) {
 }
 
 func (a *App) auth(ctx http_service.IHttpContext) error {
-	log.Error("start auth...")
+	log.Debug("start auth...")
 	if appManager.Count() < 1 {
 		_, err := anonymousAppHandler(ctx)
 		return err
@@ -99,7 +99,7 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 			setLabels(ctx, user.App.Labels())
 			ctx.SetLabel("application_id", user.App.Id())
 			ctx.SetLabel("application", user.App.Name())
-			log.Error("application name is ", user.App.Name())
+			log.Debug("application name is ", user.App.Name())
 			if user.HideCredential {
 				application.HideToken(ctx, user.TokenName, user.Position)
 			}
