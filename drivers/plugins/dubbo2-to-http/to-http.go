@@ -2,6 +2,8 @@ package dubbo2_to_http
 
 import (
 	"github.com/eolinker/apinto/drivers"
+	"github.com/eolinker/apinto/entries/ctx_key"
+	"github.com/eolinker/apinto/entries/router"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
@@ -21,7 +23,19 @@ type ToHttp struct {
 
 func (t *ToHttp) DoDubboFilter(ctx dubbo2_context.IDubbo2Context, next eocontext.IChain) (err error) {
 
-	complete := NewComplete(0, time.Second*30, t.contentType, t.path, t.method, t.params)
+	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
+	retry, ok := retryValue.(int)
+	if !ok {
+		retry = router.DefaultRetry
+	}
+
+	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
+	timeout, ok := timeoutValue.(time.Duration)
+	if !ok {
+		timeout = router.DefaultTimeout
+	}
+
+	complete := NewComplete(retry, timeout, t.contentType, t.path, t.method, t.params)
 
 	ctx.SetCompleteHandler(complete)
 
