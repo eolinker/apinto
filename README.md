@@ -13,7 +13,7 @@ Apinto网关基于GO语言模块化开发，5分钟极速部署，配置简单�
 ## Demo 
 体验地址：[demo-dashboard.apinto.com](https://demo-dashboard.apinto.com/)
 
-##Apinto功能架构图：
+## Apinto功能架构图：
 ![](http://data.eolinker.com/course/42LcDAP65fc92edcdcacaae4b09b5b5ec6f1ebfba4cbc1b.png)
 ## Apinto亮点特性
  Apinto API 网关以出色的用户体验和适用于各种企业级业务场景的控制台为特色。控制台具有四大亮点功能：集群管理、应用程序管理、精细服务治理和企业插件，能够满足企业对 API 网关更高级场景化需求的要求。 
