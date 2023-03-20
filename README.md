@@ -126,10 +126,4 @@ apinto start
 - **论坛**：[https://community.apinto.com](https://community.apinto.com/)
 - **微信群**：<img src="https://user-images.githubusercontent.com/25589530/149860447-5879437b-3cda-4833-aee3-69a2e538e85d.png" style="width:150px" />
 
-### 关于我们
 
-EOLINK 是领先的 API 管理服务供应商，为全球超过3000家企业提供专业的 API 研发管理、API自动化测试、API监控、API网关等服务。是首家为ITSS（中国电子工业标准化技术协会）制定API研发管理行业规范的企业。
-
-官方网站：[https://www.eolink.com](https://www.eolink.com "EOLINK官方网站")
-
-免费下载PC桌面端：[https://www.eolink.com/pc/](https://www.eolink.com/pc/ "免费下载PC客户端")
