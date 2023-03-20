@@ -68,7 +68,7 @@ Apinto网关不受云平台限制，也能在Kubernetes运行。
 | 同步API     | 提供OpenAPI同步API文档，支持swagger3.0 json或yaml格式文件      |
 
 ## 迭代计划
-![](http://data.eolinker.com/course/gydll750fcfc7874b12137c49566f71a586dc093887aa93.png)
+![image](https://user-images.githubusercontent.com/18322454/226301243-d69a1a5e-22eb-48d4-8fd1-52ec1cf8237b.png)
 如果您是个人开发者，可基于API网关相关的业务场景开发有价值的网关插件或企业级插件，并且愿意分享给Apinto，您将会成为Apinto的杰出贡献者或得到一定的收益。
 如果您是企业，可基于Apinto网关开发企业级插件，成为Apinto的合作伙伴。
 
