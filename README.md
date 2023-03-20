@@ -109,7 +109,10 @@ Apinto支持在arm64、amd64架构上运行。
 apinto start
 ```
 
-3.如需可视化界面请点击[Apinto Dashboard](https://github.com/eolinker/apinto-dashboard)
+### Bug 和需求反馈
+如果想要反馈 Bug、提供产品意见，可以创建一个 Github issue 联系我们，十分感谢！
+
+如果你希望和 Apinto 团队近距离交流，讨论产品使用技巧以及了解更多产品最新进展，欢迎加入以下渠道。
 
 
 - ### **联系我们**
