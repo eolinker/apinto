@@ -15,6 +15,8 @@ Apinto网关基于GO语言模块化开发，5分钟极速部署，配置简单�
 
 快速入门：https://help.apinto.com/docs/dashboard-v2/quick/quick_start.html
 
+Apinto Dashboard github地址： https://github.com/eolinker/apinto-dashboard
+
 ## Apinto功能架构图：
 ![](http://data.eolinker.com/course/42LcDAP65fc92edcdcacaae4b09b5b5ec6f1ebfba4cbc1b.png)
 ## Apinto亮点特性
