@@ -18,7 +18,8 @@ Apinto网关基于GO语言模块化开发，5分钟极速部署，配置简单�
 Apinto Dashboard github地址： https://github.com/eolinker/apinto-dashboard
 
 ## Apinto功能架构图：
-![](http://data.eolinker.com/course/42LcDAP65fc92edcdcacaae4b09b5b5ec6f1ebfba4cbc1b.png)
+<img width="1664" alt="img_v2_9852992b-7925-4aae-ab1c-1ed4eb6db20g" src="https://user-images.githubusercontent.com/18322454/226785006-b59717b5-7ea2-48ce-9a4b-17f6d8e61305.png">
+
 ## Apinto亮点特性
  Apinto API 网关以出色的用户体验和适用于各种企业级业务场景的控制台为特色。控制台具有四大亮点功能：集群管理、应用管理、精细服务治理和企业插件，能够满足企业对 API 网关更高级场景化需求的要求。 
 ### 集群管理
