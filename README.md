@@ -74,13 +74,17 @@ Apinto网关不受云平台限制，也能在Kubernetes运行。
 如果您是个人开发者，可基于API网关相关的业务场景开发有价值的网关插件或企业级插件，并且愿意分享给Apinto，您将会成为Apinto的杰出贡献者或得到一定的收益。
 如果您是企业，可基于Apinto网关开发企业级插件，成为Apinto的合作伙伴。
 
+### Star历史
+
+[![Star History Chart](https://api.star-history.com/svg?repos=eolinker/apinto&type=Date)](https://star-history.com/#eolinker/apinto&Date)
+
 
 ## 基准测试
 
 
 ![image](https://user-images.githubusercontent.com/25589530/149748340-dc544f79-a8f9-46f5-903d-a3af4fb8b16e.png)
 
-### 部署
+## 部署
 
 * 直接部署：[部署教程](https://help.apinto.com/docs/apinto/quick/arrange)
 * [快速入门教程](https://help.apinto.com/docs/dashboard-v2/quick/quick_start.html)
@@ -88,7 +92,7 @@ Apinto网关不受云平台限制，也能在Kubernetes运行。
 * [Docker部署](https://hub.docker.com/r/eolinker/apinto-gateway)
 * Kubernetes部署：后续支持
 
-### 启动
+## 启动
 
 1.下载安装包并解压（此处以v0.12.1版本的安装包示例）
 
@@ -118,7 +122,7 @@ apinto start
 如果你希望和 Apinto 团队近距离交流，讨论产品使用技巧以及了解更多产品最新进展，欢迎加入以下渠道。
 
 
-- ### **联系我们**
+- ## **联系我们**
 
 
 * **帮助文档**：[https://help.apinto.com](https://help.apinto.com/docs)
