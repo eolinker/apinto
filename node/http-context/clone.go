@@ -118,22 +118,22 @@ func (ctx *cloneContext) Response() http_service.IResponse {
 	return &ctx.response
 }
 
-func (ctx *cloneContext) SendTo(address string, timeout time.Duration) error {
+func (ctx *cloneContext) SendTo(scheme string, node eoscContext.INode, timeout time.Duration) error {
 
-	scheme, host := readAddress(address)
+	host := node.Addr()
 	request := ctx.proxyRequest.Request()
 
 	passHost, targetHost := ctx.GetUpstreamHostHandler().PassHost()
 	switch passHost {
 	case eoscContext.PassHost:
 	case eoscContext.NodeHost:
-		request.URI().SetHost(host)
+		request.URI().SetHost(node.Addr())
 	case eoscContext.ReWriteHost:
 		request.URI().SetHost(targetHost)
 	}
 
 	beginTime := time.Now()
-	ctx.responseError = fasthttp_client.ProxyTimeout(address, request, ctx.response.Response, timeout)
+	ctx.responseError = fasthttp_client.ProxyTimeout(scheme, node, request, ctx.response.Response, timeout)
 	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, beginTime, time.Now())
 	if ctx.responseError != nil {
 		agent.setStatusCode(504)

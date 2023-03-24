@@ -33,8 +33,6 @@ import (
 
 var (
 	ErrorTimeoutComplete = errors.New("complete timeout")
-
-	defaultTimeout = 10 * time.Second
 )
 
 type complete struct {
@@ -109,15 +107,14 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	balance := ctx.GetBalance()
 	for index := 0; index <= retry; index++ {
 
-		if timeout > 0 && time.Now().Sub(proxyTime) > timeout {
+		if timeout > 0 && time.Since(proxyTime) > timeout {
 			return ErrorTimeoutComplete
 		}
 		node, err := balance.Select(ctx)
 		if err != nil {
 			return status.Error(codes.NotFound, err.Error())
 		}
-		addr := node.Addr()
-		log.Debug("node: ", addr)
+
 		request.URI()
 		passHost, targetHost := ctx.GetUpstreamHostHandler().PassHost()
 		switch passHost {
@@ -129,7 +126,7 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 			request.URI().SetHost(targetHost)
 		}
 		response := fasthttp.AcquireResponse()
-		lastErr = fasthttp_client.ProxyTimeout(fmt.Sprintf("%s://%s", scheme, node.Addr()), request, response, timeOut)
+		lastErr = fasthttp_client.ProxyTimeout(scheme, node, request, response, timeOut)
 		if lastErr == nil {
 			return newGRPCResponse(ctx, response, methodDesc)
 		}

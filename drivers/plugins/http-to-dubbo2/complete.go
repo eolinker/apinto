@@ -115,9 +115,8 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 			return err
 		}
 
-		log.Debug("node: ", node.Addr())
 		var result interface{}
-		result, lastErr = client.dial(ctx.Context(), node.Addr(), c.timeOut)
+		result, lastErr = client.dial(ctx.Context(), node, c.timeOut)
 		if lastErr == nil {
 			bytes, err := json.Marshal(result)
 			if err != nil {

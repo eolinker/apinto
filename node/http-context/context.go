@@ -122,9 +122,9 @@ func (ctx *HttpContext) Response() http_service.IResponse {
 	return &ctx.response
 }
 
-func (ctx *HttpContext) SendTo(address string, timeout time.Duration) error {
+func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout time.Duration) error {
 
-	scheme, host := readAddress(address)
+	host := node.Addr()
 	request := ctx.proxyRequest.Request()
 
 	passHost, targetHost := ctx.GetUpstreamHostHandler().PassHost()
@@ -137,7 +137,7 @@ func (ctx *HttpContext) SendTo(address string, timeout time.Duration) error {
 	}
 
 	beginTime := time.Now()
-	ctx.response.responseError = fasthttp_client.ProxyTimeout(address, request, &ctx.fastHttpRequestCtx.Response, timeout)
+	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, node, request, &ctx.fastHttpRequestCtx.Response, timeout)
 	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, beginTime, time.Now())
 	if ctx.response.responseError != nil {
 		agent.setStatusCode(504)

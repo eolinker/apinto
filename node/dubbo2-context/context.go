@@ -117,7 +117,9 @@ func (d *DubboContext) Proxy() dubbo2_context.IProxy {
 	return d.proxy
 }
 
-func (d *DubboContext) Invoke(address string, timeout time.Duration) error {
+func (d *DubboContext) Invoke(node eoscContext.INode, timeout time.Duration) error {
+	address := node.Addr()
+	log.Debug("node: ", address)
 	return d.dial(address, timeout)
 }
 

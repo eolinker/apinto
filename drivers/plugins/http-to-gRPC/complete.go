@@ -118,7 +118,7 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 			log.Error("select node error: ", err)
 			return err
 		}
-		conn, lastErr = dial(node.Addr(), timeout, opts...)
+		conn, lastErr = dial(node, timeout, opts...)
 		if lastErr != nil {
 			log.Error("dial error: ", lastErr)
 			continue
@@ -216,11 +216,12 @@ func genDialOpts(isTLS bool, authority string) []grpc.DialOption {
 	return opts
 }
 
-func dial(target string, timeout time.Duration, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func dial(node eocontext.INode, timeout time.Duration, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	cc, err := grpc.DialContext(ctx, target, opts...)
+	cc, err := grpc.DialContext(ctx, node.Addr(), opts...)
 	if err != nil {
+		node.Down()
 		return nil, err
 	}
 	return cc, nil

@@ -205,7 +205,16 @@ func (c *Context) SetResponse(response grpc_context.IResponse) {
 	c.response = response
 }
 
-func (c *Context) Invoke(address string, timeout time.Duration) error {
+func (c *Context) Invoke(node eocontext.INode, timeout time.Duration) error {
+
+	err := c.doInvoke(node.Addr(), timeout)
+	if err != nil {
+		node.Down()
+		return err
+	}
+	return nil
+}
+func (c *Context) doInvoke(address string, timeout time.Duration) error {
 	passHost, targetHost := c.GetUpstreamHostHandler().PassHost()
 	switch passHost {
 	case eocontext.NodeHost:

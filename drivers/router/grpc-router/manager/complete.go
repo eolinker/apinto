@@ -55,8 +55,7 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 			return err
 		}
 
-		log.Debug("node addr : ", node.Addr())
-		lastErr = ctx.Invoke(node.Addr(), timeOut)
+		lastErr = ctx.Invoke(node, timeOut)
 		if lastErr == nil {
 			return nil
 		}

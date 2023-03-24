@@ -2,7 +2,7 @@ package http_complete
 
 import (
 	"errors"
-	"fmt"
+
 	"github.com/eolinker/apinto/entries/ctx_key"
 	"github.com/eolinker/apinto/entries/router"
 	"strconv"
@@ -39,7 +39,7 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 		ctx.Response().SetProxyStatus(ctx.Response().StatusCode(), "")
 		//设置上游响应总时间, 单位为毫秒
 		//ctx.WithValue("response_time", time.Now().Sub(proxyTime).Milliseconds())
-		ctx.Response().SetResponseTime(time.Now().Sub(proxyTime))
+		ctx.Response().SetResponseTime(time.Since(proxyTime))
 		ctx.SetLabel("handler", "proxy")
 	}()
 
@@ -71,7 +71,7 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 
 	for index := 0; index <= retry; index++ {
 
-		if timeout > 0 && time.Now().Sub(proxyTime) > timeout {
+		if timeout > 0 && time.Since(proxyTime) > timeout {
 			return ErrorTimeoutComplete
 		}
 		node, err := balance.Select(ctx)
@@ -81,10 +81,7 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 			ctx.Response().SetBody([]byte(err.Error()))
 			return err
 		}
-
-		log.Debug("node: ", node.Addr())
-		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
-		lastErr = ctx.SendTo(addr, timeOut)
+		lastErr = ctx.SendTo(scheme, node, timeOut)
 		if lastErr == nil {
 			return nil
 		}
@@ -117,7 +114,7 @@ func (n *NoServiceCompleteHandler) Complete(org eocontext.EoContext) error {
 		ctx.Response().SetProxyStatus(ctx.Response().StatusCode(), "")
 		//设置上游响应总时间, 单位为毫秒
 		//ctx.WithValue("response_time", time.Now().Sub(proxyTime).Milliseconds())
-		ctx.Response().SetResponseTime(time.Now().Sub(proxyTime))
+		ctx.Response().SetResponseTime(time.Since(proxyTime))
 		ctx.SetLabel("handler", "proxy")
 	}()
 	for key, value := range n.header {

@@ -57,7 +57,7 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 	//设置响应开始时间
 	proxyTime := time.Now()
 	defer func() {
-		ctx.Response().SetResponseTime(time.Now().Sub(proxyTime))
+		ctx.Response().SetResponseTime(time.Since(proxyTime))
 	}()
 
 	var reqBody []byte
@@ -65,7 +65,7 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 	if len(paramMap) == 1 && c.params[0].fieldName != "" {
 		object, ok := paramMap[c.params[0].className]
 		if !ok {
-			err = errors.New(fmt.Sprintf("参数解析错误，未找到的名称为 %s className", c.params[0].className))
+			err = fmt.Errorf("参数解析错误，未找到的名称为 %s className", c.params[0].className)
 			ctx.Response().SetBody(Dubbo2ErrorResult(err))
 			return err
 		}
@@ -84,7 +84,7 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 	} else if len(paramMap) == 1 && c.params[0].fieldName == "" {
 		object, ok := paramMap[c.params[0].className]
 		if !ok {
-			err = errors.New(fmt.Sprintf("参数解析错误，未找到的名称为 %s className", c.params[0].className))
+			err = fmt.Errorf("参数解析错误，未找到的名称为 %s className", c.params[0].className)
 			ctx.Response().SetBody(Dubbo2ErrorResult(err))
 			return err
 		}
@@ -105,7 +105,7 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 		for _, p := range c.params {
 			object, ok := paramMap[p.className]
 			if !ok {
-				err = errors.New(fmt.Sprintf("参数解析错误，未找到的名称为 %s className", p.className))
+				err = fmt.Errorf("参数解析错误，未找到的名称为 %s className", p.className)
 				ctx.Response().SetBody(Dubbo2ErrorResult(err))
 				return err
 			}
@@ -142,10 +142,11 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 	timeOut := app.TimeOut()
 	for index := 0; index <= c.retry; index++ {
 
-		if c.timeOut > 0 && time.Now().Sub(proxyTime) > c.timeOut {
+		if c.timeOut > 0 && time.Since(proxyTime) > c.timeOut {
 			ctx.Response().SetBody(Dubbo2ErrorResult(errorTimeoutComplete))
 			return errorTimeoutComplete
 		}
+
 		node, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select error: ", err)
@@ -153,11 +154,8 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 			return err
 		}
 
-		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
-
-		log.Debug("node: ", node.Addr())
 		var resBody []byte
-		resBody, lastErr = httpClient.dial(addr, timeOut)
+		resBody, lastErr = send(httpClient, scheme, node, timeOut)
 		if lastErr == nil {
 			var val interface{}
 			if err = json.Unmarshal(resBody, &val); err != nil {
@@ -175,7 +173,18 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 
 	return lastErr
 }
+func send(client *Client, scheme string, node eocontext.INode, timeOut time.Duration) ([]byte, error) {
 
+	addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
+	log.Debug("node: ", addr)
+	resBody, err := client.dial(addr, timeOut)
+	if err != nil {
+		node.Down()
+		return nil, err
+	}
+	return resBody, err
+
+}
 func Dubbo2ErrorResult(err error) protocol.RPCResult {
 	payload := impl.NewResponsePayload(nil, err, nil)
 	return protocol.RPCResult{

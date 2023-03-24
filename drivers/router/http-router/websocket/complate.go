@@ -3,7 +3,6 @@ package websocket
 import (
 	"errors"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -64,9 +63,7 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 			return err
 		}
 
-		log.Debug("node: ", node.Addr())
-		u := url.URL{Scheme: "ws", Host: node.Addr(), Path: ctx.Proxy().URI().Path(), RawQuery: ctx.Proxy().URI().RawQuery()}
-		conn, resp, lastErr = DialWithTimeout(u.String(), ctx.Proxy().Header().Headers(), timeOut)
+		conn, resp, lastErr = DialWithTimeout(node, ctx.Proxy().URI().Path(), ctx.Proxy().URI().RawQuery(), ctx.Proxy().Header().Headers(), timeOut)
 		if lastErr == nil {
 			resp.Body.Close()
 			ctx.SetUpstreamConn(&Conn{conn})
