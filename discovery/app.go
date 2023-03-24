@@ -4,7 +4,6 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 	"sync"
 	"sync/atomic"
-	"time"
 )
 
 var (
@@ -14,31 +13,28 @@ var (
 
 type IAppAgent interface {
 	reset(nodes []eocontext.INode)
-	Agent(scheme string, timeout time.Duration) IApp
+	Agent() IApp
 }
 
 type IApp interface {
-	eocontext.EoApp
+	Nodes() []eocontext.INode
 	Close()
 }
 
 type _AppAgent struct {
-	id      string
-	locker  sync.RWMutex
-	nodes   []eocontext.INode
-	timeout time.Duration
-	use     int64
+	locker sync.RWMutex
+	nodes  []eocontext.INode
+	use    int64
 }
 
-func (a *_AppAgent) Agent(scheme string, timeout time.Duration) IApp {
+func (a *_AppAgent) Agent() IApp {
 	atomic.AddInt64(&a.use, 1)
-	return &_App{_AppAgent: a, scheme: scheme, timeout: timeout, isClose: 0}
+	return &_App{_AppAgent: a, isClose: 0}
 }
 
 type _App struct {
 	*_AppAgent
-	scheme  string
-	timeout time.Duration
+
 	isClose int32
 }
 
@@ -67,12 +63,4 @@ func (a *_AppAgent) Nodes() []eocontext.INode {
 	l := make([]eocontext.INode, len(a.nodes))
 	copy(l, a.nodes)
 	return l
-}
-
-func (a *_App) Scheme() string {
-	return a.scheme
-}
-
-func (a *_App) TimeOut() time.Duration {
-	return a.timeout
 }

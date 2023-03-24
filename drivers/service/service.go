@@ -22,7 +22,7 @@ var (
 
 type Service struct {
 	eocontext.BalanceHandler
-	app discovery.IAppAgent
+	app discovery.IApp
 
 	scheme  string
 	timeout time.Duration
@@ -73,7 +73,7 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 	if err != nil {
 		return err
 	}
-	var apps discovery.IAppAgent
+	var apps discovery.IApp
 	if data.Discovery != "" {
 		discoveryWorker, has := workers[data.Discovery]
 		if !has {
@@ -98,13 +98,17 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 		apps.Close()
 		return err
 	}
+	old := s.app
 	s.app = apps
+	if old != nil {
+		old.Close()
+	}
 	s.scheme = data.Scheme
 	s.timeout = time.Duration(data.Timeout) * time.Millisecond
 	s.BalanceHandler = balanceHandler
 	s.passHost = parsePassHost(data.PassHost)
 	s.scheme = data.Scheme
-	s.app = apps
+
 	s.upstreamHost = data.UpstreamHost
 	return nil
 

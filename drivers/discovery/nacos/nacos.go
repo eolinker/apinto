@@ -99,18 +99,18 @@ func (n *nacos) Stop() error {
 }
 
 // GetApp 获取服务发现中目标服务的app
-func (n *nacos) GetApp(serviceName string) (discovery.IAppAgent, error) {
+func (n *nacos) GetApp(serviceName string) (discovery.IApp, error) {
 	n.locker.RLock()
 	app, ok := n.services.GetApp(serviceName)
 	n.locker.RUnlock()
 	if ok {
-		return app, nil
+		return app.Agent(), nil
 	}
 
 	n.locker.Lock()
 	app, ok = n.services.GetApp(serviceName)
 	if ok {
-		return app, nil
+		return app.Agent(), nil
 	}
 
 	ns, err := n.client.GetNodeList(serviceName)
@@ -123,5 +123,5 @@ func (n *nacos) GetApp(serviceName string) (discovery.IAppAgent, error) {
 
 	n.locker.Unlock()
 
-	return app, nil
+	return app.Agent(), nil
 }

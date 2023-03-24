@@ -7,10 +7,6 @@ import (
 	"github.com/eolinker/eosc"
 )
 
-const (
-	driverName = "static"
-)
-
 // Create 创建静态服务发现驱动的实例
 func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 
@@ -23,6 +19,7 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 
 func CreateAnonymous(conf *Config) discovery.IDiscovery {
 	s := &static{}
-
+	s.cfg = conf
+	s.Start()
 	return s
 }

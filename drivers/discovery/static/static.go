@@ -33,7 +33,7 @@ func (s *static) Start() error {
 	if handler != nil {
 		return nil
 	}
-	handler = NewHeathCheckHandler(s.cfg)
+	handler = NewHeathCheckHandler(s.services, s.cfg)
 
 	return nil
 }
@@ -78,14 +78,14 @@ func (s *static) CheckSkill(skill string) bool {
 }
 
 // GetApp 获取服务发现中目标服务的app
-func (s *static) GetApp(config string) (discovery.IAppAgent, error) {
+func (s *static) GetApp(config string) (discovery.IApp, error) {
 
 	app, err := s.decode(config)
 	if err != nil {
 		return nil, err
 	}
 
-	return app, nil
+	return app.Agent(), nil
 }
 
 // Remove 从所有服务app中移除目标app

@@ -2,5 +2,7 @@ package discovery
 
 // IHealthChecker 健康检查接口
 type IHealthChecker interface {
-	check(nodes []INode)
+	Check(nodes INodes)
+	Reset(conf interface{}) error
+	Stop()
 }

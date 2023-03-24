@@ -25,18 +25,18 @@ type eureka struct {
 }
 
 // GetApp 获取服务发现中目标服务的app
-func (e *eureka) GetApp(serviceName string) (discovery.IAppAgent, error) {
+func (e *eureka) GetApp(serviceName string) (discovery.IApp, error) {
 	e.locker.RLock()
 	app, ok := e.services.GetApp(serviceName)
 	e.locker.RUnlock()
 	if ok {
-		return app, nil
+		return app.Agent(), nil
 	}
 
 	e.locker.Lock()
 	app, ok = e.services.GetApp(serviceName)
 	if ok {
-		return app, nil
+		return app.Agent(), nil
 	}
 
 	// 开始重新获取
@@ -47,7 +47,7 @@ func (e *eureka) GetApp(serviceName string) (discovery.IAppAgent, error) {
 	app = e.services.Set(serviceName, ns)
 	e.locker.Unlock()
 
-	return app, nil
+	return app.Agent(), nil
 }
 
 // Start 开始服务发现

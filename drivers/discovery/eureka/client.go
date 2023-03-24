@@ -51,7 +51,6 @@ func (c *client) GetNodeList(serviceName string) ([]discovery.NodeInfo, error) {
 						"app":      ins.App,
 						"hostName": ins.HostName,
 					},
-					Scheme: ins.Status,
 				}
 				nodes = append(nodes, node)
 			}
