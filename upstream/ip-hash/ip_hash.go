@@ -44,7 +44,7 @@ func (r *ipHash) Select(ctx eoscContext.EoContext) (eoscContext.INode, error) {
 }
 
 // Next 由现有节点根据ip_hash决策出一个可用节点
-func (r *ipHash) Next(org eoscContext.EoContext) (discovery.INode, error) {
+func (r *ipHash) Next(org eoscContext.EoContext) (discovery.BaseNode, error) {
 	httpContext, err := http_service.Assert(org)
 	if err != nil {
 		return nil, err

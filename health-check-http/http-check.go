@@ -90,7 +90,7 @@ func (h *HTTPCheck) Reset(conf Config) error {
 }
 
 // AddToCheck 将节点添加进HTTPCheck的检查列表
-func (h *HTTPCheck) AddToCheck(node discovery.INode) error {
+func (h *HTTPCheck) AddToCheck(node discovery.BaseNode) error {
 	h.addToCheck(&checkNode{
 		node:    node,
 		agentID: "",
@@ -159,6 +159,6 @@ func (h *HTTPCheck) check(nodes map[string]map[string]*checkNode) map[string]map
 
 // checkNode 进入检查channel的节点结构
 type checkNode struct {
-	node    discovery.INode
+	node    discovery.BaseNode
 	agentID string
 }

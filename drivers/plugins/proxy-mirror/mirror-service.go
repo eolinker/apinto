@@ -38,7 +38,7 @@ func newMirrorService(target, passHost, host string, timeout time.Duration) *mir
 		port, _ = strconv.Atoi(portStr)
 	}
 
-	inode := discovery.NewNode(labels, fmt.Sprintf("%s:%d", ip, port), ip, port)
+	inode := discovery.n(labels, fmt.Sprintf("%s:%d", ip, port), ip, port)
 
 	var mode eocontext.PassHostMod
 	switch passHost {

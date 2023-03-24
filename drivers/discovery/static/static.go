@@ -7,6 +7,7 @@ import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/utils/config"
+	"github.com/google/uuid"
 	"reflect"
 	"strconv"
 	"strings"
@@ -21,9 +22,10 @@ type static struct {
 	handler   *HeathCheckHandler
 	isRunning bool
 	cfg       *Config
+	services  discovery.IAppContainer
 }
 
-//Start 开始服务发现
+// Start 开始服务发现
 func (s *static) Start() error {
 
 	handler := s.handler
@@ -36,7 +38,7 @@ func (s *static) Start() error {
 	return nil
 }
 
-//Reset 重置静态服务发现实例配置
+// Reset 重置静态服务发现实例配置
 func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg, ok := conf.(*Config)
 	if !ok {
@@ -58,7 +60,7 @@ func (s *static) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 	return nil
 }
 
-//Stop 停止服务发现
+// Stop 停止服务发现
 func (s *static) Stop() error {
 	s.isRunning = false
 	handler := s.handler
@@ -70,13 +72,14 @@ func (s *static) Stop() error {
 	return nil
 }
 
-//CheckSkill 检查目标能力是否存在
+// CheckSkill 检查目标能力是否存在
 func (s *static) CheckSkill(skill string) bool {
 	return discovery.CheckSkill(skill)
 }
 
-//GetApp 获取服务发现中目标服务的app
-func (s *static) GetApp(config string) (discovery.IApp, error) {
+// GetApp 获取服务发现中目标服务的app
+func (s *static) GetApp(config string) (discovery.IAppAgent, error) {
+
 	app, err := s.decode(config)
 	if err != nil {
 		return nil, err
@@ -85,33 +88,35 @@ func (s *static) GetApp(config string) (discovery.IApp, error) {
 	return app, nil
 }
 
-//Remove 从所有服务app中移除目标app
+// Remove 从所有服务app中移除目标app
 func (s *static) Remove(id string) error {
 	return nil
 }
 
-//Node 静态服务发现的节点类型
+// Node 静态服务发现的节点类型
 type Node struct {
 	labels map[string]string
 	ip     string
 	port   int
 }
 
-//decode 通过配置生成app
-func (s *static) decode(config string) (discovery.IApp, error) {
+// decode 通过配置生成app
+func (s *static) decode(config string) (discovery.IAppAgent, error) {
 	words := fields(config)
 
-	nodes := make(map[string]discovery.INode)
+	nodes := make([]discovery.NodeInfo, 0, 5)
 
 	index := 0
 	var node *Node
-	attrs := make(discovery.Attrs)
 	for _, word := range words {
 
 		if word == ";" {
 			if node != nil {
-				n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port)
-				nodes[n.ID()] = n
+				nodes = append(nodes, discovery.NodeInfo{
+					Ip:     node.ip,
+					Port:   node.port,
+					Labels: node.labels,
+				})
 			}
 			index = 0
 			node = nil
@@ -162,18 +167,15 @@ func (s *static) decode(config string) (discovery.IApp, error) {
 		index++
 	}
 	if node != nil {
-		n := discovery.NewNode(node.labels, fmt.Sprintf("%s:%d", node.ip, node.port), node.ip, node.port)
-		nodes[n.ID()] = n
+		nodes = append(nodes, discovery.NodeInfo{
+			Ip:     node.ip,
+			Port:   node.port,
+			Labels: node.labels,
+		})
 	}
 	index = 0
 	node = nil
 
-	agent := (discovery.IHealthChecker)(nil)
-	handler := s.handler
-	if handler != nil && handler.checker != nil {
-		agent, _ = handler.checker.Agent()
-	}
-
-	app := discovery.NewApp(agent, s, attrs, nodes)
+	app := s.services.Set(uuid.New().String(), nodes)
 	return app, nil
 }

@@ -2,6 +2,7 @@ package grey_strategy
 
 import (
 	"fmt"
+	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc/eocontext"
 	"strconv"
@@ -49,7 +50,7 @@ func (r *Rule) GetNodes() []eocontext.INode {
 			port, _ = strconv.Atoi(addrSlide[1])
 		}
 
-		nodes = append(nodes, newGreyNode(fmt.Sprintf("%s:%d", ip, port), ip, port))
+		nodes = append(nodes, discovery.NewNode(nil, fmt.Sprintf("%s:%d", ip, port), ip, port))
 	}
 
 	return nodes

@@ -16,9 +16,9 @@ func TestConsulGetNodes(t *testing.T) {
 	clients := newClients(accessConfig.Address, accessConfig.Params)
 
 	newConsul := &consul{
-		clients:    clients,
-		nodes:      discovery.NewNodesData(),
-		services:   discovery.NewServices(),
+		clients: clients,
+
+		services:   discovery.NewAppContainer("http"),
 		locker:     sync.RWMutex{},
 		context:    nil,
 		cancelFunc: nil,

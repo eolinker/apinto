@@ -2,11 +2,11 @@ package round_robin
 
 import (
 	"errors"
+	"github.com/eolinker/apinto/discovery"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	"strconv"
 	"time"
 
-	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/upstream/balance"
 )
 
@@ -18,7 +18,7 @@ var (
 	errNoValidNode = errors.New("no valid node")
 )
 
-//Register 注册round-robin算法
+// Register 注册round-robin算法
 func Register() {
 	balance.Register(name, newRoundRobinFactory())
 }
@@ -30,7 +30,7 @@ func newRoundRobinFactory() *roundRobinFactory {
 type roundRobinFactory struct {
 }
 
-//Create 创建一个round-Robin算法处理器
+// Create 创建一个round-Robin算法处理器
 func (r *roundRobinFactory) Create(app discovery.IApp) (eoscContext.BalanceHandler, error) {
 	rr := newRoundRobin(app)
 	return rr, nil
@@ -38,7 +38,7 @@ func (r *roundRobinFactory) Create(app discovery.IApp) (eoscContext.BalanceHandl
 
 type node struct {
 	weight int
-	discovery.INode
+	eoscContext.INode
 }
 
 type roundRobin struct {
@@ -58,15 +58,15 @@ type roundRobin struct {
 
 	updateTime time.Time
 
-	downNodes map[int]discovery.INode
+	downNodes map[int]eoscContext.INode
 }
 
 func (r *roundRobin) Select(ctx eoscContext.EoContext) (eoscContext.INode, error) {
 	return r.Next()
 }
 
-//Next 由现有节点根据round_Robin决策出一个可用节点
-func (r *roundRobin) Next() (discovery.INode, error) {
+// Next 由现有节点根据round_Robin决策出一个可用节点
+func (r *roundRobin) Next() (eoscContext.INode, error) {
 	if time.Now().Sub(r.updateTime) > time.Second*30 {
 		// 当上次节点更新时间与当前时间间隔超过30s，则重新设置节点
 		r.set()
@@ -103,7 +103,7 @@ func (r *roundRobin) Next() (discovery.INode, error) {
 }
 
 func (r *roundRobin) set() {
-	r.downNodes = make(map[int]discovery.INode)
+	r.downNodes = make(map[int]eoscContext.INode)
 	nodes := r.app.Nodes()
 	r.size = len(nodes)
 	ns := make([]node, 0, r.size)

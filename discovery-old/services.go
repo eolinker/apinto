@@ -1,4 +1,4 @@
-package discovery
+package discovery_old
 
 import (
 	"github.com/eolinker/eosc"
@@ -10,31 +10,19 @@ type services struct {
 	appNameOfID eosc.Untyped[string, string]
 }
 
-//NewServices 创建服务发现的服务app集合
+// NewServices 创建服务发现的服务app集合
 func NewServices() IServices {
 	return &services{apps: eosc.BuildUntyped[string, serviceHandler](), appNameOfID: eosc.BuildUntyped[string, string]()}
 }
 
-//get 获取对应服务名的节点列表
+// get 获取对应服务名的节点列表
 func (s *services) get(serviceName string) (serviceHandler, bool) {
 	v, ok := s.apps.Get(serviceName)
 
 	return v, ok
 }
 
-//func (s *services) GetStatus(serviceName string) (IApp, bool) {
-//	if apps, ok := s.get(serviceName); ok {
-//		for _, r := range apps.List() {
-//			v, ok := r.(IApp)
-//			if ok {
-//				return v, true
-//			}
-//		}
-//	}
-//	return nil, false
-//}
-
-//Set 将app存入其对应服务的节点列表
+// Set 将app存入其对应服务的节点列表
 func (s *services) Set(serviceName string, id string, app IApp) error {
 	s.appNameOfID.Set(id, serviceName)
 	if apps, ok := s.get(serviceName); ok {
@@ -47,7 +35,7 @@ func (s *services) Set(serviceName string, id string, app IApp) error {
 	return nil
 }
 
-//Remove 将目标app从其对应服务的app列表中删除，传入值为目标app的id
+// Remove 将目标app从其对应服务的app列表中删除，传入值为目标app的id
 func (s *services) Remove(appID string) (string, int) {
 	name, has := s.appNameOfID.Del(appID)
 	if has {
@@ -61,7 +49,7 @@ func (s *services) Remove(appID string) (string, int) {
 	return "", 0
 }
 
-//Update 更新目标服务所有app的节点列表
+// Update 更新目标服务所有app的节点列表
 func (s *services) Update(serviceName string, nodes Nodes) error {
 	if apps, ok := s.get(serviceName); ok {
 		for _, v := range apps.List() {
@@ -71,12 +59,12 @@ func (s *services) Update(serviceName string, nodes Nodes) error {
 	return nil
 }
 
-//AppKeys 获取现有服务app的服务名列表
+// AppKeys 获取现有服务app的服务名列表
 func (s *services) AppKeys() []string {
 	return s.apps.Keys()
 }
 
-//IServices 服务app集合接口
+// IServices 服务app集合接口
 type IServices interface {
 	Set(serviceName string, id string, app IApp) error
 	Remove(id string) (string, int)

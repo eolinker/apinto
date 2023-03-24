@@ -42,40 +42,36 @@ func newClients(addrs []string, param map[string]string) *consulClients {
 	return &consulClients{clients: clients}
 }
 
-//getNodes 通过接入地址获取节点信息
-func (c *consulClients) getNodes(service string) (map[string]discovery.INode, error) {
-	nodeSet := make(map[string]discovery.INode)
-	ok := false
+// getNodes 通过接入地址获取节点信息
+func (c *consulClients) getNodes(service string) ([]discovery.NodeInfo, error) {
+
 	for _, client := range c.clients {
 		clientNodes := getNodesFromClient(client, service)
 		if len(clientNodes) == 0 {
-			continue
+			return clientNodes, nil
 		}
-		ok = true
-		for _, node := range clientNodes {
-			if _, has := nodeSet[node.ID()]; !has {
-				nodeSet[node.ID()] = node
-			}
-		}
+
 	}
-	if !ok {
-		return nil, discovery.ErrDiscoveryDown
-	}
-	return nodeSet, nil
+
+	return nil, discovery.ErrDiscoveryDown
+
 }
 
-//getNodesFromClient 从连接的客户端返回健康的节点信息
-func getNodesFromClient(client *api.Client, service string) []discovery.INode {
+// getNodesFromClient 从连接的客户端返回健康的节点信息
+func getNodesFromClient(client *api.Client, service string) []discovery.NodeInfo {
 	queryOptions := &api.QueryOptions{}
 	serviceEntryArr, _, err := client.Health().Service(service, "", true, queryOptions)
 	if err != nil {
 		return nil
 	}
 
-	nodes := make([]discovery.INode, 0, len(serviceEntryArr))
+	nodes := make([]discovery.NodeInfo, 0, len(serviceEntryArr))
 	for _, serviceEntry := range serviceEntryArr {
-		newNode := discovery.NewNode(serviceEntry.Service.Meta, serviceEntry.Node.ID, serviceEntry.Service.Address, serviceEntry.Service.Port)
-		nodes = append(nodes, newNode)
+		nodes = append(nodes, discovery.NodeInfo{
+			Ip:     serviceEntry.Service.Address,
+			Port:   serviceEntry.Service.Port,
+			Labels: serviceEntry.Service.Meta,
+		})
 	}
 
 	return nodes
