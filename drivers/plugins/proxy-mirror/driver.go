@@ -36,6 +36,7 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 		randomRange: conf.SampleConf.RandomRange,
 		randomPivot: conf.SampleConf.RandomPivot,
 		service:     newMirrorService(conf.Addr, conf.PassHost, conf.Host, time.Duration(conf.Timeout)),
+		conf:        conf,
 	}
 
 	return pm, nil

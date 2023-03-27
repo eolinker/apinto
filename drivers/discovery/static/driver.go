@@ -19,8 +19,10 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 }
 
 func CreateAnonymous(conf *Config) discovery.IDiscovery {
-	s := &static{}
-	s.cfg = conf
+	s := &static{
+		cfg:      conf,
+		services: discovery.NewAppContainer(),
+	}
 	s.Start()
 	return s
 }

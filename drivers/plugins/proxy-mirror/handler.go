@@ -30,7 +30,6 @@ func (p *proxyMirrorCompleteHandler) Complete(ctx eocontext.EoContext) error {
 	}
 
 	cloneCtx.SetApp(p.service)
-	cloneCtx.SetBalance(p.service)
 	cloneCtx.SetUpstreamHostHandler(p.service)
 
 	go func() {
