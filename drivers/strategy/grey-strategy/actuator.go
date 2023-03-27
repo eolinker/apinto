@@ -1,7 +1,6 @@
 package grey_strategy
 
 import (
-	"fmt"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -85,8 +84,10 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 	for _, handler := range handlers {
 		//check筛选条件
 		if handler.filter.Check(httpCtx) {
-			ctx.SetBalance(newGreyBalanceHandler(ctx.GetBalance(), handler))
-			break
+			if handler.IsGrey(ctx) { //是否触发灰度
+				ctx.SetBalance(newGreyBalanceHandler(handler))
+				break
+			}
 		}
 	}
 
@@ -112,15 +113,18 @@ func (hs handlerListSort) Swap(i, j int) {
 }
 
 type GreyBalanceHandler struct {
-	orgHandler  eocontext.BalanceHandler
 	greyHandler *GreyHandler
 }
 
-func newGreyBalanceHandler(orgHandler eocontext.BalanceHandler, greyHandler *GreyHandler) *GreyBalanceHandler {
-	return &GreyBalanceHandler{orgHandler: orgHandler, greyHandler: greyHandler}
+func newGreyBalanceHandler(greyHandler *GreyHandler) *GreyBalanceHandler {
+	return &GreyBalanceHandler{greyHandler: greyHandler}
 }
 
 func (g *GreyBalanceHandler) Select(ctx eocontext.EoContext) (eocontext.INode, error) {
+	return g.greyHandler.selectNodes(), nil
+}
+
+/*
 	httpCtx, err := http_service.Assert(ctx)
 	if err != nil {
 		return nil, err
@@ -144,7 +148,8 @@ func (g *GreyBalanceHandler) Select(ctx eocontext.EoContext) (eocontext.INode, e
 		httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%v", cookieKey, normal))
 		return g.orgHandler.Select(ctx)
 	}
-}
+
+*/
 
 func DoStrategy(ctx eocontext.EoContext, next eocontext.IChain) error {
 	return actuatorSet.Strategy(ctx, next)

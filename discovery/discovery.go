@@ -127,13 +127,11 @@ func (ac *appContainer) doCheck() {
 			}
 		}
 		nodeList := ac.nodes.List()
-		dels := make([]string, 0, len(nodeList))
 		for _, n := range nodeList {
 			if nodeUse[n.ID()] == 0 {
-				dels = append(dels, n.ID())
+				ac.nodes.Del(n.ID())
 			}
 		}
-		ac.nodes.Dels(dels...)
 		ac.lock.Unlock()
 	}
 

@@ -5,7 +5,7 @@ import (
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc/eocontext"
-	"github.com/eolinker/eosc/log"
+	"strconv"
 	"strings"
 )
 
@@ -39,14 +39,23 @@ type Matching struct {
 	Value string `json:"value"  label:"值规" `
 }
 
-func (r *Rule) GetNodes() discovery.IApp {
-	app, err := defaultHttpDiscovery.GetApp(strings.Join(r.Nodes, ";"))
-	if err != nil {
-		log.Error("gery strategy decode node: ", err)
-		return nil
-	}
-	return app
+func (r *Rule) GetNodes() []eocontext.INode {
+	nodes := make([]eocontext.INode, 0)
+	for _, node := range r.Nodes {
+		addrSlide := strings.Split(node, ":")
 
+		ip := addrSlide[0]
+		port := 0
+		if len(addrSlide) > 1 {
+			port, _ = strconv.Atoi(addrSlide[1])
+		}
+
+		container := discovery.NewAppContainer()
+
+		nodes = append(nodes, discovery.NewNode(container.Get(ip, port), nil))
+	}
+
+	return nodes
 }
 
 type GreyNode struct {
