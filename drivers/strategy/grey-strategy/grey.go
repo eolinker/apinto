@@ -74,6 +74,7 @@ func (l *Grey) Stop() error {
 	}
 	if l.handler != nil {
 		l.handler.Close()
+		l.handler = nil
 	}
 
 	return nil

@@ -30,6 +30,14 @@ type GreyHandler struct {
 	balanceHandler eocontext.BalanceHandler
 }
 
+func (g *GreyHandler) Close() {
+	if g.app != nil {
+		g.app.Close()
+		g.app = nil
+	}
+	g.balanceHandler = nil
+}
+
 type GreyMatch interface {
 	Match(ctx eocontext.EoContext) bool
 }
