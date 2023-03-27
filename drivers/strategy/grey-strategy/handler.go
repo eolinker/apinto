@@ -129,7 +129,7 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 		filter:   filter,
 		priority: conf.Priority,
 		stop:     conf.Stop,
-		IApp:     discovery.NewApp(conf.Rule.GetNodes()).Agent(),
+		IApp:     discovery.newApp(conf.Rule.GetNodes()).Agent(),
 	}
 
 	if conf.Rule.Distribution == percent {

@@ -94,7 +94,7 @@ func (ac *appContainer) Set(name string, infos []NodeInfo) IAppAgent {
 		if len(ac.apps) == 0 {
 			needCheck = true
 		}
-		app = NewApp(ns)
+		app = newApp(ns)
 		ac.apps[name] = app
 	}
 	ac.lock.Unlock()
@@ -140,7 +140,7 @@ func (ac *appContainer) doCheck() {
 func (ac *appContainer) Reset(infos map[string][]NodeInfo) {
 	nm := make(map[string]*_AppAgent)
 	for name, info := range infos {
-		nm[name] = NewApp(ac.create(info))
+		nm[name] = newApp(ac.create(info))
 	}
 	ac.lock.Lock()
 	ac.apps = nm

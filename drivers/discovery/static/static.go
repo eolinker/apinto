@@ -66,8 +66,9 @@ func (s *static) Stop() error {
 	if handler == nil {
 		return nil
 	}
-
+	s.handler = nil
 	handler.stop()
+
 	return nil
 }
 
