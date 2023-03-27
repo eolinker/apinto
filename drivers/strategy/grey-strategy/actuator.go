@@ -1,11 +1,13 @@
 package grey_strategy
 
 import (
+	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"sort"
 	"sync"
+	"time"
 )
 
 var (
@@ -85,7 +87,8 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 		//check筛选条件
 		if handler.filter.Check(httpCtx) {
 			if handler.Match(ctx) { //是否触发灰度
-				ctx.SetBalance(newGreyBalanceHandler(handler))
+				ctx.SetApp(NewGreyApp(ctx.GetApp(), handler.app))
+				ctx.SetBalance(handler.balanceHandler)
 				break
 			}
 		}
@@ -95,6 +98,23 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 		return next.DoChain(ctx)
 	}
 	return nil
+}
+
+type GreyApp struct {
+	org eocontext.EoApp
+	discovery.IApp
+}
+
+func (g *GreyApp) Scheme() string {
+	return g.org.Scheme()
+}
+
+func (g *GreyApp) TimeOut() time.Duration {
+	return g.org.TimeOut()
+}
+
+func NewGreyApp(old eocontext.EoApp, grey discovery.IApp) eocontext.EoApp {
+	return &GreyApp{org: old, IApp: grey}
 }
 
 type handlerListSort []*GreyHandler

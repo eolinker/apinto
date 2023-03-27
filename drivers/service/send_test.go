@@ -18,11 +18,11 @@ func TestSend(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	balanceHandler, err := balanceFactory.Create(anonymous)
+	balanceHandler, err := balanceFactory.Create()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	node, _, _ := balanceHandler.Select(nil)
+	node, _, _ := balanceHandler.Select(anonymous)
 	t.Log(node.Addr())
 }

@@ -4,10 +4,20 @@ import (
 	"fmt"
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/apinto/drivers/discovery/static"
 	"github.com/eolinker/apinto/strategy"
+	"github.com/eolinker/apinto/upstream/balance"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
+	"strings"
+)
+
+var (
+	discoveryAnonymous = static.CreateAnonymous(&static.Config{
+		HealthOn: false,
+		Health:   nil,
+	})
 )
 
 type GreyHandler struct {
@@ -16,7 +26,16 @@ type GreyHandler struct {
 	priority int
 	stop     bool
 	GreyMatch
-	discovery.IApp
+	app            discovery.IApp
+	balanceHandler eocontext.BalanceHandler
+}
+
+func (g *GreyHandler) Close() {
+	if g.app != nil {
+		g.app.Close()
+		g.app = nil
+	}
+	g.balanceHandler = nil
 }
 
 type GreyMatch interface {
@@ -129,9 +148,15 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 		filter:   filter,
 		priority: conf.Priority,
 		stop:     conf.Stop,
-		IApp:     discovery.newApp(conf.Rule.GetNodes()).Agent(),
 	}
-
+	balanceFactory, err := balance.GetFactory("round-robin")
+	if err != nil {
+		return nil, err
+	}
+	balanceHandler, err := balanceFactory.Create()
+	if err != nil {
+		return nil, err
+	}
 	if conf.Rule.Distribution == percent {
 		greyFlowHandler := &flowHandler{
 			id:     1,
@@ -172,7 +197,12 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 
 		handler.GreyMatch = &ruleGreyMatch{ruleFilter: ruleFilter}
 	}
-
+	app, err := discoveryAnonymous.GetApp(strings.Join(conf.Rule.Nodes, ";"))
+	if err != nil {
+		return nil, err
+	}
+	handler.app = app
+	handler.balanceHandler = balanceHandler
 	return handler, nil
 }
 
