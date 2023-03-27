@@ -12,6 +12,7 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 
 	s := &static{
 		WorkerBase: drivers.Worker(id, name),
+		services:   discovery.NewAppContainer(),
 		cfg:        cfg,
 	}
 	return s, nil
