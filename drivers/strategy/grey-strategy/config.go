@@ -1,7 +1,6 @@
 package grey_strategy
 
 import (
-	"fmt"
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc/eocontext"
@@ -56,61 +55,4 @@ func (r *Rule) GetNodes() []eocontext.INode {
 	}
 
 	return nodes
-}
-
-type GreyNode struct {
-	labels eocontext.Attrs
-	id     string
-	ip     string
-	port   int
-	status eocontext.NodeStatus
-}
-
-func newGreyNode(id string, ip string, port int) *GreyNode {
-	return &GreyNode{labels: map[string]string{}, id: id, ip: ip, port: port, status: eocontext.Running}
-}
-
-func (g *GreyNode) GetAttrs() eocontext.Attrs {
-	return g.labels
-}
-
-func (g *GreyNode) GetAttrByName(name string) (string, bool) {
-	v, ok := g.labels[name]
-	return v, ok
-}
-
-func (g *GreyNode) ID() string {
-	return g.id
-}
-
-func (g *GreyNode) IP() string {
-	return g.ip
-}
-
-func (g *GreyNode) Port() int {
-	return g.port
-
-}
-
-func (g *GreyNode) Addr() string {
-	if g.port == 0 {
-		return g.ip
-	}
-	return fmt.Sprintf("%s:%d", g.ip, g.port)
-}
-
-func (g *GreyNode) Status() eocontext.NodeStatus {
-	return g.status
-}
-
-func (g *GreyNode) Up() {
-	g.status = eocontext.Running
-}
-
-func (g *GreyNode) Down() {
-	g.status = eocontext.Down
-}
-
-func (g *GreyNode) Leave() {
-	g.status = eocontext.Leave
 }

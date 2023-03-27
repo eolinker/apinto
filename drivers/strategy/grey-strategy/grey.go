@@ -46,19 +46,22 @@ func (l *Grey) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) err
 	if reflect.DeepEqual(l.config, confCore) {
 		return nil
 	}
-	//关闭旧的handler中的IAPP
-	if l.handler != nil {
-		l.handler.Close()
-	}
 
 	handler, err := NewGreyHandler(confCore)
 	if err != nil {
 		return err
 	}
+	old := l.handler
+
 	l.config = confCore
 	l.handler = handler
 	if l.isRunning != 0 {
 		actuatorSet.Set(l.Id(), l.handler)
+	}
+
+	//关闭旧的handler中的IAPP
+	if old != nil {
+		old.Close()
 	}
 	return nil
 }
@@ -67,6 +70,10 @@ func (l *Grey) Stop() error {
 	if l.isRunning != 0 {
 		l.isRunning = 0
 		actuatorSet.Del(l.Id())
+
+	}
+	if l.handler != nil {
+		l.handler.Close()
 	}
 
 	return nil
