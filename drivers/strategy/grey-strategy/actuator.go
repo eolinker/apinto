@@ -84,7 +84,7 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 	for _, handler := range handlers {
 		//check筛选条件
 		if handler.filter.Check(httpCtx) {
-			if handler.IsGrey(ctx) { //是否触发灰度
+			if handler.Match(ctx) { //是否触发灰度
 				ctx.SetBalance(newGreyBalanceHandler(handler))
 				break
 			}
@@ -121,35 +121,9 @@ func newGreyBalanceHandler(greyHandler *GreyHandler) *GreyBalanceHandler {
 }
 
 func (g *GreyBalanceHandler) Select(ctx eocontext.EoContext) (eocontext.INode, error) {
-	return g.greyHandler.selectNodes(), nil
+	//todo
+	return nil, nil
 }
-
-/*
-	httpCtx, err := http_service.Assert(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	cookieKey := fmt.Sprintf(cookieName, g.greyHandler.name)
-
-	if g.greyHandler.rule.keepSession {
-		cookie := httpCtx.Request().Header().GetCookie(cookieKey)
-		if cookie == grey {
-			return g.greyHandler.selectNodes(), nil
-		} else if cookie == normal {
-			return g.orgHandler.Select(ctx)
-		}
-	}
-
-	if g.greyHandler.rule.greyMatch.Match(ctx) { //灰度
-		httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%v", cookieKey, grey))
-		return g.greyHandler.selectNodes(), nil
-	} else {
-		httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%v", cookieKey, normal))
-		return g.orgHandler.Select(ctx)
-	}
-
-*/
 
 func DoStrategy(ctx eocontext.EoContext, next eocontext.IChain) error {
 	return actuatorSet.Strategy(ctx, next)

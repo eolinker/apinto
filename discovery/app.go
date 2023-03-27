@@ -45,7 +45,7 @@ func (a *_App) Close() {
 
 }
 
-func newApp(nodes []eocontext.INode) *_AppAgent {
+func NewApp(nodes []eocontext.INode) *_AppAgent {
 
 	return &_AppAgent{nodes: nodes}
 }
