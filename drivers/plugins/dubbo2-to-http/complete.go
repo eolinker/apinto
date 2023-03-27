@@ -147,7 +147,7 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 			return errorTimeoutComplete
 		}
 
-		node, err := balance.Select(ctx)
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select error: ", err)
 			ctx.Response().SetBody(Dubbo2ErrorResult(errNodeIsNull))

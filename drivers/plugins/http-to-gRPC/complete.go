@@ -113,7 +113,7 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	var lastErr error
 	var conn *grpc.ClientConn
 	for i := retry + 1; i > 0; i-- {
-		node, err := balance.Select(ctx)
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select node error: ", err)
 			return err

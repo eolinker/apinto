@@ -44,7 +44,7 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 			ctx.Response().SetBody(Dubbo2ErrorResult(ErrorTimeoutComplete))
 			return ErrorTimeoutComplete
 		}
-		node, err := balance.Select(ctx)
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select error: ", err)
 			ctx.Response().SetBody(Dubbo2ErrorResult(errors.New("node is null")))

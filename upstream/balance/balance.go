@@ -7,7 +7,6 @@ import (
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/eosc"
 )
 
@@ -18,7 +17,7 @@ var (
 
 // IBalanceFactory 实现了负载均衡算法工厂
 type IBalanceFactory interface {
-	Create(app discovery.IApp) (eoscContext.BalanceHandler, error)
+	Create() (eoscContext.BalanceHandler, error)
 }
 
 // IBalanceFactoryRegister 实现了负载均衡算法工厂管理器

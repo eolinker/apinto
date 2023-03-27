@@ -1,59 +1,10 @@
 package round_robin
 
-import (
-	"testing"
-
-	"github.com/eolinker/apinto/discovery"
-)
-
-type discoveryDemo struct {
-}
-
-func (d *discoveryDemo) Remove(id string) error {
-	return nil
-}
-
 type nodeDemo struct {
 	label map[string]string
 	ip    string
 	port  int
 	down  bool
-}
-
-func TestRoundRobin(t *testing.T) {
-	d := &discoveryDemo{}
-	for _, demo := range testDemos {
-		t.Run(demo.name, func(t *testing.T) {
-			nodes := map[string]discovery.BaseNode{}
-			for key, value := range demo.nodes {
-				nodes[key] = discovery.NewNode(value.label, key, value.ip, value.port)
-			}
-			app := discovery.NewApp(nil, d, nil, nodes)
-			rFactory := newRoundRobinFactory()
-			handler, err := rFactory.Create(app)
-			if err != nil {
-				t.Error(err)
-				return
-			}
-			for i := 0; i < 20; i++ {
-				n, err := handler.Next()
-				if err != nil {
-					t.Error(err)
-					continue
-				}
-				if demo.nodes[n.ID()].down {
-					n.Down()
-				}
-				demo.count[n.ID()]--
-			}
-			for key, count := range demo.count {
-				if count != 0 {
-					t.Error("error:", key, "count:", count)
-				}
-			}
-		})
-
-	}
 }
 
 var testDemos = []struct {

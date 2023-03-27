@@ -2,7 +2,6 @@ package ip_hash
 
 import (
 	"errors"
-	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/upstream/balance"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -30,38 +29,36 @@ type ipHashFactory struct {
 }
 
 // Create 创建一个ip-hash算法处理器
-func (r *ipHashFactory) Create(app discovery.IApp) (eoscContext.BalanceHandler, error) {
-	rr := newIpHash(app)
+func (r *ipHashFactory) Create() (eoscContext.BalanceHandler, error) {
+	rr := newIpHash()
 	return rr, nil
 }
 
 type ipHash struct {
-	app discovery.IApp
 }
 
-func (r *ipHash) Select(ctx eoscContext.EoContext) (eoscContext.INode, error) {
+func (r *ipHash) Select(ctx eoscContext.EoContext) (eoscContext.INode, int, error) {
 	return r.Next(ctx)
 }
 
 // Next 由现有节点根据ip_hash决策出一个可用节点
-func (r *ipHash) Next(org eoscContext.EoContext) (eoscContext.INode, error) {
+func (r *ipHash) Next(org eoscContext.EoContext) (eoscContext.INode, int, error) {
 	httpContext, err := http_service.Assert(org)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	readIp := httpContext.Request().ReadIP()
 	nodes := org.GetApp().Nodes()
 	size := len(nodes)
 	if size < 1 {
-		return nil, errNoValidNode
+		return nil, 0, errNoValidNode
 	}
-	return nodes[HashCode(readIp)%size], nil
+	index := HashCode(readIp) % size
+	return nodes[index], index, nil
 }
 
-func newIpHash(app discovery.IApp) *ipHash {
-	r := &ipHash{
-		app: app,
-	}
+func newIpHash() *ipHash {
+	r := &ipHash{}
 	return r
 }
 

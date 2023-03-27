@@ -16,7 +16,7 @@ type IService interface {
 	eoscContext.UpstreamHostHandler
 }
 
-//CheckSkill 检查目标技能是否符合
+// CheckSkill 检查目标技能是否符合
 func CheckSkill(skill string) bool {
 	return skill == ServiceSkill
 }

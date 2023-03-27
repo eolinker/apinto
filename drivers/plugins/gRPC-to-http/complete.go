@@ -110,7 +110,7 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 		if timeout > 0 && time.Since(proxyTime) > timeout {
 			return ErrorTimeoutComplete
 		}
-		node, err := balance.Select(ctx)
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			return status.Error(codes.NotFound, err.Error())
 		}

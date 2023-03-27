@@ -74,7 +74,7 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 		if timeout > 0 && time.Since(proxyTime) > timeout {
 			return ErrorTimeoutComplete
 		}
-		node, err := balance.Select(ctx)
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select error: ", err)
 			ctx.Response().SetStatus(501, "501")

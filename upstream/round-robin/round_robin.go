@@ -3,11 +3,9 @@ package round_robin
 import (
 	"errors"
 	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/apinto/upstream/balance"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	"strconv"
-	"time"
-
-	"github.com/eolinker/apinto/upstream/balance"
 )
 
 const (
@@ -16,6 +14,13 @@ const (
 
 var (
 	errNoValidNode = errors.New("no valid node")
+)
+
+type roundRobinKeyType struct {
+}
+
+var (
+	roundRobinKey = roundRobinKeyType{}
 )
 
 // Register 注册round-robin算法
@@ -31,8 +36,8 @@ type roundRobinFactory struct {
 }
 
 // Create 创建一个round-Robin算法处理器
-func (r *roundRobinFactory) Create(app discovery.IApp) (eoscContext.BalanceHandler, error) {
-	rr := newRoundRobin(app)
+func (r *roundRobinFactory) Create() (eoscContext.BalanceHandler, error) {
+	rr := newRoundRobin()
 	return rr, nil
 }
 
@@ -42,71 +47,80 @@ type node struct {
 }
 
 type roundRobin struct {
-	app discovery.IApp
-	// nodes 节点列表
-	nodes []node
-	// 节点数量
-	size int
-	// index 当前索引
 	index int
+}
+type roundRobinContext struct {
+	nodes []node
 	// gcdWeight 权重最大公约数
 	gcdWeight int
 	// maxWeight 权重最大值
 	maxWeight int
 
-	cw int
-
-	updateTime time.Time
-
-	downNodes map[int]eoscContext.INode
+	cw        int
+	lastIndex int
 }
 
-func (r *roundRobin) Select(ctx eoscContext.EoContext) (eoscContext.INode, error) {
+func (r *roundRobin) Select(ctx eoscContext.EoContext) (eoscContext.INode, int, error) {
 	return r.Next(ctx)
 }
 
 // Next 由现有节点根据round_Robin决策出一个可用节点
-func (r *roundRobin) Next(ctx eoscContext.EoContext) (eoscContext.INode, error) {
-	if time.Now().Sub(r.updateTime) > time.Second*30 {
-		// 当上次节点更新时间与当前时间间隔超过30s，则重新设置节点
-		r.set()
-	}
-	if r.size < 1 {
-		return nil, errNoValidNode
-	}
-	for {
-		index := r.index
-		r.index = (r.index + 1) % r.size
-		if len(r.downNodes) >= r.size {
-			return nil, errNoValidNode
-		}
+func (r *roundRobin) Next(ctx eoscContext.EoContext) (eoscContext.INode, int, error) {
 
+	rc := r.init(ctx)
+	size := len(rc.nodes)
+	if size < 1 {
+		return nil, 0, errNoValidNode
+	}
+	if rc.lastIndex < 0 {
+		rc.lastIndex = r.index
+	}
+	for i := 0; i < size; i++ {
+
+		index := rc.lastIndex
+		rc.lastIndex++
+
+		index %= size
 		if index == 0 {
-			r.cw = r.cw - r.gcdWeight
-			if r.cw <= 0 {
-				r.cw = r.maxWeight
-				if r.cw == 0 {
-					return nil, errNoValidNode
+			rc.cw = rc.cw - rc.gcdWeight
+			if rc.cw <= 0 {
+				rc.cw = rc.maxWeight
+				if rc.cw == 0 {
+					return nil, 0, errNoValidNode
 				}
 			}
 		}
 
-		if r.nodes[index].weight >= r.cw {
-			if r.nodes[index].Status() == discovery.Down {
-				r.downNodes[index] = r.nodes[index]
+		if rc.nodes[index].weight >= rc.cw {
+			if rc.nodes[index].Status() == discovery.Down {
+
 				continue
 			}
-			return r.nodes[index], nil
+			return rc.nodes[index], index, nil
 		}
 
 	}
+	return nil, 0, errNoValidNode
 }
 
-func (r *roundRobin) set() {
-	r.downNodes = make(map[int]eoscContext.INode)
-	nodes := r.app.Nodes()
-	r.size = len(nodes)
-	ns := make([]node, 0, r.size)
+func (r *roundRobin) init(ctx eoscContext.EoContext) *roundRobinContext {
+
+	nodesValue := ctx.Value(roundRobinKey)
+	if nodesValue != nil {
+		return nodesValue.(*roundRobinContext)
+	}
+
+	nodes := ctx.GetApp().Nodes()
+	rc := create(nodes)
+	ctx.WithValue(roundRobinKey, rc)
+
+	return rc
+
+}
+func create(nodes []eoscContext.INode) *roundRobinContext {
+	rc := new(roundRobinContext)
+	rc.lastIndex = -1
+	rc.nodes = make([]node, 0, len(nodes))
 	for i, n := range nodes {
 
 		weight, _ := n.GetAttrByName("weight")
@@ -115,24 +129,20 @@ func (r *roundRobin) set() {
 			w = 1
 		}
 		nd := node{w, n}
-		ns = append(ns, nd)
+		rc.nodes = append(rc.nodes, nd)
 		if i == 0 {
-			r.maxWeight = w
-			r.gcdWeight = w
+			rc.maxWeight = w
+			rc.gcdWeight = w
 			continue
 		}
-		r.gcdWeight = gcd(w, r.gcdWeight)
-		r.maxWeight = max(w, r.maxWeight)
+		rc.gcdWeight = gcd(w, rc.gcdWeight)
+		rc.maxWeight = max(w, rc.maxWeight)
 	}
-	r.nodes = ns
-	r.updateTime = time.Now()
+	return rc
 }
+func newRoundRobin() *roundRobin {
+	r := &roundRobin{}
 
-func newRoundRobin(app discovery.IApp) *roundRobin {
-	r := &roundRobin{
-		app: app,
-	}
-	r.set()
 	return r
 }
 

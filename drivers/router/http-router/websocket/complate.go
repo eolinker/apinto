@@ -57,7 +57,7 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 		if h.timeOut > 0 && time.Now().Sub(proxyTime) > h.timeOut {
 			return ErrorTimeoutComplete
 		}
-		node, err := balance.Select(ctx)
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select error: ", lastErr)
 			return err

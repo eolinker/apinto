@@ -75,9 +75,9 @@ func (m *mirrorService) PassHost() (eocontext.PassHostMod, string) {
 	return m.passHost, m.host
 }
 
-func (m *mirrorService) Select(ctx eocontext.EoContext) (eocontext.INode, error) {
+func (m *mirrorService) Select(ctx eocontext.EoContext) (eocontext.INode, int, error) {
 	if len(m.nodes) < 1 {
-		return nil, errNoValidNode
+		return nil, 0, errNoValidNode
 	}
-	return m.nodes[0], nil
+	return m.nodes[0], 0, nil
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	session_keep "github.com/eolinker/apinto/upstream/session-keep"
 	"reflect"
 	"strings"
 	"time"
@@ -38,7 +39,14 @@ func (s *Service) PassHost() (eocontext.PassHostMod, string) {
 }
 
 func (s *Service) Nodes() []eocontext.INode {
-	return s.app.Nodes()
+	all := s.app.Nodes()
+	ns := make([]eocontext.INode, 0, len(all))
+	for _, n := range all {
+		if n.Status() == eocontext.Running {
+			ns = append(ns, n)
+		}
+	}
+	return ns
 }
 
 func (s *Service) Scheme() string {
@@ -73,6 +81,15 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 	if err != nil {
 		return err
 	}
+
+	balanceHandler, err := balanceFactory.Create()
+	if err != nil {
+
+		return err
+	}
+	if data.KeepSession {
+		balanceHandler = session_keep.NewSession(balanceHandler)
+	}
 	var apps discovery.IApp
 	if data.Discovery != "" {
 		discoveryWorker, has := workers[data.Discovery]
@@ -93,23 +110,22 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 			return err
 		}
 	}
-	balanceHandler, err := balanceFactory.Create(apps)
-	if err != nil {
-		apps.Close()
-		return err
-	}
+
 	old := s.app
 	s.app = apps
-	if old != nil {
-		old.Close()
-	}
+
 	s.scheme = data.Scheme
 	s.timeout = time.Duration(data.Timeout) * time.Millisecond
+
 	s.BalanceHandler = balanceHandler
 	s.passHost = parsePassHost(data.PassHost)
 	s.scheme = data.Scheme
 
 	s.upstreamHost = data.UpstreamHost
+
+	if old != nil {
+		old.Close()
+	}
 	return nil
 
 }

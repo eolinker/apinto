@@ -76,6 +76,8 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 		}
 		return err
 	}
+	// greyset: grey, notgrey, unset
+	// GreyRule: greyStrategyName
 
 	a.lock.RLock()
 	handlers := a.handlers
@@ -83,7 +85,9 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 
 	for _, handler := range handlers {
 		//check筛选条件
+
 		if handler.filter.Check(httpCtx) {
+
 			if handler.IsGrey(ctx) { //是否触发灰度
 				ctx.SetBalance(newGreyBalanceHandler(handler))
 				break
@@ -120,8 +124,8 @@ func newGreyBalanceHandler(greyHandler *GreyHandler) *GreyBalanceHandler {
 	return &GreyBalanceHandler{greyHandler: greyHandler}
 }
 
-func (g *GreyBalanceHandler) Select(ctx eocontext.EoContext) (eocontext.INode, error) {
-	return g.greyHandler.selectNodes(), nil
+func (g *GreyBalanceHandler) Select(ctx eocontext.EoContext) (eocontext.INode, int, error) {
+	return g.greyHandler.selectNodes(), 0, nil
 }
 
 /*

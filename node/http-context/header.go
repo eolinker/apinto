@@ -84,7 +84,19 @@ type ResponseHeader struct {
 
 func (r *ResponseHeader) reset(header *fasthttp.ResponseHeader) {
 	r.header = header
+
 	r.tmp = nil
+}
+func (r *ResponseHeader) Finish() {
+	if r.tmp != nil {
+		for k, vs := range r.tmp {
+			r.header.Del(k)
+			for _, v := range vs {
+				r.header.Add(k, v)
+			}
+		}
+	}
+	r.reset(nil)
 }
 func NewResponseHeader(header *fasthttp.ResponseHeader) *ResponseHeader {
 	return &ResponseHeader{header: header}

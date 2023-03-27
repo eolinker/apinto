@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/eolinker/apinto/entries/ctx_key"
 	"net"
-	"strings"
 	"time"
 
 	"github.com/eolinker/eosc/utils/config"
@@ -274,16 +273,4 @@ func (ctx *HttpContext) FastFinish() {
 	ctx.fastHttpRequestCtx = nil
 	pool.Put(ctx)
 
-}
-
-func NotFound(ctx *HttpContext) {
-	ctx.fastHttpRequestCtx.SetStatusCode(404)
-	ctx.fastHttpRequestCtx.SetBody([]byte("404 Not Found"))
-}
-
-func readAddress(addr string) (scheme, host string) {
-	if i := strings.Index(addr, "://"); i > 0 {
-		return strings.ToLower(addr[:i]), addr[i+3:]
-	}
-	return "http", addr
 }

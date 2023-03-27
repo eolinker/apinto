@@ -2,7 +2,6 @@ package grey_strategy
 
 import (
 	"github.com/eolinker/apinto/checker"
-	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -25,9 +24,9 @@ type ruleHandler struct {
 	selectNodeLock *sync.Mutex
 	index          int
 	keepSession    bool
-	nodes          discovery.IApp
-	distribution   string
-	greyMatch      greyMatch
+
+	distribution string
+	greyMatch    greyMatch
 }
 
 type ruleGreyFlow struct {
@@ -100,24 +99,6 @@ func (f *flowHandler) GetWeight() int {
 	return f.weight
 }
 
-// ABCABCABCABC 轮询从nodes中拿一个节点信息
-func (g *GreyHandler) selectNodes() eocontext.INode {
-
-	g.rule.selectNodeLock.Lock()
-	defer g.rule.selectNodeLock.Unlock()
-
-	var node eocontext.INode
-	if g.rule.index == len(g.rule.nodes)-1 {
-		node = g.rule.nodes[g.rule.index]
-		g.rule.index = 0
-	} else {
-		node = g.rule.nodes[g.rule.index]
-		g.rule.index++
-	}
-
-	return node
-}
-
 func (g *GreyHandler) IsGrey(ctx eocontext.EoContext) bool {
 	return g.rule.greyMatch.Match(ctx)
 	//cookieKey := fmt.Sprintf(cookieName, g.name)
@@ -149,8 +130,8 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 	rule := &ruleHandler{
 		selectNodeLock: &sync.Mutex{},
 		keepSession:    conf.Rule.KeepSession,
-		nodes:          conf.Rule.GetNodes(),
-		distribution:   conf.Rule.Distribution,
+
+		distribution: conf.Rule.Distribution,
 	}
 
 	if conf.Rule.Distribution == percent {
