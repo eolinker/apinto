@@ -28,12 +28,11 @@ type static struct {
 // Start 开始服务发现
 func (s *static) Start() error {
 
-	handler := s.handler
 	s.isRunning = true
-	if handler != nil {
+	if s.handler != nil {
 		return nil
 	}
-	handler = NewHeathCheckHandler(s.services, s.cfg)
+	s.handler = NewHeathCheckHandler(s.services, s.cfg)
 
 	return nil
 }
