@@ -62,11 +62,11 @@ type roundRobin struct {
 }
 
 func (r *roundRobin) Select(ctx eoscContext.EoContext) (eoscContext.INode, error) {
-	return r.Next()
+	return r.Next(ctx)
 }
 
 // Next 由现有节点根据round_Robin决策出一个可用节点
-func (r *roundRobin) Next() (eoscContext.INode, error) {
+func (r *roundRobin) Next(ctx eoscContext.EoContext) (eoscContext.INode, error) {
 	if time.Now().Sub(r.updateTime) > time.Second*30 {
 		// 当上次节点更新时间与当前时间间隔超过30s，则重新设置节点
 		r.set()

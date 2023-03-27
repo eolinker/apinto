@@ -2,6 +2,7 @@ package grey_strategy
 
 import (
 	"github.com/eolinker/apinto/checker"
+	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -24,7 +25,7 @@ type ruleHandler struct {
 	selectNodeLock *sync.Mutex
 	index          int
 	keepSession    bool
-	nodes          []eocontext.INode
+	nodes          discovery.IApp
 	distribution   string
 	greyMatch      greyMatch
 }
@@ -101,9 +102,7 @@ func (f *flowHandler) GetWeight() int {
 
 // ABCABCABCABC 轮询从nodes中拿一个节点信息
 func (g *GreyHandler) selectNodes() eocontext.INode {
-	if len(g.rule.nodes) == 1 {
-		return g.rule.nodes[0]
-	}
+
 	g.rule.selectNodeLock.Lock()
 	defer g.rule.selectNodeLock.Unlock()
 

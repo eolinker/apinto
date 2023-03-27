@@ -44,13 +44,13 @@ func (r *ipHash) Select(ctx eoscContext.EoContext) (eoscContext.INode, error) {
 }
 
 // Next 由现有节点根据ip_hash决策出一个可用节点
-func (r *ipHash) Next(org eoscContext.EoContext) (discovery.BaseNode, error) {
+func (r *ipHash) Next(org eoscContext.EoContext) (eoscContext.INode, error) {
 	httpContext, err := http_service.Assert(org)
 	if err != nil {
 		return nil, err
 	}
 	readIp := httpContext.Request().ReadIP()
-	nodes := r.app.Nodes()
+	nodes := org.GetApp().Nodes()
 	size := len(nodes)
 	if size < 1 {
 		return nil, errNoValidNode
