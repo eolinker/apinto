@@ -50,7 +50,9 @@ func (r *Rule) GetNodes() []eocontext.INode {
 			port, _ = strconv.Atoi(addrSlide[1])
 		}
 
-		nodes = append(nodes, discovery.NewNode(nil, fmt.Sprintf("%s:%d", ip, port), ip, port))
+		container := discovery.NewAppContainer()
+
+		nodes = append(nodes, discovery.NewNode(container.Get(ip, port), nil))
 	}
 
 	return nodes

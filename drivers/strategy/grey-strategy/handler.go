@@ -119,6 +119,28 @@ func (g *GreyHandler) selectNodes() eocontext.INode {
 	return node
 }
 
+func (g *GreyHandler) IsGrey(ctx eocontext.EoContext) bool {
+	return g.rule.greyMatch.Match(ctx)
+	//cookieKey := fmt.Sprintf(cookieName, g.name)
+	//
+	//if g.rule.keepSession {
+	//	cookie := httpCtx.Request().Header().GetCookie(cookieKey)
+	//	if cookie == grey {
+	//		return true, nil
+	//	} else if cookie == normal {
+	//		return false, nil
+	//	}
+	//}
+
+	//if g.rule.greyMatch.Match(ctx) { //灰度
+	//	httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%v", cookieKey, grey))
+	//	return true, nil
+	//} else {
+	//	httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%v", cookieKey, normal))
+	//	return false, nil
+	//}
+}
+
 func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 	filter, err := strategy.ParseFilter(conf.Filters)
 	if err != nil {
