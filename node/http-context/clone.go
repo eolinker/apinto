@@ -34,6 +34,10 @@ type cloneContext struct {
 	responseError error
 }
 
+func (ctx *cloneContext) RealIP() string {
+	return ctx.org.RealIP()
+}
+
 func (ctx *cloneContext) GetUpstreamHostHandler() eoscContext.UpstreamHostHandler {
 	return ctx.upstreamHostHandler
 }

@@ -59,6 +59,11 @@ type Context struct {
 	errChan                   chan error
 }
 
+func (c *Context) RealIP() string {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (c *Context) EnableTls(b bool) {
 	c.tls = b
 }
