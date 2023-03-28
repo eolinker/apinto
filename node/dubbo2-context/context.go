@@ -54,7 +54,7 @@ type DubboContext struct {
 }
 
 func (d *DubboContext) RealIP() string {
-	return d.netIP.String()
+	return d.requestReader.RemoteIP()
 }
 
 func (d *DubboContext) Response() dubbo2_context.IResponse {
