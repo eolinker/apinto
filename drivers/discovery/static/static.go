@@ -17,6 +17,8 @@ var (
 	errorStructType = errors.New("error struct type")
 )
 
+var _ discovery.IDiscovery = (*static)(nil)
+
 type static struct {
 	drivers.WorkerBase
 	handler   *HeathCheckHandler

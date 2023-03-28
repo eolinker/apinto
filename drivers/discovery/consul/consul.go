@@ -14,6 +14,8 @@ import (
 	"github.com/eolinker/eosc/log"
 )
 
+var _ discovery.IDiscovery = (*consul)(nil)
+
 type consul struct {
 	drivers.WorkerBase
 	clients    *consulClients
@@ -80,21 +82,21 @@ func (c *consul) Stop() error {
 }
 
 // GetApp 获取服务发现中目标服务的app
-func (c *consul) GetApp(serviceName string) (discovery.IAppAgent, error) {
+func (c *consul) GetApp(serviceName string) (discovery.IApp, error) {
 	var err error
 	var has bool
 	c.locker.RLock()
 	app, has := c.services.GetApp(serviceName)
 	c.locker.RUnlock()
 	if has {
-		return app, nil
+		return app.Agent(), nil
 	}
 
 	c.locker.Lock()
 	defer c.locker.Unlock()
 	app, has = c.services.GetApp(serviceName)
 	if has {
-		return app, nil
+		return app.Agent(), nil
 	}
 
 	nodes, err := c.clients.getNodes(serviceName)
@@ -103,7 +105,7 @@ func (c *consul) GetApp(serviceName string) (discovery.IAppAgent, error) {
 	}
 	app = c.services.Set(serviceName, nodes)
 
-	return app, nil
+	return app.Agent(), nil
 
 }
 

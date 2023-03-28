@@ -30,6 +30,14 @@ func (s *serviceWorker) Stop() error {
 	return nil
 }
 
+func (s *serviceWorker) Destroy() error {
+	if s.app != nil {
+		s.app.Close()
+		s.app = nil
+	}
+	return nil
+}
+
 // CheckSkill 检查目标能力是否存在
 func (s *serviceWorker) CheckSkill(skill string) bool {
 	return service.CheckSkill(skill)

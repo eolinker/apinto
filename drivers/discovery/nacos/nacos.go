@@ -19,6 +19,8 @@ const (
 	instancePath = "/nacos/v1/ns/instance/list"
 )
 
+var _ discovery.IDiscovery = (*nacos)(nil)
+
 type nacos struct {
 	drivers.WorkerBase
 	client     *client

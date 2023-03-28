@@ -32,15 +32,16 @@ type NodeInfo struct {
 type IAppContainer interface {
 	INodes
 	Set(id string, info []NodeInfo) (app IAppAgent)
-	Reset(info map[string][]NodeInfo)
+
 	GetApp(id string) (IAppAgent, bool)
 	Keys() []string
 }
 
 type appContainer struct {
-	lock  sync.RWMutex
-	nodes eosc.Untyped[string, INode]
-	apps  map[string]*_AppAgent
+	lock        sync.RWMutex
+	nodes       eosc.Untyped[string, INode]
+	apps        map[string]*_AppAgent
+	healthCheck bool
 }
 
 func NewAppContainer() IAppContainer {

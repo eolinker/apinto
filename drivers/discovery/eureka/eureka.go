@@ -15,6 +15,8 @@ import (
 	"github.com/eolinker/eosc"
 )
 
+var _ discovery.IDiscovery = (*eureka)(nil)
+
 type eureka struct {
 	drivers.WorkerBase
 	client     *client
