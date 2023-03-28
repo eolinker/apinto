@@ -2,10 +2,11 @@ package round_robin
 
 import (
 	"errors"
+	"strconv"
+
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/upstream/balance"
 	eoscContext "github.com/eolinker/eosc/eocontext"
-	"strconv"
 )
 
 const (
@@ -72,15 +73,17 @@ func (r *roundRobin) Next(ctx eoscContext.EoContext) (eoscContext.INode, int, er
 	if size < 1 {
 		return nil, 0, errNoValidNode
 	}
+
 	if rc.lastIndex < 0 {
-		rc.lastIndex = r.index
+		rc.lastIndex = r.index % size
+		r.index++
 	}
-	for i := 0; i < size; i++ {
+	for {
 
 		index := rc.lastIndex
 		rc.lastIndex++
+		rc.lastIndex %= size
 
-		index %= size
 		if index == 0 {
 			rc.cw = rc.cw - rc.gcdWeight
 			if rc.cw <= 0 {
