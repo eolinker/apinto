@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/eolinker/apinto/upstream/balance"
 	eoscContext "github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"hash/crc32"
 )
 
@@ -43,12 +42,8 @@ func (r *ipHash) Select(ctx eoscContext.EoContext) (eoscContext.INode, int, erro
 
 // Next 由现有节点根据ip_hash决策出一个可用节点
 func (r *ipHash) Next(org eoscContext.EoContext) (eoscContext.INode, int, error) {
-	httpContext, err := http_service.Assert(org)
-	if err != nil {
-		return nil, 0, err
-	}
 
-	readIp := httpContext.Request().ReadIP()
+	readIp := org.RealIP()
 	nodes := org.GetApp().Nodes()
 	size := len(nodes)
 	if size < 1 {

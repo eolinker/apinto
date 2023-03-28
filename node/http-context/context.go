@@ -37,6 +37,10 @@ type HttpContext struct {
 	port                int
 }
 
+func (ctx *HttpContext) RealIP() string {
+	return ctx.Request().RealIp()
+}
+
 func (ctx *HttpContext) GetUpstreamHostHandler() eoscContext.UpstreamHostHandler {
 	return ctx.upstreamHostHandler
 }

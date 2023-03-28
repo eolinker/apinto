@@ -22,6 +22,7 @@ func init() {
 			StreamRequestBody:            true,
 			DisablePreParseMultipartForm: true,
 			MaxRequestBodySize:           100 * 1024 * 1024,
+			ReadBufferSize:               16 * 1024,
 			Handler: func(ctx *fasthttp.RequestCtx) {
 				routerManager.FastHandler(port, ctx)
 			}}

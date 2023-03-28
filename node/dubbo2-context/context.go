@@ -53,6 +53,10 @@ type DubboContext struct {
 	acceptTime          time.Time
 }
 
+func (d *DubboContext) RealIP() string {
+	return d.requestReader.RemoteIP()
+}
+
 func (d *DubboContext) Response() dubbo2_context.IResponse {
 
 	return d.response

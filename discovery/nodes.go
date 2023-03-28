@@ -11,6 +11,7 @@ var (
 type INodes interface {
 	Get(ip string, port int) INode
 	All() []INode
+	SetHealthCheck(isHealthCheck bool)
 }
 
 func (ac *appContainer) Get(ip string, port int) INode {
@@ -28,7 +29,7 @@ func (ac *appContainer) Get(ip string, port int) INode {
 		return node
 	}
 
-	ac.nodes.Set(id, newBaseNode(ip, port))
+	ac.nodes.Set(id, newBaseNode(ip, port, ac))
 	node, _ = ac.nodes.Get(id)
 	return node
 }

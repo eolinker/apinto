@@ -32,16 +32,33 @@ type NodeInfo struct {
 type IAppContainer interface {
 	INodes
 	Set(id string, info []NodeInfo) (app IAppAgent)
-
+	Reset(info map[string][]NodeInfo)
 	GetApp(id string) (IAppAgent, bool)
 	Keys() []string
 }
 
 type appContainer struct {
-	lock        sync.RWMutex
-	nodes       eosc.Untyped[string, INode]
-	apps        map[string]*_AppAgent
-	healthCheck bool
+	lock          sync.RWMutex
+	nodes         eosc.Untyped[string, INode]
+	apps          map[string]*_AppAgent
+	isHealthCheck int32
+}
+
+func (ac *appContainer) status(status NodeStatus) NodeStatus {
+
+	if atomic.LoadInt32(&ac.isHealthCheck) > 0 {
+		return status
+	}
+	return Running
+}
+
+func (ac *appContainer) SetHealthCheck(isHealthCheck bool) {
+	if isHealthCheck {
+		atomic.StoreInt32(&ac.isHealthCheck, 1)
+	} else {
+		atomic.StoreInt32(&ac.isHealthCheck, 0)
+
+	}
 }
 
 func NewAppContainer() IAppContainer {
@@ -79,7 +96,6 @@ func (ac *appContainer) Set(name string, infos []NodeInfo) IAppAgent {
 
 	ns := ac.create(infos)
 	ac.lock.RLock()
-
 	app, has := ac.apps[name]
 	ac.lock.RUnlock()
 	if has {
