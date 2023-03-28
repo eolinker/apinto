@@ -30,13 +30,17 @@ type INode interface {
 	Down()
 	Leave()
 }
+type _INodeStatusCheck interface {
+	status(status NodeStatus) NodeStatus
+}
 type _BaseNode struct {
 	id   string
 	ip   string
 	port int
 
-	status   NodeStatus
-	lastTime atomic.Pointer[time.Time]
+	status        NodeStatus
+	lastTime      atomic.Pointer[time.Time]
+	statusChecker _INodeStatusCheck
 }
 
 func (n *_BaseNode) Last() time.Time {
@@ -50,8 +54,8 @@ func (n *_BaseNode) Last() time.Time {
 
 }
 
-func newBaseNode(ip string, port int) *_BaseNode {
-	return &_BaseNode{ip: ip, port: port, status: Running}
+func newBaseNode(ip string, port int, statusChecker _INodeStatusCheck) *_BaseNode {
+	return &_BaseNode{ip: ip, port: port, status: Running, statusChecker: statusChecker}
 }
 
 func (n *_BaseNode) ID() string {
@@ -67,7 +71,8 @@ func (n *_BaseNode) Port() int {
 }
 
 func (n *_BaseNode) Status() eocontext.NodeStatus {
-	return n.status
+
+	return n.statusChecker.status(n.status)
 }
 
 // Addr 返回节点地址
@@ -97,7 +102,6 @@ func (n *_BaseNode) Leave() {
 type Attrs = eocontext.Attrs
 type Node struct {
 	INode
-
 	label Attrs
 }
 

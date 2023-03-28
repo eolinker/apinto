@@ -26,7 +26,7 @@ func NewHeathCheckHandler(nodes discovery.INodes, cfg *Config) *HeathCheckHandle
 func (s *HeathCheckHandler) reset(cfg *Config) error {
 
 	s.healthOn = cfg.HealthOn
-
+	s.nodes.SetHealthCheck(s.healthOn)
 	if !cfg.HealthOn {
 		checker := s.checker
 		if checker != nil {
