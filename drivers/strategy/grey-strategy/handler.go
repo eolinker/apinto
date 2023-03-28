@@ -1,15 +1,12 @@
 package grey_strategy
 
 import (
-	"fmt"
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/drivers/discovery/static"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/apinto/upstream/balance"
 	"github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"github.com/eolinker/eosc/log"
 	"strings"
 )
 
@@ -19,15 +16,41 @@ var (
 		Health:   nil,
 	})
 )
+var (
+	_ IGreyHandler = (*GreyHandler)(nil)
+)
 
+type GreyMatch interface {
+	Match(ctx eocontext.EoContext) bool
+}
+type IGreyHandler interface {
+	strategy.IFilter
+	GreyMatch
+	DoGrey(ctx eocontext.EoContext)
+	IsStop() bool
+	Priority() int
+}
 type GreyHandler struct {
-	name     string
-	filter   strategy.IFilter
+	name string
+	strategy.IFilter
 	priority int
 	stop     bool
 	GreyMatch
 	app            discovery.IApp
 	balanceHandler eocontext.BalanceHandler
+}
+
+func (g *GreyHandler) IsStop() bool {
+	return g.stop
+}
+
+func (g *GreyHandler) Priority() int {
+	return g.priority
+}
+
+func (g *GreyHandler) DoGrey(ctx eocontext.EoContext) {
+	ctx.SetApp(NewGreyApp(ctx.GetApp(), g.app))
+	ctx.SetBalance(g.balanceHandler)
 }
 
 func (g *GreyHandler) Close() {
@@ -38,105 +61,6 @@ func (g *GreyHandler) Close() {
 	g.balanceHandler = nil
 }
 
-type GreyMatch interface {
-	Match(ctx eocontext.EoContext) bool
-}
-
-type greyFlow struct {
-	flowRobin *Robin
-}
-
-type ruleGreyMatch struct {
-	ruleFilter strategy.IFilter
-}
-
-// Match 按流量计算
-func (r *greyFlow) Match(ctx eocontext.EoContext) bool {
-	flow := r.flowRobin.Select()
-	return flow.GetId() == 1
-}
-
-// Match 高级匹配
-func (r *ruleGreyMatch) Match(ctx eocontext.EoContext) bool {
-	return r.ruleFilter.Check(ctx)
-}
-
-type keepSessionGreyFlow struct {
-	GreyMatch
-}
-
-// Match 保持会话连接
-func (k *keepSessionGreyFlow) Match(ctx eocontext.EoContext) bool {
-
-	httpCtx, err := http_service.Assert(ctx)
-	if err != nil {
-		log.Error("keepSessionGreyFlow err=%s", err.Error())
-		return false
-	}
-
-	session := httpCtx.Request().Header().GetCookie("session")
-	if len(session) == 0 {
-		return k.GreyMatch.Match(ctx)
-	}
-
-	cookieKey := fmt.Sprintf(cookieName, session)
-
-	cookie := httpCtx.Request().Header().GetCookie(cookieKey)
-	if cookie == grey {
-		return true
-	} else if cookie == normal {
-		return false
-	}
-
-	if k.GreyMatch.Match(ctx) {
-		httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%v", cookieKey, grey))
-		return true
-	} else {
-		httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%v", cookieKey, normal))
-		return false
-	}
-}
-
-type matchingHandler struct {
-	Type    string
-	name    string
-	value   string
-	checker checker.Checker
-}
-
-type matchingHandlerFilters []*matchingHandler
-
-func (m matchingHandlerFilters) Check(ctx eocontext.EoContext) bool {
-	for _, handler := range m {
-		if !handler.Check(ctx) {
-			return false
-		}
-	}
-	return true
-}
-
-func (m *matchingHandler) Check(ctx eocontext.EoContext) bool {
-	httpCtx, err := http_service.Assert(ctx)
-	if err != nil {
-		return false
-	}
-
-	value := ""
-	request := httpCtx.Request()
-	switch m.Type {
-	case "header":
-		value = request.Header().GetHeader(m.name)
-	case "query":
-		value = request.URI().GetQuery(m.name)
-	case "cookie":
-		value = request.Header().GetCookie(m.name)
-	default:
-		return false
-	}
-
-	return m.checker.Check(value, true)
-}
-
 func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 	filter, err := strategy.ParseFilter(conf.Filters)
 	if err != nil {
@@ -145,7 +69,7 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 
 	handler := &GreyHandler{
 		name:     conf.Name,
-		filter:   filter,
+		IFilter:  filter,
 		priority: conf.Priority,
 		stop:     conf.Stop,
 	}

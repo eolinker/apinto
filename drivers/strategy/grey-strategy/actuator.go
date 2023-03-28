@@ -29,8 +29,8 @@ type ActuatorSet interface {
 
 type tActuator struct {
 	lock     sync.RWMutex
-	all      map[string]*GreyHandler
-	handlers []*GreyHandler
+	all      map[string]IGreyHandler
+	handlers []IGreyHandler
 }
 
 func (a *tActuator) Destroy() {
@@ -52,9 +52,9 @@ func (a *tActuator) Del(id string) {
 
 func (a *tActuator) rebuild() {
 
-	handlers := make([]*GreyHandler, 0, len(a.all))
+	handlers := make([]IGreyHandler, 0, len(a.all))
 	for _, h := range a.all {
-		if !h.stop {
+		if !h.IsStop() {
 			handlers = append(handlers, h)
 		}
 	}
@@ -65,7 +65,7 @@ func (a *tActuator) rebuild() {
 }
 func newtActuator() *tActuator {
 	return &tActuator{
-		all: make(map[string]*GreyHandler),
+		all: make(map[string]IGreyHandler),
 	}
 }
 
@@ -85,10 +85,9 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 
 	for _, handler := range handlers {
 		//check筛选条件
-		if handler.filter.Check(httpCtx) {
+		if handler.Check(httpCtx) {
 			if handler.Match(ctx) { //是否触发灰度
-				ctx.SetApp(NewGreyApp(ctx.GetApp(), handler.app))
-				ctx.SetBalance(handler.balanceHandler)
+				handler.DoGrey(ctx)
 				break
 			}
 		}
@@ -117,7 +116,7 @@ func NewGreyApp(old eocontext.EoApp, grey discovery.IApp) eocontext.EoApp {
 	return &GreyApp{org: old, IApp: grey}
 }
 
-type handlerListSort []*GreyHandler
+type handlerListSort []IGreyHandler
 
 func (hs handlerListSort) Len() int {
 	return len(hs)
@@ -125,24 +124,11 @@ func (hs handlerListSort) Len() int {
 
 func (hs handlerListSort) Less(i, j int) bool {
 
-	return hs[i].priority < hs[j].priority
+	return hs[i].Priority() < hs[j].Priority()
 }
 
 func (hs handlerListSort) Swap(i, j int) {
 	hs[i], hs[j] = hs[j], hs[i]
-}
-
-type GreyBalanceHandler struct {
-	greyHandler *GreyHandler
-}
-
-func newGreyBalanceHandler(greyHandler *GreyHandler) *GreyBalanceHandler {
-	return &GreyBalanceHandler{greyHandler: greyHandler}
-}
-
-func (g *GreyBalanceHandler) Select(ctx eocontext.EoContext) (eocontext.INode, error) {
-	//todo
-	return nil, nil
 }
 
 func DoStrategy(ctx eocontext.EoContext, next eocontext.IChain) error {

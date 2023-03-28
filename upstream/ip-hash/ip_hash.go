@@ -47,6 +47,7 @@ func (r *ipHash) Next(org eoscContext.EoContext) (eoscContext.INode, int, error)
 	if err != nil {
 		return nil, 0, err
 	}
+
 	readIp := httpContext.Request().ReadIP()
 	nodes := org.GetApp().Nodes()
 	size := len(nodes)

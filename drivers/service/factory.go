@@ -3,9 +3,10 @@ package service
 import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/drivers/discovery/static"
-	ip_hash "github.com/eolinker/apinto/upstream/ip-hash"
-	round_robin "github.com/eolinker/apinto/upstream/round-robin"
+	iphash "github.com/eolinker/apinto/upstream/ip-hash"
+	roundrobin "github.com/eolinker/apinto/upstream/round-robin"
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/log"
 )
 
 var DriverName = "service_http"
@@ -18,12 +19,17 @@ var (
 
 // Register 注册service_http驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
-	register.RegisterExtenderDriver(DriverName, NewFactory())
+	err := register.RegisterExtenderDriver(DriverName, NewFactory())
+	if err != nil {
+		log.Errorf("register %s %s", DriverName, err)
+		return
+
+	}
 }
 
 // NewFactory 创建service_http驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
-	round_robin.Register()
-	ip_hash.Register()
+	roundrobin.Register()
+	iphash.Register()
 	return drivers.NewFactory[Config](Create)
 }

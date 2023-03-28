@@ -31,7 +31,6 @@ type Service struct {
 	lastConfig   *Config
 	passHost     eocontext.PassHostMod
 	upstreamHost string
-	upstreamID   string
 }
 
 func (s *Service) PassHost() (eocontext.PassHostMod, string) {
