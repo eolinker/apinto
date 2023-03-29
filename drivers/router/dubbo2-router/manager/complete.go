@@ -2,10 +2,11 @@ package manager
 
 import (
 	"errors"
+	"time"
+
 	"github.com/eolinker/eosc/eocontext"
 	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
 	"github.com/eolinker/eosc/log"
-	"time"
 )
 
 var (
@@ -34,10 +35,9 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 	}()
 
 	balance := ctx.GetBalance()
-	app := ctx.GetApp()
 	var lastErr error
 
-	timeOut := app.TimeOut()
+	timeOut := balance.TimeOut()
 	for index := 0; index <= h.retry; index++ {
 
 		if h.timeOut > 0 && time.Now().Sub(proxyTime) > h.timeOut {

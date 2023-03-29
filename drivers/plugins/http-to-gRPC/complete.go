@@ -5,11 +5,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/eolinker/apinto/entries/ctx_key"
-	"github.com/eolinker/apinto/entries/router"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/eolinker/apinto/entries/ctx_key"
+	"github.com/eolinker/apinto/entries/router"
 
 	grpc_descriptor "github.com/eolinker/apinto/grpc-descriptor"
 
@@ -103,11 +104,10 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	in := strings.NewReader(string(body))
 
 	balance := ctx.GetBalance()
-	app := ctx.GetApp()
 
 	md := httpHeaderToMD(ctx.Proxy().Header().Headers(), h.headers)
 	newCtx := ctx.Context()
-	opts := genDialOpts(app.Scheme() == "https", h.authority)
+	opts := genDialOpts(balance.Scheme() == "https", h.authority)
 
 	symbol := getSymbol(ctx.Proxy().URI().Path(), h.service, h.method)
 	var lastErr error

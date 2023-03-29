@@ -3,9 +3,10 @@ package http_context
 import (
 	"context"
 	"fmt"
-	"github.com/valyala/fasthttp"
 	"net"
 	"time"
+
+	"github.com/valyala/fasthttp"
 
 	"github.com/eolinker/eosc/utils/config"
 
@@ -56,14 +57,6 @@ func (ctx *cloneContext) LocalAddr() net.Addr {
 
 func (ctx *cloneContext) LocalPort() int {
 	return ctx.org.LocalPort()
-}
-
-func (ctx *cloneContext) GetApp() eoscContext.EoApp {
-	return ctx.app
-}
-
-func (ctx *cloneContext) SetApp(app eoscContext.EoApp) {
-	ctx.app = app
 }
 
 func (ctx *cloneContext) GetBalance() eoscContext.BalanceHandler {

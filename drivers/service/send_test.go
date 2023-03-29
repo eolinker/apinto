@@ -2,12 +2,13 @@ package service
 
 import (
 	"context"
-	"github.com/eolinker/apinto/discovery"
-	"github.com/eolinker/apinto/upstream/balance"
-	"github.com/eolinker/eosc/eocontext"
 	"net"
 	"testing"
 	"time"
+
+	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/apinto/upstream/balance"
+	"github.com/eolinker/eosc/eocontext"
 )
 
 func TestSend(t *testing.T) {
@@ -23,7 +24,7 @@ func TestSend(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	balanceHandler, err := balanceFactory.Create()
+	balanceHandler, err := balanceFactory.Create("", 0)
 	if err != nil {
 		t.Error(err)
 		return

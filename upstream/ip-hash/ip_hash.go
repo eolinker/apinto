@@ -2,9 +2,11 @@ package ip_hash
 
 import (
 	"errors"
+	"hash/crc32"
+	"time"
+
 	"github.com/eolinker/apinto/upstream/balance"
 	eoscContext "github.com/eolinker/eosc/eocontext"
-	"hash/crc32"
 )
 
 const (
@@ -12,7 +14,9 @@ const (
 )
 
 var (
-	errNoValidNode = errors.New("no valid node")
+	errNoValidNode                            = errors.New("no valid node")
+	_              eoscContext.BalanceHandler = (*ipHash)(nil)
+	_              balance.IBalanceFactory    = (*ipHashFactory)(nil)
 )
 
 // Register 注册ip-hash算法
@@ -28,12 +32,23 @@ type ipHashFactory struct {
 }
 
 // Create 创建一个ip-hash算法处理器
-func (r *ipHashFactory) Create() (eoscContext.BalanceHandler, error) {
-	rr := newIpHash()
+func (r *ipHashFactory) Create(app eoscContext.EoApp, scheme string, timeout time.Duration) (eoscContext.BalanceHandler, error) {
+	rr := newIpHash(app, scheme, timeout)
 	return rr, nil
 }
 
 type ipHash struct {
+	eoscContext.EoApp
+	scheme  string
+	timeout time.Duration
+}
+
+func (r *ipHash) Scheme() string {
+	return r.scheme
+}
+
+func (r *ipHash) TimeOut() time.Duration {
+	return r.timeout
 }
 
 func (r *ipHash) Select(ctx eoscContext.EoContext) (eoscContext.INode, int, error) {
@@ -44,7 +59,7 @@ func (r *ipHash) Select(ctx eoscContext.EoContext) (eoscContext.INode, int, erro
 func (r *ipHash) Next(org eoscContext.EoContext) (eoscContext.INode, int, error) {
 
 	readIp := org.RealIP()
-	nodes := org.GetApp().Nodes()
+	nodes := r.Nodes()
 	size := len(nodes)
 	if size < 1 {
 		return nil, 0, errNoValidNode
@@ -53,8 +68,8 @@ func (r *ipHash) Next(org eoscContext.EoContext) (eoscContext.INode, int, error)
 	return nodes[index], index, nil
 }
 
-func newIpHash() *ipHash {
-	r := &ipHash{}
+func newIpHash(app eoscContext.EoApp, scheme string, timeout time.Duration) *ipHash {
+	r := &ipHash{EoApp: app, scheme: scheme, timeout: timeout}
 	return r
 }
 

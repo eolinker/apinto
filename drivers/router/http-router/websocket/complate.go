@@ -33,9 +33,7 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 	}
 
 	balance := ctx.GetBalance()
-	app := ctx.GetApp()
-
-	scheme := app.Scheme()
+	scheme := balance.Scheme()
 	switch strings.ToLower(scheme) {
 	case "http":
 		scheme = "ws"
@@ -47,7 +45,7 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 	}
 
 	proxyTime := time.Now()
-	timeOut := app.TimeOut()
+	timeOut := balance.TimeOut()
 	var lastErr error
 	var conn *websocket.Conn
 	var resp *http.Response

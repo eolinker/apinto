@@ -2,14 +2,16 @@ package proxy_mirror
 
 import (
 	"errors"
-	"github.com/eolinker/apinto/discovery"
-	"github.com/eolinker/eosc/eocontext"
 	"strings"
 	"time"
+
+	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/eosc/eocontext"
 )
 
 var (
-	errNoValidNode = errors.New("no valid node")
+	errNoValidNode                          = errors.New("no valid node")
+	_              eocontext.BalanceHandler = (*mirrorService)(nil)
 )
 
 type mirrorService struct {
@@ -18,6 +20,15 @@ type mirrorService struct {
 	passHost eocontext.PassHostMod
 	host     string
 	timeout  time.Duration
+}
+
+func (m *mirrorService) Select(ctx eocontext.EoContext) (eocontext.INode, int, error) {
+	for i, node := range m.app.Nodes() {
+		if node.Status() != eocontext.Down {
+			return node, i, nil
+		}
+	}
+	return nil, 0, errNoValidNode
 }
 
 func (m *mirrorService) stop() {
@@ -66,4 +77,3 @@ func (m *mirrorService) TimeOut() time.Duration {
 func (m *mirrorService) PassHost() (eocontext.PassHostMod, string) {
 	return m.passHost, m.host
 }
-

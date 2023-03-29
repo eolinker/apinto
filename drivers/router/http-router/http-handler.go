@@ -1,9 +1,10 @@
 package http_router
 
 import (
-	"github.com/eolinker/apinto/entries/ctx_key"
 	"net/http"
 	"time"
+
+	"github.com/eolinker/apinto/entries/ctx_key"
 
 	http_service "github.com/eolinker/apinto/node/http-context"
 
@@ -71,7 +72,6 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 	ctx.SetLabel("ip", httpContext.Request().RealIp())
 
 	ctx.SetCompleteHandler(h.completeHandler)
-	ctx.SetApp(h.service)
 	ctx.SetBalance(h.service)
 	ctx.SetUpstreamHostHandler(h.service)
 	ctx.SetFinish(h.finisher)

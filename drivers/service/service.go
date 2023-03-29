@@ -2,10 +2,11 @@ package service
 
 import (
 	"fmt"
-	session_keep "github.com/eolinker/apinto/upstream/session-keep"
 	"reflect"
 	"strings"
 	"time"
+
+	session_keep "github.com/eolinker/apinto/upstream/session-keep"
 
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/upstream/balance"
@@ -57,8 +58,7 @@ func (s *Service) TimeOut() time.Duration {
 }
 
 // Reset 重置服务实例的配置
-func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-
+func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
 	data, ok := conf.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
@@ -67,7 +67,6 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 	if reflect.DeepEqual(data, s.lastConfig) {
 		return nil
 	}
-	s.lastConfig = data
 
 	log.Debug("serviceWorker:", data.String())
 	if data.Discovery == "" && len(data.Nodes) == 0 {
@@ -76,19 +75,7 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 	if data.Discovery != "" && data.Service == "" {
 		return ErrorInvalidDiscovery
 	}
-	balanceFactory, err := balance.GetFactory(data.Balance)
-	if err != nil {
-		return err
-	}
 
-	balanceHandler, err := balanceFactory.Create()
-	if err != nil {
-
-		return err
-	}
-	if data.KeepSession {
-		balanceHandler = session_keep.NewSession(balanceHandler)
-	}
 	var apps discovery.IApp
 	if data.Discovery != "" {
 		discoveryWorker, has := workers[data.Discovery]
@@ -115,13 +102,28 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 
 	s.scheme = data.Scheme
 	s.timeout = time.Duration(data.Timeout) * time.Millisecond
+	balanceHandler := s.BalanceHandler
+	if s.lastConfig == nil || s.lastConfig.Balance != data.Balance || s.lastConfig.KeepSession != data.KeepSession {
+		balanceFactory, err := balance.GetFactory(data.Balance)
+		if err != nil {
+			return err
+		}
 
+		handler, err := balanceFactory.Create(s, s.scheme, s.timeout)
+		if err != nil {
+			return err
+		}
+		if data.KeepSession {
+			handler = session_keep.NewSession(handler)
+		}
+		balanceHandler = handler
+	}
 	s.BalanceHandler = balanceHandler
 	s.passHost = parsePassHost(data.PassHost)
 	s.scheme = data.Scheme
 
 	s.upstreamHost = data.UpstreamHost
-
+	s.lastConfig = data
 	if old != nil {
 		old.Close()
 	}
@@ -139,4 +141,16 @@ func parsePassHost(passHost string) eocontext.PassHostMod {
 		return eocontext.ReWriteHost
 	}
 	return eocontext.PassHost
+}
+
+func compareArray[T comparable](a, b []T) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

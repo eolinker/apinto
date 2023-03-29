@@ -1,13 +1,14 @@
 package proxy_mirror
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
-	"math/rand"
-	"time"
 )
 
 var _ eocontext.IFilter = (*proxyMirror)(nil)
@@ -75,12 +76,19 @@ func (p *proxyMirror) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (p *proxyMirror) Stop() error {
-	p.service.stop()
+	if p.service != nil {
+		p.service.stop()
+	}
 	p.service = nil
 	return nil
 }
 
 func (p *proxyMirror) Destroy() {
+	if p.service != nil {
+		p.service.stop()
+	}
+	p.service = nil
+	return
 }
 
 func (p *proxyMirror) CheckSkill(skill string) bool {

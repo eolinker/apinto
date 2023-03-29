@@ -3,11 +3,12 @@ package http_complete
 import (
 	"errors"
 
-	"github.com/eolinker/apinto/entries/ctx_key"
-	"github.com/eolinker/apinto/entries/router"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/eolinker/apinto/entries/ctx_key"
+	"github.com/eolinker/apinto/entries/router"
 
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -44,9 +45,8 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	}()
 
 	balance := ctx.GetBalance()
-	app := ctx.GetApp()
-	var lastErr error
-	scheme := app.Scheme()
+
+	scheme := balance.Scheme()
 
 	switch strings.ToLower(scheme) {
 	case "", "tcp":
@@ -55,7 +55,7 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 		scheme = "https"
 
 	}
-	timeOut := app.TimeOut()
+	timeOut := balance.TimeOut()
 
 	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
 	retry, ok := retryValue.(int)
@@ -68,7 +68,7 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	if !ok {
 		timeout = router.DefaultTimeout
 	}
-
+	var lastErr error
 	for index := 0; index <= retry; index++ {
 
 		if timeout > 0 && time.Since(proxyTime) > timeout {

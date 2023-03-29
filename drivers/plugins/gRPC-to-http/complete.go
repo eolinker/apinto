@@ -3,11 +3,12 @@ package grpc_to_http
 import (
 	"errors"
 	"fmt"
-	"github.com/eolinker/apinto/entries/ctx_key"
-	"github.com/eolinker/apinto/entries/router"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/eolinker/apinto/entries/ctx_key"
+	"github.com/eolinker/apinto/entries/router"
 
 	grpc_descriptor "github.com/eolinker/apinto/grpc-descriptor"
 
@@ -85,11 +86,10 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
+	balance := ctx.GetBalance()
 
-	app := ctx.GetApp()
-
-	scheme := app.Scheme()
-	switch strings.ToLower(app.Scheme()) {
+	scheme := balance.Scheme()
+	switch strings.ToLower(scheme) {
 	case "", "tcp":
 		scheme = "http"
 	case "tsl", "ssl", "https":
@@ -103,8 +103,8 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	request := newRequest(ctx.Proxy().Headers(), body, h.headers, path, h.rawQuery)
 	defer fasthttp.ReleaseRequest(request)
 	var lastErr error
-	timeOut := app.TimeOut()
-	balance := ctx.GetBalance()
+	timeOut := balance.TimeOut()
+
 	for index := 0; index <= retry; index++ {
 
 		if timeout > 0 && time.Since(proxyTime) > timeout {

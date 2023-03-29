@@ -1,13 +1,16 @@
 package grey_strategy
 
 import (
-	"github.com/eolinker/apinto/checker"
+	"strings"
+	"time"
+
 	"github.com/eolinker/apinto/discovery"
+
+	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/drivers/discovery/static"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/apinto/upstream/balance"
 	"github.com/eolinker/eosc/eocontext"
-	"strings"
 )
 
 var (
@@ -40,6 +43,18 @@ type GreyHandler struct {
 	balanceHandler eocontext.BalanceHandler
 }
 
+func (g *GreyHandler) Nodes() []eocontext.INode {
+	return g.app.Nodes()
+}
+
+func (g *GreyHandler) Scheme() string {
+	return "undefined"
+}
+
+func (g *GreyHandler) TimeOut() time.Duration {
+	return 0
+}
+
 func (g *GreyHandler) IsStop() bool {
 	return g.stop
 }
@@ -49,8 +64,7 @@ func (g *GreyHandler) Priority() int {
 }
 
 func (g *GreyHandler) DoGrey(ctx eocontext.EoContext) {
-	ctx.SetApp(NewGreyApp(ctx.GetApp(), g.app))
-	ctx.SetBalance(g.balanceHandler)
+	ctx.SetBalance(NewGreyApp(ctx.GetBalance(), g.balanceHandler))
 }
 
 func (g *GreyHandler) Close() {
@@ -77,10 +91,7 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 	if err != nil {
 		return nil, err
 	}
-	balanceHandler, err := balanceFactory.Create()
-	if err != nil {
-		return nil, err
-	}
+
 	if conf.Rule.Distribution == percent {
 		greyFlowHandler := &flowHandler{
 			id:     1,
@@ -125,7 +136,12 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	handler.app = app
+	balanceHandler, err := balanceFactory.Create(handler, "", 0)
+	if err != nil {
+		return nil, err
+	}
 	handler.balanceHandler = balanceHandler
 	return handler, nil
 }

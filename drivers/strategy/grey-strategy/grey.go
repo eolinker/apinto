@@ -2,9 +2,10 @@ package grey_strategy
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
 var (
@@ -21,6 +22,11 @@ type Grey struct {
 
 func (l *Grey) Destroy() error {
 	controller.Del(l.Id())
+	if l.handler != nil {
+		l.handler.Close()
+	}
+	l.handler = nil
+
 	return nil
 }
 

@@ -60,8 +60,10 @@ type Context struct {
 }
 
 func (c *Context) RealIP() string {
-	//TODO implement me
-	panic("implement me")
+	if c.request != nil {
+		return c.request.RealIP()
+	}
+	return ""
 }
 
 func (c *Context) EnableTls(b bool) {
@@ -156,14 +158,6 @@ func (c *Context) GetFinish() eocontext.FinishHandler {
 
 func (c *Context) SetFinish(handler eocontext.FinishHandler) {
 	c.finishHandler = handler
-}
-
-func (c *Context) GetApp() eocontext.EoApp {
-	return c.app
-}
-
-func (c *Context) SetApp(app eocontext.EoApp) {
-	c.app = app
 }
 
 func (c *Context) GetBalance() eocontext.BalanceHandler {

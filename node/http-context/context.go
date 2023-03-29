@@ -3,9 +3,10 @@ package http_context
 import (
 	"context"
 	"fmt"
-	"github.com/eolinker/apinto/entries/ctx_key"
 	"net"
 	"time"
+
+	"github.com/eolinker/apinto/entries/ctx_key"
 
 	"github.com/eolinker/eosc/utils/config"
 
@@ -59,14 +60,6 @@ func (ctx *HttpContext) LocalAddr() net.Addr {
 
 func (ctx *HttpContext) LocalPort() int {
 	return ctx.port
-}
-
-func (ctx *HttpContext) GetApp() eoscContext.EoApp {
-	return ctx.app
-}
-
-func (ctx *HttpContext) SetApp(app eoscContext.EoApp) {
-	ctx.app = app
 }
 
 func (ctx *HttpContext) GetBalance() eoscContext.BalanceHandler {

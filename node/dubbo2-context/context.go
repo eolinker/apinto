@@ -2,13 +2,19 @@ package dubbo2_context
 
 import (
 	"context"
+	"fmt"
+	"net"
+	"net/netip"
+	"reflect"
+	"strings"
+	"time"
+
 	"dubbo.apache.org/dubbo-go/v3/common"
 	"dubbo.apache.org/dubbo-go/v3/common/constant"
 	"dubbo.apache.org/dubbo-go/v3/protocol"
 	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo"
 	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
-	"fmt"
 	hessian "github.com/apache/dubbo-go-hessian2"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc/eocontext"
@@ -17,11 +23,6 @@ import (
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
 	"github.com/google/uuid"
-	"net"
-	"net/netip"
-	"reflect"
-	"strings"
-	"time"
 )
 
 func NewDubboParamBody(typesList []string, valuesList []hessian.Object) *dubbo2_context.Dubbo2ParamBody {
@@ -258,14 +259,6 @@ func (d *DubboContext) GetFinish() eocontext.FinishHandler {
 
 func (d *DubboContext) SetFinish(handler eocontext.FinishHandler) {
 	d.finishHandler = handler
-}
-
-func (d *DubboContext) GetApp() eocontext.EoApp {
-	return d.app
-}
-
-func (d *DubboContext) SetApp(app eocontext.EoApp) {
-	d.app = app
 }
 
 func (d *DubboContext) GetBalance() eocontext.BalanceHandler {

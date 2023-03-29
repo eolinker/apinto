@@ -1,13 +1,13 @@
 package grey_strategy
 
 import (
-	"github.com/eolinker/apinto/discovery"
-	"github.com/eolinker/apinto/strategy"
-	"github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/eolinker/apinto/strategy"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 var (
@@ -100,20 +100,21 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 }
 
 type GreyApp struct {
-	org eocontext.EoApp
-	discovery.IApp
+	scheme  string
+	timeout time.Duration
+	eocontext.BalanceHandler
 }
 
 func (g *GreyApp) Scheme() string {
-	return g.org.Scheme()
+	return g.scheme
 }
 
 func (g *GreyApp) TimeOut() time.Duration {
-	return g.org.TimeOut()
+	return g.timeout
 }
 
-func NewGreyApp(old eocontext.EoApp, grey discovery.IApp) eocontext.EoApp {
-	return &GreyApp{org: old, IApp: grey}
+func NewGreyApp(old eocontext.BalanceHandler, grey eocontext.BalanceHandler) eocontext.BalanceHandler {
+	return &GreyApp{scheme: old.Scheme(), timeout: old.TimeOut(), BalanceHandler: grey}
 }
 
 type handlerListSort []IGreyHandler

@@ -2,11 +2,12 @@ package session_keep
 
 import (
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/google/uuid"
-	"net/http"
-	"strconv"
 )
 
 const SessionName = "Apinto-Session"
@@ -19,22 +20,22 @@ var (
 )
 
 type Session struct {
-	base eocontext.BalanceHandler
+	eocontext.BalanceHandler
 }
 
-func NewSession(base eocontext.BalanceHandler) *Session {
-	return &Session{base: base}
+func NewSession(base eocontext.BalanceHandler) eocontext.BalanceHandler {
+	return &Session{BalanceHandler: base}
 }
 
 func (s *Session) Select(ctx eocontext.EoContext) (eocontext.INode, int, error) {
 
 	httpContext, err := http_context.Assert(ctx)
 	if err != nil {
-		return s.base.Select(ctx)
+		return s.BalanceHandler.Select(ctx)
 	}
 	value := httpContext.Value(balanceFirstSelectKey)
 	if value != nil {
-		return s.base.Select(ctx)
+		return s.BalanceHandler.Select(ctx)
 	}
 	httpContext.WithValue(balanceFirstSelectKey, true)
 
@@ -43,7 +44,7 @@ func (s *Session) Select(ctx eocontext.EoContext) (eocontext.INode, int, error) 
 		index := httpContext.Request().Header().GetCookie(fmt.Sprintf("Apinto-Upstream-%s", session))
 		if index != "" {
 			indexV, _ := strconv.Atoi(index)
-			app := httpContext.GetApp()
+			app := httpContext.GetBalance()
 			nodes := app.Nodes()
 			if indexV < len(nodes) && nodes[indexV].Status() == eocontext.Running {
 				return nodes[indexV], indexV, nil
@@ -51,7 +52,7 @@ func (s *Session) Select(ctx eocontext.EoContext) (eocontext.INode, int, error) 
 		}
 	}
 
-	node, i, err := s.base.Select(httpContext)
+	node, i, err := s.BalanceHandler.Select(httpContext)
 	if err != nil {
 		return nil, 0, err
 	}

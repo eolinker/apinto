@@ -1,18 +1,19 @@
 package dubbo2_to_http
 
 import (
-	"dubbo.apache.org/dubbo-go/v3/protocol"
-	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
+	"dubbo.apache.org/dubbo-go/v3/protocol"
+	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
 	hessian "github.com/apache/dubbo-go-hessian2"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc/eocontext"
 	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
 	"github.com/eolinker/eosc/log"
-	"strings"
-	"time"
 )
 
 var (
@@ -124,10 +125,7 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 	}
 
 	balance := ctx.GetBalance()
-	app := ctx.GetApp()
-	var lastErr error
-
-	scheme := app.Scheme()
+	scheme := balance.Scheme()
 
 	switch strings.ToLower(scheme) {
 	case "", "tcp":
@@ -139,7 +137,9 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 
 	httpClient := NewClient(c.method, reqBody, c.path)
 
-	timeOut := app.TimeOut()
+	timeOut := balance.TimeOut()
+
+	var lastErr error
 	for index := 0; index <= c.retry; index++ {
 
 		if c.timeOut > 0 && time.Since(proxyTime) > c.timeOut {

@@ -3,6 +3,7 @@ package balance
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
@@ -17,7 +18,7 @@ var (
 
 // IBalanceFactory 实现了负载均衡算法工厂
 type IBalanceFactory interface {
-	Create() (eoscContext.BalanceHandler, error)
+	Create(app eoscContext.EoApp, scheme string, timeout time.Duration) (eoscContext.BalanceHandler, error)
 }
 
 // IBalanceFactoryRegister 实现了负载均衡算法工厂管理器
