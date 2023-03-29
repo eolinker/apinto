@@ -3,7 +3,7 @@ package nacos
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -79,7 +79,7 @@ func (c *client) GetInstanceList(addr string, serviceName string) (*Instance, er
 		return nil, err
 	}
 	// 解析响应数据
-	rawResponseData, err := ioutil.ReadAll(response.Body)
+	rawResponseData, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package consul
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/eolinker/apinto/discovery"
@@ -63,8 +64,11 @@ func (c *consulClients) getNodes(service string) ([]discovery.NodeInfo, error) {
 			nodeIDSet[n.id] = struct{}{}
 		}
 	}
+	if len(nodeList) == 0 {
+		return nil, discovery.ErrDiscoveryDown
+	}
 
-	return nodeList, discovery.ErrDiscoveryDown
+	return nodeList, nil
 }
 
 // getNodesFromClient 从连接的客户端返回健康的节点信息
@@ -78,7 +82,7 @@ func getNodesFromClient(client *api.Client, service string) []*consulNodeInfo {
 	nodes := make([]*consulNodeInfo, 0, len(serviceEntryArr))
 	for _, serviceEntry := range serviceEntryArr {
 		nodes = append(nodes, &consulNodeInfo{
-			id: serviceEntry.Service.ID,
+			id: fmt.Sprintf("%s:%s", serviceEntry.Service.Address, serviceEntry.Service.Port),
 			nodeInfo: discovery.NodeInfo{
 				Ip:     serviceEntry.Service.Address,
 				Port:   serviceEntry.Service.Port,
