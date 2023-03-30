@@ -7,7 +7,6 @@ import (
 
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
-	"github.com/google/uuid"
 )
 
 const SessionName = "Apinto-Session"
@@ -35,6 +34,7 @@ func (s *Session) Select(ctx eocontext.EoContext) (eocontext.INode, int, error) 
 	}
 	value := httpContext.Value(balanceFirstSelectKey)
 	if value != nil {
+		// 请求重试，重新选节点
 		return s.BalanceHandler.Select(ctx)
 	}
 	httpContext.WithValue(balanceFirstSelectKey, true)
@@ -58,7 +58,7 @@ func (s *Session) Select(ctx eocontext.EoContext) (eocontext.INode, int, error) 
 	}
 
 	if session == "" {
-		session = uuid.New().String()
+		session = ctx.RequestId()
 		cookieSession := http.Cookie{Name: SessionName, Value: session}
 		httpContext.Response().AddHeader("Set-Cookie", cookieSession.String())
 	}

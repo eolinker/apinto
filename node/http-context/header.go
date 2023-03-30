@@ -2,9 +2,10 @@ package http_context
 
 import (
 	"bytes"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"net/http"
 	"strings"
+
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
 	"github.com/valyala/fasthttp"
 )
@@ -112,13 +113,16 @@ func (r *ResponseHeader) reset(header *fasthttp.ResponseHeader) {
 	r.header = header
 	r.cache = http.Header{}
 	r.actions = nil
-	r.refresh()
+	r.afterProxy = false
+	//r.refresh()
 }
 func (r *ResponseHeader) refresh() {
-
 	tmp := make(http.Header)
 	hs := strings.Split(r.header.String(), "\r\n")
 	for _, t := range hs {
+		if strings.TrimSpace(t) == "" {
+			continue
+		}
 		vs := strings.Split(t, ":")
 		if len(vs) < 2 {
 			if vs[0] == "" {
@@ -138,8 +142,9 @@ func (r *ResponseHeader) refresh() {
 
 }
 func (r *ResponseHeader) Finish() {
-
-	r.reset(nil)
+	r.header = nil
+	r.cache = nil
+	r.actions = nil
 }
 
 func (r *ResponseHeader) GetHeader(name string) string {
