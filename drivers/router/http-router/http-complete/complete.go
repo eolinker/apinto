@@ -83,6 +83,7 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 		}
 		lastErr = ctx.SendTo(scheme, node, timeOut)
 		if lastErr == nil {
+
 			return nil
 		}
 		log.Error("http upstream send error: ", lastErr)

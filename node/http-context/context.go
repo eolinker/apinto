@@ -22,16 +22,16 @@ var _ http_service.IHttpContext = (*HttpContext)(nil)
 
 // HttpContext fasthttpRequestCtx
 type HttpContext struct {
-	fastHttpRequestCtx  *fasthttp.RequestCtx
-	proxyRequest        ProxyRequest
-	proxyRequests       []http_service.IProxy
-	requestID           string
-	response            Response
-	requestReader       RequestReader
-	ctx                 context.Context
-	completeHandler     eoscContext.CompleteHandler
-	finishHandler       eoscContext.FinishHandler
-	app                 eoscContext.EoApp
+	fastHttpRequestCtx *fasthttp.RequestCtx
+	proxyRequest       ProxyRequest
+	proxyRequests      []http_service.IProxy
+	requestID          string
+	response           Response
+	requestReader      RequestReader
+	ctx                context.Context
+	completeHandler    eoscContext.CompleteHandler
+	finishHandler      eoscContext.FinishHandler
+
 	balance             eoscContext.BalanceHandler
 	upstreamHostHandler eoscContext.UpstreamHostHandler
 	labels              map[string]string
@@ -138,6 +138,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	if ctx.response.responseError != nil {
 		agent.setStatusCode(504)
 	} else {
+		ctx.response.ResponseHeader.refresh()
 		agent.setStatusCode(ctx.fastHttpRequestCtx.Response.StatusCode())
 	}
 
@@ -257,7 +258,6 @@ func (ctx *HttpContext) FastFinish() {
 
 	ctx.port = 0
 	ctx.ctx = nil
-	ctx.app = nil
 	ctx.balance = nil
 	ctx.upstreamHostHandler = nil
 	ctx.finishHandler = nil
