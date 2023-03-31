@@ -51,7 +51,7 @@ func (t *ToHttp) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err e
 }
 
 func (t *ToHttp) Destroy() {
-	return
+
 }
 
 func (t *ToHttp) Start() error {

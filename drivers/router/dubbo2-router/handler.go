@@ -2,8 +2,9 @@ package dubbo2_router
 
 import (
 	"errors"
-	"github.com/eolinker/apinto/entries/ctx_key"
 	"time"
+
+	"github.com/eolinker/apinto/entries/ctx_key"
 
 	"github.com/eolinker/apinto/drivers/router/dubbo2-router/manager"
 	"github.com/eolinker/apinto/router"
@@ -54,7 +55,6 @@ func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
 
 	ctx.SetCompleteHandler(d.completeHandler)
 	ctx.SetFinish(d.finishHandler)
-	ctx.SetApp(d.service)
 	ctx.SetBalance(d.service)
 	ctx.SetUpstreamHostHandler(d.service)
 

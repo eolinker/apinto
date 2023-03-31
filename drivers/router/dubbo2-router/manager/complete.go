@@ -2,10 +2,11 @@ package manager
 
 import (
 	"errors"
+	"time"
+
 	"github.com/eolinker/eosc/eocontext"
 	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
 	"github.com/eolinker/eosc/log"
-	"time"
 )
 
 var (
@@ -34,25 +35,23 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 	}()
 
 	balance := ctx.GetBalance()
-	app := ctx.GetApp()
 	var lastErr error
 
-	timeOut := app.TimeOut()
+	timeOut := balance.TimeOut()
 	for index := 0; index <= h.retry; index++ {
 
 		if h.timeOut > 0 && time.Now().Sub(proxyTime) > h.timeOut {
 			ctx.Response().SetBody(Dubbo2ErrorResult(ErrorTimeoutComplete))
 			return ErrorTimeoutComplete
 		}
-		node, err := balance.Select(ctx)
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select error: ", err)
 			ctx.Response().SetBody(Dubbo2ErrorResult(errors.New("node is null")))
 			return err
 		}
 
-		log.Debug("node: ", node.Addr())
-		lastErr = ctx.Invoke(node.Addr(), timeOut)
+		lastErr = ctx.Invoke(node, timeOut)
 		if lastErr == nil {
 			return nil
 		}

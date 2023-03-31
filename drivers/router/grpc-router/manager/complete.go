@@ -35,8 +35,7 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 	proxyTime := time.Now()
 
 	balance := ctx.GetBalance()
-	app := ctx.GetApp()
-	if app.Scheme() == "https" {
+	if balance.Scheme() == "https" {
 		ctx.EnableTls(true)
 	}
 	defer func() {
@@ -44,19 +43,18 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 		ctx.Response().SetErr(lastErr)
 		ctx.SetLabel("handler", "proxy")
 	}()
-	timeOut := app.TimeOut()
+	timeOut := balance.TimeOut()
 	for index := 0; index <= h.retry; index++ {
 
 		if h.timeOut > 0 && time.Now().Sub(proxyTime) > h.timeOut {
 			return ErrorTimeoutComplete
 		}
-		node, err := balance.Select(ctx)
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			return err
 		}
 
-		log.Debug("node addr : ", node.Addr())
-		lastErr = ctx.Invoke(node.Addr(), timeOut)
+		lastErr = ctx.Invoke(node, timeOut)
 		if lastErr == nil {
 			return nil
 		}

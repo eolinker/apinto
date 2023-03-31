@@ -1,13 +1,14 @@
 package grpc_router
 
 import (
+	"time"
+
 	"github.com/eolinker/apinto/drivers/router/grpc-router/manager"
 	"github.com/eolinker/apinto/entries/ctx_key"
 	"github.com/eolinker/apinto/service"
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"time"
 
 	"github.com/eolinker/eosc/eocontext"
 )
@@ -52,7 +53,6 @@ func (h *grpcRouter) ServeHTTP(ctx eocontext.EoContext) {
 	ctx.SetLabel("ip", grpcContext.Request().RealIP())
 
 	ctx.SetCompleteHandler(h.completeHandler)
-	ctx.SetApp(h.service)
 	ctx.SetBalance(h.service)
 	ctx.SetUpstreamHostHandler(h.service)
 	ctx.SetFinish(h.finisher)

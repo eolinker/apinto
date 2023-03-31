@@ -3,10 +3,10 @@ package http_context
 import (
 	"context"
 	"fmt"
-	"github.com/eolinker/apinto/entries/ctx_key"
 	"net"
-	"strings"
 	"time"
+
+	"github.com/eolinker/apinto/entries/ctx_key"
 
 	"github.com/eolinker/eosc/utils/config"
 
@@ -22,20 +22,24 @@ var _ http_service.IHttpContext = (*HttpContext)(nil)
 
 // HttpContext fasthttpRequestCtx
 type HttpContext struct {
-	fastHttpRequestCtx  *fasthttp.RequestCtx
-	proxyRequest        ProxyRequest
-	proxyRequests       []http_service.IProxy
-	requestID           string
-	response            Response
-	requestReader       RequestReader
-	ctx                 context.Context
-	completeHandler     eoscContext.CompleteHandler
-	finishHandler       eoscContext.FinishHandler
-	app                 eoscContext.EoApp
+	fastHttpRequestCtx *fasthttp.RequestCtx
+	proxyRequest       ProxyRequest
+	proxyRequests      []http_service.IProxy
+	requestID          string
+	response           Response
+	requestReader      RequestReader
+	ctx                context.Context
+	completeHandler    eoscContext.CompleteHandler
+	finishHandler      eoscContext.FinishHandler
+
 	balance             eoscContext.BalanceHandler
 	upstreamHostHandler eoscContext.UpstreamHostHandler
 	labels              map[string]string
 	port                int
+}
+
+func (ctx *HttpContext) RealIP() string {
+	return ctx.Request().RealIp()
 }
 
 func (ctx *HttpContext) GetUpstreamHostHandler() eoscContext.UpstreamHostHandler {
@@ -56,14 +60,6 @@ func (ctx *HttpContext) LocalAddr() net.Addr {
 
 func (ctx *HttpContext) LocalPort() int {
 	return ctx.port
-}
-
-func (ctx *HttpContext) GetApp() eoscContext.EoApp {
-	return ctx.app
-}
-
-func (ctx *HttpContext) SetApp(app eoscContext.EoApp) {
-	ctx.app = app
 }
 
 func (ctx *HttpContext) GetBalance() eoscContext.BalanceHandler {
@@ -122,9 +118,9 @@ func (ctx *HttpContext) Response() http_service.IResponse {
 	return &ctx.response
 }
 
-func (ctx *HttpContext) SendTo(address string, timeout time.Duration) error {
+func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout time.Duration) error {
 
-	scheme, host := readAddress(address)
+	host := node.Addr()
 	request := ctx.proxyRequest.Request()
 
 	passHost, targetHost := ctx.GetUpstreamHostHandler().PassHost()
@@ -137,11 +133,12 @@ func (ctx *HttpContext) SendTo(address string, timeout time.Duration) error {
 	}
 
 	beginTime := time.Now()
-	ctx.response.responseError = fasthttp_client.ProxyTimeout(address, request, &ctx.fastHttpRequestCtx.Response, timeout)
+	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, node, request, &ctx.fastHttpRequestCtx.Response, timeout)
 	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, beginTime, time.Now())
 	if ctx.response.responseError != nil {
 		agent.setStatusCode(504)
 	} else {
+		ctx.response.ResponseHeader.refresh()
 		agent.setStatusCode(ctx.fastHttpRequestCtx.Response.StatusCode())
 	}
 
@@ -261,7 +258,6 @@ func (ctx *HttpContext) FastFinish() {
 
 	ctx.port = 0
 	ctx.ctx = nil
-	ctx.app = nil
 	ctx.balance = nil
 	ctx.upstreamHostHandler = nil
 	ctx.finishHandler = nil
@@ -274,16 +270,4 @@ func (ctx *HttpContext) FastFinish() {
 	ctx.fastHttpRequestCtx = nil
 	pool.Put(ctx)
 
-}
-
-func NotFound(ctx *HttpContext) {
-	ctx.fastHttpRequestCtx.SetStatusCode(404)
-	ctx.fastHttpRequestCtx.SetBody([]byte("404 Not Found"))
-}
-
-func readAddress(addr string) (scheme, host string) {
-	if i := strings.Index(addr, "://"); i > 0 {
-		return strings.ToLower(addr[:i]), addr[i+3:]
-	}
-	return "http", addr
 }

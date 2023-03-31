@@ -49,7 +49,7 @@ func (r *RequestReader) URI() http_service.IURIReader {
 	return &r.uri
 }
 
-func (r *RequestReader) ReadIP() string {
+func (r *RequestReader) RealIp() string {
 	if r.realIP == "" {
 		realIP := r.headers.GetHeader("x-real-ip")
 		if realIP == "" {

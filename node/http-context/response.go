@@ -44,8 +44,8 @@ func (r *Response) ClearError() {
 	r.responseError = nil
 }
 func (r *Response) Finish() error {
+	r.ResponseHeader.Finish()
 	r.Response = nil
-	r.ResponseHeader.reset(nil)
 	r.responseError = nil
 	r.proxyStatusCode = 0
 	return nil

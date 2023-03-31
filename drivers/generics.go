@@ -2,10 +2,11 @@ package drivers
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/utils/config"
 	"github.com/eolinker/eosc/utils/schema"
-	"reflect"
 )
 
 type Driver[T any] struct {

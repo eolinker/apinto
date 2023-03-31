@@ -2,7 +2,6 @@ package redis
 
 import (
 	"github.com/eolinker/apinto/drivers"
-	round_robin "github.com/eolinker/apinto/upstream/round-robin"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/utils/schema"
 	"reflect"
@@ -22,8 +21,7 @@ func Register(register eosc.IExtenderDriverRegister) {
 	register.RegisterExtenderDriver("redis", NewFactory())
 }
 
-//NewFactory 创建service_http驱动工厂
+// NewFactory 创建service_http驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
-	round_robin.Register()
 	return drivers.NewFactory[Config](Create)
 }

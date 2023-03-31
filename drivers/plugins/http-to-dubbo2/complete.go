@@ -107,7 +107,7 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 		if c.timeOut > 0 && time.Now().Sub(proxyTime) > c.timeOut {
 			return ErrorTimeoutComplete
 		}
-		node, err := balance.Select(ctx)
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select error: ", err)
 			ctx.Response().SetStatus(501, "501")
@@ -115,9 +115,8 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 			return err
 		}
 
-		log.Debug("node: ", node.Addr())
 		var result interface{}
-		result, lastErr = client.dial(ctx.Context(), node.Addr(), c.timeOut)
+		result, lastErr = client.dial(ctx.Context(), node, c.timeOut)
 		if lastErr == nil {
 			bytes, err := json.Marshal(result)
 			if err != nil {
