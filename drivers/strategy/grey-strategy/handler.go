@@ -4,6 +4,8 @@ import (
 	"strings"
 	"time"
 
+	session_keep "github.com/eolinker/apinto/upstream/session-keep"
+
 	"github.com/eolinker/apinto/discovery"
 
 	"github.com/eolinker/apinto/checker"
@@ -91,6 +93,15 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 	if err != nil {
 		return nil, err
 	}
+	app, err := discoveryAnonymous.GetApp(strings.Join(conf.Rule.Nodes, ";"))
+	if err != nil {
+		return nil, err
+	}
+
+	balanceHandler, err := balanceFactory.Create(app, "", 0)
+	if err != nil {
+		return nil, err
+	}
 
 	if conf.Rule.Distribution == percent {
 		greyFlowHandler := &flowHandler{
@@ -105,6 +116,7 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 		robin := NewRobin(greyFlowHandler, normalFlowHandler)
 		handler.GreyMatch = &greyFlow{flowRobin: robin}
 		if conf.Rule.KeepSession {
+			balanceHandler = session_keep.NewSession(balanceHandler)
 			//总权重10000
 			handler.GreyMatch = &keepSessionGreyFlow{
 				GreyMatch: handler.GreyMatch,
@@ -132,15 +144,10 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 
 		handler.GreyMatch = &ruleGreyMatch{ruleFilter: ruleFilter}
 	}
-	app, err := discoveryAnonymous.GetApp(strings.Join(conf.Rule.Nodes, ";"))
-	if err != nil {
-		return nil, err
-	}
-
+	old := handler.app
 	handler.app = app
-	balanceHandler, err := balanceFactory.Create(handler, "", 0)
-	if err != nil {
-		return nil, err
+	if old != nil {
+		old.Close()
 	}
 	handler.balanceHandler = balanceHandler
 	return handler, nil
