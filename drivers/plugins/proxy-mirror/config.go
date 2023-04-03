@@ -6,7 +6,7 @@ import (
 )
 
 type Config struct {
-	Addr       string        `json:"Addr" label:"服务地址" description:"镜像服务地址, 需要包含scheme"`
+	Addr       string        `json:"addr" label:"服务地址" description:"镜像服务地址, 需要包含scheme"`
 	SampleConf *SampleConfig `json:"sample_conf" label:"采样配置"`
 	Timeout    int           `json:"timeout" label:"请求超时时间"`
 	PassHost   string        `json:"pass_host" enum:"pass,node,rewrite" default:"pass" label:"转发域名" description:"请求发给上游时的 host 设置选型，pass:将客户端的 host 透传给上游，node:使用addr中配置的host，rewrite:使用下面指定的host值"`
