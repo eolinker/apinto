@@ -3,6 +3,7 @@ package nacos
 import (
 	"context"
 	"fmt"
+	"github.com/eolinker/apinto/discovery"
 	"sync"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/eosc"
 )
 
@@ -19,11 +19,12 @@ const (
 	instancePath = "/nacos/v1/ns/instance/list"
 )
 
+var _ discovery.IDiscovery = (*nacos)(nil)
+
 type nacos struct {
 	drivers.WorkerBase
 	client     *client
-	nodes      discovery.INodesData
-	services   discovery.IServices
+	services   discovery.IAppContainer
 	context    context.Context
 	cancelFunc context.CancelFunc
 	locker     sync.RWMutex
@@ -62,7 +63,7 @@ func (n *nacos) Start() error {
 			case <-ticker.C:
 				{
 					//获取现有服务app的服务名名称列表，并从注册中心获取目标服务名的节点列表
-					keys := n.services.AppKeys()
+					keys := n.services.Keys()
 					for _, serviceName := range keys {
 						res, err := n.client.GetNodeList(serviceName)
 						if err != nil {
@@ -71,9 +72,8 @@ func (n *nacos) Start() error {
 						}
 						//更新目标服务的节点列表
 						n.locker.Lock()
-						n.nodes.Set(serviceName, res)
+						n.services.Set(serviceName, res)
 						n.locker.Unlock()
-						n.services.Update(serviceName, res)
 
 					}
 				}
@@ -100,41 +100,30 @@ func (n *nacos) Stop() error {
 	return nil
 }
 
-// Remove 从所有服务app中移除目标app
-func (n *nacos) Remove(id string) error {
-	n.locker.Lock()
-	defer n.locker.Unlock()
-	name, count := n.services.Remove(id)
-	if count == 0 {
-		n.nodes.Del(name)
-	}
-	return nil
-}
-
 // GetApp 获取服务发现中目标服务的app
 func (n *nacos) GetApp(serviceName string) (discovery.IApp, error) {
 	n.locker.RLock()
-	nodes, ok := n.nodes.Get(serviceName)
+	app, ok := n.services.GetApp(serviceName)
 	n.locker.RUnlock()
-	if !ok {
-		n.locker.Lock()
-		nodes, ok = n.nodes.Get(serviceName)
-		if !ok {
-			ns, err := n.client.GetNodeList(serviceName)
-			if err != nil {
-				log.Errorf("%s get %s node list error: %v", driverName, serviceName, err)
-				ns = make(discovery.Nodes)
-			}
-
-			n.nodes.Set(serviceName, ns)
-			nodes = ns
-		}
-
-		n.locker.Unlock()
+	if ok {
+		return app.Agent(), nil
 	}
 
-	app := discovery.NewApp(nil, n, nil, nodes)
-	//将生成的app存入目标服务的app列表
-	n.services.Set(serviceName, app.ID(), app)
-	return app, nil
+	n.locker.Lock()
+	app, ok = n.services.GetApp(serviceName)
+	if ok {
+		return app.Agent(), nil
+	}
+
+	ns, err := n.client.GetNodeList(serviceName)
+	if err != nil {
+		log.Errorf("%s get %s node list error: %v", driverName, serviceName, err)
+
+	}
+
+	app = n.services.Set(serviceName, ns)
+
+	n.locker.Unlock()
+
+	return app.Agent(), nil
 }

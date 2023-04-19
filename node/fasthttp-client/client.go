@@ -2,6 +2,7 @@ package fasthttp_client
 
 import (
 	"fmt"
+	"github.com/eolinker/eosc/eocontext"
 	"net"
 	"strconv"
 	"strings"
@@ -11,8 +12,13 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func ProxyTimeout(addr string, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) error {
-	return defaultClient.ProxyTimeout(addr, req, resp, timeout)
+func ProxyTimeout(scheme string, node eocontext.INode, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) error {
+	addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
+	err := defaultClient.ProxyTimeout(addr, req, resp, timeout)
+	if err != nil {
+		node.Down()
+	}
+	return err
 }
 
 var defaultClient Client

@@ -2,6 +2,9 @@ package dubbo2_router
 
 import (
 	"errors"
+	"time"
+
+	"github.com/eolinker/apinto/entries/ctx_key"
 
 	"github.com/eolinker/apinto/drivers/router/dubbo2-router/manager"
 	"github.com/eolinker/apinto/router"
@@ -21,6 +24,8 @@ type dubboHandler struct {
 	disable         bool
 	service         service.IService
 	filters         eocontext.IChainPro
+	retry           int
+	timeout         time.Duration
 }
 
 var completeCaller = manager.NewCompleteCaller()
@@ -37,6 +42,10 @@ func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
 		return
 	}
 
+	//set retry timeout
+	ctx.WithValue(ctx_key.CtxKeyRetry, d.retry)
+	ctx.WithValue(ctx_key.CtxKeyTimeout, d.timeout)
+
 	//Set Label
 	ctx.SetLabel("api", d.routerName)
 	ctx.SetLabel("api_id", d.routerId)
@@ -46,7 +55,6 @@ func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
 
 	ctx.SetCompleteHandler(d.completeHandler)
 	ctx.SetFinish(d.finishHandler)
-	ctx.SetApp(d.service)
 	ctx.SetBalance(d.service)
 	ctx.SetUpstreamHostHandler(d.service)
 

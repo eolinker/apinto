@@ -97,7 +97,7 @@ func (a *AppData) All() []string {
 	a.locker.RLock()
 	defer a.locker.RUnlock()
 	idMap := make(map[string]bool)
-	
+
 	for _, v := range a.data {
 		for _, id := range v {
 			if _, ok := idMap[id]; !ok {
@@ -105,7 +105,7 @@ func (a *AppData) All() []string {
 			}
 		}
 	}
-	
+
 	ids := make([]string, 0, len(idMap))
 	for key := range idMap {
 		ids = append(ids, key)

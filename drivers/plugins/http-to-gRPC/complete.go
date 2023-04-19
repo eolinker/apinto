@@ -9,6 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eolinker/apinto/entries/ctx_key"
+	"github.com/eolinker/apinto/entries/router"
+
 	grpc_descriptor "github.com/eolinker/apinto/grpc-descriptor"
 
 	"google.golang.org/grpc/codes"
@@ -37,27 +40,22 @@ var (
 	options = grpcurl.FormatOptions{
 		AllowUnknownFields: true,
 	}
-	defaultTimeout = 10 * time.Second
 )
 
 type complete struct {
 	format     grpcurl.Format
 	descriptor grpc_descriptor.IDescriptor
-	timeout    time.Duration
 	authority  string
 	service    string
 	method     string
 	headers    map[string]string
-	retry      int
 	reflect    bool
 }
 
 func newComplete(descriptor grpc_descriptor.IDescriptor, conf *Config) *complete {
-	timeout := defaultTimeout
 	return &complete{
 		format:     grpcurl.Format(conf.Format),
 		descriptor: descriptor,
-		timeout:    timeout,
 		authority:  conf.Authority,
 		service:    conf.Service,
 		method:     conf.Method,
@@ -90,25 +88,37 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
+
+	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
+	retry, ok := retryValue.(int)
+	if !ok {
+		retry = router.DefaultRetry
+	}
+
+	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
+	timeout, ok := timeoutValue.(time.Duration)
+	if !ok {
+		timeout = router.DefaultTimeout
+	}
+
 	in := strings.NewReader(string(body))
 
 	balance := ctx.GetBalance()
-	app := ctx.GetApp()
 
 	md := httpHeaderToMD(ctx.Proxy().Header().Headers(), h.headers)
 	newCtx := ctx.Context()
-	opts := genDialOpts(app.Scheme() == "https", h.authority)
+	opts := genDialOpts(balance.Scheme() == "https", h.authority)
 
 	symbol := getSymbol(ctx.Proxy().URI().Path(), h.service, h.method)
 	var lastErr error
 	var conn *grpc.ClientConn
-	for i := h.retry + 1; i > 0; i-- {
-		node, err := balance.Select(ctx)
+	for i := retry + 1; i > 0; i-- {
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select node error: ", err)
 			return err
 		}
-		conn, lastErr = dial(node.Addr(), h.timeout, opts...)
+		conn, lastErr = dial(node, timeout, opts...)
 		if lastErr != nil {
 			log.Error("dial error: ", lastErr)
 			continue
@@ -206,11 +216,12 @@ func genDialOpts(isTLS bool, authority string) []grpc.DialOption {
 	return opts
 }
 
-func dial(target string, timeout time.Duration, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func dial(node eocontext.INode, timeout time.Duration, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	cc, err := grpc.DialContext(ctx, target, opts...)
+	cc, err := grpc.DialContext(ctx, node.Addr(), opts...)
 	if err != nil {
+		node.Down()
 		return nil, err
 	}
 	return cc, nil
