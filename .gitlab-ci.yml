@@ -44,9 +44,9 @@ builder:
   stage: build
   rules:
     - if: $CI_COMMIT_BRANCH=="develop"
-      when: on_success
+      # when: on_success
     - if: $CI_COMMIT_BRANCH=="test"
-      when: on_success
+      # when: on_success
   script:
     - sed -i '/replace github.com\/eolinker\/eosc => */d' go.mod
     - go mod tidy
