@@ -59,6 +59,13 @@ type Context struct {
 	errChan                   chan error
 }
 
+func (c *Context) RealIP() string {
+	if c.request != nil {
+		return c.request.RealIP()
+	}
+	return ""
+}
+
 func (c *Context) EnableTls(b bool) {
 	c.tls = b
 }
@@ -153,14 +160,6 @@ func (c *Context) SetFinish(handler eocontext.FinishHandler) {
 	c.finishHandler = handler
 }
 
-func (c *Context) GetApp() eocontext.EoApp {
-	return c.app
-}
-
-func (c *Context) SetApp(app eocontext.EoApp) {
-	c.app = app
-}
-
 func (c *Context) GetBalance() eocontext.BalanceHandler {
 	return c.balance
 }
@@ -205,7 +204,16 @@ func (c *Context) SetResponse(response grpc_context.IResponse) {
 	c.response = response
 }
 
-func (c *Context) Invoke(address string, timeout time.Duration) error {
+func (c *Context) Invoke(node eocontext.INode, timeout time.Duration) error {
+
+	err := c.doInvoke(node.Addr(), timeout)
+	if err != nil {
+		node.Down()
+		return err
+	}
+	return nil
+}
+func (c *Context) doInvoke(address string, timeout time.Duration) error {
 	passHost, targetHost := c.GetUpstreamHostHandler().PassHost()
 	switch passHost {
 	case eocontext.NodeHost:

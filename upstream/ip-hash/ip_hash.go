@@ -2,11 +2,11 @@ package ip_hash
 
 import (
 	"errors"
-	"github.com/eolinker/apinto/discovery"
+	"hash/crc32"
+	"time"
+
 	"github.com/eolinker/apinto/upstream/balance"
 	eoscContext "github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"hash/crc32"
 )
 
 const (
@@ -14,7 +14,9 @@ const (
 )
 
 var (
-	errNoValidNode = errors.New("no valid node")
+	errNoValidNode                            = errors.New("no valid node")
+	_              eoscContext.BalanceHandler = (*ipHash)(nil)
+	_              balance.IBalanceFactory    = (*ipHashFactory)(nil)
 )
 
 // Register 注册ip-hash算法
@@ -30,38 +32,44 @@ type ipHashFactory struct {
 }
 
 // Create 创建一个ip-hash算法处理器
-func (r *ipHashFactory) Create(app discovery.IApp) (eoscContext.BalanceHandler, error) {
-	rr := newIpHash(app)
+func (r *ipHashFactory) Create(app eoscContext.EoApp, scheme string, timeout time.Duration) (eoscContext.BalanceHandler, error) {
+	rr := newIpHash(app, scheme, timeout)
 	return rr, nil
 }
 
 type ipHash struct {
-	app discovery.IApp
+	eoscContext.EoApp
+	scheme  string
+	timeout time.Duration
 }
 
-func (r *ipHash) Select(ctx eoscContext.EoContext) (eoscContext.INode, error) {
+func (r *ipHash) Scheme() string {
+	return r.scheme
+}
+
+func (r *ipHash) TimeOut() time.Duration {
+	return r.timeout
+}
+
+func (r *ipHash) Select(ctx eoscContext.EoContext) (eoscContext.INode, int, error) {
 	return r.Next(ctx)
 }
 
 // Next 由现有节点根据ip_hash决策出一个可用节点
-func (r *ipHash) Next(org eoscContext.EoContext) (discovery.INode, error) {
-	httpContext, err := http_service.Assert(org)
-	if err != nil {
-		return nil, err
-	}
-	readIp := httpContext.Request().ReadIP()
-	nodes := r.app.Nodes()
+func (r *ipHash) Next(org eoscContext.EoContext) (eoscContext.INode, int, error) {
+
+	readIp := org.RealIP()
+	nodes := r.Nodes()
 	size := len(nodes)
 	if size < 1 {
-		return nil, errNoValidNode
+		return nil, 0, errNoValidNode
 	}
-	return nodes[HashCode(readIp)%size], nil
+	index := HashCode(readIp) % size
+	return nodes[index], index, nil
 }
 
-func newIpHash(app discovery.IApp) *ipHash {
-	r := &ipHash{
-		app: app,
-	}
+func newIpHash(app eoscContext.EoApp, scheme string, timeout time.Duration) *ipHash {
+	r := &ipHash{EoApp: app, scheme: scheme, timeout: timeout}
 	return r
 }
 

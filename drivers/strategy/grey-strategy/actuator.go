@@ -1,12 +1,13 @@
 package grey_strategy
 
 import (
-	"fmt"
+	"sort"
+	"sync"
+	"time"
+
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"sort"
-	"sync"
 )
 
 var (
@@ -28,8 +29,8 @@ type ActuatorSet interface {
 
 type tActuator struct {
 	lock     sync.RWMutex
-	all      map[string]*GreyHandler
-	handlers []*GreyHandler
+	all      map[string]IGreyHandler
+	handlers []IGreyHandler
 }
 
 func (a *tActuator) Destroy() {
@@ -51,9 +52,9 @@ func (a *tActuator) Del(id string) {
 
 func (a *tActuator) rebuild() {
 
-	handlers := make([]*GreyHandler, 0, len(a.all))
+	handlers := make([]IGreyHandler, 0, len(a.all))
 	for _, h := range a.all {
-		if !h.stop {
+		if !h.IsStop() {
 			handlers = append(handlers, h)
 		}
 	}
@@ -64,7 +65,7 @@ func (a *tActuator) rebuild() {
 }
 func newtActuator() *tActuator {
 	return &tActuator{
-		all: make(map[string]*GreyHandler),
+		all: make(map[string]IGreyHandler),
 	}
 }
 
@@ -84,9 +85,11 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 
 	for _, handler := range handlers {
 		//check筛选条件
-		if handler.filter.Check(httpCtx) {
-			ctx.SetBalance(newGreyBalanceHandler(ctx.GetBalance(), handler))
-			break
+		if handler.Check(httpCtx) {
+			if handler.Match(ctx) { //是否触发灰度
+				handler.DoGrey(ctx)
+				break
+			}
 		}
 	}
 
@@ -96,7 +99,25 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 	return nil
 }
 
-type handlerListSort []*GreyHandler
+type GreyApp struct {
+	scheme  string
+	timeout time.Duration
+	eocontext.BalanceHandler
+}
+
+func (g *GreyApp) Scheme() string {
+	return g.scheme
+}
+
+func (g *GreyApp) TimeOut() time.Duration {
+	return g.timeout
+}
+
+func NewGreyApp(old eocontext.BalanceHandler, grey eocontext.BalanceHandler) eocontext.BalanceHandler {
+	return &GreyApp{scheme: old.Scheme(), timeout: old.TimeOut(), BalanceHandler: grey}
+}
+
+type handlerListSort []IGreyHandler
 
 func (hs handlerListSort) Len() int {
 	return len(hs)
@@ -104,46 +125,11 @@ func (hs handlerListSort) Len() int {
 
 func (hs handlerListSort) Less(i, j int) bool {
 
-	return hs[i].priority < hs[j].priority
+	return hs[i].Priority() < hs[j].Priority()
 }
 
 func (hs handlerListSort) Swap(i, j int) {
 	hs[i], hs[j] = hs[j], hs[i]
-}
-
-type GreyBalanceHandler struct {
-	orgHandler  eocontext.BalanceHandler
-	greyHandler *GreyHandler
-}
-
-func newGreyBalanceHandler(orgHandler eocontext.BalanceHandler, greyHandler *GreyHandler) *GreyBalanceHandler {
-	return &GreyBalanceHandler{orgHandler: orgHandler, greyHandler: greyHandler}
-}
-
-func (g *GreyBalanceHandler) Select(ctx eocontext.EoContext) (eocontext.INode, error) {
-	httpCtx, err := http_service.Assert(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	cookieKey := fmt.Sprintf(cookieName, g.greyHandler.name)
-
-	if g.greyHandler.rule.keepSession {
-		cookie := httpCtx.Request().Header().GetCookie(cookieKey)
-		if cookie == grey {
-			return g.greyHandler.selectNodes(), nil
-		} else if cookie == normal {
-			return g.orgHandler.Select(ctx)
-		}
-	}
-
-	if g.greyHandler.rule.greyMatch.Match(ctx) { //灰度
-		httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%v", cookieKey, grey))
-		return g.greyHandler.selectNodes(), nil
-	} else {
-		httpCtx.Response().Headers().Add("Set-Cookie", fmt.Sprintf("%s=%v", cookieKey, normal))
-		return g.orgHandler.Select(ctx)
-	}
 }
 
 func DoStrategy(ctx eocontext.EoContext, next eocontext.IChain) error {

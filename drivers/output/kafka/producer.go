@@ -21,7 +21,6 @@ type tProducer struct {
 	conf      *ProducerConfig
 	cancel    context.CancelFunc
 	enable    bool
-	locker    *sync.Mutex
 	formatter eosc.IFormatter
 }
 
@@ -101,9 +100,9 @@ func (o *tProducer) write(msg *sarama.ProducerMessage) {
 	if !o.enable {
 		return
 	}
-	o.locker.Lock()
+
 	o.input <- msg
-	o.locker.Unlock()
+
 }
 
 func (o *tProducer) work() {

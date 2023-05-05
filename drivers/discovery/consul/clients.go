@@ -1,12 +1,18 @@
 package consul
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/eosc/log"
 	"github.com/hashicorp/consul/api"
 )
+
+type consulNodeInfo struct {
+	id       string
+	nodeInfo discovery.NodeInfo
+}
 
 func newClients(addrs []string, param map[string]string) *consulClients {
 	clients := make([]*api.Client, 0, len(addrs))
@@ -42,40 +48,47 @@ func newClients(addrs []string, param map[string]string) *consulClients {
 	return &consulClients{clients: clients}
 }
 
-//getNodes 通过接入地址获取节点信息
-func (c *consulClients) getNodes(service string) (map[string]discovery.INode, error) {
-	nodeSet := make(map[string]discovery.INode)
-	ok := false
+// getNodes 通过接入地址获取节点信息
+func (c *consulClients) getNodes(service string) ([]discovery.NodeInfo, error) {
+	nodeList := make([]discovery.NodeInfo, 0, 2)
+	nodeIDSet := make(map[string]struct{})
 	for _, client := range c.clients {
 		clientNodes := getNodesFromClient(client, service)
 		if len(clientNodes) == 0 {
 			continue
 		}
-		ok = true
-		for _, node := range clientNodes {
-			if _, has := nodeSet[node.ID()]; !has {
-				nodeSet[node.ID()] = node
+		for _, n := range clientNodes {
+			if _, exist := nodeIDSet[n.id]; !exist {
+				nodeList = append(nodeList, n.nodeInfo)
 			}
+			nodeIDSet[n.id] = struct{}{}
 		}
 	}
-	if !ok {
+	if len(nodeList) == 0 {
 		return nil, discovery.ErrDiscoveryDown
 	}
-	return nodeSet, nil
+
+	return nodeList, nil
 }
 
-//getNodesFromClient 从连接的客户端返回健康的节点信息
-func getNodesFromClient(client *api.Client, service string) []discovery.INode {
+// getNodesFromClient 从连接的客户端返回健康的节点信息
+func getNodesFromClient(client *api.Client, service string) []*consulNodeInfo {
 	queryOptions := &api.QueryOptions{}
 	serviceEntryArr, _, err := client.Health().Service(service, "", true, queryOptions)
 	if err != nil {
 		return nil
 	}
 
-	nodes := make([]discovery.INode, 0, len(serviceEntryArr))
+	nodes := make([]*consulNodeInfo, 0, len(serviceEntryArr))
 	for _, serviceEntry := range serviceEntryArr {
-		newNode := discovery.NewNode(serviceEntry.Service.Meta, serviceEntry.Node.ID, serviceEntry.Service.Address, serviceEntry.Service.Port)
-		nodes = append(nodes, newNode)
+		nodes = append(nodes, &consulNodeInfo{
+			id: fmt.Sprintf("%s:%s", serviceEntry.Service.Address, serviceEntry.Service.Port),
+			nodeInfo: discovery.NodeInfo{
+				Ip:     serviceEntry.Service.Address,
+				Port:   serviceEntry.Service.Port,
+				Labels: serviceEntry.Service.Meta,
+			},
+		})
 	}
 
 	return nodes

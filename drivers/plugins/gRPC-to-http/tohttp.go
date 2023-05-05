@@ -33,7 +33,6 @@ func (t *toHttp) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err e
 
 func (t *toHttp) Destroy() {
 	t.handler = nil
-	return
 }
 
 func (t *toHttp) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {

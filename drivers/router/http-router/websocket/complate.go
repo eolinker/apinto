@@ -3,7 +3,6 @@ package websocket
 import (
 	"errors"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -34,9 +33,7 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 	}
 
 	balance := ctx.GetBalance()
-	app := ctx.GetApp()
-
-	scheme := app.Scheme()
+	scheme := balance.Scheme()
 	switch strings.ToLower(scheme) {
 	case "http":
 		scheme = "ws"
@@ -48,7 +45,7 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 	}
 
 	proxyTime := time.Now()
-	timeOut := app.TimeOut()
+	timeOut := balance.TimeOut()
 	var lastErr error
 	var conn *websocket.Conn
 	var resp *http.Response
@@ -58,15 +55,13 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 		if h.timeOut > 0 && time.Now().Sub(proxyTime) > h.timeOut {
 			return ErrorTimeoutComplete
 		}
-		node, err := balance.Select(ctx)
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select error: ", lastErr)
 			return err
 		}
 
-		log.Debug("node: ", node.Addr())
-		u := url.URL{Scheme: "ws", Host: node.Addr(), Path: ctx.Proxy().URI().Path(), RawQuery: ctx.Proxy().URI().RawQuery()}
-		conn, resp, lastErr = DialWithTimeout(u.String(), ctx.Proxy().Header().Headers(), timeOut)
+		conn, resp, lastErr = DialWithTimeout(node, ctx.Proxy().URI().Path(), ctx.Proxy().URI().RawQuery(), ctx.Proxy().Header().Headers(), timeOut)
 		if lastErr == nil {
 			resp.Body.Close()
 			ctx.SetUpstreamConn(&Conn{conn})
