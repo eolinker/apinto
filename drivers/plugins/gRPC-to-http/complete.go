@@ -7,6 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eolinker/apinto/entries/ctx_key"
+	"github.com/eolinker/apinto/entries/router"
+
 	grpc_descriptor "github.com/eolinker/apinto/grpc-descriptor"
 
 	"github.com/jhump/protoreflect/dynamic"
@@ -31,8 +34,6 @@ import (
 
 var (
 	ErrorTimeoutComplete = errors.New("complete timeout")
-
-	defaultTimeout = 10 * time.Second
 )
 
 type complete struct {
@@ -40,8 +41,6 @@ type complete struct {
 	headers    map[string]string
 	rawQuery   string
 	path       string
-	retry      int
-	timeout    time.Duration
 }
 
 func newComplete(descriptor grpc_descriptor.IDescriptor, conf *Config) *complete {
@@ -49,10 +48,8 @@ func newComplete(descriptor grpc_descriptor.IDescriptor, conf *Config) *complete
 	for key, value := range conf.Query {
 		query.Set(key, value)
 	}
-	timeout := defaultTimeout
 	return &complete{
 		descriptor: descriptor,
-		timeout:    timeout,
 		rawQuery:   query.Encode(),
 		path:       conf.Path,
 		headers:    conf.Headers,
@@ -65,6 +62,19 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
+
+	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
+	retry, ok := retryValue.(int)
+	if !ok {
+		retry = router.DefaultRetry
+	}
+
+	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
+	timeout, ok := timeoutValue.(time.Duration)
+	if !ok {
+		timeout = router.DefaultTimeout
+	}
+
 	descriptor, err := h.descriptor.Descriptor().FindSymbol(fmt.Sprintf("%s.%s", ctx.Proxy().Service(), ctx.Proxy().Method()))
 	if err != nil {
 		return err
@@ -76,11 +86,10 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
+	balance := ctx.GetBalance()
 
-	app := ctx.GetApp()
-
-	scheme := app.Scheme()
-	switch strings.ToLower(app.Scheme()) {
+	scheme := balance.Scheme()
+	switch strings.ToLower(scheme) {
 	case "", "tcp":
 		scheme = "http"
 	case "tsl", "ssl", "https":
@@ -94,19 +103,18 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	request := newRequest(ctx.Proxy().Headers(), body, h.headers, path, h.rawQuery)
 	defer fasthttp.ReleaseRequest(request)
 	var lastErr error
-	timeOut := app.TimeOut()
-	balance := ctx.GetBalance()
-	for index := 0; index <= h.retry; index++ {
+	timeOut := balance.TimeOut()
 
-		if h.timeout > 0 && time.Now().Sub(proxyTime) > h.timeout {
+	for index := 0; index <= retry; index++ {
+
+		if timeout > 0 && time.Since(proxyTime) > timeout {
 			return ErrorTimeoutComplete
 		}
-		node, err := balance.Select(ctx)
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			return status.Error(codes.NotFound, err.Error())
 		}
-		addr := node.Addr()
-		log.Debug("node: ", addr)
+
 		request.URI()
 		passHost, targetHost := ctx.GetUpstreamHostHandler().PassHost()
 		switch passHost {
@@ -118,7 +126,7 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 			request.URI().SetHost(targetHost)
 		}
 		response := fasthttp.AcquireResponse()
-		lastErr = fasthttp_client.ProxyTimeout(fmt.Sprintf("%s://%s", scheme, node.Addr()), request, response, timeOut)
+		lastErr = fasthttp_client.ProxyTimeout(scheme, node, request, response, timeOut)
 		if lastErr == nil {
 			return newGRPCResponse(ctx, response, methodDesc)
 		}

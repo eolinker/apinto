@@ -22,7 +22,7 @@ func (I *IPHandler) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (er
 }
 
 func (I *IPHandler) doRestriction(ctx http_service.IHttpContext) error {
-	realIP := ctx.Request().ReadIP()
+	realIP := ctx.Request().RealIp()
 	if I.filter != nil {
 		ok, err := I.filter(realIP)
 		if !ok {

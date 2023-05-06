@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	hessian "github.com/apache/dubbo-go-hessian2"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
-	"time"
 )
 
 var (
@@ -46,7 +47,7 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 		ctx.Response().SetResponseTime(time.Now().Sub(proxyTime))
 		ctx.SetLabel("handler", "proxy")
 	}()
-	body, _ := ctx.Request().Body().RawBody()
+	body, _ := ctx.Proxy().Body().RawBody()
 
 	var types []string
 	var valuesList []hessian.Object
@@ -106,7 +107,7 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 		if c.timeOut > 0 && time.Now().Sub(proxyTime) > c.timeOut {
 			return ErrorTimeoutComplete
 		}
-		node, err := balance.Select(ctx)
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select error: ", err)
 			ctx.Response().SetStatus(501, "501")
@@ -114,9 +115,8 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 			return err
 		}
 
-		log.Debug("node: ", node.Addr())
 		var result interface{}
-		result, lastErr = client.dial(ctx.Context(), node.Addr(), c.timeOut)
+		result, lastErr = client.dial(ctx.Context(), node, c.timeOut)
 		if lastErr == nil {
 			bytes, err := json.Marshal(result)
 			if err != nil {

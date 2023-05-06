@@ -2,94 +2,118 @@ package discovery
 
 import (
 	"fmt"
-
-	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/eocontext"
+	"sync/atomic"
+	"time"
 )
 
-//NewNode 创建新节点
-func NewNode(labels map[string]string, id string, ip string, port int) INode {
-	return &node{labels: labels, id: id, ip: ip, port: port, status: Running}
+// NodeStatus 节点状态类型
+type NodeStatus = eocontext.NodeStatus
+
+const (
+	//Running 节点运行中状态
+	Running = eocontext.Running
+	//Down 节点不可用状态
+	Down = eocontext.Down
+	//Leave 节点离开状态
+	Leave = eocontext.Leave
+)
+
+type INode interface {
+	IP() string
+	ID() string
+	Addr() string
+	Port() int
+	Status() NodeStatus
+	Last() time.Time
+	Up()
+	Down()
+	Leave()
+}
+type _INodeStatusCheck interface {
+	status(status NodeStatus) NodeStatus
+}
+type _BaseNode struct {
+	id   string
+	ip   string
+	port int
+
+	status        NodeStatus
+	lastTime      atomic.Pointer[time.Time]
+	statusChecker _INodeStatusCheck
 }
 
-type node struct {
-	labels Attrs
-	id     string
-	ip     string
-	port   int
-	status NodeStatus
+func (n *_BaseNode) Last() time.Time {
+	t := n.lastTime.Load()
+	if t != nil {
+		now := time.Now()
+		n.lastTime.Store(&now)
+		t = n.lastTime.Load()
+	}
+	return *t
+
 }
 
-//GetAttrs 获取节点属性集合
-func (n *node) GetAttrs() Attrs {
-	return n.labels
+func newBaseNode(ip string, port int, statusChecker _INodeStatusCheck) *_BaseNode {
+	return &_BaseNode{ip: ip, port: port, status: Running, statusChecker: statusChecker}
 }
 
-//GetAttrByName 通过属性名获取节点属性
-func (n *node) GetAttrByName(name string) (string, bool) {
-	v, ok := n.labels[name]
-	return v, ok
-}
-
-//IP 返回节点IP
-func (n *node) IP() string {
-	return n.ip
-}
-
-//Port 返回节点端口
-func (n *node) Port() int {
-	return n.port
-}
-
-//ID 返回节点ID
-func (n *node) ID() string {
+func (n *_BaseNode) ID() string {
 	return n.id
 }
 
-//Status 返回节点状态
-func (n *node) Status() NodeStatus {
-	return n.status
+func (n *_BaseNode) IP() string {
+	return n.ip
 }
 
-//Labels 返回节点标签集合
-func (n *node) Labels() map[string]string {
-	return n.labels
+func (n *_BaseNode) Port() int {
+	return n.port
 }
 
-//Addr 返回节点地址
-func (n *node) Addr() string {
+func (n *_BaseNode) Status() eocontext.NodeStatus {
+
+	return n.statusChecker.status(n.status)
+}
+
+// Addr 返回节点地址
+func (n *_BaseNode) Addr() string {
 	if n.port == 0 {
 		return n.ip
 	}
 	return fmt.Sprintf("%s:%d", n.ip, n.port)
 }
 
-//Up 将节点状态置为运行中
-func (n *node) Up() {
+// Up 将节点状态置为运行中
+func (n *_BaseNode) Up() {
 	n.status = Running
 }
 
-//Down 将节点状态置为不可用
-func (n *node) Down() {
+// Down 将节点状态置为不可用
+func (n *_BaseNode) Down() {
 	n.status = Down
 }
 
-//Leave 将节点状态置为离开
-func (n *node) Leave() {
+// Leave 将节点状态置为离开
+func (n *_BaseNode) Leave() {
 	n.status = Leave
 }
 
-type INodesData interface {
-	Get(name string) (map[string]INode, bool)
-	Set(name string, nodes map[string]INode)
-	Del(name string) (map[string]INode, bool)
+// Attrs 属性集合
+type Attrs = eocontext.Attrs
+type Node struct {
+	INode
+	label Attrs
 }
 
-type NodesData struct {
-	eosc.Untyped[string, map[string]INode]
+func NewNode(INode INode, label Attrs) eocontext.INode {
+	return &Node{INode: INode, label: label}
 }
 
-func NewNodesData() INodesData {
-	return &NodesData{Untyped: eosc.BuildUntyped[string, map[string]INode]()}
+func (n *Node) GetAttrs() eocontext.Attrs {
+	return n.label
 }
 
-type Nodes map[string]INode
+func (n *Node) GetAttrByName(name string) (string, bool) {
+	v, h := n.label[name]
+	return v, h
+}

@@ -52,6 +52,8 @@ func (h *DubboRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker
 		serviceName:     strings.TrimSuffix(string(cfg.Service), "@service"),
 		disable:         cfg.Disable,
 		filters:         nil,
+		retry:           cfg.Retry,
+		timeout:         time.Duration(cfg.TimeOut) * time.Millisecond,
 	}
 
 	if !cfg.Disable {

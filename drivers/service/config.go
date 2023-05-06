@@ -18,6 +18,7 @@ type Config struct {
 	Balance      string         `json:"balance" enum:"round-robin,ip-hash" label:"负载均衡算法"`
 	PassHost     string         `json:"pass_host" enum:"pass,node,rewrite" default:"pass" label:"转发域名" description:"请求发给上游时的 host 设置选型，pass:将客户端的 host 透传给上游，node:使用node中配置的host，rewrite:使用下面指定的host值"`
 	UpstreamHost string         `json:"upstream_host" label:"上游host" description:"指定上游请求的host，只有在 转发域名 配置为 rewrite 时有效" switch:"pass_host==='rewrite'"`
+	KeepSession  bool           `json:"keep_session" label:"会话保持" description:"同一用户session会被分配到同一台服务器上"`
 }
 
 func (c *Config) String() string {

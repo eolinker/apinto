@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/eolinker/apinto/entries/ctx_key"
+
 	http_service "github.com/eolinker/apinto/node/http-context"
 
 	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
@@ -54,8 +56,8 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 		ctx = wsCtx
 	}
 	//set retry timeout
-	ctx.WithValue(http_context.KeyHttpRetry, h.retry)
-	ctx.WithValue(http_context.KeyHttpTimeout, h.timeout)
+	ctx.WithValue(ctx_key.CtxKeyRetry, h.retry)
+	ctx.WithValue(ctx_key.CtxKeyTimeout, h.timeout)
 
 	//Set Label
 	ctx.SetLabel("api", h.routerName)
@@ -65,10 +67,11 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 		ctx.SetLabel("service_id", h.service.Id())
 	}
 
-	ctx.SetLabel("ip", httpContext.Request().ReadIP())
+	ctx.SetLabel("method", httpContext.Request().Method())
+	ctx.SetLabel("path", httpContext.Request().URI().RequestURI())
+	ctx.SetLabel("ip", httpContext.Request().RealIp())
 
 	ctx.SetCompleteHandler(h.completeHandler)
-	ctx.SetApp(h.service)
 	ctx.SetBalance(h.service)
 	ctx.SetUpstreamHostHandler(h.service)
 	ctx.SetFinish(h.finisher)

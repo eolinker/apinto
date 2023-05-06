@@ -8,6 +8,7 @@ import (
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
 	hessian "github.com/apache/dubbo-go-hessian2"
 	"github.com/eolinker/apinto/utils"
+	"github.com/eolinker/eosc/eocontext"
 	"reflect"
 	"time"
 )
@@ -23,7 +24,7 @@ func newDubbo2Client(serviceName string, methodName string, typesList []string, 
 	return &dubbo2Client{serviceName: serviceName, methodName: methodName, typesList: typesList, valuesList: valuesList}
 }
 
-func (d *dubbo2Client) dial(ctx context.Context, addr string, timeout time.Duration) (interface{}, error) {
+func (d *dubbo2Client) dial(ctx context.Context, node eocontext.INode, timeout time.Duration) (interface{}, error) {
 	arguments := make([]interface{}, 3)
 	parameterValues := make([]reflect.Value, 3)
 
@@ -40,7 +41,7 @@ func (d *dubbo2Client) dial(ctx context.Context, addr string, timeout time.Durat
 		invocation.WithParameterValues(parameterValues))
 
 	serviceName := d.serviceName
-	url, err := common.NewURL(addr,
+	url, err := common.NewURL(node.Addr(),
 		common.WithProtocol(dubbo.DUBBO), common.WithParamsValue(constant.SerializationKey, constant.Hessian2Serialization),
 		common.WithParamsValue(constant.GenericFilterKey, "true"),
 		common.WithParamsValue(constant.TimeoutKey, timeout.String()),
@@ -49,6 +50,7 @@ func (d *dubbo2Client) dial(ctx context.Context, addr string, timeout time.Durat
 		common.WithPath(serviceName),
 	)
 	if err != nil {
+		node.Down()
 		return nil, err
 	}
 

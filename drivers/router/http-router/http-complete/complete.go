@@ -2,10 +2,13 @@ package http_complete
 
 import (
 	"errors"
-	"fmt"
+
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/eolinker/apinto/entries/ctx_key"
+	"github.com/eolinker/apinto/entries/router"
 
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -37,14 +40,13 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 		ctx.Response().SetProxyStatus(ctx.Response().StatusCode(), "")
 		//设置上游响应总时间, 单位为毫秒
 		//ctx.WithValue("response_time", time.Now().Sub(proxyTime).Milliseconds())
-		ctx.Response().SetResponseTime(time.Now().Sub(proxyTime))
+		ctx.Response().SetResponseTime(time.Since(proxyTime))
 		ctx.SetLabel("handler", "proxy")
 	}()
 
 	balance := ctx.GetBalance()
-	app := ctx.GetApp()
-	var lastErr error
-	scheme := app.Scheme()
+
+	scheme := balance.Scheme()
 
 	switch strings.ToLower(scheme) {
 	case "", "tcp":
@@ -53,37 +55,35 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 		scheme = "https"
 
 	}
-	timeOut := app.TimeOut()
+	timeOut := balance.TimeOut()
 
-	retryValue := ctx.Value(http_service.KeyHttpRetry)
+	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
 	retry, ok := retryValue.(int)
 	if !ok {
-		retry = 1
+		retry = router.DefaultRetry
 	}
 
-	timeoutValue := ctx.Value(http_service.KeyHttpTimeout)
+	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
-		timeout = 3000 * time.Millisecond
+		timeout = router.DefaultTimeout
 	}
-
+	var lastErr error
 	for index := 0; index <= retry; index++ {
 
-		if timeout > 0 && time.Now().Sub(proxyTime) > timeout {
+		if timeout > 0 && time.Since(proxyTime) > timeout {
 			return ErrorTimeoutComplete
 		}
-		node, err := balance.Select(ctx)
+		node, _, err := balance.Select(ctx)
 		if err != nil {
 			log.Error("select error: ", err)
 			ctx.Response().SetStatus(501, "501")
 			ctx.Response().SetBody([]byte(err.Error()))
 			return err
 		}
-
-		log.Debug("node: ", node.Addr())
-		addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
-		lastErr = ctx.SendTo(addr, timeOut)
+		lastErr = ctx.SendTo(scheme, node, timeOut)
 		if lastErr == nil {
+
 			return nil
 		}
 		log.Error("http upstream send error: ", lastErr)
@@ -115,7 +115,7 @@ func (n *NoServiceCompleteHandler) Complete(org eocontext.EoContext) error {
 		ctx.Response().SetProxyStatus(ctx.Response().StatusCode(), "")
 		//设置上游响应总时间, 单位为毫秒
 		//ctx.WithValue("response_time", time.Now().Sub(proxyTime).Milliseconds())
-		ctx.Response().SetResponseTime(time.Now().Sub(proxyTime))
+		ctx.Response().SetResponseTime(time.Since(proxyTime))
 		ctx.SetLabel("handler", "proxy")
 	}()
 	for key, value := range n.header {

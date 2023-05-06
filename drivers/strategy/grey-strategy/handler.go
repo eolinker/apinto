@@ -1,122 +1,80 @@
 package grey_strategy
 
 import (
+	"strings"
+	"time"
+
+	session_keep "github.com/eolinker/apinto/upstream/session-keep"
+
+	"github.com/eolinker/apinto/discovery"
+
 	"github.com/eolinker/apinto/checker"
+	"github.com/eolinker/apinto/drivers/discovery/static"
 	"github.com/eolinker/apinto/strategy"
+	"github.com/eolinker/apinto/upstream/balance"
 	"github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"sync"
 )
 
-type GreyHandler struct {
-	name     string
-	filter   strategy.IFilter
-	priority int
-	stop     bool
-	rule     *ruleHandler
-}
+var (
+	discoveryAnonymous = static.CreateAnonymous(&static.Config{
+		HealthOn: false,
+		Health:   nil,
+	})
+)
+var (
+	_ IGreyHandler = (*GreyHandler)(nil)
+)
 
-type greyMatch interface {
+type GreyMatch interface {
 	Match(ctx eocontext.EoContext) bool
 }
-
-type ruleHandler struct {
-	selectNodeLock *sync.Mutex
-	index          int
-	keepSession    bool
-	nodes          []eocontext.INode
-	distribution   string
-	greyMatch      greyMatch
+type IGreyHandler interface {
+	strategy.IFilter
+	GreyMatch
+	DoGrey(ctx eocontext.EoContext)
+	IsStop() bool
+	Priority() int
+}
+type GreyHandler struct {
+	name string
+	strategy.IFilter
+	priority int
+	stop     bool
+	GreyMatch
+	app            discovery.IApp
+	balanceHandler eocontext.BalanceHandler
 }
 
-type ruleGreyFlow struct {
-	flowRobin *Robin
+func (g *GreyHandler) Nodes() []eocontext.INode {
+	return g.app.Nodes()
 }
 
-type ruleGreyMatch struct {
-	ruleFilter strategy.IFilter
+func (g *GreyHandler) Scheme() string {
+	return "undefined"
 }
 
-func (r *ruleGreyFlow) Match(ctx eocontext.EoContext) bool {
-	flow := r.flowRobin.Select()
-	return flow.GetId() == 1
+func (g *GreyHandler) TimeOut() time.Duration {
+	return 0
 }
 
-func (r *ruleGreyMatch) Match(ctx eocontext.EoContext) bool {
-	return r.ruleFilter.Check(ctx)
+func (g *GreyHandler) IsStop() bool {
+	return g.stop
 }
 
-type matchingHandler struct {
-	Type    string
-	name    string
-	value   string
-	checker checker.Checker
+func (g *GreyHandler) Priority() int {
+	return g.priority
 }
 
-type matchingHandlerFilters []*matchingHandler
+func (g *GreyHandler) DoGrey(ctx eocontext.EoContext) {
+	ctx.SetBalance(NewGreyApp(ctx.GetBalance(), g.balanceHandler))
+}
 
-func (m matchingHandlerFilters) Check(ctx eocontext.EoContext) bool {
-	for _, handler := range m {
-		if !handler.Check(ctx) {
-			return false
-		}
+func (g *GreyHandler) Close() {
+	if g.app != nil {
+		g.app.Close()
+		g.app = nil
 	}
-	return true
-}
-
-func (m *matchingHandler) Check(ctx eocontext.EoContext) bool {
-	httpCtx, err := http_service.Assert(ctx)
-	if err != nil {
-		return false
-	}
-
-	value := ""
-	request := httpCtx.Request()
-	switch m.Type {
-	case "header":
-		value = request.Header().GetHeader(m.name)
-	case "query":
-		value = request.URI().GetQuery(m.name)
-	case "cookie":
-		value = request.Header().GetCookie(m.name)
-	default:
-		return false
-	}
-
-	return m.checker.Check(value, true)
-}
-
-type flowHandler struct {
-	id     int //1为灰度流量 2为正常流量
-	weight int
-}
-
-func (f *flowHandler) GetId() uint32 {
-	return uint32(f.id)
-}
-
-func (f *flowHandler) GetWeight() int {
-	return f.weight
-}
-
-// ABCABCABCABC 轮询从nodes中拿一个节点信息
-func (g *GreyHandler) selectNodes() eocontext.INode {
-	if len(g.rule.nodes) == 1 {
-		return g.rule.nodes[0]
-	}
-	g.rule.selectNodeLock.Lock()
-	defer g.rule.selectNodeLock.Unlock()
-
-	var node eocontext.INode
-	if g.rule.index == len(g.rule.nodes)-1 {
-		node = g.rule.nodes[g.rule.index]
-		g.rule.index = 0
-	} else {
-		node = g.rule.nodes[g.rule.index]
-		g.rule.index++
-	}
-
-	return node
+	g.balanceHandler = nil
 }
 
 func NewGreyHandler(conf *Config) (*GreyHandler, error) {
@@ -125,24 +83,46 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 		return nil, err
 	}
 
-	rule := &ruleHandler{
-		selectNodeLock: &sync.Mutex{},
-		keepSession:    conf.Rule.KeepSession,
-		nodes:          conf.Rule.GetNodes(),
-		distribution:   conf.Rule.Distribution,
+	handler := &GreyHandler{
+		name:     conf.Name,
+		IFilter:  filter,
+		priority: conf.Priority,
+		stop:     conf.Stop,
+	}
+	balanceFactory, err := balance.GetFactory("round-robin")
+	if err != nil {
+		return nil, err
+	}
+	app, err := discoveryAnonymous.GetApp(strings.Join(conf.Rule.Nodes, ";"))
+	if err != nil {
+		return nil, err
+	}
+
+	balanceHandler, err := balanceFactory.Create(app, "", 0)
+	if err != nil {
+		return nil, err
 	}
 
 	if conf.Rule.Distribution == percent {
-		greyFlow := &flowHandler{
+		greyFlowHandler := &flowHandler{
 			id:     1,
 			weight: conf.Rule.Percent,
 		}
-		normalFlow := &flowHandler{
+		normalFlowHandler := &flowHandler{
 			id:     2,
-			weight: 10000 - greyFlow.weight,
+			weight: 10000 - greyFlowHandler.weight,
 		}
-		//总权重10000
-		rule.greyMatch = &ruleGreyFlow{flowRobin: NewRobin(greyFlow, normalFlow)}
+
+		robin := NewRobin(greyFlowHandler, normalFlowHandler)
+		handler.GreyMatch = &greyFlow{flowRobin: robin}
+		if conf.Rule.KeepSession {
+			balanceHandler = session_keep.NewSession(balanceHandler)
+			//总权重10000
+			handler.GreyMatch = &keepSessionGreyFlow{
+				GreyMatch: handler.GreyMatch,
+			}
+		}
+
 	} else {
 		ruleFilter := make(matchingHandlerFilters, 0)
 		for _, matching := range conf.Rule.Matching {
@@ -162,14 +142,26 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 			ruleFilter = append(ruleFilter, matchingHandlerVal)
 		}
 
-		rule.greyMatch = &ruleGreyMatch{ruleFilter: ruleFilter}
+		handler.GreyMatch = &ruleGreyMatch{ruleFilter: ruleFilter}
 	}
+	old := handler.app
+	handler.app = app
+	if old != nil {
+		old.Close()
+	}
+	handler.balanceHandler = balanceHandler
+	return handler, nil
+}
 
-	return &GreyHandler{
-		name:     conf.Name,
-		filter:   filter,
-		priority: conf.Priority,
-		stop:     conf.Stop,
-		rule:     rule,
-	}, nil
+type flowHandler struct {
+	id     int //1为灰度流量 2为正常流量
+	weight int
+}
+
+func (f *flowHandler) GetId() uint32 {
+	return uint32(f.id)
+}
+
+func (f *flowHandler) GetWeight() int {
+	return f.weight
 }

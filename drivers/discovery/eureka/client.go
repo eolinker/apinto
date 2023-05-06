@@ -20,10 +20,11 @@ func newClient(address []string, params url.Values) *client {
 	return &client{address, params}
 }
 
-//GetNodeList 从eureka接入地址中获取对应服务的节点列表
-func (c *client) GetNodeList(serviceName string) (discovery.Nodes, error) {
+// GetNodeList 从eureka接入地址中获取对应服务的节点列表
+func (c *client) GetNodeList(serviceName string) ([]discovery.NodeInfo, error) {
 	isOk := false
-	nodes := make(discovery.Nodes)
+	nodes := make([]discovery.NodeInfo, 0, 5)
+	sets := make(map[string]struct{})
 	for _, addr := range c.address {
 		app, err := c.GetApplication(addr, serviceName)
 		if err != nil {
@@ -41,14 +42,19 @@ func (c *client) GetNodeList(serviceName string) (discovery.Nodes, error) {
 			} else if ins.SecurePort.Enabled {
 				port = ins.SecurePort.Port
 			}
-			label := map[string]string{
-				"app":      ins.App,
-				"hostName": ins.HostName,
+
+			if _, exist := sets[ins.InstanceID]; !exist {
+				node := discovery.NodeInfo{
+					Ip:   ins.IPAddr,
+					Port: port,
+					Labels: map[string]string{
+						"app":      ins.App,
+						"hostName": ins.HostName,
+					},
+				}
+				nodes = append(nodes, node)
 			}
-			if _, exist := nodes[ins.InstanceID]; !exist {
-				node := discovery.NewNode(label, ins.InstanceID, ins.IPAddr, port)
-				nodes[node.ID()] = node
-			}
+
 		}
 	}
 	if !isOk {
@@ -57,7 +63,7 @@ func (c *client) GetNodeList(serviceName string) (discovery.Nodes, error) {
 	return nodes, nil
 }
 
-//GetApplication 获取每个ip中指定服务名的实例列表
+// GetApplication 获取每个ip中指定服务名的实例列表
 func (c *client) GetApplication(addr string, serviceName string) (*Application, error) {
 	addr = fmt.Sprintf("%s/apps/%s", addr, serviceName)
 	req, err := http.NewRequest("GET", addr, nil)

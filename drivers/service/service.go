@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	session_keep "github.com/eolinker/apinto/upstream/session-keep"
+
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/upstream/balance"
 	"github.com/eolinker/eosc"
@@ -30,7 +32,6 @@ type Service struct {
 	lastConfig   *Config
 	passHost     eocontext.PassHostMod
 	upstreamHost string
-	upstreamID   string
 }
 
 func (s *Service) PassHost() (eocontext.PassHostMod, string) {
@@ -38,7 +39,14 @@ func (s *Service) PassHost() (eocontext.PassHostMod, string) {
 }
 
 func (s *Service) Nodes() []eocontext.INode {
-	return s.app.Nodes()
+	all := s.app.Nodes()
+	ns := make([]eocontext.INode, 0, len(all))
+	for _, n := range all {
+		if n.Status() == eocontext.Running {
+			ns = append(ns, n)
+		}
+	}
+	return ns
 }
 
 func (s *Service) Scheme() string {
@@ -50,8 +58,7 @@ func (s *Service) TimeOut() time.Duration {
 }
 
 // Reset 重置服务实例的配置
-func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-
+func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) (err error) {
 	data, ok := conf.(*Config)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
@@ -60,7 +67,6 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 	if reflect.DeepEqual(data, s.lastConfig) {
 		return nil
 	}
-	s.lastConfig = data
 
 	log.Debug("serviceWorker:", data.String())
 	if data.Discovery == "" && len(data.Nodes) == 0 {
@@ -69,10 +75,7 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 	if data.Discovery != "" && data.Service == "" {
 		return ErrorInvalidDiscovery
 	}
-	balanceFactory, err := balance.GetFactory(data.Balance)
-	if err != nil {
-		return err
-	}
+
 	var apps discovery.IApp
 	if data.Discovery != "" {
 		discoveryWorker, has := workers[data.Discovery]
@@ -93,18 +96,37 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 			return err
 		}
 	}
-	balanceHandler, err := balanceFactory.Create(apps)
-	if err != nil {
-		return err
-	}
+
+	old := s.app
 	s.app = apps
+
 	s.scheme = data.Scheme
 	s.timeout = time.Duration(data.Timeout) * time.Millisecond
+	balanceHandler := s.BalanceHandler
+	if s.lastConfig == nil || s.lastConfig.Balance != data.Balance || s.lastConfig.KeepSession != data.KeepSession {
+		balanceFactory, err := balance.GetFactory(data.Balance)
+		if err != nil {
+			return err
+		}
+
+		handler, err := balanceFactory.Create(s, s.scheme, s.timeout)
+		if err != nil {
+			return err
+		}
+		if data.KeepSession {
+			handler = session_keep.NewSession(handler)
+		}
+		balanceHandler = handler
+	}
 	s.BalanceHandler = balanceHandler
 	s.passHost = parsePassHost(data.PassHost)
 	s.scheme = data.Scheme
-	s.app = apps
+
 	s.upstreamHost = data.UpstreamHost
+	s.lastConfig = data
+	if old != nil {
+		old.Close()
+	}
 	return nil
 
 }
@@ -119,4 +141,16 @@ func parsePassHost(passHost string) eocontext.PassHostMod {
 		return eocontext.ReWriteHost
 	}
 	return eocontext.PassHost
+}
+
+func compareArray[T comparable](a, b []T) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

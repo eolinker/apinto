@@ -1,13 +1,14 @@
 package proxy_mirror
 
 import (
+	"math/rand"
+	"time"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
-	"math/rand"
-	"time"
 )
 
 var _ eocontext.IFilter = (*proxyMirror)(nil)
@@ -17,6 +18,7 @@ type proxyMirror struct {
 	randomRange int
 	randomPivot int
 	service     *mirrorService
+	conf        *Config
 }
 
 func (p *proxyMirror) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) error {
@@ -50,6 +52,9 @@ func setMirrorProxy(service *mirrorService, ctx eocontext.EoContext) {
 }
 
 func (p *proxyMirror) Start() error {
+	if p.service == nil {
+		p.service = newMirrorService(p.conf.Addr, p.conf.PassHost, p.conf.Host, time.Duration(p.conf.Timeout))
+	}
 	return nil
 }
 
@@ -59,18 +64,31 @@ func (p *proxyMirror) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWork
 		return err
 	}
 
+	oldService := p.service
 	p.service = newMirrorService(conf.Addr, conf.PassHost, conf.Host, time.Duration(conf.Timeout))
 	p.randomRange = conf.SampleConf.RandomRange
 	p.randomPivot = conf.SampleConf.RandomPivot
-
+	p.conf = conf
+	if oldService != nil {
+		oldService.stop()
+	}
 	return nil
 }
 
 func (p *proxyMirror) Stop() error {
+	if p.service != nil {
+		p.service.stop()
+	}
+	p.service = nil
 	return nil
 }
 
 func (p *proxyMirror) Destroy() {
+	if p.service != nil {
+		p.service.stop()
+	}
+	p.service = nil
+	return
 }
 
 func (p *proxyMirror) CheckSkill(skill string) bool {

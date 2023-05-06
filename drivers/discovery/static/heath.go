@@ -1,6 +1,7 @@
 package static
 
 import (
+	"github.com/eolinker/apinto/discovery"
 	health_check_http "github.com/eolinker/apinto/health-check-http"
 	"regexp"
 	"strings"
@@ -11,10 +12,13 @@ import (
 type HeathCheckHandler struct {
 	healthOn bool
 	checker  *health_check_http.HTTPCheck
+	nodes    discovery.INodes
 }
 
-func NewHeathCheckHandler(cfg *Config) *HeathCheckHandler {
-	h := &HeathCheckHandler{}
+func NewHeathCheckHandler(nodes discovery.INodes, cfg *Config) *HeathCheckHandler {
+	h := &HeathCheckHandler{
+		nodes: nodes,
+	}
 	h.reset(cfg)
 	return h
 }
@@ -22,7 +26,7 @@ func NewHeathCheckHandler(cfg *Config) *HeathCheckHandler {
 func (s *HeathCheckHandler) reset(cfg *Config) error {
 
 	s.healthOn = cfg.HealthOn
-
+	s.nodes.SetHealthCheck(s.healthOn)
 	if !cfg.HealthOn {
 		checker := s.checker
 		if checker != nil {
@@ -42,6 +46,7 @@ func (s *HeathCheckHandler) reset(cfg *Config) error {
 				Period:      time.Duration(cfg.Health.Period) * time.Second,
 				Timeout:     time.Duration(cfg.Health.Timeout) * time.Millisecond,
 			})
+		checker.Check(s.nodes)
 	} else {
 		checker.Reset(
 			health_check_http.Config{
@@ -74,7 +79,7 @@ func fields(str string) []string {
 	return words
 }
 
-//validIP 判断ip是否合法
+// validIP 判断ip是否合法
 func validIP(ip string) bool {
 	match, err := regexp.MatchString(`^(?:(?:1[0-9][0-9]\.)|(?:2[0-4][0-9]\.)|(?:25[0-5]\.)|(?:[1-9][0-9]\.)|(?:[0-9]\.)){3}(?:(?:1[0-9][0-9])|(?:2[0-4][0-9])|(?:25[0-5])|(?:[1-9][0-9])|(?:[0-9]))$`, ip)
 	if err != nil {

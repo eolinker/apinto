@@ -1,7 +1,10 @@
 package websocket
 
 import (
+	"github.com/eolinker/eosc/eocontext"
+	"github.com/eolinker/eosc/log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/fasthttp/websocket"
@@ -21,10 +24,16 @@ var skipHeaders = []string{
 	"Sec-Websocket-Protocol",
 }
 
-func DialWithTimeout(urlStr string, header http.Header, timeout time.Duration) (*websocket.Conn, *http.Response, error) {
+func DialWithTimeout(node eocontext.INode, path string, query string, header http.Header, timeout time.Duration) (*websocket.Conn, *http.Response, error) {
+	log.Debug("node: ", node.Addr())
+	u := url.URL{Scheme: "ws", Host: node.Addr(), Path: path, RawQuery: query}
 	dialer.HandshakeTimeout = timeout
 	for _, key := range skipHeaders {
 		header.Del(key)
 	}
-	return dialer.Dial(urlStr, header)
+	dial, h, err := dialer.Dial(u.String(), header)
+	if err != nil {
+		node.Down()
+	}
+	return dial, h, err
 }

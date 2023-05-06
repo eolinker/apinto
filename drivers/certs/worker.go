@@ -3,7 +3,6 @@ package certs
 import (
 	"crypto/tls"
 	"crypto/x509"
-
 	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
@@ -18,6 +17,18 @@ var (
 type Worker struct {
 	drivers.WorkerBase
 	config *Config
+}
+
+func (w *Worker) Check(conf interface{}, _ map[eosc.RequireId]eosc.IWorker) error {
+	config, ok := conf.(*Config)
+	if !ok {
+		return eosc.ErrorConfigIsNil
+	}
+	_, err := parseCert(config.Key, config.Pem)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (w *Worker) Destroy() error {
@@ -77,11 +88,13 @@ func genCert(key, pem []byte) (*tls.Certificate, error) {
 	if err != nil {
 		return nil, err
 	}
+	if certificate.Leaf == nil {
 
-	x509Cert, err := x509.ParseCertificate(certificate.Certificate[0])
-	if err != nil {
-		return nil, err
+		x509Cert, err := x509.ParseCertificate(certificate.Certificate[0])
+		if err != nil {
+			return nil, err
+		}
+		certificate.Leaf = x509Cert
 	}
-	certificate.Leaf = x509Cert
 	return &certificate, nil
 }

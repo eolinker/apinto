@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/eolinker/eosc/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 )
 
 var _ grpc_context.IRequest = (*Request)(nil)
@@ -27,6 +29,7 @@ type Request struct {
 	message *dynamic.Message
 	stream  grpc.ServerStream
 	realIP  string
+	addr    net.Addr
 }
 
 func (r *Request) SetHost(s string) {
@@ -55,12 +58,18 @@ func NewRequest(stream grpc.ServerStream) *Request {
 	if !has {
 		md = metadata.New(map[string]string{})
 	}
+	var addr net.Addr = zeroTCPAddr
+	p, has := peer.FromContext(stream.Context())
+	if has {
+		addr = p.Addr
+	}
 	hosts := md.Get(":authority")
 	return &Request{
 		stream:  stream,
 		service: service,
 		method:  method,
 		headers: md,
+		addr:    addr,
 		host:    strings.Join(hosts, ";"),
 	}
 }
@@ -87,8 +96,12 @@ func (r *Request) FullMethodName() string {
 
 func (r *Request) RealIP() string {
 	if r.realIP == "" {
-		r.realIP = strings.Join(r.headers.Get("x-real-ip"), ";")
+		realIP := strings.Join(r.headers.Get("x-real-ip"), ";")
+		if realIP == "" {
+			r.realIP = addrToIP(r.addr).String()
+		}
 	}
+
 	return r.realIP
 }
 
