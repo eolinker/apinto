@@ -6,7 +6,7 @@ import (
 )
 
 func Register(register eosc.IExtenderDriverRegister) {
-	register.RegisterExtenderDriver("ssl-server", newFactory())
+	_ = register.RegisterExtenderDriver("ssl-server", newFactory())
 	//setting.RegisterSetting("ssl-server", controller)
 }
 
