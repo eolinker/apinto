@@ -7,7 +7,7 @@ require (
 	github.com/brianvoe/gofakeit/v6 v6.20.1
 	github.com/coocood/freecache v1.2.2
 	github.com/dubbogo/gost v1.13.1
-	github.com/eolinker/eosc v0.12.1
+	github.com/eolinker/eosc v0.12.4
 	github.com/fasthttp/websocket v1.5.0
 	github.com/fullstorydev/grpcurl v1.8.7
 	github.com/go-redis/redis/v8 v8.11.5
