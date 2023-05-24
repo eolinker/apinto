@@ -1,9 +1,9 @@
 package resources
 
 import (
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
-	"sync"
 )
 
 var (
@@ -14,28 +14,15 @@ func init() {
 	bean.Autowired(&workers)
 }
 
-type CacheBuilder struct {
-	target string
-	once   sync.Once
-	cacher ICache
-}
+func NewCacheBuilder(target string) scope_manager.IProxyOutput[ICache] {
+	if len(target) == 0 {
+		return scope_manager.Get[ICache]("redis")
+	}
+	w, has := workers.Get(target)
+	if !has || !w.CheckSkill(CacheSkill) {
+		return scope_manager.Get[ICache](target)
+	}
 
-func NewCacheBuilder(target string) *CacheBuilder {
+	return scope_manager.NewProxy(w.(ICache))
 
-	return &CacheBuilder{target: target}
-}
-func (p *CacheBuilder) GET() ICache {
-	p.once.Do(func() {
-		if len(p.target) == 0 {
-			p.cacher = LocalCache()
-			return
-		}
-		worker, has := workers.Get(p.target)
-		if !has || !worker.CheckSkill(CacheSkill) {
-			p.cacher = LocalCache()
-			return
-		}
-		p.cacher = worker.(ICache)
-	})
-	return p.cacher
 }

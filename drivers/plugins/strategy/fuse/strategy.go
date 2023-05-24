@@ -4,17 +4,24 @@ import (
 	"github.com/eolinker/apinto/drivers"
 	fuse_strategy "github.com/eolinker/apinto/drivers/strategy/fuse-strategy"
 	"github.com/eolinker/apinto/resources"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 )
 
 type Strategy struct {
 	drivers.WorkerBase
-	cache *resources.CacheBuilder
+	cache scope_manager.IProxyOutput[resources.ICache]
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
-	return fuse_strategy.DoStrategy(ctx, next, s.cache.GET())
+	cl := s.cache.List()
+	if len(cl) > 0 {
+		return fuse_strategy.DoStrategy(ctx, next, cl[0])
+	} else {
+		return fuse_strategy.DoStrategy(ctx, next, resources.LocalCache())
+	}
+
 }
 
 func (s *Strategy) Destroy() {

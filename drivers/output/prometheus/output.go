@@ -125,7 +125,7 @@ func (p *PromOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 
 	//若Scopes有变,更新scopeManager
 	if checkScopesChange(p.config.Scopes, cfg.Scopes) {
-		scopeManager.Set(p.Id(), p, cfg.Scopes)
+		scopeManager.Set(p.Id(), p, cfg.Scopes...)
 	}
 
 	p.metricsInfo = metricsInfo

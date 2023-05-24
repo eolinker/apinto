@@ -42,7 +42,7 @@ func (o *Output) Start() error {
 		return err
 	}
 	o.producer = p
-	scopeManager.Set(o.Id(), o, o.scopes)
+	scopeManager.Set(o.Id(), o, o.scopes...)
 	return nil
 }
 
@@ -69,7 +69,7 @@ func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 		}
 		o.producer = p
 	}
-	scopeManager.Set(o.Id(), o, o.scopes)
+	scopeManager.Set(o.Id(), o, o.scopes...)
 	return nil
 }
 

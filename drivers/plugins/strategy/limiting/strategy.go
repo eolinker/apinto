@@ -4,6 +4,7 @@ import (
 	"github.com/eolinker/apinto/drivers"
 	limiting_strategy "github.com/eolinker/apinto/drivers/strategy/limiting-strategy"
 	"github.com/eolinker/apinto/resources"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	"sync"
@@ -12,14 +13,20 @@ import (
 
 type Strategy struct {
 	drivers.WorkerBase
-	buildProxy *resources.VectorBuilder
+	buildProxy scope_manager.IProxyOutput[resources.IVectors]
 	scalars    limiting_strategy.Scalars
 	once       sync.Once
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
 	s.once.Do(func() {
-		iVectors := s.buildProxy.GET()
+		var iVectors resources.IVectors
+		iVectorsList := s.buildProxy.List()
+		if len(iVectorsList) > 0 {
+			iVectors = iVectorsList[0]
+		} else {
+			resources.LocalVector()
+		}
 		s.scalars = limiting_strategy.Scalars{}
 
 		s.scalars.QuerySecond, _ = iVectors.BuildVector("query", time.Second, time.Second/2)

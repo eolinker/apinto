@@ -2,7 +2,6 @@ package access_log
 
 import (
 	"fmt"
-
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/apinto/drivers"
@@ -24,20 +23,20 @@ func check(v interface{}) (*Config, error) {
 	return cfg, nil
 }
 
-func getList(ids []eosc.RequireId) ([]interface{}, error) {
-	ls := make([]interface{}, 0, len(ids))
+func getList(ids []eosc.RequireId) ([]output.IEntryOutput, error) {
+	ls := make([]output.IEntryOutput, 0, len(ids))
 	for _, id := range ids {
 		worker, has := workers.Get(string(id))
 		if !has {
 			return nil, fmt.Errorf("%s:%w", id, eosc.ErrorWorkerNotExits)
 		}
 
-		_, ok := worker.(output.IEntryOutput)
+		eto, ok := worker.(output.IEntryOutput)
 		if !ok {
 			return nil, fmt.Errorf("%s:worker not implement IEntryOutput", string(id))
 		}
 
-		ls = append(ls, worker)
+		ls = append(ls, eto)
 
 	}
 	return ls, nil
@@ -54,11 +53,11 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 		WorkerBase: drivers.Worker(id, name),
 	}
 	if len(list) > 0 {
-		proxy := scope_manager.NewProxy()
-		proxy.Set(list)
+		proxy := scope_manager.NewProxy(list...)
+
 		o.proxy = proxy
 	} else {
-		o.proxy = scopeManager.Get("access_log")
+		o.proxy = scope_manager.Get[output.IEntryOutput]("access_log")
 	}
 
 	return o, nil

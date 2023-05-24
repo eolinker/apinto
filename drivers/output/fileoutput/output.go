@@ -1,6 +1,7 @@
 package fileoutput
 
 import (
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"reflect"
 
 	"github.com/eolinker/apinto/drivers"
@@ -49,14 +50,14 @@ func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 			return err
 		}
 		a.writer = w
-		scopeManager.Set(a.Id(), a, cfg.Scopes)
+		scope_manager.Set(a.Id(), a, cfg.Scopes...)
 	}
 
 	return nil
 }
 
 func (a *FileOutput) Stop() error {
-	scopeManager.Del(a.Id())
+	scope_manager.Del(a.Id())
 	a.isRunning = false
 	w := a.writer
 	if w != nil {
@@ -79,7 +80,7 @@ func (a *FileOutput) Start() error {
 		return err
 	}
 	a.writer = w
-	scopeManager.Set(a.Id(), a, a.config.Scopes)
+	scope_manager.Set(a.Id(), a, a.config.Scopes...)
 	return nil
 
 }

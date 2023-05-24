@@ -47,7 +47,7 @@ func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWor
 		}
 		n.write = w
 	}
-	scopeManager.Set(n.Id(), n, n.config.Scopes)
+	scopeManager.Set(n.Id(), n, n.config.Scopes...)
 	return nil
 }
 
@@ -71,7 +71,7 @@ func (n *NsqOutput) Start() error {
 		return err
 	}
 	n.write = w
-	scopeManager.Set(n.Id(), n, n.config.Scopes)
+	scopeManager.Set(n.Id(), n, n.config.Scopes...)
 	return nil
 }
 

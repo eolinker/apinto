@@ -14,7 +14,7 @@ import (
 var _ IManager = (*MonitorManager)(nil)
 
 type IManager interface {
-	SetProxyOutput(id string, proxy scope_manager.IProxyOutput)
+	SetProxyOutput(id string, proxy scope_manager.IProxyOutput[monitor_entry.IOutput])
 	ConcurrencyAdd(apiID string, count int32)
 	RemoveCurrencyAPI(apiID string)
 	Output(id string, ps []monitor_entry.IPoint)
@@ -27,7 +27,7 @@ func init() {
 }
 
 type MonitorManager struct {
-	outputs        eosc.Untyped[string, scope_manager.IProxyOutput]
+	outputs        eosc.Untyped[string, scope_manager.IProxyOutput[monitor_entry.IOutput]]
 	concurrentApis eosc.Untyped[string, *concurrency]
 	pointChan      chan point
 }
@@ -54,7 +54,7 @@ func (o *MonitorManager) RemoveCurrencyAPI(apiID string) {
 
 func NewMonitorManager() IManager {
 	o := &MonitorManager{
-		outputs:        eosc.BuildUntyped[string, scope_manager.IProxyOutput](),
+		outputs:        eosc.BuildUntyped[string, scope_manager.IProxyOutput[monitor_entry.IOutput]](),
 		concurrentApis: eosc.BuildUntyped[string, *concurrency](),
 		pointChan:      make(chan point, 100),
 	}
@@ -67,7 +67,7 @@ type point struct {
 	points []monitor_entry.IPoint
 }
 
-func (o *MonitorManager) SetProxyOutput(id string, proxy scope_manager.IProxyOutput) {
+func (o *MonitorManager) SetProxyOutput(id string, proxy scope_manager.IProxyOutput[monitor_entry.IOutput]) {
 	o.outputs.Set(id, proxy)
 }
 
@@ -107,7 +107,7 @@ func (o *MonitorManager) doLoop() {
 	}
 }
 
-func (o *MonitorManager) proxyOutput(v scope_manager.IProxyOutput, ps []monitor_entry.IPoint) {
+func (o *MonitorManager) proxyOutput(v scope_manager.IProxyOutput[monitor_entry.IOutput], ps []monitor_entry.IPoint) {
 	for _, proxy := range v.List() {
 		out, ok := proxy.(monitor_entry.IOutput)
 		if !ok {

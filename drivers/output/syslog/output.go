@@ -38,7 +38,7 @@ func (s *Output) Start() error {
 		}
 		s.writer = writer
 	}
-	scopeManager.Set(s.Id(), s, s.config.Scopes)
+	scopeManager.Set(s.Id(), s, s.config.Scopes...)
 	return nil
 }
 
@@ -64,7 +64,7 @@ func (s *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 		}
 		s.writer = writer
 	}
-	scopeManager.Set(s.Id(), s, s.config.Scopes)
+	scopeManager.Set(s.Id(), s, s.config.Scopes...)
 	return nil
 }
 
