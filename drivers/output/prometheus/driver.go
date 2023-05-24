@@ -3,6 +3,7 @@ package prometheus
 import (
 	"fmt"
 	"github.com/eolinker/apinto/drivers"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/router"
@@ -181,7 +182,7 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 
 	p.metrics = metrics
 
-	scopeManager.Set(p.Id(), p, p.config.Scopes)
+	scope_manager.Set(p.Id(), p, p.config.Scopes...)
 
 	return p, err
 }

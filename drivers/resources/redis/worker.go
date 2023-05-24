@@ -81,6 +81,7 @@ func (w *Worker) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 }
 
 func (w *Worker) Stop() error {
+	scope_manager.Del(w.Id())
 	if !w.isRunning {
 		return eosc.ErrorWorkerNotRunning
 	}

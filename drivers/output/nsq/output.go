@@ -1,6 +1,7 @@
 package nsq
 
 import (
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"reflect"
 
 	"github.com/eolinker/apinto/drivers"
@@ -47,12 +48,12 @@ func (n *NsqOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWor
 		}
 		n.write = w
 	}
-	scopeManager.Set(n.Id(), n, n.config.Scopes...)
+	scope_manager.Set(n.Id(), n, n.config.Scopes...)
 	return nil
 }
 
 func (n *NsqOutput) Stop() error {
-	scopeManager.Del(n.Id())
+	scope_manager.Del(n.Id())
 	w := n.write
 	if w != nil {
 		return w.stop()
@@ -71,7 +72,7 @@ func (n *NsqOutput) Start() error {
 		return err
 	}
 	n.write = w
-	scopeManager.Set(n.Id(), n, n.config.Scopes...)
+	scope_manager.Set(n.Id(), n, n.config.Scopes...)
 	return nil
 }
 
