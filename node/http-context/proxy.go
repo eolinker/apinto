@@ -51,8 +51,9 @@ func (r *ProxyRequest) reset(request *fasthttp.Request, remoteAddr string) {
 		r.req.Header.Set("x-forwarded-for", fmt.Sprint(string(forwardedFor), ",", remoteAddr))
 	} else {
 		r.req.Header.Set("x-forwarded-for", remoteAddr)
-
 	}
+
+	r.req.Header.Set("x-real-ip", r.RequestReader.realIP)
 
 }
 
