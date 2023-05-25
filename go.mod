@@ -7,7 +7,7 @@ require (
 	github.com/brianvoe/gofakeit/v6 v6.20.1
 	github.com/coocood/freecache v1.2.2
 	github.com/dubbogo/gost v1.13.1
-	github.com/eolinker/eosc v0.12.5
+	github.com/eolinker/eosc v0.12.4
 	github.com/fasthttp/websocket v1.5.0
 	github.com/fullstorydev/grpcurl v1.8.7
 	github.com/go-redis/redis/v8 v8.11.5
@@ -23,7 +23,7 @@ require (
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
 	github.com/soheilhy/cmux v0.1.5
 	github.com/urfave/cli/v2 v2.23.4
-	github.com/valyala/fasthttp v1.42.0
+	github.com/valyala/fasthttp v1.47.0
 	golang.org/x/crypto v0.7.0
 	golang.org/x/net v0.8.0
 	google.golang.org/grpc v1.50.1
