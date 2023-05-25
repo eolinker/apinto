@@ -1,7 +1,6 @@
 package http_context
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/eolinker/eosc/log"
@@ -45,23 +44,16 @@ var (
 )
 
 func (r *ProxyRequest) reset(request *fasthttp.Request, remoteAddr string) {
-	//proxyRequest := fasthttp.AcquireRequest()
-	//request.CopyTo(proxyRequest)
-	r.req = request
+
+	r.RequestReader.reset(request, remoteAddr)
 	forwardedFor := r.req.Header.PeekBytes(xforwardedforKey)
 	if len(forwardedFor) > 0 {
-		if i := bytes.IndexByte(forwardedFor, ','); i > 0 {
-			r.realIP = string(forwardedFor[:i])
-		} else {
-			r.realIP = string(forwardedFor)
-		}
-		r.req.Header.Set("x-forwarded-for", fmt.Sprint(string(forwardedFor), ",", r.remoteAddr))
+		r.req.Header.Set("x-forwarded-for", fmt.Sprint(string(forwardedFor), ",", remoteAddr))
 	} else {
-		r.req.Header.Set("x-forwarded-for", r.remoteAddr)
-		r.realIP = r.remoteAddr
+		r.req.Header.Set("x-forwarded-for", remoteAddr)
+
 	}
 
-	r.RequestReader.reset(r.req, remoteAddr)
 }
 
 //func NewProxyRequest(request *fasthttp.Request, remoteAddr string) *ProxyRequest {

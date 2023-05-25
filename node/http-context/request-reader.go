@@ -1,6 +1,7 @@
 package http_context
 
 import (
+	"bytes"
 	"strings"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -95,6 +96,17 @@ func (r *RequestReader) reset(req *fasthttp.Request, remoteAddr string) {
 	length := r.req.Header.ContentLength()
 	if length > 0 {
 		r.length = length
+	}
+
+	forwardedFor := r.req.Header.PeekBytes(xforwardedforKey)
+	if len(forwardedFor) > 0 {
+		if i := bytes.IndexByte(forwardedFor, ','); i > 0 {
+			r.realIP = string(forwardedFor[:i])
+		} else {
+			r.realIP = string(forwardedFor)
+		}
+	} else {
+		r.realIP = r.remoteAddr
 	}
 
 }
