@@ -3,7 +3,7 @@ package eureka
 import (
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -75,7 +75,7 @@ func (c *client) GetApplication(addr string, serviceName string) (*Application, 
 	if err != nil {
 		return nil, err
 	}
-	respBody, err := ioutil.ReadAll(res.Body)
+	respBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
