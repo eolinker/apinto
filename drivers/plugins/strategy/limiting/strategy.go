@@ -36,6 +36,7 @@ func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) 
 			s.lock.RUnlock()
 			s.lock.Lock()
 			if s.lastVectorId != id {
+				s.lastVectorId = id
 				redisScalars := &limiting_strategy.Scalars{}
 				redisScalars.QuerySecond, _ = iVectors.BuildVector("query", time.Second, time.Second/2)
 				redisScalars.QueryMinute, _ = iVectors.BuildVector("query", time.Minute, time.Second*10)
