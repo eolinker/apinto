@@ -13,31 +13,59 @@ import (
 
 type Strategy struct {
 	drivers.WorkerBase
-	buildProxy scope_manager.IProxyOutput[resources.IVectors]
-	scalars    limiting_strategy.Scalars
-	once       sync.Once
+	buildProxy   scope_manager.IProxyOutput[resources.IVectors]
+	localScalars *limiting_strategy.Scalars
+	redisScalars *limiting_strategy.Scalars
+	lastVectorId string
+	once         sync.Once
+	lock         sync.RWMutex
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
-	s.once.Do(func() {
-		var iVectors resources.IVectors
-		iVectorsList := s.buildProxy.List()
-		if len(iVectorsList) > 0 {
-			iVectors = iVectorsList[0]
+	iVectorsList := s.buildProxy.List()
+	var scalars *limiting_strategy.Scalars
+	if len(iVectorsList) > 0 {
+
+		iVectors := iVectorsList[0]
+		id := iVectors.(eosc.IWorker).Id()
+		s.lock.RLock()
+		if s.lastVectorId == id {
+			scalars = s.redisScalars
+			s.lock.RUnlock()
 		} else {
-			iVectors = resources.LocalVector()
+			s.lock.RUnlock()
+			s.lock.Lock()
+			if s.lastVectorId != id {
+				redisScalars := &limiting_strategy.Scalars{}
+				redisScalars.QuerySecond, _ = iVectors.BuildVector("query", time.Second, time.Second/2)
+				redisScalars.QueryMinute, _ = iVectors.BuildVector("query", time.Minute, time.Second*10)
+				redisScalars.QueryHour, _ = iVectors.BuildVector("query", time.Hour, time.Minute*10)
+				redisScalars.TrafficsSecond, _ = iVectors.BuildVector("traffic", time.Second, time.Second/2)
+				redisScalars.TrafficsMinute, _ = iVectors.BuildVector("traffic", time.Minute, time.Second*10)
+				redisScalars.TrafficsHour, _ = iVectors.BuildVector("traffic", time.Hour, time.Minute*10)
+				s.redisScalars = scalars
+			}
+			scalars = s.redisScalars
+			s.lock.Unlock()
 		}
-		s.scalars = limiting_strategy.Scalars{}
 
-		s.scalars.QuerySecond, _ = iVectors.BuildVector("query", time.Second, time.Second/2)
-		s.scalars.QueryMinute, _ = iVectors.BuildVector("query", time.Minute, time.Second*10)
-		s.scalars.QueryHour, _ = iVectors.BuildVector("query", time.Hour, time.Minute*10)
-		s.scalars.TrafficsSecond, _ = iVectors.BuildVector("traffic", time.Second, time.Second/2)
-		s.scalars.TrafficsMinute, _ = iVectors.BuildVector("traffic", time.Minute, time.Second*10)
-		s.scalars.TrafficsHour, _ = iVectors.BuildVector("traffic", time.Hour, time.Minute*10)
-	})
+	} else {
 
-	return limiting_strategy.DoStrategy(ctx, next, &s.scalars)
+		s.once.Do(func() {
+			iVectors := resources.LocalVector()
+			s.localScalars = &limiting_strategy.Scalars{}
+
+			s.localScalars.QuerySecond, _ = iVectors.BuildVector("query", time.Second, time.Second/2)
+			s.localScalars.QueryMinute, _ = iVectors.BuildVector("query", time.Minute, time.Second*10)
+			s.localScalars.QueryHour, _ = iVectors.BuildVector("query", time.Hour, time.Minute*10)
+			s.localScalars.TrafficsSecond, _ = iVectors.BuildVector("traffic", time.Second, time.Second/2)
+			s.localScalars.TrafficsMinute, _ = iVectors.BuildVector("traffic", time.Minute, time.Second*10)
+			s.localScalars.TrafficsHour, _ = iVectors.BuildVector("traffic", time.Hour, time.Minute*10)
+		})
+		scalars = s.localScalars
+	}
+
+	return limiting_strategy.DoStrategy(ctx, next, scalars)
 }
 
 func (s *Strategy) Destroy() {
