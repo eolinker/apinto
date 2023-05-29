@@ -25,7 +25,7 @@ func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) 
 		if len(iVectorsList) > 0 {
 			iVectors = iVectorsList[0]
 		} else {
-			resources.LocalVector()
+			iVectors = resources.LocalVector()
 		}
 		s.scalars = limiting_strategy.Scalars{}
 
