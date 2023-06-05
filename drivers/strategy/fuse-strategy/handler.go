@@ -41,19 +41,19 @@ func (f *FuseHandler) IsFuse(ctx context.Context, metrics string, cache resource
 
 // 熔断次数的key
 func getFuseCountKey(metrics string) string {
-	return fmt.Sprintf("fuse_count_%s_%d", metrics, time.Now().Unix())
+	return fmt.Sprintf("strategy-fuse:count:%s_%d", metrics, time.Now().Unix())
 }
 
 // 失败次数的key
 func getErrorCountKey(metrics string) string {
-	return fmt.Sprintf("fuse_error_count_%s_%d", metrics, time.Now().Unix())
+	return fmt.Sprintf("strategy-fuse:error_count:%s_%d", metrics, time.Now().Unix())
 }
 
 func getSuccessCountKey(metrics string) string {
-	return fmt.Sprintf("fuse_success_count_%s_%d", metrics, time.Now().Unix())
+	return fmt.Sprintf("strategy-fuse:success_count:%s_%d", metrics, time.Now().Unix())
 }
 func getFuseStatusKey(metrics string) string {
-	return fmt.Sprintf("fuse_status_%s", metrics)
+	return fmt.Sprintf("strategy-fuse:status:%s", metrics)
 }
 
 func getFuseStatus(ctx context.Context, metrics string, cache resources.ICache) fuseStatus {
