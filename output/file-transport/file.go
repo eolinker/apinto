@@ -43,6 +43,7 @@ func (w *FileController) dropHistory() {
 					_ = os.Remove(f)
 				}
 			}
+
 		}
 	}
 }

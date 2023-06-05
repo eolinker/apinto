@@ -1,14 +1,15 @@
 package fileoutput
 
 import (
-	file_transport "github.com/eolinker/apinto/output/file-transport"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
+	"github.com/eolinker/eosc/log/filelog"
+	"time"
 )
 
 type FileWriter struct {
 	formatter eosc.IFormatter
-	transport *file_transport.FileWriterByPeriod
+	transport *filelog.FileWriterByPeriod
 	//id        string
 }
 
@@ -37,14 +38,14 @@ func (a *FileWriter) reset(cfg *Config) (err error) {
 	}
 
 	transport := a.transport
-	c := &file_transport.Config{
+	c := &filelog.Config{
 		Dir:    cfg.Dir,
 		File:   cfg.File,
-		Expire: cfg.Expire,
-		Period: file_transport.ParsePeriod(cfg.Period),
+		Expire: time.Duration(cfg.Expire) * 24 * time.Hour,
+		Period: filelog.ParsePeriod(cfg.Period),
 	}
 	if transport == nil {
-		transport = file_transport.NewFileWriteByPeriod(c)
+		transport = filelog.NewFileWriteByPeriod(c)
 	} else {
 		transport.Reset(c)
 	}
