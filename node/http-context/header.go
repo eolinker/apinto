@@ -159,10 +159,8 @@ func (r *ResponseHeader) Headers() http.Header {
 func (r *ResponseHeader) SetHeader(key, value string) {
 
 	r.cache.Set(key, value)
-
-	if r.afterProxy {
-		r.header.Set(key, value)
-	} else {
+	r.header.Set(key, value)
+	if !r.afterProxy {
 		r.actions = append(r.actions, &headerAction{
 			Key:    key,
 			Value:  value,

@@ -183,7 +183,7 @@ type StatusErr struct {
 func httpHeaderToMD(headers http.Header, additionalHeader map[string]string) []string {
 	headers.Set("content-type", "application/grpc")
 	headers.Del("connection")
-	md := make([]string, len(headers)+len(additionalHeader))
+	md := make([]string, 0, len(headers)+len(additionalHeader))
 	//md := metadata.New(map[string]string{})
 	for key, value := range headers {
 		if strings.ToLower(key) == "user-agent" {
