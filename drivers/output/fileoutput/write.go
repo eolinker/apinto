@@ -38,7 +38,7 @@ func (a *FileWriter) reset(cfg *Config) (err error) {
 	}
 
 	transport := a.transport
-	c := &filelog.Config{
+	c := filelog.Config{
 		Dir:    cfg.Dir,
 		File:   cfg.File,
 		Expire: time.Duration(cfg.Expire) * 24 * time.Hour,
