@@ -23,6 +23,6 @@ func CreateAnonymous(conf *Config) discovery.IDiscovery {
 		cfg:      conf,
 		services: discovery.NewAppContainer(),
 	}
-	s.Start()
+	_ = s.Start()
 	return s
 }

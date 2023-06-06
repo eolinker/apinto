@@ -14,20 +14,20 @@ import (
 	"github.com/eolinker/eosc"
 )
 
-func getList(ids []eosc.RequireId) ([]interface{}, error) {
-	ls := make([]interface{}, 0, len(ids))
+func getList(ids []eosc.RequireId) ([]monitor_entry.IOutput, error) {
+	ls := make([]monitor_entry.IOutput, 0, len(ids))
 	for _, id := range ids {
-		worker, has := workers.Get(string(id))
+		w, has := workers.Get(string(id))
 		if !has {
 			return nil, fmt.Errorf("%s:%w", id, eosc.ErrorWorkerNotExits)
 		}
 
-		_, ok := worker.(monitor_entry.IOutput)
+		v, ok := w.(monitor_entry.IOutput)
 		if !ok {
-			return nil, fmt.Errorf("%s:worker d not implement IEntryOutput,now %v", string(id), reflect.TypeOf(worker))
+			return nil, fmt.Errorf("%s:worker d not implement IEntryOutput,now %v", string(id), reflect.TypeOf(w))
 		}
 
-		ls = append(ls, worker)
+		ls = append(ls, v)
 
 	}
 	return ls, nil
@@ -44,11 +44,11 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 		WorkerBase: drivers.Worker(id, name),
 	}
 	if len(list) > 0 {
-		proxy := scope_manager.NewProxy()
-		proxy.Set(list)
+		proxy := scope_manager.NewProxy(list...)
+
 		monitorManager.SetProxyOutput(id, proxy)
 	} else {
-		monitorManager.SetProxyOutput(id, scopeManager.Get("monitor"))
+		monitorManager.SetProxyOutput(id, scope_manager.Get[monitor_entry.IOutput]("monitor"))
 	}
 
 	return o, nil

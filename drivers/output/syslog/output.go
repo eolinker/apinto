@@ -1,6 +1,7 @@
 package syslog
 
 import (
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"reflect"
 
 	"github.com/eolinker/apinto/drivers"
@@ -28,7 +29,7 @@ func (s *Output) Output(entry eosc.IEntry) error {
 }
 
 func (s *Output) Start() error {
-	scopeManager.Del(s.Id())
+	scope_manager.Del(s.Id())
 	s.running = true
 	w := s.writer
 	if w == nil {
@@ -38,7 +39,7 @@ func (s *Output) Start() error {
 		}
 		s.writer = writer
 	}
-	scopeManager.Set(s.Id(), s, s.config.Scopes)
+	scope_manager.Set(s.Id(), s, s.config.Scopes...)
 	return nil
 }
 
@@ -64,12 +65,13 @@ func (s *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 		}
 		s.writer = writer
 	}
-	scopeManager.Set(s.Id(), s, s.config.Scopes)
+	scope_manager.Set(s.Id(), s, s.config.Scopes...)
 	return nil
 }
 
 func (s *Output) Stop() error {
 	w := s.writer
+	scope_manager.Del(s.Id())
 	if w != nil {
 		return w.stop()
 	}

@@ -18,26 +18,17 @@
 package getty
 
 import (
+	"dubbo.apache.org/dubbo-go/v3/common/constant"
+	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
+	"dubbo.apache.org/dubbo-go/v3/remoting"
+	hessian "github.com/apache/dubbo-go-hessian2"
+	gxtime "github.com/dubbogo/gost/time"
+	"github.com/eolinker/apinto/dubbo-getty"
+	"github.com/eolinker/eosc/log"
+	perrors "github.com/pkg/errors"
 	"sync"
 	"sync/atomic"
 	"time"
-)
-
-import (
-	"github.com/eolinker/apinto/dubbo-getty"
-
-	hessian "github.com/apache/dubbo-go-hessian2"
-
-	gxtime "github.com/dubbogo/gost/time"
-
-	perrors "github.com/pkg/errors"
-)
-
-import (
-	"dubbo.apache.org/dubbo-go/v3/common/constant"
-	"dubbo.apache.org/dubbo-go/v3/common/logger"
-	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
-	"dubbo.apache.org/dubbo-go/v3/remoting"
 )
 
 const (
@@ -93,7 +84,7 @@ func (h *RpcServerHandler) OnOpen(session getty.Session) error {
 		return perrors.WithStack(err)
 	}
 
-	logger.Infof("got session:%s", session.Stat())
+	log.Infof("got session:%s", session.Stat())
 	h.rwlock.Lock()
 	h.sessionMap[session] = &rpcSession{session: session}
 	h.rwlock.Unlock()
@@ -102,7 +93,7 @@ func (h *RpcServerHandler) OnOpen(session getty.Session) error {
 
 // OnError the getty server session has errored, so remove the session from the getty server session list
 func (h *RpcServerHandler) OnError(session getty.Session, err error) {
-	logger.Infof("session{%s} got error{%v}, will be closed.", session.Stat(), err)
+	log.Infof("session{%s} got error{%v}, will be closed.", session.Stat(), err)
 	h.rwlock.Lock()
 	delete(h.sessionMap, session)
 	h.rwlock.Unlock()
@@ -110,7 +101,7 @@ func (h *RpcServerHandler) OnError(session getty.Session, err error) {
 
 // OnClose close the session, remove it from the getty server list
 func (h *RpcServerHandler) OnClose(session getty.Session) {
-	logger.Infof("session{%s} is closing......", session.Stat())
+	log.Infof("session{%s} is closing......", session.Stat())
 	h.rwlock.Lock()
 	delete(h.sessionMap, session)
 	h.rwlock.Unlock()
@@ -127,20 +118,20 @@ func (h *RpcServerHandler) OnMessage(session getty.Session, pkg interface{}) {
 	decodeResult, drOK := pkg.(*remoting.DecodeResult)
 
 	if !drOK || decodeResult == ((*remoting.DecodeResult)(nil)) {
-		logger.Errorf("illegal package{%#v}", pkg)
+		log.Errorf("illegal package{%#v}", pkg)
 		return
 	}
 	if !decodeResult.IsRequest {
 		res := decodeResult.Result.(*remoting.Response)
 		if res.Event {
-			logger.Debugf("get rpc heartbeat response{%#v}", res)
+			log.DebugF("get rpc heartbeat response{%#v}", res)
 			if res.Error != nil {
-				logger.Errorf("rpc heartbeat response{error: %#v}", res.Error)
+				log.Errorf("rpc heartbeat response{error: %#v}", res.Error)
 			}
 			res.Handle()
 			return
 		}
-		logger.Errorf("illegal package but not heartbeat. {%#v}", pkg)
+		log.Errorf("illegal package but not heartbeat. {%#v}", pkg)
 		return
 	}
 	req := decodeResult.Result.(*remoting.Request)
@@ -153,7 +144,7 @@ func (h *RpcServerHandler) OnMessage(session getty.Session, pkg interface{}) {
 
 	// heartbeat
 	if req.Event {
-		logger.Debugf("get rpc heartbeat request{%#v}", resp)
+		log.DebugF("get rpc heartbeat request{%#v}", resp)
 		reply(session, resp)
 		return
 	}
@@ -188,7 +179,7 @@ func (h *RpcServerHandler) OnCron(session getty.Session) {
 		active = session.GetActive()
 		if h.sessionTimeout.Nanoseconds() < time.Since(active).Nanoseconds() {
 			flag = true
-			logger.Warnf("session{%s} timeout{%s}, reqNum{%d}",
+			log.Warnf("session{%s} timeout{%s}, reqNum{%d}",
 				session.Stat(), time.Since(active).String(), h.sessionMap[session].reqNum)
 		}
 	}
@@ -203,7 +194,7 @@ func (h *RpcServerHandler) OnCron(session getty.Session) {
 
 	heartbeatCallBack := func(err error) {
 		if err != nil {
-			logger.Warnf("failed to send heartbeat, error{%v}", err)
+			log.Warnf("failed to send heartbeat, error{%v}", err)
 			if h.timeoutTimes >= 3 {
 				h.rwlock.Lock()
 				delete(h.sessionMap, session)
@@ -218,17 +209,17 @@ func (h *RpcServerHandler) OnCron(session getty.Session) {
 	}
 
 	if err := heartbeat(session, h.server.conf.heartbeatTimeout, heartbeatCallBack); err != nil {
-		logger.Warnf("failed to send heartbeat, error{%v}", err)
+		log.Warnf("failed to send heartbeat, error{%v}", err)
 	}
 }
 
 func reply(session getty.Session, resp *remoting.Response) {
 	if totalLen, sendLen, err := session.WritePkg(resp, WritePkg_Timeout); err != nil {
 		if sendLen != 0 && totalLen != sendLen {
-			logger.Warnf("start to close the session at replying because %d of %d bytes data is sent success. err:%+v", sendLen, totalLen, err)
+			log.Warnf("start to close the session at replying because %d of %d bytes data is sent success. err:%+v", sendLen, totalLen, err)
 			go session.Close()
 		}
-		logger.Errorf("WritePkg error: %#v, %#v", perrors.WithStack(err), resp)
+		log.Errorf("WritePkg error: %#v, %#v", perrors.WithStack(err), resp)
 	}
 }
 
@@ -240,7 +231,7 @@ func heartbeat(session getty.Session, timeout time.Duration, callBack func(err e
 	remoting.AddPendingResponse(resp)
 	totalLen, sendLen, err := session.WritePkg(req, -1)
 	if sendLen != 0 && totalLen != sendLen {
-		logger.Warnf("start to close the session at heartbeat because %d of %d bytes data is sent success. err:%+v", sendLen, totalLen, err)
+		log.Warnf("start to close the session at heartbeat because %d of %d bytes data is sent success. err:%+v", sendLen, totalLen, err)
 		go session.Close()
 	}
 

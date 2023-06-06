@@ -162,7 +162,7 @@ func (f *fuseFinishHandler) Finish(eoCtx eocontext.EoContext) error {
 		errCount, _ := tx.IncrBy(ctx, getErrorCountKey(f.metrics), 1, time.Second).Result()
 		//清除恢复的计数器
 		tx.Del(ctx, getSuccessCountKey(f.metrics))
-		tx.Exec(ctx)
+		_ = tx.Exec(ctx)
 
 		if errCount == f.fuseHandler.rule.fuseConditionCount {
 
@@ -195,7 +195,7 @@ func (f *fuseFinishHandler) Finish(eoCtx eocontext.EoContext) error {
 
 			txDone.Set(ctx, getFuseStatusKey(f.metrics), []byte(strconv.FormatInt(expUnix, 16)), fuseStatusTime)
 			txDone.Del(ctx, lockerKey)
-			txDone.Exec(ctx)
+			_ = txDone.Exec(ctx)
 		}
 
 	case codeStatusSuccess:
@@ -218,7 +218,7 @@ func (f *fuseFinishHandler) Finish(eoCtx eocontext.EoContext) error {
 					//删除已记录的熔断次数
 					tx.Del(ctx, getFuseCountKey(f.metrics))
 					tx.Del(ctx, lockerKey)
-					tx.Exec(ctx)
+					_ = tx.Exec(ctx)
 				}
 			}
 

@@ -2,104 +2,89 @@ package scope_manager
 
 import (
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/common/bean"
 	"sync"
 )
 
-func init() {
-	manager := NewManager()
-	bean.Injection(&manager)
-}
-
-var _ IManager = (*Manager)(nil)
-
-type Manager struct {
-	scopes     eosc.Untyped[string, IProxy]
+var (
+	scopes     eosc.Untyped[string, *_Proxy]
 	connScope  eosc.Untyped[string, []string]
 	connOutput eosc.Untyped[string, eosc.Untyped[string, interface{}]]
 	locker     sync.Mutex
+)
+
+func init() {
+	scopes = eosc.BuildUntyped[string, *_Proxy]()
+	connScope = eosc.BuildUntyped[string, []string]()
+	connOutput = eosc.BuildUntyped[string, eosc.Untyped[string, interface{}]]()
 }
 
-func NewManager() IManager {
-
-	return &Manager{
-		scopes:     eosc.BuildUntyped[string, IProxy](),
-		connScope:  eosc.BuildUntyped[string, []string](),
-		connOutput: eosc.BuildUntyped[string, eosc.Untyped[string, interface{}]](),
-	}
-}
-
-func (m *Manager) Get(scopeName string) IProxyOutput {
-	proxy, has := m.scopes.Get(scopeName)
+func Get[T any](scopeName string) IProxyOutput[T] {
+	proxy, has := scopes.Get(scopeName)
 	if !has {
-		m.locker.Lock()
-		defer m.locker.Unlock()
-		proxy, has = m.scopes.Get(scopeName)
+		locker.Lock()
+		defer locker.Unlock()
+		proxy, has = scopes.Get(scopeName)
 		if !has {
-			proxy = NewProxy()
-			m.scopes.Set(scopeName, proxy)
+			proxy = newProxy()
+			scopes.Set(scopeName, proxy)
 		}
 	}
-	return proxy
+
+	return create[T](proxy)
 }
 
-func (m *Manager) Set(name string, value interface{}, scopes []string) {
-	m.locker.Lock()
-	defer m.locker.Unlock()
-	m.del(name)
-	m.set(name, value, scopes)
-	m.rebuild()
+func Set(name string, value interface{}, scopes ...string) {
+	locker.Lock()
+	defer locker.Unlock()
+	del(name)
+
+	set(name, value, append(scopes, name))
+	rebuild()
 }
 
-func (m *Manager) set(name string, value interface{}, scopes []string) {
+func set(name string, value interface{}, scopes []string) {
 	if len(scopes) < 1 {
 		return
 	}
-	m.connScope.Set(name, scopes)
+	connScope.Set(name, scopes)
 	for _, scope := range scopes {
-		output, has := m.connOutput.Get(scope)
+		output, has := connOutput.Get(scope)
 		if !has {
 			output = eosc.BuildUntyped[string, interface{}]()
-			m.connOutput.Set(scope, output)
+			connOutput.Set(scope, output)
 		}
 		output.Set(name, value)
 	}
 }
 
-func (m *Manager) rebuild() {
-	outputs := m.connOutput.All()
+func rebuild() {
+	outputs := connOutput.All()
 	for key, value := range outputs {
-		proxy, has := m.scopes.Get(key)
+		proxy, has := scopes.Get(key)
 		if !has {
-			proxy = NewProxy()
+			proxy = newProxy()
 		}
 		proxy.Set(value.List())
-		m.scopes.Set(key, proxy)
+		scopes.Set(key, proxy)
 	}
 }
 
-func (m *Manager) Del(name string) {
-	m.locker.Lock()
-	defer m.locker.Unlock()
-	m.del(name)
-	m.rebuild()
+func Del(name string) {
+	locker.Lock()
+	defer locker.Unlock()
+	del(name)
+	rebuild()
 }
 
-func (m *Manager) del(name string) {
-	scopes, has := m.connScope.Del(name)
+func del(name string) {
+	scopes, has := connScope.Del(name)
 	if has {
 		for _, scope := range scopes {
-			output, has := m.connOutput.Get(scope)
+			output, has := connOutput.Get(scope)
 			if !has {
 				continue
 			}
 			output.Del(name)
 		}
 	}
-}
-
-type IManager interface {
-	Get(scopeName string) IProxyOutput
-	Set(name string, value interface{}, scopes []string)
-	Del(name string)
 }

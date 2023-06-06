@@ -23,9 +23,9 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/eolinker/eosc/log"
-	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -303,7 +303,7 @@ func (s *server) runTCPEventLoop(newSession NewSessionCallback) {
 			}
 			client, err = s.accept(newSession)
 			if err != nil {
-				if netErr, ok := perrors.Cause(err).(net.Error); ok && netErr.Temporary() {
+				if netErr, ok := perrors.Cause(err).(net.Error); ok && netErr.Timeout() {
 					if delay == 0 {
 						delay = 5 * time.Millisecond
 					} else {
@@ -456,9 +456,9 @@ func (s *server) runWSSEventLoop(newSession NewSessionCallback) {
 		}
 
 		if s.caCert != "" {
-			certPem, err = ioutil.ReadFile(s.caCert)
+			certPem, err = os.ReadFile(s.caCert)
 			if err != nil {
-				panic(fmt.Errorf("ioutil.ReadFile(certFile{%s}) = err:%+v", s.caCert, perrors.WithStack(err)))
+				panic(fmt.Errorf("os.ReadFile(certFile{%s}) = err:%+v", s.caCert, perrors.WithStack(err)))
 			}
 			certPool = x509.NewCertPool()
 			if ok := certPool.AppendCertsFromPEM(certPem); !ok {

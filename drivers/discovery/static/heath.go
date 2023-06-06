@@ -19,7 +19,7 @@ func NewHeathCheckHandler(nodes discovery.INodes, cfg *Config) *HeathCheckHandle
 	h := &HeathCheckHandler{
 		nodes: nodes,
 	}
-	h.reset(cfg)
+	_ = h.reset(cfg)
 	return h
 }
 
@@ -48,7 +48,7 @@ func (s *HeathCheckHandler) reset(cfg *Config) error {
 			})
 		checker.Check(s.nodes)
 	} else {
-		checker.Reset(
+		_ = checker.Reset(
 			health_check_http.Config{
 				Protocol:    cfg.Health.Scheme,
 				Method:      cfg.Health.Method,
