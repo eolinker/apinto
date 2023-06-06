@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-//MaxBuffer buffer最大值
+// MaxBuffer buffer最大值
 const MaxBuffer = 1024 * 500
 
 var (
@@ -21,7 +21,7 @@ var (
 	}
 )
 
-//FileWriterByPeriod 文件周期写入
+// FileWriterByPeriod 文件周期写入
 type FileWriterByPeriod struct {
 	wC chan *bytes.Buffer
 
@@ -32,7 +32,7 @@ type FileWriterByPeriod struct {
 	resetChan  chan FileController
 }
 
-//NewFileWriteByPeriod 获取新的FileWriterByPeriod
+// NewFileWriteByPeriod 获取新的FileWriterByPeriod
 func NewFileWriteByPeriod(cfg *Config) *FileWriterByPeriod {
 	w := &FileWriterByPeriod{
 		locker:    sync.RWMutex{},
@@ -59,7 +59,7 @@ func (w *FileWriterByPeriod) Reset(cfg *Config) {
 	}
 }
 
-//Open 打开
+// Open 打开
 func (w *FileWriterByPeriod) Open(config *FileController) {
 	w.locker.Lock()
 	defer w.locker.Unlock()
@@ -80,7 +80,7 @@ func (w *FileWriterByPeriod) Open(config *FileController) {
 	}()
 }
 
-//Close 关闭
+// Close 关闭
 func (w *FileWriterByPeriod) Close() {
 
 	isClose := false
@@ -210,7 +210,7 @@ func (w *FileWriterByPeriod) do(ctx context.Context, config *FileController) {
 }
 
 func (w *FileController) initFile() {
-	err := os.MkdirAll(w.dir, 0755)
+	err := os.MkdirAll(w.dir, 0666)
 	if err != nil {
 		log.Error(err)
 	}

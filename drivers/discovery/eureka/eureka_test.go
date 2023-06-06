@@ -1,6 +1,7 @@
 package eureka
 
 import (
+	"github.com/eolinker/apinto/drivers"
 	"sync"
 	"testing"
 
@@ -21,11 +22,10 @@ func TestGetApp(t *testing.T) {
 		},
 	}
 	e := &eureka{
-		id: "1",
+		WorkerBase: drivers.Worker("1", name),
 
 		client:   newClient(cfg.getAddress(), cfg.getParams()),
-		nodes:    discovery.NewNodesData(),
-		services: discovery.NewServices(),
+		services: discovery.NewAppContainer(),
 		locker:   sync.RWMutex{},
 	}
 	app, err := e.GetApp(serviceName)
@@ -35,10 +35,5 @@ func TestGetApp(t *testing.T) {
 	for _, node := range app.Nodes() {
 		t.Log(node.ID())
 	}
-	ns, bo := e.nodes.Get(serviceName)
-	if bo {
-		t.Log(len(ns))
-	} else {
-		t.Error("nodes error")
-	}
+
 }

@@ -1,13 +1,14 @@
 package manager
 
 import (
+	"net"
+
 	"github.com/eolinker/apinto/drivers/router"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 	"github.com/valyala/fasthttp"
-	"net"
 )
 
 var (
@@ -23,6 +24,7 @@ func init() {
 			DisablePreParseMultipartForm: true,
 			MaxRequestBodySize:           100 * 1024 * 1024,
 			ReadBufferSize:               16 * 1024,
+
 			Handler: func(ctx *fasthttp.RequestCtx) {
 				routerManager.FastHandler(port, ctx)
 			}}

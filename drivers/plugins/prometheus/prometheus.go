@@ -19,7 +19,7 @@ var _ http_service.HttpFilter = (*prometheus)(nil)
 
 type prometheus struct {
 	drivers.WorkerBase
-	proxy   scope_manager.IProxyOutput
+	proxy   scope_manager.IProxyOutput[output.IMetrics]
 	metrics []string
 }
 
@@ -71,11 +71,10 @@ func (p *prometheus) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		return err
 	}
 	if len(list) > 0 {
-		proxy := scope_manager.NewProxy()
-		proxy.Set(list)
+		proxy := scope_manager.NewProxy(list...)
 		p.proxy = proxy
 	} else {
-		p.proxy = scopeManager.Get(globalScopeName)
+		p.proxy = scope_manager.Get[output.IMetrics](globalScopeName)
 	}
 
 	p.metrics = c.Metrics

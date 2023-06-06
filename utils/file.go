@@ -2,10 +2,10 @@ package utils
 
 import "os"
 
-//GenFile 根据路径和数据生成文件
+// GenFile 根据路径和数据生成文件
 func GenFile(dir, fileName, data string) error {
 	dir = "work/export/" + dir
-	err := os.MkdirAll(dir, 0755)
+	err := os.MkdirAll(dir, 0666)
 	if err != nil {
 		return err
 	}
