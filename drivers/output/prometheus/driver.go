@@ -170,8 +170,8 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 		p.registry, promhttp.HandlerFor(p.registry, promhttp.HandlerOpts{}),
 	)
 
-	//路径为 metrics路径为 /apinto/prometheus/metrics/{worker_name} 前面的/apinto/在router.SetPath里做拼接
-	err = router.SetPath(p.Id(), fmt.Sprintf("/prometheus/metrics/%s", name), p)
+	//metrics路径为 /apinto/metrics/prometheus/{worker_name} 前面的/apinto/在router.SetPath里做拼接
+	err = router.SetPath(p.Id(), fmt.Sprintf("/metrics/prometheus/%s", name), p)
 	if err != nil {
 		return nil, fmt.Errorf("create output %s fail: %w", p.Id(), err)
 	}
