@@ -13,11 +13,11 @@ var (
 	configType = reflect.TypeOf((*Config)(nil))
 )
 
-//Register 注册http路由驱动工厂
+// Register 注册http路由驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
 
-	register.RegisterExtenderDriver(Name, newFactory())
-	setting.RegisterSetting("strategies-fuse", controller)
+	_ = register.RegisterExtenderDriver(Name, newFactory())
+	_ = setting.RegisterSetting("strategies-fuse", controller)
 }
 
 type factory struct {

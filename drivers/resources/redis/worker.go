@@ -3,6 +3,7 @@ package redis
 import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/resources"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
 	"github.com/go-redis/redis/v8"
 	"reflect"
@@ -11,6 +12,10 @@ import (
 var (
 	_ resources.ICache   = (*Worker)(nil)
 	_ resources.IVectors = (*Worker)(nil)
+)
+
+const (
+	scopeRedis = "redis"
 )
 
 type Worker struct {
@@ -37,6 +42,11 @@ func (w *Worker) Start() error {
 	h := &Cmdable{cmdable: client}
 	w.client, w.ICache, w.IVectors = client, h, h
 	w.isRunning = true
+	if len(w.config.Scopes) > 0 {
+		scope_manager.Set(w.Id(), w, w.config.Scopes...)
+	} else {
+		scope_manager.Set(w.Id(), w, scopeRedis)
+	}
 	return nil
 }
 
@@ -56,6 +66,11 @@ func (w *Worker) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 			oc := w.client
 			w.client, w.ICache = client, &Cmdable{cmdable: client}
 			oc.Close()
+			if len(w.config.Scopes) > 0 {
+				scope_manager.Set(w.Id(), w, w.config.Scopes...)
+			} else {
+				scope_manager.Set(w.Id(), w, scopeRedis)
+			}
 		} else {
 			client.Close()
 		}
@@ -66,6 +81,7 @@ func (w *Worker) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 }
 
 func (w *Worker) Stop() error {
+	scope_manager.Del(w.Id())
 	if !w.isRunning {
 		return eosc.ErrorWorkerNotRunning
 	}

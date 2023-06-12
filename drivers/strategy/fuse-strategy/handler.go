@@ -1,6 +1,7 @@
 package fuse_strategy
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,7 +10,6 @@ import (
 	"github.com/eolinker/apinto/metrics"
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/apinto/strategy"
-	"golang.org/x/net/context"
 )
 
 type fuseStatus string
@@ -80,11 +80,6 @@ type ruleHandler struct {
 	recoverConditionCount int64
 	response              strategyResponseConf
 	codeStatusMap         map[int]codeStatus
-}
-
-type statusConditionConf struct {
-	statusCodes []int
-	count       int64
 }
 
 type fuseTimeConf struct {
