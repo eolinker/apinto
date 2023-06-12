@@ -87,7 +87,7 @@ func (a *FileOutput) Start() error {
 	if w == nil {
 		w = new(FileWriter)
 	}
-	err := router.SetPath(a.Id(), fmt.Sprintf("/log/access-log/%s", a.Name()), a)
+	err := router.SetPath(a.Id(), fmt.Sprintf("/log/access/%s/", a.Name()), a)
 	if err != nil {
 		return err
 	}
