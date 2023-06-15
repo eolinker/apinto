@@ -52,7 +52,7 @@ func (a *FileWriter) reset(cfg *Config, name string) (err error) {
 	}
 	if transport == nil {
 		transport = filelog.NewFileWriteByPeriod(c)
-		a.fileHandler = transport.ServeHTTP(fmt.Sprintf("/%s/log/access/%s", router.RouterPrefix, name))
+		a.fileHandler = transport.ServeHTTP(fmt.Sprintf("/%slog/access/%s", router.RouterPrefix, name))
 	} else {
 		transport.Reset(c)
 	}
