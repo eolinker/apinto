@@ -54,7 +54,11 @@ deployer:
     - builder
   script:
     - cp out/${APP_PRE}.linux.x64.tar.gz ${SAVE_DIR}
-    - cd ${SAVE_DIR};cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}; ./install.sh upgrade;cd ${SAVE_DIR}; ./clean.sh ${APP_PRE}
+    - cd ${SAVE_DIR};cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}
+    - ./apinto stop
+    - sleep 10s
+    - ./apinto start
+    - cd ${SAVE_DIR}; ./clean.sh ${APP_PRE}
     - |
       curl -X POST -H "Content-Type: application/json" \
       -d "{\"msg_type\":\"text\",\"content\":{\"text\":\"项目：apinto\\n环境：${DEPLOY_DESC}\\n更新部署完成.\"}}" \
