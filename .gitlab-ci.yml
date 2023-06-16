@@ -55,6 +55,7 @@ deployer:
   script:
     - cp out/${APP_PRE}.linux.x64.tar.gz ${SAVE_DIR}
     - cd ${SAVE_DIR};cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}
+    - pwd
     - ./apinto stop
     - sleep 10s
     - ./apinto start
