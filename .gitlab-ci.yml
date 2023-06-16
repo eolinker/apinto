@@ -12,7 +12,7 @@ variables:
   SAVE_DIR: /opt/apinto
   VERSION: $CI_COMMIT_SHORT_SHA
   APP: apinto
-  APP_PRE: ${APP}_${VERSION}
+  APP_PRE: ${APP}-${VERSION}
   BUILD_DIR: apserver-build
 
 default:
