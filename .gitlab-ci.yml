@@ -38,7 +38,7 @@ builder:
     - if: $CI_COMMIT_BRANCH=="main"
   script:
 #    - sed -i '/replace github.com\/eolinker\/eosc => */d' go.mod
-    - cd ../eosc && git pull
+    - cd ../eosc && git pull && cd ..
     - go mod tidy
     - cd build/cmd && ./package.sh $VERSION
   cache:
