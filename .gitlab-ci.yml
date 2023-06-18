@@ -50,6 +50,7 @@ deployer:
     - if: $CI_COMMIT_BRANCH=="main"
       variables:
         DEPLOY_DESC: "DEV 环境"
+        APINTO_DEBUG: "true"
   dependencies:
     - builder
   script:
