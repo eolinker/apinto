@@ -50,6 +50,7 @@ deployer:
     - if: $CI_COMMIT_BRANCH=="main"
       variables:
         DEPLOY_DESC: "DEV 环境"
+        APINTO_DEBUG: "true"
   dependencies:
     - builder
   script:
@@ -59,7 +60,6 @@ deployer:
     - ./apinto stop
     - sleep 10s
     - ./apinto start
-    - sleep 10s
     - ps -ef | grep apinto
     - cd ${SAVE_DIR}; ./clean.sh ${APP_PRE}
     - |
