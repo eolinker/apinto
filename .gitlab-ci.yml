@@ -59,6 +59,7 @@ deployer:
     - ./apinto stop
     - sleep 10s
     - ./apinto start
+    - ps -ef | grep apinto
     - cd ${SAVE_DIR}; ./clean.sh ${APP_PRE}
     - |
       curl -X POST -H "Content-Type: application/json" \
