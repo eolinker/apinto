@@ -57,6 +57,7 @@ deployer:
     - cp out/${APP_PRE}.linux.x64.tar.gz ${SAVE_DIR}
     - cd ${SAVE_DIR};cd ${SAVE_DIR}; mkdir -p ${APP_PRE};tar -zxvf ${APP_PRE}.linux.x64.tar.gz -C ${APP_PRE};cd ${APP_PRE}/${APP}
     - ln -snF ${SAVE_DIR}/etc/tmp ./ && cp ${SAVE_DIR}/etc/apinto.yml ./ && cp ${SAVE_DIR}/etc/config.yml ./
+    - pwd
     - ./apinto stop
     - sleep 10s
     - ./apinto start
