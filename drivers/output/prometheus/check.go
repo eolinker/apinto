@@ -2,7 +2,6 @@ package prometheus
 
 import (
 	"sort"
-	"strings"
 )
 
 // checkScopesChange 检查scopes配置是否有改变
@@ -24,15 +23,6 @@ func checkScopesChange(oldScopes, newScopes []string) bool {
 		}
 	}
 
-	return false
-}
-
-func checkPathChange(oldPath, newPath string) bool {
-	oldPath = "/" + strings.Trim(oldPath, "/")
-	newPath = "/" + strings.Trim(newPath, "/")
-	if oldPath != newPath {
-		return true
-	}
 	return false
 }
 
