@@ -1,14 +1,15 @@
 package limiting
 
 import (
+	"sync"
+	"time"
+
 	"github.com/eolinker/apinto/drivers"
 	limiting_strategy "github.com/eolinker/apinto/drivers/strategy/limiting-strategy"
 	"github.com/eolinker/apinto/resources"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
-	"sync"
-	"time"
 )
 
 type Strategy struct {
@@ -17,11 +18,17 @@ type Strategy struct {
 	localScalars *limiting_strategy.Scalars
 	redisScalars *limiting_strategy.Scalars
 	lastVectorId string
+	redisID      string
 	once         sync.Once
 	lock         sync.RWMutex
+	doFilterOnce sync.Once
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
+	s.doFilterOnce.Do(func() {
+		s.buildProxy = scope_manager.Auto[resources.IVectors](s.redisID, "redis")
+
+	})
 	iVectorsList := s.buildProxy.List()
 	var scalars *limiting_strategy.Scalars
 	if len(iVectorsList) > 0 {
@@ -44,7 +51,7 @@ func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) 
 				redisScalars.TrafficsSecond, _ = iVectors.BuildVector("traffic", time.Second, time.Second/2)
 				redisScalars.TrafficsMinute, _ = iVectors.BuildVector("traffic", time.Minute, time.Second*10)
 				redisScalars.TrafficsHour, _ = iVectors.BuildVector("traffic", time.Hour, time.Minute*10)
-				s.redisScalars = scalars
+				s.redisScalars = redisScalars
 			}
 			scalars = s.redisScalars
 			s.lock.Unlock()

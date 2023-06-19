@@ -1,7 +1,6 @@
 package http_entry
 
 import (
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -125,7 +124,7 @@ var (
 				if !ok {
 					return "", false
 				}
-				return fmt.Sprintf("%.3f", time.Now().Sub(start).Seconds()), true
+				return strconv.FormatInt(time.Now().Sub(start).Milliseconds(), 10), true
 			}),
 			"uri": ReadFunc(func(name string, ctx http_service.IHttpContext) (string, bool) {
 				return ctx.Request().URI().RequestURI(), true

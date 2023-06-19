@@ -2,8 +2,6 @@ package limiting
 
 import (
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/resources"
-	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
 )
 
@@ -16,6 +14,6 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 	return &Strategy{
 
 		WorkerBase: drivers.Worker(id, name),
-		buildProxy: scope_manager.Auto[resources.IVectors](string(cfg.Cache), "redis"),
+		redisID:    string(cfg.Cache),
 	}, nil
 }
