@@ -103,7 +103,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Id:    "eolinker.com:apinto:discovery_eureka",
 					Name:  "eureka",
 					Label: "eureka服务发现",
-					Desc:  "consul服务发现",
+					Desc:  "eureka服务发现",
+				}, {
+					Id:    "eolinker.com:apinto:discovery_polaris",
+					Name:  "polaris",
+					Label: "北极星服务发现",
+					Desc:  "北极星服务发现",
 				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
