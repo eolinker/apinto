@@ -18,11 +18,11 @@ func newClients(addrs []string, param map[string]string) *consulClients {
 	clients := make([]*api.Client, 0, len(addrs))
 
 	defaultConfig := api.DefaultConfig()
-	if _, has := param["token"]; has {
-		defaultConfig.Token = param["token"]
+	if v, has := param["token"]; has {
+		defaultConfig.Token = v
 	}
-	if _, has := param["namespace"]; has {
-		defaultConfig.Namespace = param["namespace"]
+	if v, has := param["namespace"]; has {
+		defaultConfig.Namespace = v
 	}
 
 	for _, addr := range addrs {

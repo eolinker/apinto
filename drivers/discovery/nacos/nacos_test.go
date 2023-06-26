@@ -19,10 +19,10 @@ func TestGetApp(t *testing.T) {
 			},
 		},
 	}
+	c, _ := newClient("asd", cfg.Config.Address, cfg.Config.Params)
 	n := &nacos{
-		client:   newClient(cfg.Config.Address, cfg.getParams()),
-		nodes:    discovery.NewNodesData(),
-		services: discovery.NewServices(),
+		client:   c,
+		services: discovery.NewAppContainer(),
 		locker:   sync.RWMutex{},
 	}
 	app, err := n.GetApp(serviceName)
@@ -32,9 +32,9 @@ func TestGetApp(t *testing.T) {
 	for _, node := range app.Nodes() {
 		t.Log(node.ID())
 	}
-	ns, bo := n.nodes.Get(serviceName)
-	if bo {
-		t.Log(len(ns))
+	ns, err := n.GetApp(serviceName)
+	if err == nil {
+		t.Log(len(ns.Nodes()))
 	} else {
 		t.Error("nodes error")
 	}

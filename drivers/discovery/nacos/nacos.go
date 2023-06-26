@@ -90,7 +90,11 @@ func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
-	n.client = newClient(cfg.Config.Address, cfg.getParams())
+	nClient, err := newClient("", cfg.Config.Address, cfg.Config.Params)
+	if err != nil {
+		return fmt.Errorf("create nacos client fail. err: %w", err)
+	}
+	n.client = nClient
 	return nil
 }
 
