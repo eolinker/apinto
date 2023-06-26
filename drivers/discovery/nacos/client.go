@@ -124,8 +124,5 @@ func (c *client) GetNodeList(serviceName string) ([]discovery.NodeInfo, error) {
 		}
 	}
 
-	if len(nodes) == 0 {
-		return nil, discovery.ErrDiscoveryDown
-	}
 	return nodes, nil
 }

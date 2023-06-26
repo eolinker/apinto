@@ -64,7 +64,6 @@ func (n *nacos) Start() error {
 						res, err := n.client.GetNodeList(serviceName)
 						if err != nil {
 							log.Warnf("nacos %s:%w for service %s", n.Name(), discovery.ErrDiscoveryDown, serviceName)
-							continue
 						}
 						//更新目标服务的节点列表
 						n.locker.Lock()
@@ -86,7 +85,7 @@ func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
-	nClient, err := newClient("", cfg.Config.Address, cfg.Config.Params)
+	nClient, err := newClient(n.Name(), cfg.Config.Address, cfg.Config.Params)
 	if err != nil {
 		return fmt.Errorf("create nacos client fail. err: %w", err)
 	}
@@ -118,7 +117,6 @@ func (n *nacos) GetApp(serviceName string) (discovery.IApp, error) {
 	ns, err := n.client.GetNodeList(serviceName)
 	if err != nil {
 		log.Errorf("%s get %s node list error: %v", driverName, serviceName, err)
-
 	}
 
 	app = n.services.Set(serviceName, ns)
