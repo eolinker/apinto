@@ -47,7 +47,6 @@ func (c *consul) Start() error {
 						nodeSet, err := c.clients.getNodes(serviceName)
 						if err != nil {
 							log.Warnf("consul %s:%s for service %s", c.Name(), discovery.ErrDiscoveryDown, serviceName)
-							continue
 						}
 						//更新目标服务的节点列表
 						c.services.Set(serviceName, nodeSet)
@@ -83,8 +82,6 @@ func (c *consul) Stop() error {
 
 // GetApp 获取服务发现中目标服务的app
 func (c *consul) GetApp(serviceName string) (discovery.IApp, error) {
-	var err error
-	var has bool
 	c.locker.RLock()
 	app, has := c.services.GetApp(serviceName)
 	c.locker.RUnlock()

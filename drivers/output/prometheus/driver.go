@@ -21,10 +21,6 @@ func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 func doCheck(promConf *Config) (map[string]*metricInfoCfg, error) {
 	metricLabels := make(map[string]*metricInfoCfg, len(promConf.Metrics))
 
-	if match := utils.CheckUrlPath(promConf.Path); !match {
-		return nil, fmt.Errorf(errorPathFormat, promConf.Path)
-	}
-
 	if len(promConf.Metrics) == 0 {
 		return nil, errorNullMetrics
 	}
@@ -175,7 +171,8 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 		p.registry, promhttp.HandlerFor(p.registry, promhttp.HandlerOpts{}),
 	)
 
-	err = router.SetPath(p.Id(), p.config.Path, p)
+	//metrics路径为 /apinto/metrics/prometheus/{worker_name} 前面的/apinto/在router.SetPath里做拼接
+	err = router.SetPath(p.Id(), fmt.Sprintf("/metrics/prometheus/%s", name), p)
 	if err != nil {
 		return nil, fmt.Errorf("create output %s fail: %w", p.Id(), err)
 	}

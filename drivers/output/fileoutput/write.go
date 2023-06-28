@@ -1,15 +1,22 @@
 package fileoutput
 
 import (
-	file_transport "github.com/eolinker/apinto/output/file-transport"
+	"fmt"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
+	"github.com/eolinker/eosc/log/filelog"
+	"github.com/eolinker/eosc/router"
+	"net/http"
+
+	"time"
 )
 
 type FileWriter struct {
 	formatter eosc.IFormatter
-	transport *file_transport.FileWriterByPeriod
+	transport *filelog.FileWriterByPeriod
 	//id        string
+
+	fileHandler http.Handler
 }
 
 func (a *FileWriter) output(entry eosc.IEntry) error {
@@ -24,7 +31,7 @@ func (a *FileWriter) output(entry eosc.IEntry) error {
 	return nil
 }
 
-func (a *FileWriter) reset(cfg *Config) (err error) {
+func (a *FileWriter) reset(cfg *Config, name string) (err error) {
 
 	factory, has := formatter.GetFormatterFactory(cfg.Type)
 	if !has {
@@ -37,14 +44,15 @@ func (a *FileWriter) reset(cfg *Config) (err error) {
 	}
 
 	transport := a.transport
-	c := &file_transport.Config{
+	c := filelog.Config{
 		Dir:    cfg.Dir,
 		File:   cfg.File,
-		Expire: cfg.Expire,
-		Period: file_transport.ParsePeriod(cfg.Period),
+		Expire: time.Duration(cfg.Expire) * 24 * time.Hour,
+		Period: filelog.ParsePeriod(cfg.Period),
 	}
 	if transport == nil {
-		transport = file_transport.NewFileWriteByPeriod(c)
+		transport = filelog.NewFileWriteByPeriod(c)
+		a.fileHandler = transport.ServeHTTP(fmt.Sprintf("/%slog/access/%s", router.RouterPrefix, name))
 	} else {
 		transport.Reset(c)
 	}

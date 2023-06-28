@@ -110,15 +110,6 @@ func (p *PromOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		)
 	}
 
-	//若path有变，更新router
-	if checkPathChange(p.config.Path, cfg.Path) {
-		//重新设置路由
-		err = router.SetPath(p.Id(), cfg.Path, p)
-		if err != nil {
-			return fmt.Errorf("reset output %s fail: %w", p.Id(), err)
-		}
-	}
-
 	if isMetricsUpdate {
 		p.registry = newRegistry
 		p.handler = handler

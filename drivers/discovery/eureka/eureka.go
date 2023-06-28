@@ -73,12 +73,9 @@ func (e *eureka) Start() error {
 						res, err := e.client.GetNodeList(serviceName)
 						if err != nil {
 							log.Warnf("eureka %s:%w for service %s", e.Name(), discovery.ErrDiscoveryDown, serviceName)
-							continue
 						}
 						//更新目标服务的节点列表
-						e.locker.Lock()
 						e.services.Set(serviceName, res)
-						e.locker.Unlock()
 					}
 				}
 			}
