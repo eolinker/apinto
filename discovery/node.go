@@ -54,8 +54,8 @@ func (n *_BaseNode) Last() time.Time {
 
 }
 
-func newBaseNode(ip string, port int, statusChecker _INodeStatusCheck) *_BaseNode {
-	return &_BaseNode{ip: ip, port: port, status: Running, statusChecker: statusChecker}
+func newBaseNode(id string, ip string, port int, statusChecker _INodeStatusCheck) *_BaseNode {
+	return &_BaseNode{id: id, ip: ip, port: port, status: Running, statusChecker: statusChecker}
 }
 
 func (n *_BaseNode) ID() string {

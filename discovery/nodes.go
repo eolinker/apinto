@@ -29,7 +29,7 @@ func (ac *appContainer) Get(ip string, port int) INode {
 		return node
 	}
 
-	ac.nodes.Set(id, newBaseNode(ip, port, ac))
+	ac.nodes.Set(id, newBaseNode(id, ip, port, ac))
 	node, _ = ac.nodes.Get(id)
 	return node
 }
