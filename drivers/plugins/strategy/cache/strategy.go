@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"sync"
+
 	"github.com/eolinker/apinto/drivers"
 	cache_strategy "github.com/eolinker/apinto/drivers/strategy/cache-strategy"
 	"github.com/eolinker/apinto/resources"
@@ -11,10 +13,15 @@ import (
 
 type Strategy struct {
 	drivers.WorkerBase
-	cache scope_manager.IProxyOutput[resources.ICache]
+	cache        scope_manager.IProxyOutput[resources.ICache]
+	redisID      string
+	doFilterOnce sync.Once
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
+	s.doFilterOnce.Do(func() {
+		s.cache = scope_manager.Auto[resources.ICache](s.redisID, "redis")
+	})
 	cl := s.cache.List()
 	if len(cl) > 0 {
 		return cache_strategy.DoStrategy(ctx, next, cl[0])

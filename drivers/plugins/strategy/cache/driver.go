@@ -2,8 +2,6 @@ package cache
 
 import (
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/resources"
-	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
 )
@@ -24,6 +22,6 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 
 	return &Strategy{
 		WorkerBase: drivers.Worker(id, name),
-		cache:      scope_manager.Auto[resources.ICache](string(conf.Cache), "redis"),
+		redisID:    string(conf.Cache),
 	}, nil
 }

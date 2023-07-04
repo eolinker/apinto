@@ -80,7 +80,7 @@ func getNodesFromClient(client *api.Client, service string) ([]*consulNodeInfo, 
 	nodes := make([]*consulNodeInfo, 0, len(serviceEntryArr))
 	for _, serviceEntry := range serviceEntryArr {
 		nodes = append(nodes, &consulNodeInfo{
-			id: fmt.Sprintf("%s:%s", serviceEntry.Service.Address, serviceEntry.Service.Port),
+			id: fmt.Sprintf("%s:%d", serviceEntry.Service.Address, serviceEntry.Service.Port),
 			nodeInfo: discovery.NodeInfo{
 				Ip:     serviceEntry.Service.Address,
 				Port:   serviceEntry.Service.Port,
