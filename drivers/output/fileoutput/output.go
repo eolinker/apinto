@@ -1,6 +1,10 @@
 package fileoutput
 
 import (
+	"fmt"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
+	"github.com/eolinker/eosc/router"
+	"net/http"
 	"reflect"
 
 	"github.com/eolinker/apinto/drivers"
@@ -16,6 +20,14 @@ type FileOutput struct {
 	config    *Config
 	writer    *FileWriter
 	isRunning bool
+}
+
+func (a *FileOutput) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if a.writer == nil || a.writer.fileHandler == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	a.writer.fileHandler.ServeHTTP(w, r)
 }
 
 func (a *FileOutput) Output(entry eosc.IEntry) error {
@@ -44,20 +56,22 @@ func (a *FileOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 			w = new(FileWriter)
 		}
 
-		err = w.reset(cfg)
+		err = w.reset(cfg, a.Name())
 		if err != nil {
 			return err
 		}
 		a.writer = w
-		scopeManager.Set(a.Id(), a, cfg.Scopes)
+		scope_manager.Set(a.Id(), a, cfg.Scopes...)
 	}
 
 	return nil
 }
 
 func (a *FileOutput) Stop() error {
-	scopeManager.Del(a.Id())
+	scope_manager.Del(a.Id())
+	router.DeletePath(a.Id())
 	a.isRunning = false
+
 	w := a.writer
 	if w != nil {
 		err := w.stop()
@@ -73,13 +87,18 @@ func (a *FileOutput) Start() error {
 	if w == nil {
 		w = new(FileWriter)
 	}
-
-	err := w.reset(a.config)
+	err := router.SetPath(a.Id(), fmt.Sprintf("/log/access/%s/", a.Name()), a)
 	if err != nil {
 		return err
 	}
+	err = w.reset(a.config, a.Name())
+	if err != nil {
+		return err
+	}
+
 	a.writer = w
-	scopeManager.Set(a.Id(), a, a.config.Scopes)
+	scope_manager.Set(a.Id(), a, a.config.Scopes...)
+
 	return nil
 
 }

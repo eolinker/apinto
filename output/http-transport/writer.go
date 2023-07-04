@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/eolinker/eosc/log"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"runtime/debug"
 	"sync"
@@ -113,7 +113,7 @@ func (h *_HttpWriter) send(method, url string, header http.Header, p []byte) {
 		return
 	}
 	if response.StatusCode != 200 {
-		body, err := ioutil.ReadAll(response.Body)
+		body, err := io.ReadAll(response.Body)
 		response.Body.Close()
 		if err != nil {
 			log.DebugF("send to httplog error:%s %s status<%d,%s> :%s\n", method, url, response.StatusCode, response.Status, err.Error())

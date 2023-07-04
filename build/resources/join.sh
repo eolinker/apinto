@@ -4,7 +4,7 @@ set -e
 sleep 5s
 
 #Gets the IP addresses of all pods under the target service
-response=$(curl -s GET "https://kubernetes.default.svc:443/api/v1/namespaces/${SVC_NAMESPACE}/endpoints/${SVC_NAME}" -k -H "Authorization: ${SVC_TOKEN}")
+response=$(curl -s "https://kubernetes.default.svc:443/api/v1/namespaces/${SVC_NAMESPACE}/endpoints/${SVC_NAME}" -k -H "Authorization: Bearer ${SVC_TOKEN}")
 
 #Determines whether the request was successful
 if [[ ${response} =~ 'Failure' ]]

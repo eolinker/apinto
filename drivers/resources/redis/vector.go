@@ -3,9 +3,10 @@ package redis
 import (
 	"context"
 	"fmt"
-	"github.com/go-redis/redis/v8"
 	"strconv"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
 type Vector struct {
@@ -17,7 +18,7 @@ type Vector struct {
 }
 
 func (v *Vector) CompareAndAdd(key string, threshold, delta int64) bool {
-	token := fmt.Sprint(v.name, ":", key)
+	token := fmt.Sprint("strategy-limiting:", v.name, ":", key)
 	index := time.Now().UnixNano() / v.step
 	ctx := context.Background()
 
@@ -29,14 +30,14 @@ func (v *Vector) CompareAndAdd(key string, threshold, delta int64) bool {
 }
 
 func (v *Vector) Add(key string, delta int64) {
-	token := fmt.Sprint(v.name, ":", key)
+	token := fmt.Sprint("strategy-limiting:", v.name, ":", key)
 	index := time.Now().UnixNano() / v.step
 	ctx := context.Background()
 	v.redisCmdable.HIncrBy(ctx, token, fmt.Sprint(index), delta)
 }
 
 func (v *Vector) Get(key string) int64 {
-	token := fmt.Sprint(v.name, ":", key)
+	token := fmt.Sprint("strategy-limiting:", v.name, ":", key)
 	index := time.Now().UnixNano() / v.step
 	ctx := context.Background()
 	return v.get(ctx, token, index/v.size*v.size)

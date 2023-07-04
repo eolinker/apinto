@@ -79,6 +79,7 @@ func initListener(tf traffic.ITraffic, listenCfg *config.ListenUrl) {
 		tlsConfig := &tls.Config{GetCertificate: certs.GetCertificateFunc()}
 
 		for _, l := range ssl {
+			log.Debug("ssl listen: ", l.Addr().String())
 			port := readPort(l.Addr())
 			listenerByPort[port] = append(listenerByPort[port], tls.NewListener(l, tlsConfig))
 		}

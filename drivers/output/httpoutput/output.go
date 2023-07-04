@@ -3,6 +3,7 @@ package httpoutput
 import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/output"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
 )
 
@@ -37,7 +38,7 @@ func (h *HttpOutput) Start() error {
 	}
 
 	h.handler = handler
-	scopeManager.Set(h.Id(), h, h.config.Scopes)
+	scope_manager.Set(h.Id(), h, h.config.Scopes...)
 	return nil
 }
 
@@ -67,12 +68,12 @@ func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		h.handler = handler
 
 	}
-	scopeManager.Set(h.Id(), h, h.config.Scopes)
+	scope_manager.Set(h.Id(), h, h.config.Scopes...)
 	return nil
 }
 
 func (h *HttpOutput) Stop() error {
-	scopeManager.Del(h.Id())
+	scope_manager.Del(h.Id())
 	hd := h.handler
 	if hd != nil {
 		h.handler = nil

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/output"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/router"
 	"github.com/prometheus/client_golang/prometheus"
@@ -109,15 +110,6 @@ func (p *PromOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 		)
 	}
 
-	//若path有变，更新router
-	if checkPathChange(p.config.Path, cfg.Path) {
-		//重新设置路由
-		err = router.SetPath(p.Id(), cfg.Path, p)
-		if err != nil {
-			return fmt.Errorf("reset output %s fail: %w", p.Id(), err)
-		}
-	}
-
 	if isMetricsUpdate {
 		p.registry = newRegistry
 		p.handler = handler
@@ -125,7 +117,7 @@ func (p *PromOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 
 	//若Scopes有变,更新scopeManager
 	if checkScopesChange(p.config.Scopes, cfg.Scopes) {
-		scopeManager.Set(p.Id(), p, cfg.Scopes)
+		scope_manager.Set(p.Id(), p, cfg.Scopes...)
 	}
 
 	p.metricsInfo = metricsInfo
@@ -188,7 +180,7 @@ func (p *PromOutput) Stop() error {
 	p.registry = nil
 	p.metrics = nil
 	p.metricsInfo = nil
-
+	scope_manager.Del(p.Id())
 	return nil
 }
 

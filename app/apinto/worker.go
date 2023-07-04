@@ -7,6 +7,7 @@ import (
 	"github.com/eolinker/apinto/drivers/discovery/consul"
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
+	"github.com/eolinker/apinto/drivers/discovery/polaris"
 	"github.com/eolinker/apinto/drivers/discovery/static"
 	"github.com/eolinker/apinto/drivers/output/fileoutput"
 	"github.com/eolinker/apinto/drivers/output/httpoutput"
@@ -87,6 +88,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	nacos.Register(extenderRegister)
 	consul.Register(extenderRegister)
 	eureka.Register(extenderRegister)
+	polaris.Register(extenderRegister)
 
 	//output
 	fileoutput.Register(extenderRegister)

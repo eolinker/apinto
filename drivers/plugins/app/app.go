@@ -65,7 +65,7 @@ func anonymousAppHandler(ctx http_service.IHttpContext) (bool, error) {
 		setLabels(ctx, app.Labels())
 		ctx.SetLabel("application_id", app.Id())
 		ctx.SetLabel("application", app.Name())
-		log.Error("application name is ", app.Name())
+		log.Debug("application name is ", app.Name())
 		return true, app.Execute(ctx)
 	}
 	return false, nil

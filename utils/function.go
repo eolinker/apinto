@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-//ConvertIntArrayToString 转换整型数组
+// ConvertIntArrayToString 转换整型数组
 func ConvertIntArrayToString(ids []int) string {
 	idLen := len(ids)
 	if idLen < 1 {
@@ -32,7 +32,7 @@ func ConvertIntArrayToString(ids []int) string {
 	return idStr
 }
 
-//ConvertArray 将[]string转为[]int
+// ConvertArray 将[]string转为[]int
 func ConvertArray(arr []string) (bool, []int) {
 	result := make([]int, 0)
 	for _, i := range arr {
@@ -45,7 +45,7 @@ func ConvertArray(arr []string) (bool, []int) {
 	return true, result
 }
 
-//ValidateRemoteAddr 判断ip端口是否合法
+// ValidateRemoteAddr 判断ip端口是否合法
 func ValidateRemoteAddr(ip string) bool {
 	match, err := regexp.MatchString(`^(?:(?:1[0-9][0-9]\.)|(?:2[0-4][0-9]\.)|(?:25[0-5]\.)|(?:[1-9][0-9]\.)|(?:[0-9]\.)){3}(?:(?:1[0-9][0-9])|(?:2[0-4][0-9])|(?:25[0-5])|(?:[1-9][0-9])|(?:[0-9]))\:(([0-9])|([1-9][0-9]{1,3})|([1-6][0-9]{0,4}))$`, ip)
 	if err != nil {
@@ -54,7 +54,7 @@ func ValidateRemoteAddr(ip string) bool {
 	return match
 }
 
-//ValidateURL 判断ip端口是否合法
+// ValidateURL 判断ip端口是否合法
 func ValidateURL(url string) bool {
 	match, err := regexp.MatchString(`^/(([a-zA-Z][0-9a-zA-Z+\-\.]*:)?/{0,2}[0-9a-zA-Z;/?:@&=+$\.\-_!~*'()%]+)?(#[0-9a-zA-Z;/?:@&=+$\.\-_!~*'()%]+)?$`, url)
 	if err != nil {
@@ -63,7 +63,7 @@ func ValidateURL(url string) bool {
 	return match
 }
 
-//Intercept 获取IP
+// Intercept 获取IP
 func Intercept(str, substr string) (string, string) {
 	result := strings.Index(str, substr)
 	var rs string
@@ -78,14 +78,14 @@ func Intercept(str, substr string) (string, string) {
 	return rs, bs
 }
 
-//Md5 md5加密
+// Md5 md5加密
 func Md5(encodeString string) string {
 	h := md5.New()
 	h.Write([]byte(encodeString))
 	return hex.EncodeToString(h.Sum(nil)) // 输出加密结果
 }
 
-//GetRandomStringBack 生成随机字符串
+// GetRandomStringBack 生成随机字符串
 func GetRandomStringBack(num int) string {
 	str := "123456789abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ"
 	bytes := []byte(str)
@@ -101,9 +101,10 @@ var (
 	randManager = rand.New(rand.NewSource(time.Now().UnixNano()))
 	randBytes   = []byte("123456789abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ")
 	randSize    = len(randBytes)
+	reg, _      = regexp.Compile(`[0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f]`)
 )
 
-//GetRandomString 生成随机字符串
+// GetRandomString 生成随机字符串
 func GetRandomString(num int) string {
 	result := make([]byte, num)
 	for i := 0; i < num; i++ {
@@ -112,7 +113,7 @@ func GetRandomString(num int) string {
 	return string(result)
 }
 
-//CheckFileIsExist 判断文件是否存在  存在返回 true 不存在返回false
+// CheckFileIsExist 判断文件是否存在  存在返回 true 不存在返回false
 func CheckFileIsExist(filename string) bool {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		return false
@@ -120,7 +121,7 @@ func CheckFileIsExist(filename string) bool {
 	return true
 }
 
-//Stop 关闭网关服务，重启读取配置文件
+// Stop 关闭网关服务，重启读取配置文件
 func Stop() bool {
 	id := os.Getpid()
 	cmd := exec.Command("/bin/bash", "-c", "kill -HUP "+strconv.Itoa(id))
@@ -130,19 +131,18 @@ func Stop() bool {
 	return true
 }
 
-//GetMac 获取MAC地址
+// GetMac 获取MAC地址
 func GetMac() (bool, string) {
 	interfaces, err := net.Interfaces()
 	if err != nil {
 		return false, "Poor soul, here is what you got: " + err.Error()
 	}
+
 	for _, inter := range interfaces {
 		mac := inter.HardwareAddr //获取本机MAC地址
 		m := fmt.Sprintf("%s", mac)
-		match, err := regexp.MatchString(`[0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f][:-][0-9a-f][0-9a-f]`, m)
-		if err != nil {
-			return false, ""
-		}
+		match := reg.MatchString(m)
+
 		if match {
 			return true, string(m)
 		}
@@ -150,7 +150,7 @@ func GetMac() (bool, string) {
 	return false, ""
 }
 
-//GzipCompress 转成Gzip
+// GzipCompress 转成Gzip
 func GzipCompress(origin []byte) ([]byte, error) {
 	var b bytes.Buffer
 	gz := gzip.NewWriter(&b)
