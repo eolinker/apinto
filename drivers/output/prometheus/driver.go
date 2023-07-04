@@ -3,6 +3,7 @@ package prometheus
 import (
 	"fmt"
 	"github.com/eolinker/apinto/drivers"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/router"
@@ -19,10 +20,6 @@ func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 // doCheck 检查配置并返回指标的标签配置列表
 func doCheck(promConf *Config) (map[string]*metricInfoCfg, error) {
 	metricLabels := make(map[string]*metricInfoCfg, len(promConf.Metrics))
-
-	if match := utils.CheckUrlPath(promConf.Path); !match {
-		return nil, fmt.Errorf(errorPathFormat, promConf.Path)
-	}
 
 	if len(promConf.Metrics) == 0 {
 		return nil, errorNullMetrics
@@ -174,14 +171,15 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 		p.registry, promhttp.HandlerFor(p.registry, promhttp.HandlerOpts{}),
 	)
 
-	err = router.SetPath(p.Id(), p.config.Path, p)
+	//metrics路径为 /apinto/metrics/prometheus/{worker_name} 前面的/apinto/在router.SetPath里做拼接
+	err = router.SetPath(p.Id(), fmt.Sprintf("/metrics/prometheus/%s", name), p)
 	if err != nil {
 		return nil, fmt.Errorf("create output %s fail: %w", p.Id(), err)
 	}
 
 	p.metrics = metrics
 
-	scopeManager.Set(p.Id(), p, p.config.Scopes)
+	scope_manager.Set(p.Id(), p, p.config.Scopes...)
 
 	return p, err
 }

@@ -21,7 +21,7 @@ type Config struct {
 	Topic         string               `json:"topic" yaml:"topic" label:"Topic"`
 	Address       string               `json:"address" yaml:"address" label:"请求地址"`
 	Timeout       int                  `json:"timeout" yaml:"timeout" label:"超时时间"`
-	Version       string               `json:"version" yaml:"version" label:"版本" default:"1.0.0.0" enum:"0.8.2.0, 0.8.2.1, 0.8.2.2, 0.9.0.0, 0.9.0.1, 0.10.0.0, 0.10.0.1, 0.10.1.0, 0.10.1.1, 0.10.2.0, 0.10.2.1, 0.10.2.2, 0.11.0.0, 0.11.0.1, 0.11.0.2, 1.0.0.0, 1.0.1.0, 1.0.2.0, 1.1.0.0, 1.1.1.0, 2.0.0.0, 2.0.1.0, 2.1.0.0, 2.1.1.0, 2.2.0.0, 2.2.1.0, 2.2.2.0, 2.3.0.0, 2.3.1.0, 2.4.0.0, 2.4.1.0, 2.5.0.0, 2.5.1.0, 2.6.0.0, 2.6.1.0, 2.6.2.0, 2.7.0.0, 2.7.1.0, 2.8.0.0, 2.8.1.0, 3.0.0.0, 3.1.0.0"`
+	Version       string               `json:"kafka_version" yaml:"kafka_version" label:"版本" default:"1.0.0.0" enum:"0.8.2.0, 0.8.2.1, 0.8.2.2, 0.9.0.0, 0.9.0.1, 0.10.0.0, 0.10.0.1, 0.10.1.0, 0.10.1.1, 0.10.2.0, 0.10.2.1, 0.10.2.2, 0.11.0.0, 0.11.0.1, 0.11.0.2, 1.0.0.0, 1.0.1.0, 1.0.2.0, 1.1.0.0, 1.1.1.0, 2.0.0.0, 2.0.1.0, 2.1.0.0, 2.1.1.0, 2.2.0.0, 2.2.1.0, 2.2.2.0, 2.3.0.0, 2.3.1.0, 2.4.0.0, 2.4.1.0, 2.5.0.0, 2.5.1.0, 2.6.0.0, 2.6.1.0, 2.6.2.0, 2.7.0.0, 2.7.1.0, 2.8.0.0, 2.8.1.0, 3.0.0.0, 3.1.0.0"`
 	PartitionType string               `json:"partition_type" yaml:"partition_type" enum:"robin,hash,manual,random"`
 	Partition     int32                `json:"partition" yaml:"partition" switch:"partition_type==='manual'"`
 	PartitionKey  string               `json:"partition_key" yaml:"partition_key" switch:"partition_type==='hash'"`

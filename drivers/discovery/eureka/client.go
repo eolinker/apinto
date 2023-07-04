@@ -3,7 +3,7 @@ package eureka
 import (
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -22,16 +22,14 @@ func newClient(address []string, params url.Values) *client {
 
 // GetNodeList 从eureka接入地址中获取对应服务的节点列表
 func (c *client) GetNodeList(serviceName string) ([]discovery.NodeInfo, error) {
-	isOk := false
 	nodes := make([]discovery.NodeInfo, 0, 5)
 	sets := make(map[string]struct{})
 	for _, addr := range c.address {
 		app, err := c.GetApplication(addr, serviceName)
 		if err != nil {
-			log.Info("eureka get node instance list error:", err)
+			log.Warnf("eureka get node instance list fail. err: %w", err)
 			continue
 		}
-		isOk = true
 		for _, ins := range app.Instances {
 			if ins.Status != eurekaStatusUp {
 				continue
@@ -54,12 +52,9 @@ func (c *client) GetNodeList(serviceName string) ([]discovery.NodeInfo, error) {
 				}
 				nodes = append(nodes, node)
 			}
-
 		}
 	}
-	if !isOk {
-		return nil, discovery.ErrDiscoveryDown
-	}
+
 	return nodes, nil
 }
 
@@ -75,7 +70,7 @@ func (c *client) GetApplication(addr string, serviceName string) (*Application, 
 	if err != nil {
 		return nil, err
 	}
-	respBody, err := ioutil.ReadAll(res.Body)
+	respBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}

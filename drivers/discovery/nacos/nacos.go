@@ -15,10 +15,6 @@ import (
 	"github.com/eolinker/eosc"
 )
 
-const (
-	instancePath = "/nacos/v1/ns/instance/list"
-)
-
 var _ discovery.IDiscovery = (*nacos)(nil)
 
 type nacos struct {
@@ -68,13 +64,9 @@ func (n *nacos) Start() error {
 						res, err := n.client.GetNodeList(serviceName)
 						if err != nil {
 							log.Warnf("nacos %s:%w for service %s", n.Name(), discovery.ErrDiscoveryDown, serviceName)
-							continue
 						}
 						//更新目标服务的节点列表
-						n.locker.Lock()
 						n.services.Set(serviceName, res)
-						n.locker.Unlock()
-
 					}
 				}
 			}
@@ -90,7 +82,11 @@ func (n *nacos) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker)
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
-	n.client = newClient(cfg.Config.Address, cfg.getParams())
+	nClient, err := newClient(n.Name(), cfg.Config.Address, cfg.Config.Params)
+	if err != nil {
+		return fmt.Errorf("create nacos client fail. err: %w", err)
+	}
+	n.client = nClient
 	return nil
 }
 
@@ -110,6 +106,7 @@ func (n *nacos) GetApp(serviceName string) (discovery.IApp, error) {
 	}
 
 	n.locker.Lock()
+	defer n.locker.Unlock()
 	app, ok = n.services.GetApp(serviceName)
 	if ok {
 		return app.Agent(), nil
@@ -117,13 +114,10 @@ func (n *nacos) GetApp(serviceName string) (discovery.IApp, error) {
 
 	ns, err := n.client.GetNodeList(serviceName)
 	if err != nil {
-		log.Errorf("%s get %s node list error: %v", driverName, serviceName, err)
-
+		log.Warnf("%s get %s node list error: %v", driverName, serviceName, err)
 	}
 
 	app = n.services.Set(serviceName, ns)
-
-	n.locker.Unlock()
 
 	return app.Agent(), nil
 }

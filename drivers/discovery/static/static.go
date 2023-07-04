@@ -8,6 +8,7 @@ import (
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/utils/config"
 	"github.com/google/uuid"
+
 	"reflect"
 	"strconv"
 	"strings"
@@ -175,9 +176,7 @@ func (s *static) decode(config string) (discovery.IAppAgent, error) {
 			Labels: node.labels,
 		})
 	}
-	index = 0
-	node = nil
 
-	app := s.services.Set(uuid.New().String(), nodes)
+	app := s.services.Set(uuid.NewString(), nodes)
 	return app, nil
 }

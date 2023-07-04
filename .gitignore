@@ -19,3 +19,4 @@
 /go.sum
 *.DS_Store
 /dist/
+.gitlab-ci.yml

@@ -2,7 +2,7 @@ package prometheus
 
 import (
 	"fmt"
-	metric_entry "github.com/eolinker/apinto/output"
+	output "github.com/eolinker/apinto/output"
 
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
@@ -31,20 +31,20 @@ func doCheck(cfg *Config) error {
 	return nil
 }
 
-func getList(ids []eosc.RequireId) ([]interface{}, error) {
-	ls := make([]interface{}, 0, len(ids))
+func getList(ids []eosc.RequireId) ([]output.IMetrics, error) {
+	ls := make([]output.IMetrics, 0, len(ids))
 	for _, id := range ids {
-		worker, has := workers.Get(string(id))
+		w, has := workers.Get(string(id))
 		if !has {
 			return nil, fmt.Errorf("%s:%w", id, eosc.ErrorWorkerNotExits)
 		}
 
-		_, ok := worker.(metric_entry.IMetrics)
+		v, ok := w.(output.IMetrics)
 		if !ok {
 			return nil, fmt.Errorf(errNotImpEntryFormat, string(id))
 		}
 
-		ls = append(ls, worker)
+		ls = append(ls, v)
 
 	}
 	return ls, nil
@@ -62,11 +62,11 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 		metrics:    conf.Metrics,
 	}
 	if len(list) > 0 {
-		proxy := scope_manager.NewProxy()
-		proxy.Set(list)
+		proxy := scope_manager.NewProxy(list...)
+
 		p.proxy = proxy
 	} else {
-		p.proxy = scopeManager.Get(globalScopeName)
+		p.proxy = scope_manager.Get[output.IMetrics](globalScopeName)
 	}
 
 	return p, nil

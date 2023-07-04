@@ -74,8 +74,6 @@ type Connection interface {
 type gettyConn struct {
 	id            uint32
 	compress      CompressType
-	padding1      uint8
-	padding2      uint16
 	readBytes     uatomic.Uint32   // read bytes
 	writeBytes    uatomic.Uint32   // write bytes
 	readPkgNum    uatomic.Uint32   // send pkg number
@@ -124,7 +122,7 @@ func (c *gettyConn) send(interface{}) (int, error) {
 
 func (c *gettyConn) close(int) {}
 
-func (c gettyConn) readTimeout() time.Duration {
+func (c *gettyConn) readTimeout() time.Duration {
 	return c.rTimeout.Load()
 }
 
@@ -147,7 +145,7 @@ func (c *gettyConn) SetReadTimeout(rTimeout time.Duration) {
 	}
 }
 
-func (c gettyConn) writeTimeout() time.Duration {
+func (c *gettyConn) writeTimeout() time.Duration {
 	return c.wTimeout.Load()
 }
 
@@ -553,7 +551,7 @@ func (w *gettyWSConn) handlePing(message string) error {
 	err := w.writePong([]byte(message))
 	if err == websocket.ErrCloseSent {
 		err = nil
-	} else if e, ok := err.(net.Error); ok && e.Temporary() {
+	} else if e, ok := err.(net.Error); ok && e.Timeout() {
 		err = nil
 	}
 	if err == nil {

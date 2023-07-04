@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"net/http"
-	"time"
 )
 
 type ResponseData struct {
@@ -42,15 +43,19 @@ func (r *ResponseData) Complete(ctx eocontext.EoContext) error {
 
 func SetResponseData(cache resources.ICache, uri string, data *ResponseData, validTime int) {
 	bytes, _ := json.Marshal(data)
-	cache.Set(context.TODO(), uri, bytes, time.Second*time.Duration(validTime))
+	cache.Set(context.TODO(), getKey(uri), bytes, time.Second*time.Duration(validTime))
 }
 
 func GetResponseData(cache resources.ICache, uri string) *ResponseData {
-	result := cache.Get(context.TODO(), uri)
+	result := cache.Get(context.TODO(), getKey(uri))
 	bytes, _ := result.Bytes()
 	data := new(ResponseData)
 	if err := json.Unmarshal(bytes, data); err != nil {
 		return nil
 	}
 	return data
+}
+
+func getKey(uri string) string {
+	return fmt.Sprintf("strategy-cache:%s", uri)
 }

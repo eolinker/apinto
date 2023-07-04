@@ -3,6 +3,7 @@
 FROM centos:7.9.2009
 MAINTAINER eolink
 
+RUN yum install -y wget && wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm &&  rpm -ivh epel-release-latest-7.noarch.rpm && yum install -y jq
 #声明端口
 EXPOSE 9400 8099
 

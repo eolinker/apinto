@@ -13,7 +13,6 @@ import (
 	"net/url"
 )
 
-const defaultMultipartMemory = 32 << 20 // 32 MB
 var (
 	_ http_context.IBodyDataWriter = (*BodyRequestHandler)(nil)
 )
@@ -52,8 +51,8 @@ func (b *BodyRequestHandler) MultipartForm() (*multipart.Form, error) {
 		Value: form.Value,
 		File:  form.File,
 	}
-	b.resetFile()
-	return form, nil
+
+	return form, b.resetFile()
 }
 func (b *BodyRequestHandler) Files() (map[string][]*multipart.FileHeader, error) {
 	form, err := b.MultipartForm()

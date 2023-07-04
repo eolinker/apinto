@@ -2,7 +2,6 @@ package prometheus
 
 type Config struct {
 	Scopes  []string        `json:"scopes" label:"作用域"`
-	Path    string          `json:"path" yaml:"path" required:"true" label:"Metrics路径"`
 	Metrics []*MetricConfig `json:"metrics" yaml:"metrics" required:"true" label:"指标列表"`
 }
 

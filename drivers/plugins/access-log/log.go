@@ -1,8 +1,6 @@
 package access_log
 
 import (
-	"reflect"
-
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/apinto/drivers"
@@ -19,7 +17,7 @@ var _ http_service.HttpFilter = (*accessLog)(nil)
 
 type accessLog struct {
 	drivers.WorkerBase
-	proxy scope_manager.IProxyOutput
+	proxy scope_manager.IProxyOutput[output.IEntryOutput]
 }
 
 func (l *accessLog) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
@@ -35,12 +33,8 @@ func (l *accessLog) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.I
 
 	outputs := l.proxy.List()
 	for _, v := range outputs {
-		o, ok := v.(output.IEntryOutput)
-		if !ok {
-			log.Error("access log output type error,type is ", reflect.TypeOf(v))
-			continue
-		}
-		err = o.Output(entry)
+
+		err = v.Output(entry)
 		if err != nil {
 			log.Error("access log http-entry error:", err)
 			continue
@@ -68,11 +62,11 @@ func (l *accessLog) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWor
 		return err
 	}
 	if len(list) > 0 {
-		proxy := scope_manager.NewProxy()
-		proxy.Set(list)
+		proxy := scope_manager.NewProxy(list...)
+
 		l.proxy = proxy
 	} else {
-		l.proxy = scopeManager.Get("access_log")
+		l.proxy = scope_manager.Get[output.IEntryOutput]("access_log")
 	}
 
 	return nil

@@ -18,11 +18,11 @@ func newClients(addrs []string, param map[string]string) *consulClients {
 	clients := make([]*api.Client, 0, len(addrs))
 
 	defaultConfig := api.DefaultConfig()
-	if _, has := param["token"]; has {
-		defaultConfig.Token = param["token"]
+	if v, has := param["token"]; has {
+		defaultConfig.Token = v
 	}
-	if _, has := param["namespace"]; has {
-		defaultConfig.Namespace = param["namespace"]
+	if v, has := param["namespace"]; has {
+		defaultConfig.Namespace = v
 	}
 
 	for _, addr := range addrs {
@@ -53,8 +53,9 @@ func (c *consulClients) getNodes(service string) ([]discovery.NodeInfo, error) {
 	nodeList := make([]discovery.NodeInfo, 0, 2)
 	nodeIDSet := make(map[string]struct{})
 	for _, client := range c.clients {
-		clientNodes := getNodesFromClient(client, service)
-		if len(clientNodes) == 0 {
+		clientNodes, err := getNodesFromClient(client, service)
+		if err != nil {
+			log.Warnf("consul client down for service %s", service)
 			continue
 		}
 		for _, n := range clientNodes {
@@ -64,25 +65,22 @@ func (c *consulClients) getNodes(service string) ([]discovery.NodeInfo, error) {
 			nodeIDSet[n.id] = struct{}{}
 		}
 	}
-	if len(nodeList) == 0 {
-		return nil, discovery.ErrDiscoveryDown
-	}
 
 	return nodeList, nil
 }
 
 // getNodesFromClient 从连接的客户端返回健康的节点信息
-func getNodesFromClient(client *api.Client, service string) []*consulNodeInfo {
+func getNodesFromClient(client *api.Client, service string) ([]*consulNodeInfo, error) {
 	queryOptions := &api.QueryOptions{}
 	serviceEntryArr, _, err := client.Health().Service(service, "", true, queryOptions)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	nodes := make([]*consulNodeInfo, 0, len(serviceEntryArr))
 	for _, serviceEntry := range serviceEntryArr {
 		nodes = append(nodes, &consulNodeInfo{
-			id: fmt.Sprintf("%s:%s", serviceEntry.Service.Address, serviceEntry.Service.Port),
+			id: fmt.Sprintf("%s:%d", serviceEntry.Service.Address, serviceEntry.Service.Port),
 			nodeInfo: discovery.NodeInfo{
 				Ip:     serviceEntry.Service.Address,
 				Port:   serviceEntry.Service.Port,
@@ -91,5 +89,5 @@ func getNodesFromClient(client *api.Client, service string) []*consulNodeInfo {
 		})
 	}
 
-	return nodes
+	return nodes, nil
 }
