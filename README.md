@@ -12,6 +12,13 @@ Apinto网关基于GO语言模块化开发，5分钟极速部署，配置简单�
 
 ## Demo 
 体验地址：[demo-dashboard.apinto.com](https://demo-dashboard.apinto.com/)
+提供了三个试用账号，避免被使用者挤下来
+账号：apinto-1
+密码：12345678
+账号：apinto-2
+密码：12345678
+账号：apinto-3
+密码：12345678
 
 快速入门：https://help.apinto.com/docs/dashboard-v2/quick/quick_start.html
 
