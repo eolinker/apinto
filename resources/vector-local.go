@@ -71,12 +71,12 @@ func (v *VectorsLocalBuild) BuildVector(name string, uni, step time.Duration) (V
 }
 
 type vectorLocal struct {
-	name      string
-	step      int64
-	lastIndex int64
-	size      int64
-	lock      sync.RWMutex
-	vm        map[string]*vectorValues
+	name  string
+	step  int64
+	start int64
+	size  int64
+	lock  sync.RWMutex
+	vm    map[string]*vectorValues
 }
 
 func (v *vectorLocal) CompareAndAdd(key string, threshold, delta int64) bool {
@@ -90,7 +90,8 @@ func (v *vectorLocal) CompareAndAdd(key string, threshold, delta int64) bool {
 }
 
 type vectorValues struct {
-	vectors []int64
+	vectors   []int64
+	lastIndex int64
 }
 
 func (v *vectorLocal) Add(key string, delta int64) {
@@ -132,8 +133,8 @@ func (v *vectorLocal) read(vectors *vectorValues) int64 {
 func (v *vectorLocal) refresh(key string) (int64, *vectorValues) {
 	vectors := v.vector(key)
 	seconds := time.Now().UnixNano()
-	index := seconds / v.step
-	last := atomic.SwapInt64(&v.lastIndex, index)
+	index := seconds/v.step - v.start // 减少这个index的值大小,方便调试
+	last := atomic.SwapInt64(&vectors.lastIndex, index)
 
 	if index > last {
 		if index-last > v.size {
@@ -153,7 +154,7 @@ func (v *vectorLocal) refresh(key string) (int64, *vectorValues) {
 func newVectorLocal(name string, uin, step time.Duration) *vectorLocal {
 	v := &vectorLocal{name: name, step: int64(step), size: int64(uin / step), vm: make(map[string]*vectorValues)}
 
-	index := time.Now().UnixNano() / v.step
-	atomic.StoreInt64(&v.lastIndex, index)
+	v.start = time.Now().UnixNano() / v.step
+
 	return v
 }
