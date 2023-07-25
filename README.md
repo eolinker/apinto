@@ -13,6 +13,20 @@ Apinto网关基于GO语言模块化开发，5分钟极速部署，配置简单�
 ## Demo 
 体验地址：[demo-dashboard.apinto.com](https://demo-dashboard.apinto.com/)
 
+提供了三个试用账号，避免被使用者挤下来
+
+账号：apinto-1
+
+密码：12345678
+
+账号：apinto-2
+
+密码：12345678
+
+账号：apinto-3
+
+密码：12345678
+
 快速入门：https://help.apinto.com/docs/dashboard-v2/quick/quick_start.html
 
 Apinto Dashboard github地址： https://github.com/eolinker/apinto-dashboard
@@ -133,6 +147,6 @@ apinto start
 
 - **官网**：[https://www.apinto.com](https://www.apinto.com/)
 - **论坛**：[https://community.apinto.com](https://community.apinto.com/)
-- **微信群**：<img src="https://user-images.githubusercontent.com/25589530/149860447-5879437b-3cda-4833-aee3-69a2e538e85d.png" style="width:150px" />
+- **微信群**：<img src="http://data.eolinker.com/course/2HdT4zd10b670318462bec90f0f390bef896c21cad66172.png" style="width:150px" />
 
 
