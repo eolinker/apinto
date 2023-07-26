@@ -81,9 +81,7 @@ func (m *Manager) getByDriver(driver string) []application.IAuthUser {
 func (m *Manager) all() []application.IAuthUser {
 	list := m.List()
 	filters := make([]application.IAuthUser, 0, len(list))
-	for _, filter := range list {
-		filters = append(filters, filter)
-	}
+	filters = append(filters, list...)
 	return filters
 }
 
