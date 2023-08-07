@@ -1,8 +1,9 @@
 package syslog
 
 import (
-	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"reflect"
+
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/output"
@@ -55,15 +56,17 @@ func (s *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 	s.config = cfg
 
 	if s.running {
-		w := s.writer
-		if w != nil {
-			return w.reset(cfg)
+		if s.writer == nil {
+			s.writer, err = CreateTransporter(s.config)
+			if err != nil {
+				return err
+			}
 		}
-		writer, err := CreateTransporter(s.config)
+
+		err = s.writer.reset(cfg)
 		if err != nil {
 			return err
 		}
-		s.writer = writer
 	}
 	scope_manager.Set(s.Id(), s, s.config.Scopes...)
 	return nil

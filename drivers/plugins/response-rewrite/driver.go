@@ -4,16 +4,7 @@ import (
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
-
-type Driver struct {
-	profession string
-	name       string
-	label      string
-	desc       string
-	configType reflect.Type
-}
 
 func Check(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 

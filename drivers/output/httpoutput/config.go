@@ -17,7 +17,7 @@ type Config struct {
 }
 
 func (h *Config) isConfUpdate(conf *Config) bool {
-	if h.Method != conf.Method || h.Url != conf.Url || !compareTwoMapStringEqual(h.Headers, conf.Headers) {
+	if h.Method != conf.Method || h.Url != conf.Url || !compareTwoMapStringEqual(h.Headers, conf.Headers) || !compareArray(h.Scopes, conf.Scopes) || h.Type != conf.Type {
 		return true
 	}
 	return false
@@ -56,4 +56,25 @@ func toHeader(items map[string]string) http.Header {
 		header.Set(k, v)
 	}
 	return header
+}
+
+func compareArray[T comparable](o, t []T) bool {
+	if len(o) != len(t) {
+		return false
+	}
+	oMap := make(map[T]struct{})
+	tMap := make(map[T]struct{})
+	for i := 0; i < len(o); i++ {
+		oMap[o[i]] = struct{}{}
+		tMap[t[i]] = struct{}{}
+	}
+	if len(oMap) != len(tMap) {
+		return false
+	}
+	for k := range oMap {
+		if _, has := tMap[k]; !has {
+			return false
+		}
+	}
+	return true
 }

@@ -113,7 +113,7 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 	if has {
 		return nil
 	}
-	return errors.New("invalid user")
+	return errors.New("missing or invalid token")
 }
 
 func setLabels(ctx http_service.IHttpContext, labels map[string]string) {

@@ -1,11 +1,12 @@
 package response_rewrite
 
 import (
+	"strconv"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
-	"strconv"
 
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -24,6 +25,24 @@ type ResponseRewrite struct {
 
 func (r *ResponseRewrite) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
 	return http_service.DoHttpFilter(r, ctx, next)
+}
+
+func (r *ResponseRewrite) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
+	if next != nil {
+		err := next.DoChain(ctx)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+
+	return r.rewrite(ctx)
+}
+
+func (r *ResponseRewrite) Destroy() {
+	r.statusCode = 0
+	r.body = ""
+	r.headers = nil
+	r.match = nil
 }
 
 func (r *ResponseRewrite) Start() error {
@@ -56,26 +75,8 @@ func (r *ResponseRewrite) Stop() error {
 	return nil
 }
 
-func (r *ResponseRewrite) Destroy() {
-	r.statusCode = 0
-	r.body = ""
-	r.headers = nil
-	r.match = nil
-}
-
 func (r *ResponseRewrite) CheckSkill(skill string) bool {
 	return http_service.FilterSkillName == skill
-}
-
-func (r *ResponseRewrite) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
-	if next != nil {
-		err := next.DoChain(ctx)
-		if err != nil {
-			log.Error(err)
-		}
-	}
-
-	return r.rewrite(ctx)
 }
 
 func (r *ResponseRewrite) rewrite(ctx http_service.IHttpContext) error {
