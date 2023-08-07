@@ -55,18 +55,17 @@ func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	h.config = config
 
 	if h.running {
-		hd := h.handler
-		if hd != nil {
-			return hd.reset(config)
+		if h.handler == nil {
+			h.handler, err = NewHandler(h.config)
+			if err != nil {
+				return err
+			}
 		}
 
-		handler, err := NewHandler(h.config)
+		err = h.handler.reset(config)
 		if err != nil {
 			return err
 		}
-
-		h.handler = handler
-
 	}
 	scope_manager.Set(h.Id(), h, h.config.Scopes...)
 	return nil
