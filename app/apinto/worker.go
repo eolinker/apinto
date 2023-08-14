@@ -18,11 +18,13 @@ import (
 	plugin_manager "github.com/eolinker/apinto/drivers/plugin-manager"
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
 	plugin_app "github.com/eolinker/apinto/drivers/plugins/app"
+	body_check "github.com/eolinker/apinto/drivers/plugins/body-check"
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
 	dubbo2_to_http "github.com/eolinker/apinto/drivers/plugins/dubbo2-to-http"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
+	extra_params_v2 "github.com/eolinker/apinto/drivers/plugins/extra-params_v2"
 	grpc_to_http "github.com/eolinker/apinto/drivers/plugins/gRPC-to-http"
 	grpc_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/grpc-proxy-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
@@ -69,6 +71,7 @@ func ProcessWorker() {
 func registerInnerExtenders() {
 	extends.AddInnerExtendProject("eolinker.com", "apinto", Register)
 }
+
 func Register(extenderRegister eosc.IExtenderDriverRegister) {
 	// router
 	http_router.Register(extenderRegister)
@@ -153,4 +156,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 
 	proxy_mirror.Register(extenderRegister)
 	http_mocking.Register(extenderRegister)
+
+	body_check.Register(extenderRegister)
+	extra_params_v2.Register(extenderRegister)
 }
