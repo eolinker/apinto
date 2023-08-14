@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/eolinker/apinto/drivers/plugins/extra-params_v2/dynamic-params/concat"
+
 	"github.com/eolinker/apinto/drivers/plugins/extra-params_v2/dynamic-params/datetime"
 	"github.com/eolinker/apinto/drivers/plugins/extra-params_v2/dynamic-params/md5"
 	"github.com/eolinker/apinto/drivers/plugins/extra-params_v2/dynamic-params/timestamp"
@@ -48,6 +50,7 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 		datetime.Register()
 		md5.Register()
 		timestamp.Register()
+		concat.Register()
 	})
 	ep := &executor{
 		WorkerBase:      drivers.Worker(id, name),
