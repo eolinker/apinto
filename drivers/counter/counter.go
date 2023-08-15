@@ -1,6 +1,19 @@
 package counter
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+
+	"github.com/eolinker/eosc/utils/config"
+)
+
+var (
+	FilterSkillName = config.TypeName(reflect.TypeOf((*IClient)(nil)).Elem())
+)
+
+type IClient interface {
+	Get(key string) (int64, error)
+}
 
 type ICounter interface {
 	// Lock 锁定次数
@@ -9,11 +22,9 @@ type ICounter interface {
 	Complete(count int64) error
 	// RollBack 回滚
 	RollBack(count int64) error
-	// ResetClient 重置客户端
-	ResetClient(client IClient)
 }
 
-func getRemainCount(client IClient, key string, count int64) (int64, error) {
+func GetRemainCount(client IClient, key string, count int64) (int64, error) {
 	remain, err := client.Get(key)
 	if err != nil {
 		return 0, err

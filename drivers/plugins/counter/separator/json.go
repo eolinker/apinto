@@ -62,41 +62,39 @@ func (j *JsonCounter) Count(ctx http_service.IHttpContext) (int64, error) {
 		return -1, fmt.Errorf("parse json body error:%v, body is %s", err, string(body))
 	}
 	results := j.expr.Get(obj)
+	if len(results) == 0 {
+		return -1, fmt.Errorf("json path %s get value is empty", j.name)
+	}
 	switch j.typ {
 	case SplitCountType:
-		if len(results) > 0 {
-			origin, ok := results[0].(string)
-			if !ok {
-				return -1, fmt.Errorf("json path %s get value is not string", j.name)
-			}
-			return splitCount(origin, j.split), nil
+		origin, ok := results[0].(string)
+		if !ok {
+			return -1, fmt.Errorf("json path %s get value is not string", j.name)
 		}
+		return splitCount(origin, j.split), nil
 	case ArrayCountType:
-		if len(results) > 0 {
-			switch v := results[0].(type) {
-			case []interface{}:
-				{
-					return int64(len(v)), nil
-				}
-			case map[string]interface{}:
+		switch v := results[0].(type) {
+		case []interface{}:
+			{
 				return int64(len(v)), nil
 			}
+		case map[string]interface{}:
+			return int64(len(v)), nil
 		}
 	case LengthCountType:
-		if len(results) > 0 {
-			origin, ok := results[0].(string)
-			if !ok {
-				return -1, fmt.Errorf("json path %s get value is not string", j.name)
-			}
-			l := len([]rune(origin))
-
-			if l%j.splitLen == 0 {
-				return int64(l / j.splitLen), nil
-			}
-			return int64(l/j.splitLen + 1), nil
+		origin, ok := results[0].(string)
+		if !ok {
+			return -1, fmt.Errorf("json path %s get value is not string", j.name)
 		}
+		l := len([]rune(origin))
+
+		if l%j.splitLen == 0 {
+			return int64(l / j.splitLen), nil
+		}
+		return int64(l/j.splitLen + 1), nil
+
 	}
-	return -1, nil
+	return 1, nil
 }
 
 func (j *JsonCounter) Max() int64 {

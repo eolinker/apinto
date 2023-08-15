@@ -1,27 +1,17 @@
-package counter
+package matcher
 
 import (
 	"strconv"
 	"strings"
 
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
-
 	"github.com/eolinker/eosc/log"
+
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
 )
 
-type IMatcher interface {
-	Match(ctx http_service.IHttpContext) bool
-}
-
-type MatchParam struct {
-	Key   string   `json:"key"`
-	Kind  string   `json:"kind"` // int|string|bool
-	Value []string `json:"value"`
-}
-
-func newJsonMatcher(params []*MatchParam) *jsonMatcher {
+func NewJsonMatcher(params []*MatchParam) *jsonMatcher {
 	ps := make([]*jsonMatchParam, 0, len(params))
 	for _, p := range params {
 		key := p.Key
@@ -94,27 +84,6 @@ func (m *jsonMatcher) Match(ctx http_service.IHttpContext) bool {
 					}
 				}
 			}
-		}
-	}
-	return false
-}
-
-func newStatusCodeMatcher(codes []int) *statusCodeMatcher {
-	return &statusCodeMatcher{codes: codes}
-}
-
-type statusCodeMatcher struct {
-	codes []int
-}
-
-func (m *statusCodeMatcher) Match(ctx http_service.IHttpContext) bool {
-	if len(m.codes) < 1 {
-		return true
-	}
-	code := ctx.Response().StatusCode()
-	for _, c := range m.codes {
-		if c == code {
-			return true
 		}
 	}
 	return false

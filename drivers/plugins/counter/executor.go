@@ -2,8 +2,16 @@ package counter
 
 import (
 	"fmt"
+	"reflect"
+	"sync"
 
-	"github.com/eolinker/apinto/drivers/plugins/counter/counter"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
+
+	"github.com/eolinker/apinto/drivers/plugins/counter/matcher"
+
+	"github.com/eolinker/apinto/resources"
+
+	"github.com/eolinker/apinto/drivers/counter"
 
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/drivers/plugins/counter/separator"
@@ -18,11 +26,13 @@ var _ eocontext.IFilter = (*executor)(nil)
 
 type executor struct {
 	drivers.WorkerBase
-	matchers         []IMatcher
+	matchers         []matcher.IMatcher
 	separatorCounter separator.ICounter
 	counters         eosc.Untyped[string, counter.ICounter]
-	client           counter.IClient
+	cache            scope_manager.IProxyOutput[resources.ICache]
+	client           scope_manager.IProxyOutput[counter.IClient]
 	keyGenerate      IKeyGenerator
+	once             sync.Once
 }
 
 func (b *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
@@ -30,14 +40,20 @@ func (b *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err
 }
 
 func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
-	counter, has := b.counters.Get(b.keyGenerate.Key(ctx))
-	if !has {
+	b.once.Do(func() {
+		b.cache = scope_manager.Auto[resources.ICache]("", "redis")
+		b.client = scope_manager.Auto[counter.IClient]("", "counter")
+	})
 
+	key := b.keyGenerate.Key(ctx)
+	ct, has := b.counters.Get(key)
+	if !has {
+		ct = NewRedisCounter(key, b.cache, b.client)
+		b.counters.Set(key, ct)
 	}
 	var count int64 = 1
 	var err error
-	if b.separatorCounter != nil {
-
+	if !reflect.ValueOf(b.separatorCounter).IsNil() {
 		separatorCounter := b.separatorCounter
 		count, err = separatorCounter.Count(ctx)
 		if err != nil {
@@ -53,16 +69,16 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 		}
 	}
 
-	err = counter.Lock(count)
+	err = ct.Lock(count)
 	if err != nil {
 		// 次数不足，直接返回
-		//return fmt.Errorf("no enough, key:%s, remain:%d, count:%d", b.counters.Name(), b.counters.Remain(), count
+		return err
 	}
 	if next != nil {
 		err = next.DoChain(ctx)
 		if err != nil {
 			// 转发失败，回滚次数
-			return counter.RollBack(count)
+			return ct.RollBack(count)
 			//return err
 		}
 	}
@@ -76,10 +92,10 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 	}
 	if match {
 		// 匹配，扣减次数
-		return counter.Complete(count)
+		return ct.Complete(count)
 	}
 	// 不匹配，回滚次数
-	return counter.RollBack(count)
+	return ct.RollBack(count)
 }
 
 func (b *executor) Start() error {
@@ -91,11 +107,12 @@ func (b *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 	if !ok {
 		return fmt.Errorf("invalid config, driver: %s", Name)
 	}
-	counter, err := separator.GetCounter(cfg.Count)
+	ct, err := separator.GetCounter(cfg.Count)
 	if err != nil {
 		return err
 	}
-	b.separatorCounter = counter
+	b.keyGenerate = newKeyGenerate(cfg.Key)
+	b.separatorCounter = ct
 	b.matchers = cfg.Match.GenerateHandler()
 	return nil
 }

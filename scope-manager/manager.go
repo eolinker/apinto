@@ -28,7 +28,6 @@ func Get[T any](scopeName string) IProxyOutput[T] {
 		if !has {
 			proxy = newProxy()
 			scopes.Set(scopeName, proxy)
-
 		}
 	}
 	return create[T](proxy)

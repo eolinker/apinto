@@ -4,6 +4,7 @@ import (
 	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/apinto/drivers/app"
 	"github.com/eolinker/apinto/drivers/certs"
+	http_counter "github.com/eolinker/apinto/drivers/counter/http"
 	"github.com/eolinker/apinto/drivers/discovery/consul"
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
@@ -21,6 +22,7 @@ import (
 	body_check "github.com/eolinker/apinto/drivers/plugins/body-check"
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
+	"github.com/eolinker/apinto/drivers/plugins/counter"
 	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
 	dubbo2_to_http "github.com/eolinker/apinto/drivers/plugins/dubbo2-to-http"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
@@ -159,4 +161,7 @@ func Register(extenderRegister eosc.IExtenderDriverRegister) {
 
 	body_check.Register(extenderRegister)
 	extra_params_v2.Register(extenderRegister)
+
+	http_counter.Register(extenderRegister)
+	counter.Register(extenderRegister)
 }

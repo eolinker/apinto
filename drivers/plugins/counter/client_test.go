@@ -6,11 +6,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	redis "github.com/go-redis/redis/v8"
 )
 
+type demoClient struct {
+}
+
+func (d *demoClient) Get(key string) (int64, error) {
+	return 100, nil
+}
+
 func TestLocalCounter(t *testing.T) {
-	client := NewHTTPClient("", nil)
+	client := &demoClient{}
 	lc := NewLocalCounter("test", client)
 	wg := sync.WaitGroup{}
 	wg.Add(100)
@@ -41,7 +48,7 @@ func TestLocalCounter(t *testing.T) {
 }
 
 func TestRedisCounter(t *testing.T) {
-	client := NewHTTPClient("", nil)
+	client := &demoClient{}
 	key := "apinto-apiddww"
 	lc := NewLocalCounter(key, client)
 	redisConn := redis.NewClient(&redis.Options{
@@ -49,7 +56,7 @@ func TestRedisCounter(t *testing.T) {
 		Password: "password", // 如果有密码，请填写密码
 		DB:       9,          // 选择数据库，默认为0
 	})
-	rc := NewRedisCounter(key, redisConn, client, lc)
+	rc := NewRedisCounter(key, redisConn, client)
 	wg := sync.WaitGroup{}
 	wg.Add(100)
 	for i := 0; i < 100; i++ {
