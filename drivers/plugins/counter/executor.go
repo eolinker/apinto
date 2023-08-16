@@ -29,7 +29,9 @@ type executor struct {
 	matchers         []matcher.IMatcher
 	separatorCounter separator.ICounter
 	counters         eosc.Untyped[string, counter.ICounter]
+	cacheID          string
 	cache            scope_manager.IProxyOutput[resources.ICache]
+	clientID         string
 	client           scope_manager.IProxyOutput[counter.IClient]
 	keyGenerate      IKeyGenerator
 	once             sync.Once
@@ -41,8 +43,8 @@ func (b *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err
 
 func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
 	b.once.Do(func() {
-		b.cache = scope_manager.Auto[resources.ICache]("", "redis")
-		b.client = scope_manager.Auto[counter.IClient]("", "counter")
+		b.cache = scope_manager.Auto[resources.ICache](b.cacheID, "redis")
+		b.client = scope_manager.Auto[counter.IClient](b.clientID, "counter")
 	})
 
 	key := b.keyGenerate.Key(ctx)
@@ -103,17 +105,7 @@ func (b *executor) Start() error {
 }
 
 func (b *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	cfg, ok := conf.(*Config)
-	if !ok {
-		return fmt.Errorf("invalid config, driver: %s", Name)
-	}
-	ct, err := separator.GetCounter(cfg.Count)
-	if err != nil {
-		return err
-	}
-	b.keyGenerate = newKeyGenerate(cfg.Key)
-	b.separatorCounter = ct
-	b.matchers = cfg.Match.GenerateHandler()
+	// 插件不会执行reset，会先销毁再Create
 	return nil
 }
 
