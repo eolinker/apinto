@@ -1,4 +1,4 @@
-package param_check
+package params_check
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	Name = "param_check"
+	Name = "params_check"
 )
 
 func Register(register eosc.IExtenderDriverRegister) {

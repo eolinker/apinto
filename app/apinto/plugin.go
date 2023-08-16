@@ -4,8 +4,10 @@ import (
 	"github.com/eolinker/apinto/drivers/plugins/app"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
+	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
 	grpc_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/grpc-proxy-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
+	params_check "github.com/eolinker/apinto/drivers/plugins/params-check"
 	"github.com/eolinker/apinto/drivers/plugins/prometheus"
 
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
@@ -56,11 +58,13 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 
 	// 请求处理相关插件
 	body_check.Register(extenderRegister)
+	extra_params.Register(extenderRegister)
 	extra_params_v2.Register(extenderRegister)
 	params_transformer.Register(extenderRegister)
 	proxy_rewrite.Register(extenderRegister)
 	proxy_rewrite_v2.Register(extenderRegister)
 	http_mocking.Register(extenderRegister)
+	params_check.Register(extenderRegister)
 
 	// 响应处理插件
 	response_rewrite.Register(extenderRegister)

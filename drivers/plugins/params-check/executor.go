@@ -1,6 +1,7 @@
-package param_check
+package params_check
 
 import (
+	"errors"
 	"fmt"
 	"mime"
 	"net/url"
@@ -51,20 +52,26 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 		v := ctx.Request().Header().GetHeader(c.name)
 		match := c.Check(v, len(v) > 0)
 		if !match {
+			errInfo := fmt.Sprintf(errParamCheck, "header", c.name, c.name)
 			ctx.Response().SetStatus(401, "401")
-			return fmt.Errorf(errParamCheck, "header", c.name)
+			ctx.Response().SetBody([]byte(errInfo))
+			return errors.New(errInfo)
 		}
 	}
 	for _, c := range e.queryChecker {
 		v := ctx.Request().URI().GetQuery(c.name)
 		match := c.Check(v, len(v) > 0)
 		if !match {
+			errInfo := fmt.Sprintf(errParamCheck, "query", c.name, c.name)
 			ctx.Response().SetStatus(401, "401")
-			return fmt.Errorf(errParamCheck, "query", c.name)
+			ctx.Response().SetBody([]byte(errInfo))
+			return errors.New(errInfo)
 		}
 	}
 	err = bodyCheck(ctx, e.bodyChecker)
 	if err != nil {
+		ctx.Response().SetStatus(401, "401")
+		ctx.Response().SetBody([]byte(err.Error()))
 		return err
 	}
 
@@ -156,7 +163,7 @@ func jsonChecker(body interface{}, checker *paramChecker) error {
 	if len(result) < 1 {
 		match := checker.Check("", false)
 		if !match {
-			return fmt.Errorf(errParamCheck, "body", checker.name)
+			return fmt.Errorf(errParamCheck, "body", checker.name, checker.name)
 		}
 	}
 	v, ok := result[0].(string)
@@ -165,7 +172,7 @@ func jsonChecker(body interface{}, checker *paramChecker) error {
 	}
 	match := checker.Check(v, len(v) > 0)
 	if !match {
-		return fmt.Errorf(errParamCheck, "body", checker.name)
+		return fmt.Errorf(errParamCheck, "body", checker.name, checker.name)
 	}
 	return nil
 }

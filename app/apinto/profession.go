@@ -38,8 +38,8 @@ import (
 	"github.com/eolinker/apinto/drivers/template"
 	protocbuf "github.com/eolinker/apinto/drivers/transcode/protobuf"
 
-	"github.com/eolinker/apinto/drivers/plugins/app"
-	"github.com/eolinker/apinto/drivers/plugins/prometheus"
+	"github.com/eolinker/apinto/drivers/app"
+	"github.com/eolinker/apinto/drivers/output/prometheus"
 	"github.com/eolinker/eosc"
 )
 

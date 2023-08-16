@@ -1,4 +1,4 @@
-package param_check
+package params_check
 
 type Config struct {
 	Params []*Param `json:"params" label:"参数列表"`
