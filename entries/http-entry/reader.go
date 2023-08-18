@@ -39,7 +39,8 @@ func (f Fields) Read(name string, ctx http_service.IHttpContext) (string, bool) 
 		}
 	}
 
-	if label := ctx.GetLabel(name); label != "" {
+	label := ctx.GetLabel(name)
+	if label != "" {
 		return label, true
 	}
 

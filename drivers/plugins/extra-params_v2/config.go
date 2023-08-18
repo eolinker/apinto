@@ -2,6 +2,7 @@ package extra_params_v2
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	dynamic_params "github.com/eolinker/apinto/drivers/plugins/extra-params_v2/dynamic-params"
@@ -41,7 +42,7 @@ func (c *Config) doCheck() error {
 
 type ExtraParam struct {
 	Name     string   `json:"name" label:"参数名"`
-	Type     string   `json:"type" label:"参数类型" enum:"string,int,float,bool,$datetime,$md5"`
+	Type     string   `json:"type" label:"参数类型" enum:"string,int,float,bool,$datetime,$md5,$timestamp,$concat"`
 	Position string   `json:"position" enum:"header,query,body" label:"参数位置"`
 	Value    []string `json:"value" label:"参数值列表"`
 	Conflict string   `json:"conflict" label:"参数冲突时的处理方式" enum:"origin,convert,error"`
@@ -73,7 +74,7 @@ func generateBaseParam(params []*ExtraParam) *baseParam {
 }
 
 func newParamInfo(name string, value []string, typ string, conflict string) *paramInfo {
-	d := &paramInfo{name: name, value: strings.Join(value, ","), conflict: conflict}
+	d := &paramInfo{name: name, value: strings.Join(value, ""), conflict: conflict, valueType: typ}
 	valueLen := len(d.value)
 	if strings.HasPrefix(typ, "$") {
 		factory, has := dynamic_params.Get(typ)
@@ -93,13 +94,34 @@ func newParamInfo(name string, value []string, typ string, conflict string) *par
 
 type paramInfo struct {
 	name        string
+	valueType   string
 	systemValue bool
 	value       string
 	driver      dynamic_params.IDynamicDriver
 	conflict    string
 }
 
-func (b *paramInfo) Build(ctx http_service.IHttpContext, contentType string, params interface{}) (string, error) {
+func (b *paramInfo) Build(ctx http_service.IHttpContext, contentType string, params interface{}) (string, interface{}, error) {
+	value, err := b.build(ctx, contentType, params)
+	if err != nil {
+		return "", nil, err
+	}
+	switch b.valueType {
+	case "int":
+		v, err := strconv.Atoi(value)
+		return value, v, err
+	case "float":
+		v, err := strconv.ParseFloat(value, 64)
+		return value, v, err
+	case "bool":
+		v, err := strconv.ParseBool(value)
+		return value, v, err
+	default:
+		return value, nil, nil
+	}
+}
+
+func (b *paramInfo) build(ctx http_service.IHttpContext, contentType string, params interface{}) (string, error) {
 	if b.driver == nil {
 		if b.systemValue {
 			return ctx.GetLabel(b.value), nil

@@ -84,7 +84,7 @@ func addParamToBody(ctx http_service.IHttpContext, contentType string, params []
 					continue
 				}
 			}
-			value, err := param.Build(ctx, contentType, bodyParam)
+			_, value, err := param.Build(ctx, contentType, bodyParam)
 			if err != nil {
 				log.Errorf("build param(s) error: %v", key, err)
 				continue
@@ -111,7 +111,7 @@ func addParamToBody(ctx http_service.IHttpContext, contentType string, params []
 					continue
 				}
 			}
-			value, err := param.Build(ctx, contentType, nil)
+			_, value, err := param.Build(ctx, contentType, nil)
 			if err != nil {
 				log.Errorf("build param(s) error: %v", param.name, err)
 				continue
@@ -173,7 +173,7 @@ func (e *executor) access(ctx http_service.IHttpContext) (int, error) {
 				continue
 			}
 		}
-		value, err := param.Build(ctx, contentType, bodyParam)
+		value, _, err := param.Build(ctx, contentType, bodyParam)
 		if err != nil {
 			log.Errorf("build query extra param(%s) error: %s", param.name, err.Error())
 			continue
@@ -192,7 +192,7 @@ func (e *executor) access(ctx http_service.IHttpContext) (int, error) {
 				continue
 			}
 		}
-		value, err := param.Build(ctx, contentType, bodyParam)
+		value, _, err := param.Build(ctx, contentType, bodyParam)
 		if err != nil {
 			log.Errorf("build header extra param(%s) error: %s", name, err.Error())
 			continue
