@@ -1,10 +1,12 @@
 package extra_params_v2
 
 import (
+	"encoding/json"
 	"fmt"
 	"mime"
 	"net/http"
 	"net/textproto"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -55,7 +57,6 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 
 func addParamToBody(ctx http_service.IHttpContext, contentType string, params []*paramInfo) (interface{}, error) {
 
-	//var bodyParam map[string]interface{}
 	if contentType == "application/json" {
 		body, _ := ctx.Proxy().Body().RawBody()
 		if string(body) == "" {
@@ -119,8 +120,25 @@ func addParamToBody(ctx http_service.IHttpContext, contentType string, params []
 
 		}
 		ctx.Proxy().Body().SetForm(bodyForm)
+	} else if contentType == "application/x-www-form-urlencoded" {
+		body, _ := ctx.Proxy().Body().RawBody()
+		_, err := url.ParseQuery(string(body))
+		if err != nil {
+			return nil, err
+		}
+		var d interface{}
+		err = json.Unmarshal(body, &d)
+		if err == nil && len(body) > 0 {
+			return nil, fmt.Errorf("fail to parse body,body is %s", string(body))
+		}
 	}
 	return nil, nil
+}
+
+var contentTypeMap = map[string]string{
+	"json":               "application/json",
+	"form-data":          "application/x-www-form-urlencoded",
+	"multipart-formdata": "multipart/form-data",
 }
 
 func (e *executor) access(ctx http_service.IHttpContext) (int, error) {
@@ -130,15 +148,18 @@ func (e *executor) access(ctx http_service.IHttpContext) (int, error) {
 	var err error
 	if ctx.Proxy().Method() == http.MethodPost || ctx.Proxy().Method() == http.MethodPut || ctx.Proxy().Method() == http.MethodPatch {
 		if e.requestBodyType != "" {
-			if e.requestBodyType == "json" && contentType != "application/json" {
-				return clientErrStatusCode, encodeErr(e.errorType, `[extra_params] request body type is not json`, clientErrStatusCode)
-			} else if e.requestBodyType == "form-data" && contentType != "multipart/form-data" {
-				return clientErrStatusCode, encodeErr(e.errorType, `[extra_params] request body type is not form-data`, clientErrStatusCode)
+			needContentType := contentTypeMap[e.requestBodyType]
+			if contentType == "" {
+				return clientErrStatusCode, encodeErr(e.errorType, fmt.Sprintf(`[extra_params] missing content type,need %s`, needContentType), clientErrStatusCode)
+			}
+			if contentType != needContentType {
+				return clientErrStatusCode, encodeErr(e.errorType, `[extra_params] content-type is not `+needContentType, clientErrStatusCode)
 			}
 		}
 		bodyParam, err = addParamToBody(ctx, contentType, e.baseParam.body)
 		if err != nil {
-			return clientErrStatusCode, encodeErr(e.errorType, err.Error(), clientErrStatusCode)
+			log.Error(err)
+			return clientErrStatusCode, encodeErr(e.errorType, fmt.Sprintf("[extra_params] fail to parse request body,content-type is %s", contentType), clientErrStatusCode)
 		}
 	}
 
@@ -186,19 +207,12 @@ func (e *executor) Start() error {
 }
 
 func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	cfg, err := check(conf)
-	if err != nil {
-		return err
-	}
-
-	e.baseParam = generateBaseParam(cfg.Params)
-	e.requestBodyType = cfg.RequestBodyType
-	e.errorType = cfg.ErrorType
 
 	return nil
 }
 
 func (e *executor) Stop() error {
+	e.Destroy()
 	return nil
 }
 

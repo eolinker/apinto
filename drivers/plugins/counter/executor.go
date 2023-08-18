@@ -1,6 +1,7 @@
 package counter
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"sync"
@@ -59,21 +60,29 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 		separatorCounter := b.separatorCounter
 		count, err = separatorCounter.Count(ctx)
 		if err != nil {
+			errInfo := fmt.Sprintf("%s count error", separatorCounter.Name())
 			ctx.Response().SetStatus(400, "400")
-			return fmt.Errorf("%s count error", separatorCounter.Name())
+			ctx.Response().SetBody([]byte(errInfo))
+			return errors.New(errInfo)
 		}
 		if count > separatorCounter.Max() {
-			ctx.Response().SetStatus(403, "not allow")
-			return fmt.Errorf("%s number exceed", separatorCounter.Name())
+			errInfo := fmt.Sprintf("%s number exceed", separatorCounter.Name())
+			ctx.Response().SetStatus(400, "not allow")
+			ctx.Response().SetBody([]byte(errInfo))
+			return errors.New(errInfo)
 		} else if count == 0 {
+			errInfo := fmt.Sprintf("%s value is missing", separatorCounter.Name())
 			ctx.Response().SetStatus(400, "400")
-			return fmt.Errorf("%s value is missing", separatorCounter.Name())
+			ctx.Response().SetBody([]byte(errInfo))
+			return errors.New(errInfo)
 		}
 	}
 
 	err = ct.Lock(count)
 	if err != nil {
 		// 次数不足，直接返回
+		ctx.Response().SetStatus(416, "416")
+		ctx.Response().SetBody([]byte("out of calls"))
 		return err
 	}
 	if next != nil {
@@ -110,10 +119,16 @@ func (b *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (b *executor) Stop() error {
+	b.Destroy()
 	return nil
 }
 
 func (b *executor) Destroy() {
+	b.cache = nil
+	b.client = nil
+	b.counters = nil
+	b.separatorCounter = nil
+	b.matchers = nil
 	return
 }
 

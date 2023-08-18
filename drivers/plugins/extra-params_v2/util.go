@@ -2,6 +2,7 @@ package extra_params_v2
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 )
 
@@ -33,7 +34,7 @@ func encodeErr(ent string, origin string, statusCode int) error {
 		info, _ := json.Marshal(tmp)
 		return fmt.Errorf("%s", info)
 	}
-	return fmt.Errorf("%s statusCode: %d", origin, statusCode)
+	return errors.New(origin)
 }
 
 //func parseBodyParams(ctx http_service.IHttpContext) (interface{}, url.Values, error) {

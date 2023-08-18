@@ -32,13 +32,13 @@ func (b *BodyCheck) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.I
 		}
 		bodySize := len([]rune(string(body)))
 		if !b.isEmpty && bodySize < 1 {
-			ctx.Response().SetStatus(500, "Internal Server Error")
-			ctx.Response().SetBody([]byte("请求体不能为空，请检查body的参数情况"))
+			ctx.Response().SetStatus(400, "400")
+			ctx.Response().SetBody([]byte("Body is required"))
 			return errors.New("Body is required")
 		}
 		if b.allowedPayloadSize > 0 && bodySize > b.allowedPayloadSize {
-			ctx.Response().SetStatus(500, "Internal Server Error")
-			ctx.Response().SetBody([]byte("请求体超出长度限制"))
+			ctx.Response().SetStatus(413, "413")
+			ctx.Response().SetBody([]byte("The request body is too large"))
 			return errors.New("The request entity is too large")
 		}
 	}

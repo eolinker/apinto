@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	Params          []*ExtraParam `json:"params" label:"参数列表"`
-	RequestBodyType string        `json:"request_body_type" enum:"form-data,json" label:"请求体类型"`
+	RequestBodyType string        `json:"request_body_type" enum:"form-data,json,multipart-formdata" label:"请求体类型"`
 	ErrorType       string        `json:"error_type" enum:"text,json" label:"报错输出格式"`
 }
 

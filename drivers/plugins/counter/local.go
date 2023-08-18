@@ -54,6 +54,9 @@ func (c *LocalCounter) Lock(count int64) error {
 			}
 			break
 		}
+		if err != nil {
+			return fmt.Errorf("no enough, key:%s, remain:%d, count:%d", c.key, c.remain, count)
+		}
 		//// 获取最新的次数
 		//remain, err = counter.GetRemainCount(c.client, c.key, count)
 		//if err != nil {
