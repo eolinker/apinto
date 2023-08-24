@@ -61,6 +61,7 @@ func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 		disable:     cfg.Disable,
 		websocket:   cfg.Websocket,
 		retry:       cfg.Retry,
+		labels:      cfg.Labels,
 		timeout:     time.Duration(cfg.TimeOut) * time.Millisecond,
 	}
 

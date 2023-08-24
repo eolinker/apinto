@@ -26,6 +26,7 @@ type dubboHandler struct {
 	filters         eocontext.IChainPro
 	retry           int
 	timeout         time.Duration
+	labels          map[string]string
 }
 
 var completeCaller = manager.NewCompleteCaller()
@@ -40,6 +41,9 @@ func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
 	if d.disable {
 		dubboCtx.Response().SetBody(manager.Dubbo2ErrorResult(errors.New("router disable")))
 		return
+	}
+	for key, value := range d.labels {
+		ctx.SetLabel(key, value)
 	}
 
 	//set retry timeout

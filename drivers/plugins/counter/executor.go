@@ -51,7 +51,7 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 	key := b.keyGenerate.Key(ctx)
 	ct, has := b.counters.Get(key)
 	if !has {
-		ct = NewRedisCounter(key, b.cache, b.client)
+		ct = NewRedisCounter(key, b.keyGenerate.Variables(ctx), b.cache, b.client)
 		b.counters.Set(key, ct)
 	}
 	var count int64 = 1

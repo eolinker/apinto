@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/eolinker/eosc"
+
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/apinto/drivers/counter"
@@ -14,8 +16,8 @@ import (
 
 var _ counter.ICounter = (*LocalCounter)(nil)
 
-func NewLocalCounter(key string, client scope_manager.IProxyOutput[counter.IClient]) *LocalCounter {
-	return &LocalCounter{key: key, client: client}
+func NewLocalCounter(key string, variables eosc.Untyped[string, string], client scope_manager.IProxyOutput[counter.IClient]) *LocalCounter {
+	return &LocalCounter{key: key, client: client, variables: variables}
 }
 
 // LocalCounter 本地计数器
@@ -27,6 +29,8 @@ type LocalCounter struct {
 	lock int64
 
 	locker sync.Mutex
+
+	variables eosc.Untyped[string, string]
 
 	resetTime time.Time
 
@@ -47,7 +51,7 @@ func (c *LocalCounter) Lock(count int64) error {
 		c.resetTime = now
 		for _, client := range c.client.List() {
 			// 获取最新的次数
-			remain, err = counter.GetRemainCount(client, c.key, count)
+			remain, err = counter.GetRemainCount(client, c.key, count, c.variables)
 			if err != nil {
 				log.Errorf("get remain count error: %s", err.Error())
 				continue

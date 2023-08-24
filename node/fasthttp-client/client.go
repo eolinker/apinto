@@ -2,12 +2,13 @@ package fasthttp_client
 
 import (
 	"fmt"
-	"github.com/eolinker/eosc/eocontext"
 	"net"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/eolinker/eosc/eocontext"
 
 	"github.com/valyala/fasthttp"
 )

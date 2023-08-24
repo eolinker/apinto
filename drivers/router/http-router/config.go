@@ -22,8 +22,9 @@ type Config struct {
 	Disable   bool           `json:"disable" yaml:"disable" label:"禁用路由"`
 	Plugins   plugin.Plugins `json:"plugins" yaml:"plugins" label:"插件配置"`
 
-	Retry   int `json:"retry" label:"重试次数" yaml:"retry" switch:"service!==''"`
-	TimeOut int `json:"time_out" label:"超时时间" switch:"service!==''"`
+	Retry   int               `json:"retry" label:"重试次数" yaml:"retry" switch:"service!==''"`
+	TimeOut int               `json:"time_out" label:"超时时间" switch:"service!==''"`
+	Labels  map[string]string `json:"labels" label:"路由标签"`
 }
 
 // Rule 规则

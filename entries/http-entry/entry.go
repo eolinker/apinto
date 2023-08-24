@@ -21,7 +21,7 @@ func NewEntry(ctx http_service.IHttpContext) *Entry {
 	return &Entry{ctx: ctx}
 }
 
-func (e *Entry) Read(pattern string) string {
+func (e *Entry) Read(pattern string) interface{} {
 	v, ok := rule.Read(pattern, e.ctx)
 	if !ok {
 		return ""
@@ -50,7 +50,7 @@ type ChildEntry struct {
 	childReader IReaderIndex
 }
 
-func (c *ChildEntry) Read(pattern string) string {
+func (c *ChildEntry) Read(pattern string) interface{} {
 	if strings.HasPrefix(pattern, c.pre) {
 		name := strings.TrimPrefix(pattern, c.pre)
 		v, _ := c.childReader.ReadByIndex(c.index, name, c.parent.ctx)

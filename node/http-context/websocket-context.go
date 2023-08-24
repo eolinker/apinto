@@ -3,10 +3,12 @@ package http_context
 import (
 	"errors"
 	"fmt"
-	eoscContext "github.com/eolinker/eosc/eocontext"
 	"io"
 	"net"
 	"sync"
+
+	eoscContext "github.com/eolinker/eosc/eocontext"
+	"github.com/valyala/fasthttp"
 
 	"github.com/eolinker/eosc/log"
 
@@ -24,7 +26,9 @@ type WebsocketContext struct {
 	upstreamConn net.Conn
 }
 
-var upgrader = websocket.FastHTTPUpgrader{}
+var upgrader = websocket.FastHTTPUpgrader{
+	CheckOrigin: func(ctx *fasthttp.RequestCtx) bool { return true },
+}
 
 func (w *WebsocketContext) Upgrade() error {
 	err := upgrader.Upgrade(w.fastHttpRequestCtx, func(conn *websocket.Conn) {

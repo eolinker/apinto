@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/eolinker/apinto/drivers/plugins/app"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
+	data_transform "github.com/eolinker/apinto/drivers/plugins/data-transform"
 	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
 	grpc_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/grpc-proxy-rewrite"
@@ -66,6 +67,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	proxy_rewrite_v2.Register(extenderRegister)
 	http_mocking.Register(extenderRegister)
 	params_check.Register(extenderRegister)
+	data_transform.Register(extenderRegister)
 
 	// 响应处理插件
 	response_rewrite.Register(extenderRegister)

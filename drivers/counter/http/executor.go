@@ -1,18 +1,19 @@
 package http
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"time"
 
-	scope_manager "github.com/eolinker/apinto/scope-manager"
+	"github.com/ohler55/ojg/oj"
 
 	"github.com/ohler55/ojg/jp"
 
+	scope_manager "github.com/eolinker/apinto/scope-manager"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/drivers/counter"
-	"github.com/ohler55/ojg/oj"
 	"github.com/valyala/fasthttp"
 
 	"github.com/eolinker/eosc"
@@ -23,8 +24,12 @@ var _ eosc.IWorker = (*Executor)(nil)
 
 type Executor struct {
 	drivers.WorkerBase
-	request *fasthttp.Request
-	expr    jp.Expr
+	req         *fasthttp.Request
+	contentType string
+	query       map[string]string
+	header      map[string]string
+	body        map[string]string
+	expr        jp.Expr
 }
 
 func (b *Executor) Start() error {
@@ -48,32 +53,20 @@ func (b *Executor) reset(conf *Config) error {
 	request := fasthttp.AcquireRequest()
 	request.SetRequestURI(conf.URI)
 	request.Header.SetMethod(conf.Method)
-	for key, value := range conf.Headers {
-		request.Header.Set(key, value)
-	}
-	for key, value := range conf.QueryParam {
-		request.URI().QueryArgs().Set(key, value)
-	}
-	if conf.ContentType == "json" {
-		request.Header.SetContentType("application/json")
-		body, _ := json.Marshal(conf.BodyParam)
-		request.SetBody(body)
-	} else {
-		request.Header.SetContentType("application/x-www-form-urlencoded")
-		bodyParams := url.Values{}
-		for key, value := range conf.BodyParam {
-			bodyParams.Set(key, value)
-		}
-		request.SetBodyString(bodyParams.Encode())
-	}
-	b.request = request
+
+	b.contentType = conf.ContentType
+	b.header = conf.Headers
+	b.query = conf.QueryParam
+	b.body = conf.BodyParam
+
+	b.req = request
 	b.expr = expr
 	scope_manager.Set(b.Id(), b, conf.Scopes...)
 	return nil
 }
 
 func (b *Executor) Stop() error {
-	fasthttp.ReleaseRequest(b.request)
+	fasthttp.ReleaseRequest(b.req)
 	scope_manager.Del(b.Id())
 	return nil
 }
@@ -86,21 +79,58 @@ var httpClient = fasthttp.Client{
 	Name: "apinto-counter",
 }
 
-func (b *Executor) Get(key string) (int64, error) {
+func (b *Executor) Get(variables eosc.Untyped[string, string]) (int64, error) {
 	req := fasthttp.AcquireRequest()
-	b.request.CopyTo(req)
+	b.req.CopyTo(req)
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+	for key, value := range b.header {
+		v, ok := variables.Get(value)
+		if !ok {
+			v = value
+		}
+		req.Header.Set(key, v)
+	}
+	for key, value := range b.query {
+		v, ok := variables.Get(value)
+		if !ok {
+			v = value
+		}
+		req.URI().QueryArgs().Set(key, v)
+	}
 
-	req.URI().SetQueryStringBytes(bytes.Replace(req.URI().QueryString(), []byte("$key"), []byte(key), -1))
-	req.SetBody(bytes.Replace(req.Body(), []byte("$key"), []byte(key), -1))
-
-	err := httpClient.Do(req, resp)
+	var body []byte
+	switch b.contentType {
+	case "json":
+		for key, value := range b.body {
+			v, ok := variables.Get(value)
+			if !ok {
+				v = value
+			}
+			b.body[key] = v
+		}
+		body, _ = json.Marshal(b.body)
+		req.Header.SetContentType("application/json")
+	case "form-data":
+		params := url.Values{}
+		for key, value := range b.body {
+			v, ok := variables.Get(value)
+			if !ok {
+				v = value
+			}
+			params.Add(key, v)
+		}
+		body = []byte(params.Encode())
+		req.Header.SetContentType("application/x-www-form-urlencoded")
+	}
+	req.SetBody(body)
+	err := httpClient.DoTimeout(req, resp, 10*time.Second)
 	if err != nil {
 		return 0, err
 	}
 	if resp.StatusCode() != fasthttp.StatusOK {
-		return 0, fmt.Errorf("error http status code: %d,key: %s,id: %s", resp.StatusCode(), key, b.Id())
+		return 0, fmt.Errorf("http status code is %d", resp.StatusCode())
 	}
 	result, err := oj.Parse(resp.Body())
 	if err != nil {
@@ -109,10 +139,10 @@ func (b *Executor) Get(key string) (int64, error) {
 	// 解析JSON
 	v := b.expr.Get(result)
 	if v == nil || len(v) < 1 {
-		return 0, fmt.Errorf("no found key: %s,id: %s", key, b.Id())
+		return 0, fmt.Errorf("json path %s not found,id is %d", b.expr.String(), b.Id())
 	}
 	if len(v) != 1 {
-		return 0, fmt.Errorf("invalid value: %v,key: %s,id: %s", v, key, b.Id())
+		return 0, fmt.Errorf("json path %s found more than one,id is %d", b.expr.String(), b.Id())
 	}
 	return v[0].(int64), nil
 }

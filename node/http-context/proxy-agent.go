@@ -16,9 +16,14 @@ type requestAgent struct {
 	statusCode     int
 	status         string
 	responseLength int
+	responseBody   string
 	beginTime      time.Time
 	endTime        time.Time
 	hostAgent      *UrlAgent
+}
+
+func (a *requestAgent) ResponseBody() string {
+	return a.responseBody
 }
 
 func (a *requestAgent) ProxyTime() time.Time {

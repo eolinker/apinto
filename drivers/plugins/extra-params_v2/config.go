@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/eolinker/eosc"
+
 	dynamic_params "github.com/eolinker/apinto/drivers/plugins/extra-params_v2/dynamic-params"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -124,7 +126,7 @@ func (b *paramInfo) Build(ctx http_service.IHttpContext, contentType string, par
 func (b *paramInfo) build(ctx http_service.IHttpContext, contentType string, params interface{}) (string, error) {
 	if b.driver == nil {
 		if b.systemValue {
-			return ctx.GetLabel(b.value), nil
+			return eosc.ReadStringFromEntry(ctx.GetEntry(), b.value), nil
 		}
 		return b.value, nil
 	}

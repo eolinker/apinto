@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/eolinker/eosc"
+
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/apinto/resources"
@@ -33,19 +35,22 @@ type RedisCounter struct {
 	lockerKey string
 	lockKey   string
 	remainKey string
+
+	variables eosc.Untyped[string, string]
 }
 
-func NewRedisCounter(key string, redis scope_manager.IProxyOutput[resources.ICache], client scope_manager.IProxyOutput[counter.IClient]) *RedisCounter {
+func NewRedisCounter(key string, variables eosc.Untyped[string, string], redis scope_manager.IProxyOutput[resources.ICache], client scope_manager.IProxyOutput[counter.IClient]) *RedisCounter {
 
 	return &RedisCounter{
 		key:          key,
 		redis:        redis,
 		client:       client,
-		localCounter: NewLocalCounter(key, client),
+		localCounter: NewLocalCounter(key, variables, client),
 		ctx:          context.Background(),
 		lockerKey:    fmt.Sprintf("%s:locker", key),
 		lockKey:      fmt.Sprintf("%s:lock", key),
 		remainKey:    fmt.Sprintf("%s:remain", key),
+		variables:    variables,
 	}
 }
 
@@ -110,7 +115,7 @@ func (r *RedisCounter) lock(cache resources.ICache, count int64) error {
 		}
 		lock, _ := strconv.ParseInt(lockCount, 10, 64)
 		for _, client := range r.client.List() {
-			remain, err = counter.GetRemainCount(client, r.key, count+lock)
+			remain, err = counter.GetRemainCount(client, r.key, count+lock, r.variables)
 			if err != nil {
 				log.Errorf("get remain count error: %s", err)
 				continue

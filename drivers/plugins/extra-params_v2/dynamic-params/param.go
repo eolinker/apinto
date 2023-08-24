@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/eolinker/eosc"
+
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
@@ -166,7 +168,7 @@ func retrieveParam(ctx http_service.IHttpContext, contentType string, body inter
 			}
 		}
 	case positionSystem:
-		return ctx.GetLabel(value.key)
+		return eosc.ReadStringFromEntry(ctx.GetEntry(), value.key)
 	}
 	return ""
 }

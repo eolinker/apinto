@@ -27,6 +27,7 @@ type grpcRouter struct {
 	filters  eocontext.IChainPro
 	disable  bool
 	retry    int
+	labels   map[string]string
 	timeout  time.Duration
 }
 
@@ -39,6 +40,9 @@ func (h *grpcRouter) ServeHTTP(ctx eocontext.EoContext) {
 		grpcContext.SetFinish(manager.NewErrHandler(status.Error(codes.Unavailable, "router is disable")))
 		grpcContext.FastFinish()
 		return
+	}
+	for key, value := range h.labels {
+		ctx.SetLabel(key, value)
 	}
 
 	//set retry timeout

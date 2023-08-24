@@ -58,6 +58,7 @@ func (h *GrpcRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 		retry:           cfg.Retry,
 		timeout:         time.Duration(cfg.TimeOut) * time.Millisecond,
 		disable:         cfg.Disable,
+		labels:          cfg.Labels,
 	}
 
 	if !cfg.Disable {
