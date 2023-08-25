@@ -77,10 +77,10 @@ func NewParam(name string, value []string) *Param {
 					position: position,
 					optional: true,
 				})
-			} else if vLen > 3 && v[0] == '$' && v[1] == '{' && v[vLen-1] == '}' {
+			} else if vLen > 1 && v[0] == '$' {
 				// 使用系统变量
 				vs = append(vs, &ParamValue{
-					key:      v[2 : vLen-1],
+					key:      v[1:],
 					position: positionSystem,
 				})
 			} else {
