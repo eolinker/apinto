@@ -169,6 +169,28 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Mod: eosc.ProfessionConfig_Worker,
 		},
 		{
+			Name:         "counter",
+			Label:        "计数器",
+			Desc:         "计数器",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:apinto:http-counter",
+					Name:  "http",
+					Label: "http计数器",
+					Desc:  "http计数器",
+				},
+				{
+					Id:    "eolinker.com:apinto:nsq-counter",
+					Name:  "nsq",
+					Label: "nsq计数器",
+					Desc:  "nsq计数器",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		},
+		{
 			Name:         "output",
 			Label:        "输出",
 			Desc:         "输出",
@@ -226,6 +248,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
+
 		{
 			Name:         "certificate",
 			Label:        "证书",

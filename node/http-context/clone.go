@@ -6,6 +6,10 @@ import (
 	"net"
 	"time"
 
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
+
+	"github.com/eolinker/eosc"
+
 	"github.com/valyala/fasthttp"
 
 	"github.com/eolinker/eosc/utils/config"
@@ -31,8 +35,15 @@ type cloneContext struct {
 	balance             eoscContext.BalanceHandler
 	upstreamHostHandler eoscContext.UpstreamHostHandler
 	labels              map[string]string
+	entry               eosc.IEntry
+	responseError       error
+}
 
-	responseError error
+func (ctx *cloneContext) GetEntry() eosc.IEntry {
+	if ctx.entry == nil {
+		ctx.entry = http_entry.NewEntry(ctx)
+	}
+	return ctx.entry
 }
 
 func (ctx *cloneContext) RealIP() string {
@@ -137,6 +148,7 @@ func (ctx *cloneContext) SendTo(scheme string, node eoscContext.INode, timeout t
 	} else {
 		agent.setStatusCode(ctx.response.Response.StatusCode())
 	}
+	agent.responseBody = string(ctx.response.Response.Body())
 
 	agent.setResponseLength(ctx.response.Response.Header.ContentLength())
 

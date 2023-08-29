@@ -1,9 +1,8 @@
 package monitor_entry
 
 import (
+	"os"
 	"time"
-
-	"github.com/eolinker/eosc/utils"
 
 	"github.com/eolinker/eosc/log"
 
@@ -26,10 +25,9 @@ var requestFields = []string{
 type RequestReadFunc func(ctx http_context.IHttpContext) (interface{}, bool)
 
 func ReadRequest(ctx http_context.IHttpContext) []IPoint {
-	globalLabels := utils.GlobalLabelGet()
 	tags := map[string]string{
-		"cluster": globalLabels["cluster_id"],
-		"node":    globalLabels["node_id"],
+		"cluster": os.Getenv("cluster_id"),
+		"node":    os.Getenv("node_id"),
 	}
 
 	for key, label := range labels {

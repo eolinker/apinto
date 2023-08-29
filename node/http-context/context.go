@@ -6,6 +6,10 @@ import (
 	"net"
 	"time"
 
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
+
+	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/apinto/entries/ctx_key"
 
 	"github.com/eolinker/eosc/utils/config"
@@ -36,6 +40,7 @@ type HttpContext struct {
 	upstreamHostHandler eoscContext.UpstreamHostHandler
 	labels              map[string]string
 	port                int
+	entry               eosc.IEntry
 }
 
 func (ctx *HttpContext) RealIP() string {
@@ -68,6 +73,13 @@ func (ctx *HttpContext) GetBalance() eoscContext.BalanceHandler {
 
 func (ctx *HttpContext) SetBalance(handler eoscContext.BalanceHandler) {
 	ctx.balance = handler
+}
+
+func (ctx *HttpContext) GetEntry() eosc.IEntry {
+	if ctx.entry == nil {
+		ctx.entry = http_entry.NewEntry(ctx)
+	}
+	return ctx.entry
 }
 
 func (ctx *HttpContext) SetLabel(name, value string) {
@@ -141,7 +153,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 		ctx.response.ResponseHeader.refresh()
 		agent.setStatusCode(ctx.fastHttpRequestCtx.Response.StatusCode())
 	}
-
+	agent.responseBody = string(ctx.response.Response.Body())
 	agent.setResponseLength(ctx.fastHttpRequestCtx.Response.Header.ContentLength())
 
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)

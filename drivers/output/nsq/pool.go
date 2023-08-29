@@ -3,10 +3,11 @@ package nsq
 import (
 	"context"
 	"fmt"
-	"github.com/eolinker/eosc/log"
-	"github.com/nsqio/go-nsq"
 	"sync/atomic"
 	"time"
+
+	"github.com/eolinker/eosc/log"
+	"github.com/nsqio/go-nsq"
 )
 
 const (
@@ -29,7 +30,7 @@ type node struct {
 	status   int
 }
 
-//Create
+// Create
 func CreateProducerPool(addrs []string, authSecret string, conf map[string]interface{}) (*producerPool, error) {
 
 	pool := &producerPool{
@@ -87,7 +88,7 @@ func (p *producerPool) PublishAsync(topic string, body []byte) error {
 				log.Errorf("log output nsqd is invalid. nsqd_addr:%s  error:%s", producerNode.producer.String(), err)
 				continue
 			}
-			break
+			return
 		}
 		log.Errorf("no available nsqd node. data: %s", fmt.Sprintf("topic:%s data:%s", topic, body))
 	}(n)
@@ -95,7 +96,7 @@ func (p *producerPool) PublishAsync(topic string, body []byte) error {
 	return nil
 }
 
-//Check 检查节点状态
+// Check 检查节点状态
 func (p *producerPool) Check() {
 
 	ticker := time.NewTicker(time.Second * 30)

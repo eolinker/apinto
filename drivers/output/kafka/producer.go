@@ -2,11 +2,12 @@ package kafka
 
 import (
 	"context"
+	"sync"
+
 	"github.com/Shopify/sarama"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
 	"github.com/eolinker/eosc/log"
-	"sync"
 )
 
 type Producer interface {
@@ -88,7 +89,7 @@ func (o *tProducer) output(entry eosc.IEntry) error {
 		msg.Partition = o.conf.Partition
 	}
 	if o.conf.PartitionType == "hash" {
-		msg.Key = sarama.StringEncoder(entry.Read(o.conf.PartitionKey))
+		msg.Key = sarama.StringEncoder(eosc.ReadStringFromEntry(entry, o.conf.PartitionKey))
 	}
 	o.write(msg)
 

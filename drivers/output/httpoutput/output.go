@@ -49,9 +49,9 @@ func (h *HttpOutput) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWo
 	if err != nil {
 		return err
 	}
-	if h.config != nil && !h.config.isConfUpdate(config) {
-		return nil
-	}
+	//if h.config != nil && !h.config.isConfUpdate(config) {
+	//	return nil
+	//}
 	h.config = config
 
 	if h.running {
