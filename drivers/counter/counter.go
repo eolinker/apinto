@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/eolinker/eosc"
-
 	"github.com/eolinker/eosc/utils/config"
 )
 
@@ -14,7 +12,11 @@ var (
 )
 
 type IClient interface {
-	Get(variables eosc.Untyped[string, string]) (int64, error)
+	Get(variables map[string]string) (int64, error)
+}
+
+type ICountPusher interface {
+	Push(key string, count int64, variables map[string]string) error
 }
 
 type ICounter interface {
@@ -26,7 +28,7 @@ type ICounter interface {
 	RollBack(count int64) error
 }
 
-func GetRemainCount(client IClient, key string, count int64, variables eosc.Untyped[string, string]) (int64, error) {
+func GetRemainCount(client IClient, key string, count int64, variables map[string]string) (int64, error) {
 	remain, err := client.Get(variables)
 	if err != nil {
 		return 0, err

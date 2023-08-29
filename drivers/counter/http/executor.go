@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/ohler55/ojg/oj"
@@ -79,47 +80,42 @@ var httpClient = fasthttp.Client{
 	Name: "apinto-counter",
 }
 
-func (b *Executor) Get(variables eosc.Untyped[string, string]) (int64, error) {
+func retrieveValue(variables map[string]string, value string) string {
+	if !strings.HasPrefix(value, "$") {
+		return value
+	}
+	v, ok := variables[value]
+	if !ok {
+		v = value
+	}
+	return v
+}
+
+func (b *Executor) Get(variables map[string]string) (int64, error) {
 	req := fasthttp.AcquireRequest()
 	b.req.CopyTo(req)
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseRequest(req)
 	defer fasthttp.ReleaseResponse(resp)
 	for key, value := range b.header {
-		v, ok := variables.Get(value)
-		if !ok {
-			v = value
-		}
-		req.Header.Set(key, v)
+		req.Header.Set(key, retrieveValue(variables, value))
 	}
 	for key, value := range b.query {
-		v, ok := variables.Get(value)
-		if !ok {
-			v = value
-		}
-		req.URI().QueryArgs().Set(key, v)
+		req.URI().QueryArgs().Set(key, retrieveValue(variables, value))
 	}
 
 	var body []byte
 	switch b.contentType {
 	case "json":
 		for key, value := range b.body {
-			v, ok := variables.Get(value)
-			if !ok {
-				v = value
-			}
-			b.body[key] = v
+			b.body[key] = retrieveValue(variables, value)
 		}
 		body, _ = json.Marshal(b.body)
 		req.Header.SetContentType("application/json")
 	case "form-data":
 		params := url.Values{}
 		for key, value := range b.body {
-			v, ok := variables.Get(value)
-			if !ok {
-				v = value
-			}
-			params.Add(key, v)
+			params.Add(key, retrieveValue(variables, value))
 		}
 		body = []byte(params.Encode())
 		req.Header.SetContentType("application/x-www-form-urlencoded")

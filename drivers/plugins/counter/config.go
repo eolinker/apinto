@@ -9,11 +9,12 @@ import (
 )
 
 type Config struct {
-	Key     string               `json:"key" label:"格式化Key" required:"true"`
-	Cache   eosc.RequireId       `json:"cache" label:"缓存计数器" skill:"github.com/eolinker/apinto/resources.resources.ICache" required:"false"`
-	Counter eosc.RequireId       `json:"counter" label:"计数器" skill:"github.com/eolinker/apinto/drivers/counter.counter.IClient" required:"false"`
-	Match   *Match               `json:"match" label:"响应匹配规则"`
-	Count   *separator.CountRule `json:"count" label:"计数规则"`
+	Key         string               `json:"key" label:"格式化Key" required:"true"`
+	Cache       eosc.RequireId       `json:"cache" label:"缓存计数器" skill:"github.com/eolinker/apinto/resources.resources.ICache" required:"false"`
+	Counter     eosc.RequireId       `json:"counter" label:"计数器" skill:"github.com/eolinker/apinto/drivers/counter.counter.IClient" required:"false"`
+	CountPusher eosc.RequireId       `json:"counterPusher" label:"计数推送器" skill:"github.com/eolinker/apinto/drivers/counter.counter.ICountPusher" required:"false"`
+	Match       Match                `json:"match" label:"响应匹配规则"`
+	Count       *separator.CountRule `json:"count" label:"计数规则"`
 }
 
 type Match struct {
@@ -42,6 +43,7 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 		keyGenerate:      newKeyGenerate(conf.Key),
 		cacheID:          string(conf.Cache),
 		clientID:         string(conf.Counter),
+		countPusherID:    string(conf.CountPusher),
 	}
 
 	return bc, nil

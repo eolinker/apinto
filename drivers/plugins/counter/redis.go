@@ -26,9 +26,10 @@ type RedisCounter struct {
 	key   string
 	redis scope_manager.IProxyOutput[resources.ICache]
 
-	client    scope_manager.IProxyOutput[counter.IClient]
-	locker    sync.Mutex
-	resetTime time.Time
+	client        scope_manager.IProxyOutput[counter.IClient]
+	counterPusher scope_manager.IProxyOutput[counter.ICountPusher]
+	locker        sync.Mutex
+	resetTime     time.Time
 
 	localCounter counter.ICounter
 
@@ -39,18 +40,19 @@ type RedisCounter struct {
 	variables eosc.Untyped[string, string]
 }
 
-func NewRedisCounter(key string, variables eosc.Untyped[string, string], redis scope_manager.IProxyOutput[resources.ICache], client scope_manager.IProxyOutput[counter.IClient]) *RedisCounter {
+func NewRedisCounter(key string, variables eosc.Untyped[string, string], redis scope_manager.IProxyOutput[resources.ICache], client scope_manager.IProxyOutput[counter.IClient], counterPusher scope_manager.IProxyOutput[counter.ICountPusher]) *RedisCounter {
 
 	return &RedisCounter{
-		key:          key,
-		redis:        redis,
-		client:       client,
-		localCounter: NewLocalCounter(key, variables, client),
-		ctx:          context.Background(),
-		lockerKey:    fmt.Sprintf("%s:locker", key),
-		lockKey:      fmt.Sprintf("%s:lock", key),
-		remainKey:    fmt.Sprintf("%s:remain", key),
-		variables:    variables,
+		key:           key,
+		redis:         redis,
+		client:        client,
+		localCounter:  NewLocalCounter(key, variables, client, counterPusher),
+		counterPusher: counterPusher,
+		ctx:           context.Background(),
+		lockerKey:     fmt.Sprintf("%s:locker", key),
+		lockKey:       fmt.Sprintf("%s:lock", key),
+		remainKey:     fmt.Sprintf("%s:remain", key),
+		variables:     variables,
 	}
 }
 
@@ -114,8 +116,9 @@ func (r *RedisCounter) lock(cache resources.ICache, count int64) error {
 			}
 		}
 		lock, _ := strconv.ParseInt(lockCount, 10, 64)
+		variables := r.variables.All()
 		for _, client := range r.client.List() {
-			remain, err = counter.GetRemainCount(client, r.key, count+lock, r.variables)
+			remain, err = counter.GetRemainCount(client, r.key, count+lock, variables)
 			if err != nil {
 				log.Errorf("get remain count error: %s", err)
 				continue
@@ -139,7 +142,7 @@ func (r *RedisCounter) Complete(count int64) error {
 	list := r.redis.List()
 	if len(list) < 1 {
 		// Redis不存在，使用本地计数器
-		return r.localCounter.Lock(count)
+		return r.localCounter.Complete(count)
 	}
 	for _, cache := range list {
 		err := r.complete(cache, count)
@@ -150,6 +153,11 @@ func (r *RedisCounter) Complete(count int64) error {
 			return err
 		}
 	}
+	variables := r.variables.All()
+	for _, p := range r.counterPusher.List() {
+		p.Push(r.key, count, variables)
+	}
+
 	return nil
 }
 
@@ -174,7 +182,7 @@ func (r *RedisCounter) RollBack(count int64) error {
 
 	if len(list) < 1 {
 		// Redis不存在，使用本地计数器
-		return r.localCounter.Lock(count)
+		return r.localCounter.RollBack(count)
 	}
 	for _, cache := range list {
 		err := r.rollback(cache, count)

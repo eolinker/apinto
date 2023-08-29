@@ -6,15 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eolinker/eosc"
-
 	redis "github.com/go-redis/redis/v8"
 )
 
 type demoClient struct {
 }
 
-func (d *demoClient) Get(variables eosc.Untyped[string, string]) (int64, error) {
+func (d *demoClient) Get(variables map[string]string) (int64, error) {
 	return 100, nil
 }
 

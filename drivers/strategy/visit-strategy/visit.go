@@ -1,9 +1,9 @@
 package visit_strategy
 
 import (
-	"fmt"
-	"github.com/eolinker/eosc"
 	"reflect"
+
+	"github.com/eolinker/eosc"
 )
 
 var (
@@ -46,9 +46,9 @@ func (l *Visit) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker) er
 }
 func (l *Visit) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 
-	if conf.Priority > 999 || conf.Priority < 1 {
-		return fmt.Errorf("priority value %d not allow ", conf.Priority)
-	}
+	//if conf.Priority > 999 || conf.Priority < 1 {
+	//	return fmt.Errorf("priority value %d not allow ", conf.Priority)
+	//}
 
 	confCore := conf
 	if reflect.DeepEqual(l.config, confCore) {

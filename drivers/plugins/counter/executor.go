@@ -34,6 +34,8 @@ type executor struct {
 	cache            scope_manager.IProxyOutput[resources.ICache]
 	clientID         string
 	client           scope_manager.IProxyOutput[counter.IClient]
+	countPusherID    string
+	counterPusher    scope_manager.IProxyOutput[counter.ICountPusher]
 	keyGenerate      IKeyGenerator
 	once             sync.Once
 }
@@ -46,12 +48,13 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 	b.once.Do(func() {
 		b.cache = scope_manager.Auto[resources.ICache](b.cacheID, "redis")
 		b.client = scope_manager.Auto[counter.IClient](b.clientID, "counter")
+		b.counterPusher = scope_manager.Auto[counter.ICountPusher](b.countPusherID, "counter-pusher")
 	})
 
 	key := b.keyGenerate.Key(ctx)
 	ct, has := b.counters.Get(key)
 	if !has {
-		ct = NewRedisCounter(key, b.keyGenerate.Variables(ctx), b.cache, b.client)
+		ct = NewRedisCounter(key, b.keyGenerate.Variables(ctx), b.cache, b.client, b.counterPusher)
 		b.counters.Set(key, ct)
 	}
 	var count int64 = 1

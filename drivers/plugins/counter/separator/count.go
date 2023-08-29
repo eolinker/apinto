@@ -32,6 +32,9 @@ type ICounter interface {
 }
 
 func GetCounter(rule *CountRule) (ICounter, error) {
+	if rule == nil && rule.Key == "" {
+		return NewEmptyCounter(), nil
+	}
 	switch strings.ToLower(rule.RequestBodyType) {
 	case "form-data":
 		return NewFormDataCounter(rule)
@@ -40,7 +43,7 @@ func GetCounter(rule *CountRule) (ICounter, error) {
 	case "json":
 		return NewJsonCounter(rule)
 	default:
-		return NewFormDataCounter(rule)
+		return NewEmptyCounter(), nil
 	}
 }
 
