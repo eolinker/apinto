@@ -2,10 +2,11 @@ package resources
 
 import (
 	"context"
-	"github.com/coocood/freecache"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/coocood/freecache"
 )
 
 var (
@@ -79,6 +80,7 @@ func (n *cacheLocal) DecrBy(ctx context.Context, key string, decrement int64, ex
 }
 
 func (n *cacheLocal) IncrBy(ctx context.Context, key string, incr int64, expiration time.Duration) IntResult {
+
 	n.keyLock.Lock()
 	lock, has := n.keyLocks[key]
 	if !has {
@@ -101,6 +103,7 @@ func (n *cacheLocal) IncrBy(ctx context.Context, key string, incr int64, expirat
 			n.keyLock.Unlock()
 		}
 	}()
+
 	v, err := n.client.Get([]byte(key))
 	if err != nil || len(v) != 8 {
 		v = ToBytes(incr)

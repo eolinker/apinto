@@ -3,9 +3,10 @@ package redis
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/eolinker/apinto/resources"
 	"github.com/go-redis/redis/v8"
-	"time"
 )
 
 type statusResult struct {
@@ -63,7 +64,9 @@ func (r *Cmdable) SetNX(ctx context.Context, key string, value []byte, expiratio
 func (r *Cmdable) DecrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
 	pipeline := r.cmdable.Pipeline()
 	result := pipeline.DecrBy(ctx, key, decrement)
-	pipeline.Expire(ctx, key, expiration)
+	if expiration > 0 {
+		pipeline.Expire(ctx, key, expiration)
+	}
 	_, err := pipeline.Exec(ctx)
 	if err != nil {
 		return nil
@@ -75,7 +78,10 @@ func (r *Cmdable) DecrBy(ctx context.Context, key string, decrement int64, expir
 func (r *Cmdable) IncrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
 	pipeline := r.cmdable.Pipeline()
 	result := pipeline.IncrBy(ctx, key, decrement)
-	pipeline.Expire(ctx, key, expiration)
+	if expiration > 0 {
+		pipeline.Expire(ctx, key, expiration)
+	}
+
 	_, err := pipeline.Exec(ctx)
 	if err != nil {
 		return nil
