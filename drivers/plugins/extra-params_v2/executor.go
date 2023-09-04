@@ -1,12 +1,10 @@
 package extra_params_v2
 
 import (
-	"encoding/json"
 	"fmt"
 	"mime"
 	"net/http"
 	"net/textproto"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -84,12 +82,17 @@ func addParamToBody(ctx http_service.IHttpContext, contentType string, params []
 					continue
 				}
 			}
-			_, value, err := param.Build(ctx, contentType, bodyParam)
+			value, err := param.Build(ctx, contentType, bodyParam)
 			if err != nil {
 				log.Errorf("build param(s) error: %v", key, err)
 				continue
 			}
-			err = x.Set(bodyParam, value)
+			v, err := param.Parse(value)
+			if err != nil {
+				log.Errorf("parse param(s) error: %v", key, err)
+				continue
+			}
+			err = x.Set(bodyParam, v)
 			if err != nil {
 				log.Errorf("set param(s) error: %v", key, err)
 				continue
@@ -100,10 +103,9 @@ func addParamToBody(ctx http_service.IHttpContext, contentType string, params []
 		ctx.Proxy().Body().SetRaw(contentType, b)
 		return bodyParam, nil
 	} else if contentType == "application/x-www-form-urlencoded" || contentType == "multipart/form-data" {
-		bodyParam := make(map[string]interface{})
 		bodyForm, _ := ctx.Proxy().Body().BodyForm()
 		for _, param := range params {
-			_, has := bodyParam[param.name]
+			_, has := bodyForm[param.name]
 			if has {
 				if param.conflict == paramError {
 					return nil, fmt.Errorf("[extra_params] body(%s) has a conflict", param.name)
@@ -111,26 +113,15 @@ func addParamToBody(ctx http_service.IHttpContext, contentType string, params []
 					continue
 				}
 			}
-			_, value, err := param.Build(ctx, contentType, nil)
+			value, err := param.Build(ctx, contentType, nil)
 			if err != nil {
 				log.Errorf("build param(s) error: %v", param.name, err)
 				continue
 			}
-			bodyParam[param.name] = value
+			bodyForm.Set(param.name, value)
 
 		}
 		ctx.Proxy().Body().SetForm(bodyForm)
-	} else if contentType == "application/x-www-form-urlencoded" {
-		body, _ := ctx.Proxy().Body().RawBody()
-		_, err := url.ParseQuery(string(body))
-		if err != nil {
-			return nil, err
-		}
-		var d interface{}
-		err = json.Unmarshal(body, &d)
-		if err == nil && len(body) > 0 {
-			return nil, fmt.Errorf("fail to parse body,body is %s", string(body))
-		}
 	}
 	return nil, nil
 }
@@ -173,7 +164,7 @@ func (e *executor) access(ctx http_service.IHttpContext) (int, error) {
 				continue
 			}
 		}
-		value, _, err := param.Build(ctx, contentType, bodyParam)
+		value, err := param.Build(ctx, contentType, bodyParam)
 		if err != nil {
 			log.Errorf("build query extra param(%s) error: %s", param.name, err.Error())
 			continue
@@ -192,7 +183,7 @@ func (e *executor) access(ctx http_service.IHttpContext) (int, error) {
 				continue
 			}
 		}
-		value, _, err := param.Build(ctx, contentType, bodyParam)
+		value, err := param.Build(ctx, contentType, bodyParam)
 		if err != nil {
 			log.Errorf("build header extra param(%s) error: %s", name, err.Error())
 			continue
