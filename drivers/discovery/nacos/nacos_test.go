@@ -20,7 +20,7 @@ func TestGetApp(t *testing.T) {
 		},
 	}
 	c, _ := newClient("asd", cfg.Config.Address, cfg.Config.Params)
-	n := &nacos{
+	n := &executor{
 		client:   c,
 		services: discovery.NewAppContainer(),
 		locker:   sync.RWMutex{},

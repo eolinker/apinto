@@ -135,10 +135,14 @@ func (b *Executor) Get(variables map[string]string) (int64, error) {
 	// 解析JSON
 	v := b.expr.Get(result)
 	if v == nil || len(v) < 1 {
-		return 0, fmt.Errorf("json path %s not found,id is %d", b.expr.String(), b.Id())
+		return 0, fmt.Errorf("json path %s not found,id is %s", b.expr.String(), b.Id())
 	}
 	if len(v) != 1 {
-		return 0, fmt.Errorf("json path %s found more than one,id is %d", b.expr.String(), b.Id())
+		return 0, fmt.Errorf("json path %s found more than one,id is %s", b.expr.String(), b.Id())
 	}
-	return v[0].(int64), nil
+	intV, ok := v[0].(int64)
+	if !ok {
+		return 0, fmt.Errorf("json path %s found not int64,id is %s", b.expr.String(), b.Id())
+	}
+	return intV, nil
 }

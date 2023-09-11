@@ -2,12 +2,15 @@ package nacos
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/eolinker/eosc/env"
+
 	"github.com/nacos-group/nacos-sdk-go/v2/clients"
 	"github.com/nacos-group/nacos-sdk-go/v2/clients/naming_client"
 	"github.com/nacos-group/nacos-sdk-go/v2/common/constant"
 	"github.com/nacos-group/nacos-sdk-go/v2/vo"
-	"strconv"
-	"strings"
 
 	"github.com/eolinker/apinto/discovery"
 )
@@ -20,9 +23,9 @@ type client struct {
 
 func newClient(name string, address []string, params map[string]string) (*client, error) {
 	clientConfig := &constant.ClientConfig{
-		LogDir:   fmt.Sprintf("/var/log/apinto/nacos/%s", name),
-		CacheDir: fmt.Sprintf("/var/cache/apinto/nacos/%s", name),
-		LogLevel: "error",
+		LogDir:   fmt.Sprintf("%s/nacos/current/%s", env.LogDir(), name),
+		CacheDir: fmt.Sprintf("%s/nacos/cache/%s", env.LogDir(), name),
+		//LogLevel: env.ErrorLevel().String(),
 	}
 	//获取namespaceId, username,password
 	if v, has := params["namespaceId"]; has {
@@ -67,7 +70,6 @@ func newClient(name string, address []string, params map[string]string) (*client
 			Port:   port,
 		})
 	}
-
 	namingClient, err := clients.NewNamingClient(vo.NacosClientParam{
 		ClientConfig:  clientConfig,
 		ServerConfigs: serverConfigs,

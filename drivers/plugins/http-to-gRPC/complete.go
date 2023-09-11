@@ -156,7 +156,7 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 				ctx.Response().SetBody(data)
 				return err
 			}
-			err = fmt.Errorf("error invoking method %s", symbol)
+			err = fmt.Errorf("error invoking method %s,error: %v", symbol, err)
 			data, _ := json.Marshal(StatusErr{
 				Code: fmt.Sprintf("%s", codes.Unavailable),
 				Msg:  err.Error(),

@@ -2,8 +2,9 @@ package nacos
 
 import (
 	"fmt"
-	"github.com/eolinker/apinto/drivers"
 	"sync"
+
+	"github.com/eolinker/apinto/drivers"
 
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/eosc"
@@ -19,7 +20,7 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 	if err != nil {
 		return nil, fmt.Errorf("create nacos client fail. err: %w", err)
 	}
-	return &nacos{
+	return &executor{
 		WorkerBase: drivers.Worker(id, name),
 		client:     c,
 		services:   discovery.NewAppContainer(),
