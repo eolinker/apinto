@@ -7,6 +7,7 @@ builds:
     goarch:
       - amd64
       - arm64
+      - loong64
     goarm:
       - "6"
     gomips:
@@ -19,6 +20,7 @@ builds:
       - linux_amd64
       - darwin_arm64
       - darwin_amd64
+      - linux_loong64
     dir: ./app/apinto
     main: .
     binary: apinto
