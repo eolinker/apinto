@@ -1,6 +1,7 @@
 package visit_strategy
 
 import (
+	"errors"
 	"sort"
 	"sync"
 
@@ -92,7 +93,9 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 		if (handler.rule.visit && !handler.rule.effectFilter.Check(ctx)) || (!handler.rule.visit && handler.rule.effectFilter.Check(ctx)) {
 			ctx.SetLabel("handler", "visit")
 			httpCtx.Response().SetStatus(403, "")
-			return nil
+			errInfo := "not allowed"
+			httpCtx.Response().SetBody([]byte(errInfo))
+			return errors.New(errInfo)
 		}
 
 		if handler.rule.isContinue {

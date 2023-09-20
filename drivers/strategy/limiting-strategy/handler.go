@@ -45,7 +45,7 @@ func (l *LimitingHandler) Stop() bool {
 	return l.stop
 }
 
-func NewLimitingHandler(conf *Config) (*LimitingHandler, error) {
+func NewLimitingHandler(name string, conf *Config) (*LimitingHandler, error) {
 	filter, err := strategy.ParseFilter(conf.Filters)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func NewLimitingHandler(conf *Config) (*LimitingHandler, error) {
 	mts := metrics.Parse(conf.Rule.Metrics)
 
 	return &LimitingHandler{
-		name:     conf.Name,
+		name:     name,
 		filter:   filter,
 		metrics:  mts,
 		query:    parseThreshold(conf.Rule.Query),

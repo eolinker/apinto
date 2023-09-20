@@ -107,10 +107,11 @@ func (b *Executor) Get(variables map[string]string) (int64, error) {
 	var body []byte
 	switch b.contentType {
 	case "json":
+		tmp := make(map[string]string)
 		for key, value := range b.body {
-			b.body[key] = retrieveValue(variables, value)
+			tmp[key] = retrieveValue(variables, value)
 		}
-		body, _ = json.Marshal(b.body)
+		body, _ = json.Marshal(tmp)
 		req.Header.SetContentType("application/json")
 	case "form-data":
 		params := url.Values{}
@@ -120,6 +121,7 @@ func (b *Executor) Get(variables map[string]string) (int64, error) {
 		body = []byte(params.Encode())
 		req.Header.SetContentType("application/x-www-form-urlencoded")
 	}
+
 	req.SetBody(body)
 	err := httpClient.DoTimeout(req, resp, 10*time.Second)
 	if err != nil {
