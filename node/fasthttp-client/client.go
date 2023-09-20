@@ -27,6 +27,7 @@ var defaultClient Client
 const (
 	DefaultMaxConns           = 10240
 	DefaultMaxConnWaitTimeout = time.Second * 60
+	DefaultMaxRedirectCount   = 2
 )
 
 // Client implements http client.
@@ -140,10 +141,15 @@ func (c *Client) ProxyTimeout(addr string, req *fasthttp.Request, resp *fasthttp
 	request.Header.Set("Connection", "keep-alive")
 
 	connectionClose := resp.ConnectionClose()
-
 	err = client.DoTimeout(request, resp, timeout)
 	if err != nil {
 		return err
+	}
+	if fasthttp.StatusCodeIsRedirect(resp.StatusCode()) {
+		err = client.DoRedirects(request, resp, DefaultMaxRedirectCount)
+		if err != nil {
+			return err
+		}
 	}
 
 	if connectionClose {

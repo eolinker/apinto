@@ -18,7 +18,7 @@ var (
 )
 
 type CountRule struct {
-	RequestBodyType string `json:"request_body_type" label:"请求体类型" enum:"form-data,json"`
+	RequestBodyType string `json:"request_body_type" label:"请求体类型" enum:"form-data,json,multipart-formdata"`
 	Key             string `json:"key" label:"参数名称（支持json path）"`
 	Separator       string `json:"separator" label:"分隔符" switch:"separator_type===splite"`
 	SeparatorType   string `json:"separator_type" label:"分割类型" enum:"splite,array,length"`
@@ -32,7 +32,7 @@ type ICounter interface {
 }
 
 func GetCounter(rule *CountRule) (ICounter, error) {
-	if rule == nil && rule.Key == "" {
+	if rule == nil || rule.Key == "" {
 		return NewEmptyCounter(), nil
 	}
 	switch strings.ToLower(rule.RequestBodyType) {

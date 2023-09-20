@@ -222,7 +222,6 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 	//记录请求时间
 	copyContext.ctx = context.WithValue(ctx.Context(), http_service.KeyCloneCtx, true)
 	copyContext.WithValue(ctx_key.CtxKeyRetry, 0)
-	copyContext.WithValue(ctx_key.CtxKeyRetry, time.Duration(0))
 	return copyContext, nil
 }
 
@@ -238,6 +237,10 @@ func NewContext(ctx *fasthttp.RequestCtx, port int) *HttpContext {
 
 	// 原始请求最大读取body为8k，使用clone request
 	request := fasthttp.AcquireRequest()
+
+	if ctx.Request.IsBodyStream() && ctx.Request.Header.ContentLength() > 8*1024 {
+		ctx.Request.Body()
+	}
 	ctx.Request.CopyTo(request)
 	httpContext.requestReader.reset(request, remoteAddr)
 

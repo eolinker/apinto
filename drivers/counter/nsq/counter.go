@@ -6,6 +6,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/eolinker/eosc/log"
 
 	"github.com/ohler55/ojg/oj"
@@ -130,6 +132,7 @@ type Counter struct {
 	key           string
 	count         int64
 	body          interface{}
+	requestIDExpr jp.Expr
 	timestampExpr jp.Expr
 	datetimeExpr  jp.Expr
 	countExpr     jp.Expr
@@ -140,6 +143,7 @@ func NewCounter(key string, body interface{}, countExpr jp.Expr) *Counter {
 		key:           key,
 		body:          body,
 		countExpr:     countExpr,
+		requestIDExpr: jp.MustParseString("$.request_id"),
 		timestampExpr: jp.MustParseString("$.timestamp"),
 		datetimeExpr:  jp.MustParseString("$.datetime"),
 	}
@@ -167,8 +171,8 @@ func (c *Counter) Generate(count int64) (interface{}, error) {
 		return nil, fmt.Errorf("set count to body failed,err: %s,body: %s", err.Error(), string(orgBody))
 	}
 	now := time.Now()
-	c.timestampExpr.Set(c.body, now.UnixMicro())
+	c.timestampExpr.Set(c.body, now.UnixMilli())
 	c.datetimeExpr.Set(c.body, now.Format("2006-01-02 15:04:05"))
-
+	c.requestIDExpr.Set(c.body, uuid.New().String())
 	return c.body, nil
 }

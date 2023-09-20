@@ -45,7 +45,7 @@ func (l *Limiting) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker)
 	if reflect.DeepEqual(l.config, confCore) {
 		return nil
 	}
-	handler, err := NewLimitingHandler(confCore)
+	handler, err := NewLimitingHandler(l.Name(), confCore)
 	if err != nil {
 		return err
 	}

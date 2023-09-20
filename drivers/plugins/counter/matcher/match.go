@@ -10,6 +10,6 @@ type IMatcher interface {
 
 type MatchParam struct {
 	Key   string   `json:"key"`
-	Kind  string   `json:"kind"` // int|string|bool
+	Kind  string   `json:"kind" enum:"int,string,bool" default:"string"` // int|string|bool
 	Value []string `json:"value"`
 }

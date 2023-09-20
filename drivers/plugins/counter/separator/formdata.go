@@ -50,6 +50,8 @@ func (f *FormDataCounter) Count(ctx http_service.IHttpContext) (int64, error) {
 			return int64(l / f.splitLen), nil
 		}
 		return int64(l/f.splitLen + 1), nil
+	case ArrayCountType:
+		return 1, nil
 	}
 	return splitCount(u.Get(f.name), f.split), nil
 }

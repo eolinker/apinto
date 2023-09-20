@@ -38,7 +38,10 @@ func (c *Config) doCheck() error {
 			param.Conflict = paramConvert
 		}
 	}
-
+	c.RequestBodyType = strings.ToLower(c.RequestBodyType)
+	if contentTypeMap[c.RequestBodyType] == "" {
+		return fmt.Errorf("error body type: %s", c.RequestBodyType)
+	}
 	return nil
 }
 
@@ -103,23 +106,23 @@ type paramInfo struct {
 	conflict    string
 }
 
-func (b *paramInfo) Build(ctx http_service.IHttpContext, contentType string, params interface{}) (string, interface{}, error) {
-	value, err := b.build(ctx, contentType, params)
-	if err != nil {
-		return "", nil, err
-	}
+func (b *paramInfo) Build(ctx http_service.IHttpContext, contentType string, params interface{}) (string, error) {
+	return b.build(ctx, contentType, params)
+}
+
+func (b *paramInfo) Parse(value string) (interface{}, error) {
 	switch b.valueType {
 	case "int":
 		v, err := strconv.Atoi(value)
-		return value, v, err
+		return v, err
 	case "float":
 		v, err := strconv.ParseFloat(value, 64)
-		return value, v, err
+		return v, err
 	case "bool":
 		v, err := strconv.ParseBool(value)
-		return value, v, err
+		return v, err
 	default:
-		return value, nil, nil
+		return value, nil
 	}
 }
 

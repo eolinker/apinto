@@ -8,7 +8,7 @@ require (
 	github.com/clbanning/mxj v1.8.4
 	github.com/coocood/freecache v1.2.2
 	github.com/dubbogo/gost v1.13.1
-	github.com/eolinker/eosc v0.14.4
+	github.com/eolinker/eosc v0.14.5
 	github.com/fasthttp/websocket v1.5.0
 	github.com/fullstorydev/grpcurl v1.8.7
 	github.com/go-redis/redis/v8 v8.11.5
@@ -17,7 +17,7 @@ require (
 	github.com/hashicorp/consul/api v1.9.1
 	github.com/influxdata/influxdb-client-go/v2 v2.12.1
 	github.com/jhump/protoreflect v1.14.1
-	github.com/nacos-group/nacos-sdk-go/v2 v2.1.2
+	github.com/nacos-group/nacos-sdk-go/v2 v2.2.3
 	github.com/nsqio/go-nsq v1.1.0
 	github.com/ohler55/ojg v1.12.9
 	github.com/pkg/sftp v1.13.4
@@ -27,7 +27,7 @@ require (
 	github.com/urfave/cli/v2 v2.23.4
 	github.com/valyala/fasthttp v1.47.0
 	golang.org/x/crypto v0.7.0
-	google.golang.org/grpc v1.50.1
+	google.golang.org/grpc v1.53.0
 	google.golang.org/protobuf v1.28.1
 )
 
@@ -77,7 +77,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
+	golang.org/x/sync v0.1.0 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
@@ -88,7 +88,7 @@ require (
 	github.com/apache/dubbo-go-hessian2 v1.11.6
 	github.com/armon/go-metrics v0.3.9 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
@@ -145,7 +145,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	go.etcd.io/bbolt v1.3.6 // indirect
+	go.etcd.io/bbolt v1.3.7 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.7 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.7 // indirect
 	go.etcd.io/etcd/client/v2 v2.305.7 // indirect
@@ -161,10 +161,10 @@ require (
 	go.uber.org/zap v1.23.0
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
-	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
-	google.golang.org/genproto v0.0.0-20211104193956-4c6863e31247 // indirect
+	golang.org/x/time v0.1.0 // indirect
+	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-//replace github.com/eolinker/eosc => ../eosc
+replace github.com/eolinker/eosc => ../eosc

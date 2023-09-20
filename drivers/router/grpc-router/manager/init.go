@@ -30,6 +30,8 @@ func init() {
 				}
 				return err
 			}),
+			grpc.MaxRecvMsgSize(64 * 1024 * 1024),
+			grpc.MaxSendMsgSize(64 * 1024 * 1024),
 		}
 		server := grpc.NewServer(opts...)
 		server.Serve(ln)
