@@ -2,7 +2,6 @@ package limiting_strategy
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"strconv"
 	"testing"
@@ -23,7 +22,7 @@ func NewEmptyContext() *EmptyContext {
 	e := &EmptyContext{
 		labels: map[string]string{
 			//"api": strconv.Itoa(rand.Intn(maxID)),
-			"api": strconv.Itoa(maxID),
+			"api": strconv.Itoa(1),
 		},
 	}
 	return e
@@ -165,14 +164,14 @@ func BenchmarkLimiting(b *testing.B) {
 	//begin := time.Now()
 	for i := 0; i < b.N; i++ {
 		ctx := NewEmptyContext()
-		begin := time.Now()
+		//begin := time.Now()
 		for _, h := range handlers {
 			if h.Filter().Check(ctx) {
 				//fmt.Printf("match %s\n", h.name)
 				break
 			}
 		}
-		fmt.Println("spend time:", time.Now().Sub(begin))
+		//fmt.Println("spend time:", time.Now().Sub(begin))
 	}
 
 }
