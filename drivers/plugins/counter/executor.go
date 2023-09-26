@@ -37,6 +37,7 @@ type executor struct {
 	countPusherID    string
 	counterPusher    scope_manager.IProxyOutput[counter.ICountPusher]
 	keyGenerate      IKeyGenerator
+	countMode        string
 	once             sync.Once
 }
 
@@ -54,7 +55,12 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 	key := b.keyGenerate.Key(ctx)
 	ct, has := b.counters.Get(key)
 	if !has {
-		ct = NewRedisCounter(key, b.keyGenerate.Variables(ctx), b.cache, b.client, b.counterPusher)
+		switch b.countMode {
+		case localMode:
+			ct = NewLocalCounter(key, b.keyGenerate.Variables(ctx), b.client, b.counterPusher)
+		case redisMode:
+			ct = NewRedisCounter(key, b.keyGenerate.Variables(ctx), b.cache, b.client, b.counterPusher)
+		}
 		b.counters.Set(key, ct)
 	}
 	var count int64 = 1
@@ -92,7 +98,8 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 		err = next.DoChain(ctx)
 		if err != nil {
 			// 转发失败，回滚次数
-			return ct.RollBack(count)
+			ct.RollBack(count)
+			return err
 			//return err
 		}
 	}

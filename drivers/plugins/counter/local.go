@@ -3,6 +3,7 @@ package counter
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/eolinker/eosc"
@@ -12,6 +13,10 @@ import (
 	"github.com/eolinker/apinto/drivers/counter"
 
 	"github.com/eolinker/eosc/log"
+)
+
+const (
+	localMode = "local"
 )
 
 var _ counter.ICounter = (*LocalCounter)(nil)
@@ -39,10 +44,11 @@ type LocalCounter struct {
 }
 
 func (c *LocalCounter) Lock(count int64) error {
-	c.locker.Lock()
-	defer c.locker.Unlock()
-	remain := c.remain - count
+
+	remain := atomic.AddInt64(&c.remain, -count)
 	if remain < 0 {
+		c.locker.Lock()
+		defer c.locker.Unlock()
 		now := time.Now()
 		if now.Sub(c.resetTime) < 10*time.Second {
 			return fmt.Errorf("no enough, key:%s, remain:%d, count:%d", c.key, c.remain, count)
@@ -64,18 +70,16 @@ func (c *LocalCounter) Lock(count int64) error {
 			return fmt.Errorf("no enough, key:%s, remain:%d, count:%d", c.key, c.remain, count)
 		}
 	}
-	c.remain = remain
-	c.lock += count
+	atomic.StoreInt64(&c.remain, remain)
+	atomic.AddInt64(&c.lock, count)
 	//fmt.Println(time.Now().Format("2006-01-02 15:04:05"), "lock", "remain:", c.remain, ",lock:", c.lock, ",count:", count)
 	log.DebugF("lock now: %s,key: %s,remain: %d,lock: %d,count: %d", time.Now().Format("2006-01-02 15:04:05"), c.key, c.remain, c.lock, count)
 	return nil
 }
 
 func (c *LocalCounter) Complete(count int64) error {
-	c.locker.Lock()
-	defer c.locker.Unlock()
 	// 需要解除已经锁定的部分次数
-	c.lock -= count
+	atomic.AddInt64(&c.lock, -count)
 	variables := c.variables.All()
 	for _, p := range c.counterPusher.List() {
 		p.Push(c.key, count, variables)
@@ -86,11 +90,9 @@ func (c *LocalCounter) Complete(count int64) error {
 }
 
 func (c *LocalCounter) RollBack(count int64) error {
-	c.locker.Lock()
-	defer c.locker.Unlock()
 	// 需要解除已经锁定的部分次数,并且增加剩余次数
-	c.remain += c.lock
-	c.lock -= count
+	atomic.AddInt64(&c.remain, count)
+	atomic.AddInt64(&c.lock, -count)
 	//fmt.Println(time.Now().Format("2006-01-02 15:04:05"), "rollback", "remain:", c.remain, ",lock:", c.lock, ",count:", count)
 	log.DebugF("rollback now: %s,key: %s,remain: %d,lock: %d,count: %d", time.Now().Format("2006-01-02 15:04:05"), c.key, c.remain, c.lock, count)
 	return nil

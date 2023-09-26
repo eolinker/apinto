@@ -88,7 +88,7 @@ func (p *producerPool) PublishAsync(topic string, body []byte) error {
 			if err := producerNode.producer.Publish(topic, body); err != nil {
 				//发送失败，将该节点状态置为disconnected，等待check重新连接
 				producerNode.status = disconnected
-				log.Errorf("log output nsqd is invalid. nsqd_addr:%s  error:%s", producerNode.producer.String(), err)
+				log.Errorf("fail to publish. nsqd_addr:%s  error:%s", producerNode.producer.String(), err)
 				continue
 			}
 			return
@@ -99,10 +99,32 @@ func (p *producerPool) PublishAsync(topic string, body []byte) error {
 	return nil
 }
 
+func (p *producerPool) check() {
+	for _, n := range p.nodes {
+		if err := n.producer.Ping(); err != nil {
+
+			oldProducer := n.producer
+			newProducer, _ := nsq.NewProducer(oldProducer.String(), p.config)
+			if err = newProducer.Ping(); err != nil {
+				if n.status == connecting {
+					n.status = disconnected
+					log.Errorf("log output nsqd is invalid. nsqd_addr:%s  error:%s", oldProducer.String(), err)
+				}
+				newProducer.Stop()
+				continue
+			}
+			n.producer = newProducer
+			n.status = connecting
+			oldProducer.Stop()
+		}
+		n.status = connecting
+
+	}
+}
+
 // Check 检查节点状态
 func (p *producerPool) Check() {
-
-	ticker := time.NewTicker(time.Second * 30)
+	ticker := time.NewTicker(time.Second * 10)
 	defer ticker.Stop()
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	p.cancelFunc = cancelFunc
@@ -110,33 +132,7 @@ func (p *producerPool) Check() {
 
 		select {
 		case <-ticker.C:
-			for _, n := range p.nodes {
-				if err := n.producer.Ping(); err != nil {
-					//解决断线重连的问题
-					//n.producer.Stop()
-					//if err = n.producer.Ping();err != nil{
-					//	continue
-					//}
-					//n.status = connecting
-					//continue
-
-					oldProducer := n.producer
-					newProducer, _ := nsq.NewProducer(oldProducer.String(), p.config)
-					if err = newProducer.Ping(); err != nil {
-						if n.status == connecting {
-							n.status = disconnected
-							log.Errorf("log output nsqd is invalid. nsqd_addr:%s  error:%s", oldProducer.String(), err)
-						}
-						newProducer.Stop()
-						continue
-					}
-					n.producer = newProducer
-					n.status = connecting
-					oldProducer.Stop()
-				}
-				n.status = connecting
-
-			}
+			p.check()
 		case <-ctx.Done():
 			return
 		}
