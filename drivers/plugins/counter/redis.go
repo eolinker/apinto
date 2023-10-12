@@ -121,17 +121,19 @@ func (r *RedisCounter) lock(cache resources.ICache, count int64) error {
 		log.Errorf("decr remain error: %s,key: %s", err, r.key)
 		return err
 	}
-	if remain > 0 {
+	if remain >= 0 {
 		// 剩余次数充足，直接返回
 		log.DebugF("lock now: %s,key: %s,remain: %d,count: %d", time.Now().Format("2006-01-02 15:04:05"), r.key, remain, count)
 		return nil
 	}
+	// 回滚已经扣的次数
+	cache.IncrBy(r.ctx, r.remainKey, count, -1).Result()
 
 	if time.Now().Sub(r.resetTime) < 15*time.Second {
 		// 重置时间未到，直接将次数回滚
-		cache.IncrBy(r.ctx, r.remainKey, count, -1).Result()
 		return fmt.Errorf("no enough, key:%s, remain:%d, count:%d", r.key, remain+count, count)
 	}
+
 	r.resetTime = time.Now()
 	err = r.acquireLock(cache)
 	if err != nil {
@@ -139,6 +141,7 @@ func (r *RedisCounter) lock(cache resources.ICache, count int64) error {
 		log.Errorf("acquire lock error: %s", err)
 		return err
 	}
+
 	// 释放分布锁
 	defer r.releaseLock(cache)
 	// 重新尝试扣减
@@ -147,8 +150,8 @@ func (r *RedisCounter) lock(cache resources.ICache, count int64) error {
 		log.Errorf("lock decr remain error: %s,key: %s", err, r.key)
 		return err
 	}
-	if remain > 0 {
-		// 当次数大于0，此时已经有节点同步过剩余次数，直接返回
+	if remain >= 0 {
+		// 当次数大于等于0，此时已经有节点同步过剩余次数，直接返回
 		log.DebugF("lock now: %s,key: %s,remain: %d,count: %d", time.Now().Format("2006-01-02 15:04:05"), r.key, remain, count)
 		return nil
 	}
@@ -162,8 +165,17 @@ func (r *RedisCounter) lock(cache resources.ICache, count int64) error {
 		}
 		break
 	}
-
-	return cache.Set(r.ctx, r.remainKey, []byte(strconv.FormatInt(remain, 10)), -1).Result()
+	if err != nil {
+		// 获取次数失败，回滚次数
+		cache.IncrBy(r.ctx, r.remainKey, count, -1).Result()
+		//return fmt.Errorf("no enough, key:%s, remain:%d, count:%d", r.key, remain+count, count)
+		return err
+	}
+	err = cache.Set(r.ctx, r.remainKey, []byte(strconv.FormatInt(remain, 10)), -1).Result()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *RedisCounter) rollback(cache resources.ICache, count int64) error {

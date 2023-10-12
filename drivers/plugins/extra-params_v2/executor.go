@@ -99,7 +99,10 @@ func addParamToBody(ctx http_service.IHttpContext, contentType string, params []
 			}
 		}
 
-		b, _ := oj.Marshal(bodyParam)
+		b, err := oj.Marshal(bodyParam)
+		if err != nil {
+			return nil, err
+		}
 		ctx.Proxy().Body().SetRaw(contentType, b)
 		return bodyParam, nil
 	} else if contentType == "application/x-www-form-urlencoded" || contentType == "multipart/form-data" {

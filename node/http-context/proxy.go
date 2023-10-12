@@ -49,7 +49,7 @@ func (r *ProxyRequest) reset(request *fasthttp.Request, remoteAddr string) {
 
 	forwardedFor := r.req.Header.PeekBytes(xforwardedforKey)
 	if len(forwardedFor) > 0 {
-		r.req.Header.Set("x-forwarded-for", fmt.Sprint(string(forwardedFor), ",", r.remoteAddr))
+		r.req.Header.Set("x-forwarded-for", fmt.Sprint(string(forwardedFor), ", ", r.remoteAddr))
 	} else {
 		r.req.Header.Set("x-forwarded-for", r.remoteAddr)
 	}
