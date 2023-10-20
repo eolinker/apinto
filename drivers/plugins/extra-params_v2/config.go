@@ -47,7 +47,7 @@ func (c *Config) doCheck() error {
 
 type ExtraParam struct {
 	Name     string   `json:"name" label:"参数名"`
-	Type     string   `json:"type" label:"参数类型" enum:"string,int,float,bool,$datetime,$md5,$timestamp,$concat"`
+	Type     string   `json:"type" label:"参数类型" enum:"string,int,float,bool,$datetime,$md5,$timestamp,$concat,$hmac-sha256"`
 	Position string   `json:"position" enum:"header,query,body" label:"参数位置"`
 	Value    []string `json:"value" label:"参数值列表"`
 	Conflict string   `json:"conflict" label:"参数冲突时的处理方式" enum:"origin,convert,error"`

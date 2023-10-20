@@ -10,6 +10,7 @@ import (
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
 	params_check "github.com/eolinker/apinto/drivers/plugins/params-check"
 	"github.com/eolinker/apinto/drivers/plugins/prometheus"
+	request_interception "github.com/eolinker/apinto/drivers/plugins/request-interception"
 	response_rewrite_v2 "github.com/eolinker/apinto/drivers/plugins/response-rewrite_v2"
 
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
@@ -68,6 +69,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	http_mocking.Register(extenderRegister)
 	params_check.Register(extenderRegister)
 	data_transform.Register(extenderRegister)
+	request_interception.Register(extenderRegister)
 
 	// 响应处理插件
 	response_rewrite.Register(extenderRegister)

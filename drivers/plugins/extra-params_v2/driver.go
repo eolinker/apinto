@@ -5,6 +5,8 @@ import (
 	"strings"
 	"sync"
 
+	hmac_sha256 "github.com/eolinker/apinto/drivers/plugins/extra-params_v2/dynamic-params/hmac-sha256"
+
 	"github.com/eolinker/apinto/drivers/plugins/extra-params_v2/dynamic-params/concat"
 
 	"github.com/eolinker/apinto/drivers/plugins/extra-params_v2/dynamic-params/datetime"
@@ -52,6 +54,7 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 		md5.Register()
 		timestamp.Register()
 		concat.Register()
+		hmac_sha256.Register()
 	})
 	ep := &executor{
 		WorkerBase:      drivers.Worker(id, name),
