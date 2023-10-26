@@ -11,6 +11,7 @@ import (
 	params_check "github.com/eolinker/apinto/drivers/plugins/params-check"
 	"github.com/eolinker/apinto/drivers/plugins/prometheus"
 	request_interception "github.com/eolinker/apinto/drivers/plugins/request-interception"
+	response_filter "github.com/eolinker/apinto/drivers/plugins/response-filter"
 	response_rewrite_v2 "github.com/eolinker/apinto/drivers/plugins/response-rewrite_v2"
 
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
@@ -74,6 +75,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	// 响应处理插件
 	response_rewrite.Register(extenderRegister)
 	response_rewrite_v2.Register(extenderRegister)
+	response_filter.Register(extenderRegister)
 	gzip.Register(extenderRegister)
 
 	// 安全相关插件

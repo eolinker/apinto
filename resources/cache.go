@@ -16,12 +16,19 @@ type ICache interface {
 	Get(ctx context.Context, key string) StringResult
 	GetDel(ctx context.Context, key string) StringResult
 	Del(ctx context.Context, keys ...string) IntResult
+	Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) InterfaceResult
 	Tx() TX
 }
+
 type TX interface {
 	ICache
 	Exec(ctx context.Context) error
 }
+
+type InterfaceResult interface {
+	Result() (interface{}, error)
+}
+
 type BoolResult interface {
 	Result() (bool, error)
 }
@@ -95,5 +102,18 @@ func NewIntResult(val int64, err error) *intResult {
 }
 
 func (b *intResult) Result() (int64, error) {
+	return b.val, b.err
+}
+
+type interfaceResult struct {
+	val interface{}
+	err error
+}
+
+func NewInterfaceResult(val interface{}, err error) *interfaceResult {
+	return &interfaceResult{val: val, err: err}
+}
+
+func (b *interfaceResult) Result() (interface{}, error) {
 	return b.val, b.err
 }

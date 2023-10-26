@@ -103,6 +103,16 @@ func (r *Cmdable) Del(ctx context.Context, keys ...string) resources.IntResult {
 	return r.cmdable.Del(ctx, keys...)
 }
 
+func (r *Cmdable) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) resources.InterfaceResult {
+	switch s := script.(type) {
+	case string:
+		return redis.NewScript(s).Run(ctx, r.cmdable, keys, args...)
+	case *redis.Script:
+		return s.Run(ctx, r.cmdable, keys, args...)
+	}
+	return resources.NewInterfaceResult(nil, fmt.Errorf("script type error: %T", script))
+}
+
 type TxPipeline struct {
 	Cmdable
 	p redis.Pipeliner

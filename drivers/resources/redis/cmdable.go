@@ -3,8 +3,9 @@ package redis
 import (
 	"context"
 	"errors"
-	"github.com/eolinker/apinto/resources"
 	"time"
+
+	"github.com/eolinker/apinto/resources"
 )
 
 var (
@@ -13,6 +14,7 @@ var (
 	boolError         = resources.NewBoolResult(false, ErrorNotInitRedis)
 	stringError       = resources.NewStringResult("", ErrorNotInitRedis)
 	statusError       = resources.NewStatusResult(ErrorNotInitRedis)
+	interfaceError    = resources.NewInterfaceResult(nil, ErrorNotInitRedis)
 )
 
 type Empty struct {
@@ -53,6 +55,10 @@ func (e *Empty) GetDel(ctx context.Context, key string) resources.StringResult {
 
 func (e *Empty) Del(ctx context.Context, keys ...string) resources.IntResult {
 	return intError
+}
+
+func (e *Empty) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) resources.InterfaceResult {
+	return interfaceError
 }
 
 func (e *Empty) Tx() resources.TX {

@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"sync"
 	"time"
@@ -160,6 +161,10 @@ func (n *cacheLocal) Del(ctx context.Context, keys ...string) IntResult {
 	}
 
 	return NewIntResult(count, nil)
+}
+
+func (n *cacheLocal) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) InterfaceResult {
+	return NewInterfaceResult(nil, errors.New("not support"))
 }
 
 func newCacher() *cacheLocal {
