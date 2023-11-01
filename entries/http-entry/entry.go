@@ -26,6 +26,7 @@ func (e *Entry) Read(pattern string) interface{} {
 	if !ok {
 		return ""
 	}
+
 	return v
 }
 

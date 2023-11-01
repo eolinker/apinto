@@ -32,6 +32,7 @@ func (o *tProducer) reset(cfg *ProducerConfig) (err error) {
 	if !has {
 		return errorFormatterType
 	}
+
 	o.formatter, err = factory.Create(cfg.Formatter)
 
 	if o.producer != nil {

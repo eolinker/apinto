@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/eolinker/apinto/drivers/plugins/app"
+	body_record_truncation "github.com/eolinker/apinto/drivers/plugins/body-record-truncation"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	data_transform "github.com/eolinker/apinto/drivers/plugins/data-transform"
 	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
@@ -10,7 +11,9 @@ import (
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
 	params_check "github.com/eolinker/apinto/drivers/plugins/params-check"
 	"github.com/eolinker/apinto/drivers/plugins/prometheus"
+	request_file_parse "github.com/eolinker/apinto/drivers/plugins/request-file-parse"
 	request_interception "github.com/eolinker/apinto/drivers/plugins/request-interception"
+	response_file_parse "github.com/eolinker/apinto/drivers/plugins/response-file-parse"
 	response_filter "github.com/eolinker/apinto/drivers/plugins/response-filter"
 	response_rewrite_v2 "github.com/eolinker/apinto/drivers/plugins/response-rewrite_v2"
 
@@ -71,12 +74,14 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	params_check.Register(extenderRegister)
 	data_transform.Register(extenderRegister)
 	request_interception.Register(extenderRegister)
+	request_file_parse.Register(extenderRegister)
 
 	// 响应处理插件
 	response_rewrite.Register(extenderRegister)
 	response_rewrite_v2.Register(extenderRegister)
 	response_filter.Register(extenderRegister)
 	gzip.Register(extenderRegister)
+	response_file_parse.Register(extenderRegister)
 
 	// 安全相关插件
 	ip_restriction.Register(extenderRegister)
@@ -90,6 +95,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	prometheus.Register(extenderRegister)
 	monitor.Register(extenderRegister)
 	proxy_mirror.Register(extenderRegister)
+	body_record_truncation.Register(extenderRegister)
 
 	// 计数插件
 	counter.Register(extenderRegister)

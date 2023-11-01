@@ -30,7 +30,8 @@ func (b *BodyCheck) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.I
 		if err != nil {
 			return err
 		}
-		bodySize := len([]rune(string(body)))
+		// 计算body大小
+		bodySize := len(body)
 		if !b.isEmpty && bodySize < 1 {
 			ctx.Response().SetStatus(400, "400")
 			ctx.Response().SetBody([]byte("Body is required"))
