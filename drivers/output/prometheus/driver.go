@@ -2,6 +2,8 @@ package prometheus
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/eolinker/apinto/drivers"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/apinto/utils"
@@ -9,7 +11,6 @@ import (
 	"github.com/eolinker/eosc/router"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"strings"
 )
 
 func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
@@ -164,7 +165,6 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 		}
 		metrics[metric.Metric] = m
 	}
-
 	//注册路由
 	p.registry = registry
 	p.handler = promhttp.InstrumentMetricHandler(

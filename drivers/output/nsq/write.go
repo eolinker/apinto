@@ -54,6 +54,7 @@ func (n *Writer) reset(config *Config) error {
 	if !has {
 		return errFormatterType
 	}
+
 	fm, err := factory.Create(config.Formatter)
 	if err != nil {
 		return err

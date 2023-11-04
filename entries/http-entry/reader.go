@@ -47,8 +47,32 @@ func (f Fields) Read(name string, ctx http_service.IHttpContext) (interface{}, b
 	return label, label != ""
 }
 
+type CtxRule struct {
+	fields Fields
+}
+
+func (l *CtxRule) Read(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+	value := ctx.Value(name)
+	if value != nil {
+		return value, true
+	}
+	// 先从Label中获取值
+	value = ctx.GetLabel(name)
+	if value != "" {
+		return value, true
+	}
+
+	return l.fields.Read(name, ctx)
+}
+func init() {
+	ctxRule = &CtxRule{
+		fields: rule,
+	}
+}
+
 var (
-	rule Fields = map[string]IReader{
+	ctxRule *CtxRule
+	rule    Fields = map[string]IReader{
 		"request_id": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return ctx.RequestId(), true
 		}),
@@ -58,14 +82,17 @@ var (
 		"cluster": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return os.Getenv("cluster_id"), true
 		}),
-		"api_id": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
-			return ctx.GetLabel("api_id"), true
-		}),
 		"query": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			if name == "" {
 				return utils.QueryUrlEncode(ctx.Request().URI().RawQuery()), true
 			}
 			return url.QueryEscape(ctx.Request().URI().GetQuery(name)), true
+		}),
+		"src_ip": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return ctx.Request().RealIp(), true
+		}),
+		"src_port": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return ctx.Request().RemotePort(), true
 		}),
 		"uri": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			//不带请求参数的uri
@@ -95,6 +122,10 @@ var (
 		"remote_port": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return ctx.Request().RemotePort(), true
 		}),
+		"ctx": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return ctxRule.Read(name, ctx)
+
+		}),
 
 		"request": Fields{
 			"body": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
@@ -103,6 +134,17 @@ var (
 					return "", false
 				}
 				return string(body), true
+			}),
+			"body_filter": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+				value := ctx.GetLabel("xxx")
+				if value == "" {
+					body, err := ctx.Request().Body().RawBody()
+					if err != nil {
+						return "", false
+					}
+					return string(body), true
+				}
+				return ctx.GetLabel("xxx"), true
 			}),
 			"length": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 
@@ -139,11 +181,17 @@ var (
 			//return time.Now().Format("2006-01-02 15:04:05"), true
 			return ctx.AcceptTime().Format("2006-01-02 15:04:05"), true
 		}),
+		"timestamp": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return ctx.AcceptTime().Unix(), true
+		}),
 		"header": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			if name == "" {
 				return url.Values(ctx.Request().Header().Headers()).Encode(), true
 			}
 			return ctx.Request().Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
+		}),
+		"headers": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return ctx.Request().Header().Headers(), true
 		}),
 		"http": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return ctx.Request().Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
@@ -160,14 +208,19 @@ var (
 			"": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 				return ctx.Response().String(), true
 			}),
-			"body": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
-				return string(ctx.Response().GetBody()), true
-			}),
+			"body": Fields{
+				"": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+					return string(ctx.Response().GetBody()), true
+				}),
+			},
 			"header": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 				if name == "" {
 					return url.Values(ctx.Response().Headers()).Encode(), true
 				}
 				return ctx.Response().GetHeader(strings.Replace(name, "_", "-", -1)), true
+			}),
+			"headers": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+				return ctx.Response().Headers(), true
 			}),
 			"status": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 				return ctx.Response().ProxyStatus(), true
@@ -179,6 +232,15 @@ var (
 				return strconv.Itoa(ctx.Response().ContentLength()), true
 			}),
 		},
+		"set_cookies": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return strings.Split(ctx.Response().GetHeader("Set-Cookie"), "; "), true
+		}),
+		"dst_ip": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return ctx.Response().RemoteIP(), true
+		}),
+		"dst_port": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return ctx.Response().RemotePort(), true
+		}),
 		"proxy": proxyFields,
 	}
 
@@ -208,6 +270,12 @@ var (
 		}),
 		"addr": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
 			return proxy.URI().Host(), true
+		}),
+		"dst_ip": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+			return proxy.RemotePort(), true
+		}),
+		"dst_port": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+			return proxy.RemotePort(), true
 		}),
 		"scheme": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
 			return proxy.URI().Scheme(), true

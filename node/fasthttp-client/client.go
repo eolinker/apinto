@@ -13,13 +13,41 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func ProxyTimeout(scheme string, node eocontext.INode, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) error {
-	addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
-	err := defaultClient.ProxyTimeout(addr, req, resp, timeout)
+type Addr struct {
+	IP   net.IP
+	Port int
+}
+
+func resolveAddr(scheme string, addr string) (*Addr, error) {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	port := tcpAddr.Port
+	if port == 0 {
+		if scheme == "http" {
+			port = 80
+		} else if scheme == "https" {
+			port = 443
+		}
+	}
+	return &Addr{
+		IP:   tcpAddr.IP,
+		Port: port,
+	}, nil
+}
+
+func ProxyTimeout(scheme string, node eocontext.INode, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) (*Addr, error) {
+	tcpAddr, err := resolveAddr(scheme, node.Addr())
+	if err != nil {
+		return nil, err
+	}
+	addr := fmt.Sprintf("%s://%s:%d", scheme, tcpAddr.IP.String(), tcpAddr.Port)
+	err = defaultClient.ProxyTimeout(addr, req, resp, timeout)
 	if err != nil {
 		node.Down()
 	}
-	return err
+	return tcpAddr, err
 }
 
 var defaultClient Client
@@ -100,6 +128,32 @@ func (c *Client) getHostClient(addr string) (*fasthttp.HostClient, string, error
 	}
 	return hc, scheme, nil
 }
+
+//func (c *Client) getDialFunc() fasthttp.DialFunc {
+//	return func(addr string) (net.Conn, error) {
+//		atomic.AddInt64(&dialCount, 1)
+//		conn, err := tcpDial.Dial(addr)
+//		if err != nil {
+//			return nil, err
+//		}
+//		c.conn = conn
+//		return &debugConn{Conn: conn}, nil
+//	}
+//}
+//
+//func (c *Client) RemoteAddr() string {
+//	if c.conn != nil {
+//		return c.conn.RemoteAddr().String()
+//	}
+//	return "unknown"
+//}
+//
+//func (c *Client) LocalAddr() string {
+//	if c.conn != nil {
+//		return c.conn.RemoteAddr().String()
+//	}
+//	return "unknown"
+//}
 
 // ProxyTimeout performs the given request and waits for response during
 // the given timeout duration.

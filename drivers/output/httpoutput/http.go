@@ -73,6 +73,7 @@ func create(config *Config) (formatter.ITransport, eosc.IFormatter, error) {
 	if !has {
 		return nil, nil, errFormatterType
 	}
+
 	fm, err := factory.Create(config.Formatter)
 	if err != nil {
 		return nil, nil, err

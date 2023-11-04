@@ -139,9 +139,9 @@ func (ctx *cloneContext) SendTo(scheme string, node eoscContext.INode, timeout t
 	case eoscContext.ReWriteHost:
 		request.URI().SetHost(targetHost)
 	}
-
+	var tcpAddr *fasthttp_client.Addr
 	beginTime := time.Now()
-	ctx.responseError = fasthttp_client.ProxyTimeout(scheme, node, request, ctx.response.Response, timeout)
+	tcpAddr, ctx.responseError = fasthttp_client.ProxyTimeout(scheme, node, request, ctx.response.Response, timeout)
 	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, beginTime, time.Now())
 	if ctx.responseError != nil {
 		agent.setStatusCode(504)
@@ -149,7 +149,8 @@ func (ctx *cloneContext) SendTo(scheme string, node eoscContext.INode, timeout t
 		agent.setStatusCode(ctx.response.Response.StatusCode())
 	}
 	agent.responseBody = string(ctx.response.Response.Body())
-
+	agent.setRemoteIP(tcpAddr.IP.String())
+	agent.setRemotePort(tcpAddr.Port)
 	agent.setResponseLength(ctx.response.Response.Header.ContentLength())
 
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)

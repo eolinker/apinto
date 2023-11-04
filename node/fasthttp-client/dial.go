@@ -2,13 +2,14 @@ package fasthttp_client
 
 import (
 	"fmt"
-	"github.com/eolinker/eosc/debug"
-	"github.com/valyala/fasthttp"
 	"net"
 	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/eolinker/eosc/debug"
+	"github.com/valyala/fasthttp"
 )
 
 var (

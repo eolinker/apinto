@@ -2,11 +2,12 @@ package fileoutput
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
 	"github.com/eolinker/eosc/log/filelog"
 	"github.com/eolinker/eosc/router"
-	"net/http"
 
 	"time"
 )
@@ -15,7 +16,6 @@ type FileWriter struct {
 	formatter eosc.IFormatter
 	transport *filelog.FileWriterByPeriod
 	//id        string
-
 	fileHandler http.Handler
 }
 
@@ -37,7 +37,10 @@ func (a *FileWriter) reset(cfg *Config, name string) (err error) {
 	if !has {
 		return errorFormatterType
 	}
-
+	//var extendCfg []byte
+	//if cfg.Type == "json" {
+	//	extendCfg, _ = json.Marshal(cfg.BodyConfig)
+	//}
 	fm, err := factory.Create(cfg.Formatter)
 	if err != nil {
 		return err
