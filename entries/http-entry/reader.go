@@ -235,6 +235,12 @@ var (
 		"set_cookies": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return strings.Split(ctx.Response().GetHeader("Set-Cookie"), "; "), true
 		}),
+		"dst_ip": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return ctx.Response().RemoteIP(), true
+		}),
+		"dst_port": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return ctx.Response().RemotePort(), true
+		}),
 		"proxy": proxyFields,
 	}
 
@@ -264,6 +270,12 @@ var (
 		}),
 		"addr": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
 			return proxy.URI().Host(), true
+		}),
+		"dst_ip": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+			return proxy.RemotePort(), true
+		}),
+		"dst_port": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+			return proxy.RemotePort(), true
 		}),
 		"scheme": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
 			return proxy.URI().Scheme(), true

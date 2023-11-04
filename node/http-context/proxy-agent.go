@@ -20,6 +20,8 @@ type requestAgent struct {
 	beginTime      time.Time
 	endTime        time.Time
 	hostAgent      *UrlAgent
+	remoteIP       string
+	remotePort     int
 }
 
 func (a *requestAgent) ResponseBody() string {
@@ -53,12 +55,28 @@ func (a *requestAgent) setResponseLength(length int) {
 	}
 }
 
+func (a *requestAgent) setRemoteIP(ip string) {
+	a.remoteIP = ip
+}
+
+func (a *requestAgent) setRemotePort(port int) {
+	a.remotePort = port
+}
+
 func newRequestAgent(IRequest http_service.IRequest, host string, scheme string, beginTime, endTime time.Time) *requestAgent {
 	return &requestAgent{IRequest: IRequest, host: host, scheme: scheme, beginTime: beginTime, endTime: endTime}
 }
 
 func (a *requestAgent) ResponseTime() int64 {
 	return a.endTime.Sub(a.beginTime).Milliseconds()
+}
+
+func (a *requestAgent) RemoteIP() string {
+	return a.remoteIP
+}
+
+func (a *requestAgent) RemotePort() int {
+	return a.remotePort
 }
 
 func (a *requestAgent) URI() http_service.IURIWriter {

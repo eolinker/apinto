@@ -19,6 +19,8 @@ type Response struct {
 	responseTime    time.Duration
 	proxyStatusCode int
 	responseError   error
+	remoteIP        string
+	remotePort      int
 }
 
 func (r *Response) ContentLength() int {
@@ -118,4 +120,12 @@ func (r *Response) SetResponseTime(t time.Duration) {
 
 func (r *Response) ResponseTime() time.Duration {
 	return r.responseTime
+}
+
+func (r *Response) RemoteIP() string {
+	return r.remoteIP
+}
+
+func (r *Response) RemotePort() int {
+	return r.remotePort
 }
