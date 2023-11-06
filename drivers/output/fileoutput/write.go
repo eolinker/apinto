@@ -1,6 +1,7 @@
 package fileoutput
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -37,11 +38,11 @@ func (a *FileWriter) reset(cfg *Config, name string) (err error) {
 	if !has {
 		return errorFormatterType
 	}
-	//var extendCfg []byte
-	//if cfg.Type == "json" {
-	//	extendCfg, _ = json.Marshal(cfg.BodyConfig)
-	//}
-	fm, err := factory.Create(cfg.Formatter)
+	var extendCfg []byte
+	if cfg.Type == "json" {
+		extendCfg, _ = json.Marshal(cfg.ContentResize)
+	}
+	fm, err := factory.Create(cfg.Formatter, extendCfg)
 	if err != nil {
 		return err
 	}

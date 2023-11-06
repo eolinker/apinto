@@ -98,11 +98,6 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 							out = append(out, v)
 						}
 					}
-					//if e.largeWarn > 0 && h.Size > e.largeWarn {
-					//	ctx.WithValue("file_size_warn", e.largeWarnStr)
-					//	out = out[:e.largeWarn]
-					//	ctx.WithValue("request_body_complete", 0)
-					//}
 
 					ctx.SetLabel("request_body", string(out))
 					ctx.SetLabel("file_direction", "upload")

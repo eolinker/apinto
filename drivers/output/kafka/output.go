@@ -1,8 +1,9 @@
 package kafka
 
 import (
-	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"reflect"
+
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/apinto/drivers"
 
@@ -15,8 +16,8 @@ var _ eosc.IWorker = (*Output)(nil)
 
 type Output struct {
 	drivers.WorkerBase
-	producer  Producer
-	scopes    []string
+	producer Producer
+	//scopes    []string
 	config    *ProducerConfig
 	isRunning bool
 }
@@ -43,7 +44,7 @@ func (o *Output) Start() error {
 		return err
 	}
 	o.producer = p
-	scope_manager.Set(o.Id(), o, o.scopes...)
+	scope_manager.Set(o.Id(), o, o.config.Scopes...)
 	return nil
 }
 
@@ -70,7 +71,7 @@ func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 		}
 		o.producer = p
 	}
-	scope_manager.Set(o.Id(), o, o.scopes...)
+	scope_manager.Set(o.Id(), o, o.config.Scopes...)
 	return nil
 }
 

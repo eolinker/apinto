@@ -8,12 +8,18 @@ import (
 )
 
 type Config struct {
-	Scopes    []string             `json:"scopes" label:"作用域"`
-	Method    string               `json:"method" yaml:"method" enum:"GET,POST,PUT" label:"请求方式"`
-	Url       string               `json:"url" yaml:"url" format:"uri" label:"请求Url"`
-	Headers   map[string]string    `json:"headers" yaml:"headers" label:"请求头部"`
-	Type      string               `json:"type" yaml:"type" enum:"json,line" label:"输出格式"`
-	Formatter eosc.FormatterConfig `json:"formatter" yaml:"formatter" label:"格式化配置"`
+	Scopes        []string             `json:"scopes" label:"作用域"`
+	Method        string               `json:"method" yaml:"method" enum:"GET,POST,PUT" label:"请求方式"`
+	Url           string               `json:"url" yaml:"url" format:"uri" label:"请求Url"`
+	Headers       map[string]string    `json:"headers" yaml:"headers" label:"请求头部"`
+	Type          string               `json:"type" yaml:"type" enum:"json,line" label:"输出格式"`
+	ContentResize []ContentResize      `json:"content_resize" yaml:"content_resize" label:"内容截断配置" switch:"type===json"`
+	Formatter     eosc.FormatterConfig `json:"formatter" yaml:"formatter" label:"格式化配置"`
+}
+
+type ContentResize struct {
+	Size   int    `json:"size" label:"内容截断大小" description:"单位：M" default:"10" minimum:"0"`
+	Suffix string `json:"suffix" label:"匹配标签后缀"`
 }
 
 func (h *Config) isConfUpdate(conf *Config) bool {

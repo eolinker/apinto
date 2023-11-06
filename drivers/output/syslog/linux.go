@@ -4,13 +4,15 @@
 package syslog
 
 import (
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/formatter"
+	"encoding/json"
 	sys "log/syslog"
 	"strings"
+
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/formatter"
 )
 
-//CreateTransporter 创建syslog-Transporter
+// CreateTransporter 创建syslog-Transporter
 func CreateTransporter(conf *Config) (*SysWriter, error) {
 	fm, w, err := create(conf)
 	if err != nil {
@@ -57,7 +59,11 @@ func create(cfg *Config) (eosc.IFormatter, *sys.Writer, error) {
 	if !has {
 		return nil, nil, errFormatterType
 	}
-	fm, err := factory.Create(cfg.Formatter)
+	var extentCfg []byte
+	if cfg.Type == "json" {
+		extentCfg, _ = json.Marshal(cfg.ContentResize)
+	}
+	fm, err := factory.Create(cfg.Formatter, extentCfg)
 	if err != nil {
 		return nil, nil, err
 	}

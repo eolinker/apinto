@@ -11,7 +11,7 @@ const name = "kafka_output"
 func Register(register eosc.IExtenderDriverRegister) {
 	register.RegisterExtenderDriver(name, NewFactory())
 }
-func NewFactory() eosc.IExtenderDriverFactory {
 
+func NewFactory() eosc.IExtenderDriverFactory {
 	return drivers.NewFactory[Config](Create, Check)
 }
