@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/eolinker/apinto/drivers/plugins/app"
-	body_record_truncation "github.com/eolinker/apinto/drivers/plugins/body-record-truncation"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	data_transform "github.com/eolinker/apinto/drivers/plugins/data-transform"
 	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
@@ -95,7 +94,6 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	prometheus.Register(extenderRegister)
 	monitor.Register(extenderRegister)
 	proxy_mirror.Register(extenderRegister)
-	body_record_truncation.Register(extenderRegister)
 
 	// 计数插件
 	counter.Register(extenderRegister)

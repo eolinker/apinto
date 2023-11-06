@@ -2,6 +2,7 @@ package nsq
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/eolinker/eosc/log"
@@ -54,8 +55,12 @@ func (n *Writer) reset(config *Config) error {
 	if !has {
 		return errFormatterType
 	}
+	var extendCfg []byte
+	if config.Type == "json" {
+		extendCfg, _ = json.Marshal(config.ContentResize)
+	}
 
-	fm, err := factory.Create(config.Formatter)
+	fm, err := factory.Create(config.Formatter, extendCfg)
 	if err != nil {
 		return err
 	}
