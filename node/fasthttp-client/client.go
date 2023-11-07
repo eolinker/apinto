@@ -19,21 +19,21 @@ type Addr struct {
 }
 
 func resolveAddr(scheme string, addr string) (*Addr, error) {
+	as := strings.Split(addr, ":")
+	if len(as) < 2 {
+		if scheme == "http" {
+			addr = fmt.Sprintf("%s:80", addr)
+		} else if scheme == "https" {
+			addr = fmt.Sprintf("%s:443", addr)
+		}
+	}
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
-	port := tcpAddr.Port
-	if port == 0 {
-		if scheme == "http" {
-			port = 80
-		} else if scheme == "https" {
-			port = 443
-		}
-	}
 	return &Addr{
 		IP:   tcpAddr.IP,
-		Port: port,
+		Port: tcpAddr.Port,
 	}, nil
 }
 

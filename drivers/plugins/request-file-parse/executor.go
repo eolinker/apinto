@@ -104,7 +104,9 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 					ctx.SetLabel("file_name", h.Filename)
 					ctx.SetLabel("file_suffix", suffix)
 					ctx.WithValue("file_size", h.Size)
-
+					if h.Size > e.largeWarn {
+						ctx.SetLabel("file_size_warn", e.largeWarnStr)
+					}
 					break
 				}
 			}
