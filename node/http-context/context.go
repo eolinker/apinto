@@ -151,15 +151,14 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 		agent.setStatusCode(504)
 	} else {
 		ctx.response.ResponseHeader.refresh()
+		agent.setRemoteIP(tcpAddr.IP.String())
+		agent.setRemotePort(tcpAddr.Port)
 		agent.setStatusCode(ctx.fastHttpRequestCtx.Response.StatusCode())
 	}
 	agent.responseBody = string(ctx.response.Response.Body())
-	agent.setRemoteIP(tcpAddr.IP.String())
-	agent.setRemotePort(tcpAddr.Port)
+
 	agent.setResponseLength(ctx.fastHttpRequestCtx.Response.Header.ContentLength())
 
-	ctx.response.remoteIP = tcpAddr.IP.String()
-	ctx.response.remotePort = tcpAddr.Port
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)
 	return ctx.response.responseError
 

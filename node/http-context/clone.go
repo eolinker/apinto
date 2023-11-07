@@ -147,10 +147,11 @@ func (ctx *cloneContext) SendTo(scheme string, node eoscContext.INode, timeout t
 		agent.setStatusCode(504)
 	} else {
 		agent.setStatusCode(ctx.response.Response.StatusCode())
+		agent.setRemoteIP(tcpAddr.IP.String())
+		agent.setRemotePort(tcpAddr.Port)
 	}
 	agent.responseBody = string(ctx.response.Response.Body())
-	agent.setRemoteIP(tcpAddr.IP.String())
-	agent.setRemotePort(tcpAddr.Port)
+
 	agent.setResponseLength(ctx.response.Response.Header.ContentLength())
 
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)

@@ -19,7 +19,7 @@ peer: # 集群间节点通信配置信息
   listen_urls: # 节点监听地址
     - http://0.0.0.0:9401
   #advertise_urls: # 节点通信广播地址
-  # - http://127.0.0.1:9400
+  # - http://127.0.0.1:9401
   #certificate:  # 证书配置，允许使用ip的自签证书
   #  - cert: server.pem
   #    key: server.key

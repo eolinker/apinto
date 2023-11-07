@@ -1,17 +1,19 @@
 package kafka
 
 import (
-	"github.com/Shopify/sarama"
-	"github.com/eolinker/eosc/log"
 	"testing"
 	"time"
+
+	"github.com/Shopify/sarama"
+	"github.com/eolinker/eosc/log"
 )
 
 var (
 	addr = []string{
 		"alikafka-post-cn-7mz2jfjap00k-1-vpc.alikafka.aliyuncs.com:9092",
 		"alikafka-post-cn-7mz2jfjap00k-2-vpc.alikafka.aliyuncs.com:9092",
-		"alikafka-post-cn-7mz2jfjap00k-3-vpc.alikafka.aliyuncs.com:9092"}
+		"alikafka-post-cn-7mz2jfjap00k-3-vpc.alikafka.aliyuncs.com:9092",
+	}
 )
 
 func beginConsumer(topic string, addr []string, partition int32) {
@@ -66,7 +68,7 @@ func TestSendMessageSync(t *testing.T) {
 	config.Producer.Timeout = 3 * time.Second
 	config.Producer.RequiredAcks = sarama.WaitForLocal
 	config.Producer.Partitioner = sarama.NewManualPartitioner
-	config.Version = sarama.V0_11_0_2
+	config.Version = sarama.V2_5_0_0
 	p, err := sarama.NewSyncProducer(msg.address, config)
 	if err != nil {
 		t.Errorf("sarama.NewSyncProducer err, message=%s \n", err)
@@ -84,6 +86,7 @@ func TestSendMessageSync(t *testing.T) {
 		t.Logf("send success, partition=%d, offset=%d \n", part, offset)
 	}
 }
+
 func TestSendMessageAsync(t *testing.T) {
 	msg := TestProducerConfig{
 		address:   addr,
@@ -140,4 +143,20 @@ func TestMain(m *testing.M) {
 	<-time.After(1 * time.Second)
 	m.Run()
 	<-time.After(60 * time.Second)
+}
+
+func TestConsumer(t *testing.T) {
+	config := sarama.NewConfig()
+	config.Version = sarama.V2_5_0_0
+	consumer, err := sarama.NewConsumer([]string{"172.18.166.219:9092"}, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pc, err := consumer.ConsumePartition("apinto", 0, sarama.OffsetNewest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for msg := range pc.Messages() {
+		t.Log("key:", string(msg.Key), "value:", string(msg.Value), "offset:", msg.Offset, "partition:", msg.Partition, "timestamp:", msg.Timestamp)
+	}
 }
