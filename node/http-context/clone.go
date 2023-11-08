@@ -147,6 +147,8 @@ func (ctx *cloneContext) SendTo(scheme string, node eoscContext.INode, timeout t
 		agent.setStatusCode(504)
 	} else {
 		agent.setStatusCode(ctx.response.Response.StatusCode())
+		ctx.response.remoteIP = tcpAddr.IP.String()
+		ctx.response.remotePort = tcpAddr.Port
 		agent.setRemoteIP(tcpAddr.IP.String())
 		agent.setRemotePort(tcpAddr.Port)
 	}
