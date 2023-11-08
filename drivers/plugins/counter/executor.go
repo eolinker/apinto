@@ -51,19 +51,19 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 		b.client = scope_manager.Auto[counter.IClient](b.clientID, "counter")
 		b.counterPusher = scope_manager.Auto[counter.ICountPusher](b.countPusherID, "counter-pusher")
 	})
-	body := ctx.Response().GetBody()
-	if len(body) < 1 {
+
+	variables, ok := b.keyGenerate.Variables(ctx)
+	if !ok {
 		return next.DoChain(ctx)
 	}
-
 	key := b.keyGenerate.Key(ctx)
 	ct, has := b.counters.Get(key)
 	if !has {
 		switch b.countMode {
 		case localMode:
-			ct = NewLocalCounter(key, b.keyGenerate.Variables(ctx), b.client, b.counterPusher)
+			ct = NewLocalCounter(key, variables, b.client, b.counterPusher)
 		case redisMode:
-			ct = NewRedisCounter(key, b.keyGenerate.Variables(ctx), b.cache, b.client, b.counterPusher)
+			ct = NewRedisCounter(key, variables, b.cache, b.client, b.counterPusher)
 		}
 		b.counters.Set(key, ct)
 	}

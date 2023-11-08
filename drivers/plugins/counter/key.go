@@ -13,7 +13,7 @@ var _ IKeyGenerator = (*keyGenerate)(nil)
 
 type IKeyGenerator interface {
 	Key(ctx http_service.IHttpContext) string
-	Variables(ctx http_service.IHttpContext) eosc.Untyped[string, string]
+	Variables(ctx http_service.IHttpContext) (eosc.Untyped[string, string], bool)
 }
 
 func newKeyGenerate(key string) *keyGenerate {
@@ -43,13 +43,17 @@ type keyGenerate struct {
 	variables []string
 }
 
-func (k *keyGenerate) Variables(ctx http_service.IHttpContext) eosc.Untyped[string, string] {
+func (k *keyGenerate) Variables(ctx http_service.IHttpContext) (eosc.Untyped[string, string], bool) {
 	variables := eosc.BuildUntyped[string, string]()
 	entry := ctx.GetEntry()
 	for _, v := range k.variables {
-		variables.Set(fmt.Sprintf("$%s", v), eosc.ReadStringFromEntry(entry, v))
+		value := eosc.ReadStringFromEntry(entry, v)
+		if value == "" {
+			return nil, false
+		}
+		variables.Set(fmt.Sprintf("$%s", v), value)
 	}
-	return variables
+	return variables, true
 }
 
 func (k *keyGenerate) Key(ctx http_service.IHttpContext) string {
