@@ -51,6 +51,10 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 		b.client = scope_manager.Auto[counter.IClient](b.clientID, "counter")
 		b.counterPusher = scope_manager.Auto[counter.ICountPusher](b.countPusherID, "counter-pusher")
 	})
+	body := ctx.Response().GetBody()
+	if len(body) < 1 {
+		return next.DoChain(ctx)
+	}
 
 	key := b.keyGenerate.Key(ctx)
 	ct, has := b.counters.Get(key)

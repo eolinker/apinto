@@ -191,7 +191,11 @@ var (
 			return ctx.Request().Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
 		}),
 		"headers": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
-			return ctx.Request().Header().Headers(), true
+			result := make(map[string]string)
+			for key, value := range ctx.Request().Header().Headers() {
+				result[strings.ToLower(key)] = strings.Join(value, ";")
+			}
+			return result, true
 		}),
 		"http": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return ctx.Request().Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
@@ -220,7 +224,11 @@ var (
 				return ctx.Response().GetHeader(strings.Replace(name, "_", "-", -1)), true
 			}),
 			"headers": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
-				return ctx.Response().Headers(), true
+				result := make(map[string]string)
+				for key, value := range ctx.Response().Headers() {
+					result[strings.ToLower(key)] = strings.Join(value, ";")
+				}
+				return result, true
 			}),
 			"status": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 				return ctx.Response().ProxyStatus(), true
@@ -233,6 +241,10 @@ var (
 			}),
 		},
 		"set_cookies": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			cookies := ctx.Response().GetHeader("Set-Cookie")
+			if strings.TrimSpace(cookies) == "" {
+				return nil, true
+			}
 			return strings.Split(ctx.Response().GetHeader("Set-Cookie"), "; "), true
 		}),
 		"dst_ip": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
