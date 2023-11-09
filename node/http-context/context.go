@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strconv"
+	"strings"
 	"time"
 
 	http_entry "github.com/eolinker/apinto/entries/http-entry"
@@ -143,18 +145,18 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	case eoscContext.ReWriteHost:
 		request.URI().SetHost(targetHost)
 	}
-	var tcpAddr *fasthttp_client.Addr
 	beginTime := time.Now()
-	tcpAddr, ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, node, request, &ctx.fastHttpRequestCtx.Response, timeout)
+	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, node, request, &ctx.fastHttpRequestCtx.Response, timeout)
 	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, beginTime, time.Now())
 	if ctx.response.responseError != nil {
 		agent.setStatusCode(504)
 	} else {
 		ctx.response.ResponseHeader.refresh()
-		agent.setRemoteIP(tcpAddr.IP.String())
-		agent.setRemotePort(tcpAddr.Port)
-		ctx.response.remoteIP = tcpAddr.IP.String()
-		ctx.response.remotePort = tcpAddr.Port
+		ip, port := parseAddr(ctx.fastHttpRequestCtx.Response.RemoteAddr().String())
+		agent.setRemoteIP(ip)
+		agent.setRemotePort(port)
+		ctx.response.remoteIP = ip
+		ctx.response.remotePort = port
 		agent.setStatusCode(ctx.fastHttpRequestCtx.Response.StatusCode())
 	}
 	agent.responseBody = string(ctx.response.Response.Body())
@@ -290,4 +292,13 @@ func (ctx *HttpContext) FastFinish() {
 	ctx.fastHttpRequestCtx = nil
 	pool.Put(ctx)
 
+}
+
+func parseAddr(addr string) (string, int) {
+	a := strings.Split(addr, ":")
+	port := 0
+	if len(a) > 1 {
+		port, _ = strconv.Atoi(a[1])
+	}
+	return a[0], port
 }

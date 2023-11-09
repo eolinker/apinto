@@ -66,15 +66,14 @@ func DebugHandleFun(w http.ResponseWriter, r *http.Request) {
 	for _, v := range lists {
 		fmt.Fprintf(w, "%s %d : %d\n", v.Time, v.DialCount, v.CloseCount)
 	}
-
 }
+
 func Dial(addr string) (net.Conn, error) {
 	atomic.AddInt64(&dialCount, 1)
 	conn, err := tcpDial.Dial(addr)
 	if err != nil {
 		return nil, err
 	}
-
 	//return conn, nil
 	return &debugConn{Conn: conn}, nil
 }
