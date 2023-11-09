@@ -13,41 +13,13 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-type Addr struct {
-	IP   net.IP
-	Port int
-}
-
-func resolveAddr(scheme string, addr string) (*Addr, error) {
-	as := strings.Split(addr, ":")
-	if len(as) < 2 {
-		if scheme == "http" {
-			addr = fmt.Sprintf("%s:80", addr)
-		} else if scheme == "https" {
-			addr = fmt.Sprintf("%s:443", addr)
-		}
-	}
-	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
-	if err != nil {
-		return nil, err
-	}
-	return &Addr{
-		IP:   tcpAddr.IP,
-		Port: tcpAddr.Port,
-	}, nil
-}
-
-func ProxyTimeout(scheme string, node eocontext.INode, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) (*Addr, error) {
-	tcpAddr, err := resolveAddr(scheme, node.Addr())
-	if err != nil {
-		return nil, err
-	}
+func ProxyTimeout(scheme string, node eocontext.INode, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) error {
 	addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
-	err = defaultClient.ProxyTimeout(addr, req, resp, timeout)
+	err := defaultClient.ProxyTimeout(addr, req, resp, timeout)
 	if err != nil {
 		node.Down()
 	}
-	return tcpAddr, err
+	return err
 }
 
 var defaultClient Client
@@ -129,32 +101,6 @@ func (c *Client) getHostClient(addr string) (*fasthttp.HostClient, string, error
 	return hc, scheme, nil
 }
 
-//func (c *Client) getDialFunc() fasthttp.DialFunc {
-//	return func(addr string) (net.Conn, error) {
-//		atomic.AddInt64(&dialCount, 1)
-//		conn, err := tcpDial.Dial(addr)
-//		if err != nil {
-//			return nil, err
-//		}
-//		c.conn = conn
-//		return &debugConn{Conn: conn}, nil
-//	}
-//}
-//
-//func (c *Client) RemoteAddr() string {
-//	if c.conn != nil {
-//		return c.conn.RemoteAddr().String()
-//	}
-//	return "unknown"
-//}
-//
-//func (c *Client) LocalAddr() string {
-//	if c.conn != nil {
-//		return c.conn.RemoteAddr().String()
-//	}
-//	return "unknown"
-//}
-
 // ProxyTimeout performs the given request and waits for response during
 // the given timeout duration.
 //
@@ -184,31 +130,48 @@ func (c *Client) getHostClient(addr string) (*fasthttp.HostClient, string, error
 // If requests take too long and the connection pool gets filled up please
 // try setting a ReadTimeout.
 func (c *Client) ProxyTimeout(addr string, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) error {
-	client, scheme, err := c.getHostClient(addr)
-	if err != nil {
-		return err
-	}
-
 	request := req
-	request.URI().SetScheme(scheme)
 	request.Header.ResetConnectionClose()
 	request.Header.Set("Connection", "keep-alive")
 
 	connectionClose := resp.ConnectionClose()
-	err = client.DoTimeout(request, resp, timeout)
-	if err != nil {
-		return err
-	}
-	if fasthttp.StatusCodeIsRedirect(resp.StatusCode()) {
-		err = client.DoRedirects(request, resp, DefaultMaxRedirectCount)
+	defer func() {
+		if connectionClose {
+			resp.SetConnectionClose()
+		}
+	}()
+	var deadline time.Time
+	var requestURI string
+	redirectCount := 0
+	for {
+		client, scheme, err := c.getHostClient(addr)
 		if err != nil {
 			return err
 		}
+
+		request.URI().SetScheme(scheme)
+
+		if redirectCount == 0 {
+			deadline = time.Now().Add(timeout)
+		} else {
+			request.SetRequestURI(requestURI)
+		}
+
+		err = client.DoDeadline(req, resp, deadline)
+		if err != nil {
+			return err
+		}
+		if !fasthttp.StatusCodeIsRedirect(resp.StatusCode()) || redirectCount >= DefaultMaxRedirectCount {
+			break
+		}
+		redirectCount++
+		location := resp.Header.Peek("Location")
+		if len(location) == 0 {
+			return fasthttp.ErrMissingLocation
+		}
+		addr, requestURI = getRedirectURL(req.URI().String(), location)
 	}
 
-	if connectionClose {
-		resp.SetConnectionClose()
-	}
 	return nil
 }
 
@@ -253,4 +216,13 @@ func addMissingPort(addr string, isTLS bool) string {
 		port = 443
 	}
 	return net.JoinHostPort(addr, strconv.Itoa(port))
+}
+
+func getRedirectURL(baseURL string, location []byte) (string, string) {
+	u := fasthttp.AcquireURI()
+	u.Update(baseURL)
+	u.UpdateBytes(location)
+	u.RequestURI()
+	defer fasthttp.ReleaseURI(u)
+	return fmt.Sprintf("%s://%s", u.Scheme(), u.Host()), u.String()
 }
