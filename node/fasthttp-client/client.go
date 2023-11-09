@@ -42,7 +42,7 @@ func ProxyTimeout(scheme string, node eocontext.INode, req *fasthttp.Request, re
 	if err != nil {
 		return nil, err
 	}
-	addr := fmt.Sprintf("%s://%s:%d", scheme, tcpAddr.IP.String(), tcpAddr.Port)
+	addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
 	err = defaultClient.ProxyTimeout(addr, req, resp, timeout)
 	if err != nil {
 		node.Down()

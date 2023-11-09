@@ -39,7 +39,7 @@ func (c *Config) doCheck() error {
 		}
 	}
 	c.RequestBodyType = strings.ToLower(c.RequestBodyType)
-	if contentTypeMap[c.RequestBodyType] == "" {
+	if contentTypeMap[c.RequestBodyType] == "" && c.RequestBodyType != "" {
 		return fmt.Errorf("error body type: %s", c.RequestBodyType)
 	}
 	return nil

@@ -92,11 +92,18 @@ var (
 			return ctx.Request().RealIp(), true
 		}),
 		"src_port": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
-			return ctx.Request().RemotePort(), true
+			port, err := strconv.Atoi(ctx.Request().RemotePort())
+			if err != nil {
+				return nil, false
+			}
+			return port, true
 		}),
 		"uri": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			//不带请求参数的uri
 			return ctx.Request().URI().Path(), true
+		}),
+		"url": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return ctx.Request().URI().RawURL(), true
 		}),
 		"content_length": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return ctx.Request().Header().GetHeader("content-length"), true
