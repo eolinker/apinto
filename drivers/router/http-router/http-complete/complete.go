@@ -55,7 +55,6 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 		scheme = "https"
 
 	}
-	timeOut := balance.TimeOut()
 
 	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
 	retry, ok := retryValue.(int)
@@ -67,6 +66,10 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
 		timeout = router.DefaultTimeout
+	}
+	balanceTimeout := balance.TimeOut()
+	if balanceTimeout == 0 {
+		balanceTimeout = timeout
 	}
 	var lastErr error
 	for index := 0; index <= retry; index++ {
@@ -81,7 +84,7 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 			ctx.Response().SetBody([]byte(err.Error()))
 			return err
 		}
-		lastErr = ctx.SendTo(scheme, node, timeOut)
+		lastErr = ctx.SendTo(scheme, node, balanceTimeout)
 		if lastErr == nil {
 
 			return nil

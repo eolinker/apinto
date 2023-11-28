@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	responseHeaderPre  = "\nResponse headers received:"
-	responseContentPre = "\nResponse contents:"
-	responseTrailerPre = "\nResponse trailers received:"
+	responseHeaderPre  = "\nResponse headers received:\n"
+	responseContentPre = "\nResponse contents:\n"
+	responseTrailerPre = "\nResponse trailers received:\n"
 )
 
 func NewResponse() *Response {
@@ -29,20 +29,23 @@ type Response struct {
 func (r *Response) Write(p []byte) (n int, err error) {
 	str := string(p)
 	if strings.HasPrefix(str, responseHeaderPre) || strings.HasPrefix(str, responseTrailerPre) {
+		str = strings.Replace(str, responseHeaderPre, "", 1)
+		str = strings.Replace(str, responseTrailerPre, "", 1)
 		headers := strings.Split(str, "\n")
 		if len(headers) == 2 && strings.HasPrefix(headers[1], "(empty)") {
 			return len(p), nil
 		}
-		for index, header := range headers {
-			if index == 0 {
+		for _, header := range headers {
+			if strings.TrimSpace(header) == "" {
 				continue
 			}
+
 			values := strings.Split(header, ":")
 			var v string
 			if len(values) > 1 {
 				v = values[1]
+				r.header[values[0]] = v
 			}
-			r.header[values[0]] = v
 		}
 	}
 	if strings.HasPrefix(str, responseContentPre) {
