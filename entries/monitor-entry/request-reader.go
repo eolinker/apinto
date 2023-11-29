@@ -4,9 +4,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/eolinker/eosc/log"
-
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/eosc/log"
 )
 
 var requestMetrics = []string{
@@ -73,12 +72,12 @@ var request = map[string]RequestReadFunc{
 	"method": func(ctx http_context.IHttpContext) (interface{}, bool) {
 		return ctx.Request().Method(), true
 	},
-	//"path": func(ctx http_context.IHttpContext) (interface{}, bool) {
+	// "path": func(ctx http_context.IHttpContext) (interface{}, bool) {
 	//	return ctx.Request().URI().Path(), true
-	//},
-	//"ip": func(ctx http_context.IHttpContext) (interface{}, bool) {
+	// },
+	// "ip": func(ctx http_context.IHttpContext) (interface{}, bool) {
 	//	return ctx.GetLabel("ip"), true
-	//},
+	// },
 	"status": func(ctx http_context.IHttpContext) (interface{}, bool) {
 		return ctx.Response().StatusCode(), true
 	},

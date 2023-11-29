@@ -3,11 +3,13 @@ package static
 import (
 	"errors"
 	"fmt"
-	"github.com/eolinker/apinto/discovery"
-	"github.com/eolinker/apinto/drivers"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/utils/config"
 	"github.com/google/uuid"
+
+	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/apinto/drivers"
 
 	"reflect"
 	"strconv"

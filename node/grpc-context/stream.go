@@ -3,14 +3,11 @@ package grpc_context
 import (
 	"io"
 
-	"google.golang.org/grpc/metadata"
-
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
@@ -27,7 +24,6 @@ func (c *Context) readError(serverStream grpc.ServerStream, clientStream grpc.Cl
 }
 
 func handlerStream(serverStream grpc.ServerStream, clientStream grpc.ClientStream, response grpc_context.IResponse) error {
-
 	// Explicitly *do not close* s2cErrChan and c2sErrChan, otherwise the select below will not terminate.
 	// Channels do not have to be closed, it is just a control flow mechanism, see
 	// https://groups.google.com/forum/#!msg/golang-nuts/pZwdYRGxCIk/qpbHxRRPJdUJ

@@ -1,9 +1,10 @@
 package response_rewrite
 
 import (
+	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
-	"github.com/eolinker/eosc"
 )
 
 func Check(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {

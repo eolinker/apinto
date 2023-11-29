@@ -1,8 +1,9 @@
 package response_rewrite_v2
 
 import (
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 type Config struct {

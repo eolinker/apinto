@@ -2,9 +2,11 @@ package proxy_rewrite_v2
 
 import (
 	"fmt"
-	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/eosc"
 	"regexp"
+
+	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {

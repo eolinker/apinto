@@ -1,12 +1,12 @@
 package template
 
 import (
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/eocontext"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/template"
-
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/eocontext"
 )
 
 type Template struct {

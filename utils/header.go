@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-//HeaderToString 将header转成字符串
+// HeaderToString 将header转成字符串
 func HeaderToString(h http.Header) string {
 	if h == nil {
 		return ""

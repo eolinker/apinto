@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/eolinker/apinto/drivers"
-	scope_manager "github.com/eolinker/apinto/scope-manager"
-	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/router"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/eolinker/apinto/drivers"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
+	"github.com/eolinker/apinto/utils"
 )
 
 func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {

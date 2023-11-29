@@ -8,20 +8,16 @@ import (
 	"strings"
 	"time"
 
-	http_entry "github.com/eolinker/apinto/entries/http-entry"
-
 	"github.com/eolinker/eosc"
-
-	"github.com/eolinker/apinto/entries/ctx_key"
-
-	"github.com/eolinker/eosc/utils/config"
-
-	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
-
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/eosc/utils/config"
 	"github.com/google/uuid"
 	"github.com/valyala/fasthttp"
+
+	"github.com/eolinker/apinto/entries/ctx_key"
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
+	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
 )
 
 var _ http_service.IHttpContext = (*HttpContext)(nil)
@@ -133,7 +129,6 @@ func (ctx *HttpContext) Response() http_service.IResponse {
 }
 
 func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout time.Duration) error {
-
 	host := node.Addr()
 	request := ctx.proxyRequest.Request()
 
@@ -165,12 +160,10 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)
 	return ctx.response.responseError
-
 }
 
 func (ctx *HttpContext) Context() context.Context {
 	if ctx.ctx == nil {
-
 		ctx.ctx = context.Background()
 	}
 	return ctx.ctx
@@ -212,7 +205,7 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 	ctx.proxyRequest.req.CopyTo(req)
 
 	resp := fasthttp.AcquireResponse()
-	//ctx.fastHttpRequestCtx.Response.CopyTo(resp)
+	// ctx.fastHttpRequestCtx.Response.CopyTo(resp)
 
 	copyContext.proxyRequest.reset(req, ctx.requestReader.remoteAddr)
 	copyContext.response.reset(resp)
@@ -226,7 +219,7 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 	}
 	copyContext.labels = cloneLabels
 
-	//记录请求时间
+	// 记录请求时间
 	copyContext.ctx = context.WithValue(ctx.Context(), http_service.KeyCloneCtx, true)
 	copyContext.WithValue(ctx_key.CtxKeyRetry, 0)
 	return copyContext, nil
@@ -234,9 +227,7 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 
 // NewContext 创建Context
 func NewContext(ctx *fasthttp.RequestCtx, port int) *HttpContext {
-
 	remoteAddr := ctx.RemoteAddr().String()
-
 	httpContext := pool.Get().(*HttpContext)
 
 	httpContext.fastHttpRequestCtx = ctx
@@ -257,12 +248,11 @@ func NewContext(ctx *fasthttp.RequestCtx, port int) *HttpContext {
 	httpContext.response.reset(&ctx.Response)
 	httpContext.labels = make(map[string]string)
 	httpContext.port = port
-	//记录请求时间
+	// 记录请求时间
 	httpContext.ctx = context.Background()
 	httpContext.WithValue("request_time", ctx.Time())
 
 	return httpContext
-
 }
 
 // RequestId 请求ID
@@ -291,7 +281,6 @@ func (ctx *HttpContext) FastFinish() {
 	ctx.response.Finish()
 	ctx.fastHttpRequestCtx = nil
 	pool.Put(ctx)
-
 }
 
 func parseAddr(addr string) (string, int) {

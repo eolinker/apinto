@@ -1,6 +1,8 @@
 package resources
 
-import "time"
+import (
+	"time"
+)
 
 // 通过滑动窗口实现的平滑计数器
 const VectorsSkill = "github.com/eolinker/apinto/resources.resources.IVectors"

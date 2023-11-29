@@ -1,11 +1,13 @@
 package grey_strategy
 
 import (
-	"github.com/eolinker/apinto/discovery"
-	"github.com/eolinker/apinto/strategy"
-	"github.com/eolinker/eosc/eocontext"
 	"strconv"
 	"strings"
+
+	"github.com/eolinker/eosc/eocontext"
+
+	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/apinto/strategy"
 )
 
 const (

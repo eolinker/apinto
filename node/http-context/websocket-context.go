@@ -8,15 +8,12 @@ import (
 	"sync"
 
 	eoscContext "github.com/eolinker/eosc/eocontext"
-	"github.com/valyala/fasthttp"
-
-	"github.com/eolinker/eosc/log"
-
-	"github.com/eolinker/eosc/utils/config"
-
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/eosc/log"
+	"github.com/eolinker/eosc/utils/config"
 	"github.com/fasthttp/websocket"
+	"github.com/valyala/fasthttp"
 )
 
 var _ http_context.IWebsocketContext = (*WebsocketContext)(nil)
@@ -90,6 +87,6 @@ func (w *WebsocketContext) IsCloneable() bool {
 }
 
 func (w *WebsocketContext) Clone() (eoscContext.EoContext, error) {
-	//TODO
+	// TODO
 	return nil, fmt.Errorf("%s %w", "WebsocketContext", eoscContext.ErrEoCtxUnCloneable)
 }

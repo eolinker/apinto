@@ -20,7 +20,7 @@ func init() {
 	start = s.UnixNano()
 }
 
-//GenerateID 生成id
+// GenerateID 生成id
 func GenerateID() int64 {
 	id := time.Now().UnixNano() - start
 	locker.Lock()
@@ -33,7 +33,7 @@ func GenerateID() int64 {
 	return id
 }
 
-//GenerateIDString 生成id字符串
+// GenerateIDString 生成id字符串
 func GenerateIDString() string {
 	id := GenerateID()
 	data := make([]byte, 8)

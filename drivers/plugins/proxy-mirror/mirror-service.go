@@ -5,8 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/eosc/eocontext"
+
+	"github.com/eolinker/apinto/discovery"
 )
 
 var (

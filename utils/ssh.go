@@ -9,7 +9,7 @@ import (
 	// "io/ioutil"
 )
 
-//SSHClient SSHClient
+// SSHClient SSHClient
 func SSHClient(user, password, host, key string, port int, cipherList []string) (*ssh.Client, error) {
 	var (
 		auth         []ssh.AuthMethod
@@ -67,7 +67,7 @@ func SSHClient(user, password, host, key string, port int, cipherList []string) 
 	return client, nil
 }
 
-//SessionConnect SessionConnect
+// SessionConnect SessionConnect
 func SessionConnect(client *ssh.Client) (*ssh.Session, error) {
 	var (
 		session *ssh.Session

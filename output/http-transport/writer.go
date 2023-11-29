@@ -3,12 +3,13 @@ package http_transport
 import (
 	"bytes"
 	"context"
-	"github.com/eolinker/eosc/log"
 	"io"
 	"net/http"
 	"runtime/debug"
 	"sync"
 	"time"
+
+	"github.com/eolinker/eosc/log"
 )
 
 type _HttpWriter struct {
@@ -20,7 +21,6 @@ type _HttpWriter struct {
 }
 
 func (h *_HttpWriter) reset(c *Config) {
-
 	h.locker.Lock()
 	h.stop()
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -39,8 +39,8 @@ func (h *_HttpWriter) reset(c *Config) {
 
 	h.locker.Unlock()
 }
-func (h *_HttpWriter) stop() error {
 
+func (h *_HttpWriter) stop() error {
 	if h.cancelFunc != nil {
 		h.cancelFunc()
 		h.cancelFunc = nil
@@ -48,6 +48,7 @@ func (h *_HttpWriter) stop() error {
 
 	return nil
 }
+
 func (h *_HttpWriter) Close() error {
 	h.locker.Lock()
 	h.stop()
@@ -67,6 +68,7 @@ func (h *_HttpWriter) do(method, url string, header http.Header, ctx context.Con
 			go h.do(method, url, header, ctx)
 		}
 	}()
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -78,13 +80,11 @@ func (h *_HttpWriter) do(method, url string, header http.Header, ctx context.Con
 		}
 	}
 }
+
 func newHttpWriter() *_HttpWriter {
-
 	return &_HttpWriter{
-
 		locker: sync.Mutex{},
 		client: &http.Client{
-
 			Timeout: time.Second * 30,
 		},
 		chanOut: nil,
@@ -103,6 +103,7 @@ func (h *_HttpWriter) send(method, url string, header http.Header, p []byte) {
 		log.DebugF("[httplog]:create requeset error: %s %s header<%v> body<%s> error<%s>\n", method, url, header, string(p), err)
 		return
 	}
+
 	for k, v := range header {
 		request.Header[k] = v
 	}
@@ -112,6 +113,7 @@ func (h *_HttpWriter) send(method, url string, header http.Header, p []byte) {
 		log.DebugF("[httplog]:send error: %s %s header<%v> body<%s> error<%s>\n", method, url, header, string(p), err)
 		return
 	}
+
 	if response.StatusCode != 200 {
 		body, err := io.ReadAll(response.Body)
 		response.Body.Close()
@@ -119,8 +121,6 @@ func (h *_HttpWriter) send(method, url string, header http.Header, p []byte) {
 			log.DebugF("send to httplog error:%s %s status<%d,%s> :%s\n", method, url, response.StatusCode, response.Status, err.Error())
 		} else {
 			log.DebugF("[httplog] response error:%s %s status<%d,%s> body:%s\n", method, url, response.StatusCode, response.Status, string(body))
-
 		}
 	}
-
 }

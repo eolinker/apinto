@@ -1,8 +1,9 @@
 package visit_strategy
 
 import (
-	"github.com/eolinker/eosc"
 	"reflect"
+
+	"github.com/eolinker/eosc"
 )
 
 var (

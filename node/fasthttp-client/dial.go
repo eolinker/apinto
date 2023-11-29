@@ -33,6 +33,7 @@ func init() {
 	debug.Register("/debug/dial", DebugHandleFun)
 	go reset()
 }
+
 func reset() {
 	t := time.NewTicker(time.Second * 10)
 	defer t.Stop()
@@ -59,6 +60,7 @@ func reset() {
 		}
 	}
 }
+
 func DebugHandleFun(w http.ResponseWriter, r *http.Request) {
 	lock.Lock()
 	defer lock.Unlock()
@@ -74,7 +76,7 @@ func Dial(addr string) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	//return conn, nil
+	// return conn, nil
 	return &debugConn{Conn: conn}, nil
 }
 

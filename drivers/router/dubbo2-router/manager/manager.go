@@ -1,15 +1,17 @@
 package manager
 
 import (
-	"dubbo.apache.org/dubbo-go/v3/protocol"
-	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
 	"errors"
-	dubbo2_context "github.com/eolinker/apinto/node/dubbo2-context"
-	"github.com/eolinker/apinto/router"
-	eoscContext "github.com/eolinker/eosc/eocontext"
-	"github.com/eolinker/eosc/log"
 	"sync"
 	"sync/atomic"
+
+	"dubbo.apache.org/dubbo-go/v3/protocol"
+	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
+	eoscContext "github.com/eolinker/eosc/eocontext"
+	"github.com/eolinker/eosc/log"
+
+	dubbo2_context "github.com/eolinker/apinto/node/dubbo2-context"
+	"github.com/eolinker/apinto/router"
 )
 
 var _ IManger = (*dubboManger)(nil)

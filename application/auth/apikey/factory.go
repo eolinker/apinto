@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/eolinker/eosc/utils/schema"
+
 	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/apinto/application/auth"
-	"github.com/eolinker/eosc/utils/schema"
 )
 
 var _ auth.IAuthFactory = (*factory)(nil)

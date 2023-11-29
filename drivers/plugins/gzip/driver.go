@@ -1,8 +1,9 @@
 package gzip
 
 import (
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 func Check(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {

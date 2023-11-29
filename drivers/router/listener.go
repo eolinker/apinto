@@ -11,12 +11,13 @@ import (
 
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/config"
 	"github.com/eolinker/eosc/traffic"
 	"github.com/eolinker/eosc/traffic/mixl"
 	"github.com/soheilhy/cmux"
+
+	"github.com/eolinker/apinto/certs"
 )
 
 type RouterType int

@@ -1,9 +1,11 @@
 package template
 
 import (
-	"github.com/eolinker/apinto/plugin"
-	eoscContext "github.com/eolinker/eosc/eocontext"
 	"sync"
+
+	eoscContext "github.com/eolinker/eosc/eocontext"
+
+	"github.com/eolinker/apinto/plugin"
 )
 
 var _ iProxyDatas = (*ProxyDatas)(nil)

@@ -1,10 +1,11 @@
 package plugin_manager
 
 import (
-	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/setting"
+
+	"github.com/eolinker/apinto/plugin"
 )
 
 var (

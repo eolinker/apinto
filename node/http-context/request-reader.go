@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-
 	"github.com/valyala/fasthttp"
 )
 
@@ -72,6 +71,7 @@ func (r *RequestReader) RemoteAddr() string {
 func (r *RequestReader) RemotePort() string {
 	return r.remotePort
 }
+
 func (r *RequestReader) Finish() error {
 	r.req = nil
 	r.body.reset(nil)
@@ -79,6 +79,7 @@ func (r *RequestReader) Finish() error {
 	r.uri.reset(nil)
 	return nil
 }
+
 func (r *RequestReader) reset(req *fasthttp.Request, remoteAddr string) {
 	r.req = req
 	r.remoteAddr = remoteAddr
@@ -111,7 +112,6 @@ func (r *RequestReader) reset(req *fasthttp.Request, remoteAddr string) {
 	} else {
 		r.realIP = string(realIp)
 	}
-
 }
 
 func (r *RequestReader) Request() *fasthttp.Request {

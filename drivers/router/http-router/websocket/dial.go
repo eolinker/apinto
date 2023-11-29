@@ -1,11 +1,12 @@
 package websocket
 
 import (
-	"github.com/eolinker/eosc/eocontext"
-	"github.com/eolinker/eosc/log"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/eolinker/eosc/eocontext"
+	"github.com/eolinker/eosc/log"
 
 	"github.com/fasthttp/websocket"
 )

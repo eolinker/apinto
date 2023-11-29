@@ -1,8 +1,9 @@
 package plugin
 
 import (
-	"github.com/eolinker/eosc/eocontext"
 	"reflect"
+
+	"github.com/eolinker/eosc/eocontext"
 )
 
 // Config 普通插件配置，在router、service、upstream的插件格式
@@ -41,8 +42,8 @@ func MergeConfig(high, low map[string]*Config) map[string]*Config {
 		}
 	}
 	return mv
-
 }
+
 func clone(v map[string]*Config) map[string]*Config {
 	cv := make(map[string]*Config)
 	if v == nil {

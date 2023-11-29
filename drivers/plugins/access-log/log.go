@@ -3,13 +3,14 @@ package access_log
 import (
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
-	"github.com/eolinker/apinto/drivers"
-	http_entry "github.com/eolinker/apinto/entries/http-entry"
-	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
+
+	"github.com/eolinker/apinto/drivers"
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
+	"github.com/eolinker/apinto/output"
 )
 
 var _ eocontext.IFilter = (*accessLog)(nil)

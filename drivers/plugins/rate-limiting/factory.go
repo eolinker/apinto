@@ -1,8 +1,9 @@
 package rate_limiting
 
 import (
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 const (

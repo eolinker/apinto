@@ -2,9 +2,10 @@ package discovery
 
 import (
 	"fmt"
-	"github.com/eolinker/eosc/eocontext"
 	"sync/atomic"
 	"time"
+
+	"github.com/eolinker/eosc/eocontext"
 )
 
 // NodeStatus 节点状态类型

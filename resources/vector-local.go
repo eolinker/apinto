@@ -10,6 +10,7 @@ import (
 var (
 	localVector IVectors = (*VectorsLocalBuild)(nil)
 )
+
 var (
 	onceVector  sync.Once
 	LocalVector func() IVectors
@@ -17,7 +18,6 @@ var (
 
 func init() {
 	LocalVector = func() IVectors {
-
 		onceVector.Do(func() {
 			localVector = NewVectorsLocalBuild()
 			LocalVector = func() IVectors {
@@ -26,12 +26,10 @@ func init() {
 		})
 		return localVector
 	}
-
 }
 
 type VectorsLocalBuild struct {
-	lock sync.Mutex
-
+	lock    sync.Mutex
 	vectors map[string]Vector
 }
 
@@ -42,7 +40,6 @@ func NewVectorsLocalBuild() *VectorsLocalBuild {
 }
 
 func (v *VectorsLocalBuild) BuildVector(name string, uni, step time.Duration) (Vector, error) {
-
 	if uni < time.Second {
 		uni = time.Second
 	}
@@ -103,6 +100,7 @@ func (v *vectorLocal) Get(key string) int64 {
 	_, values := v.refresh(key)
 	return v.read(values)
 }
+
 func (v *vectorLocal) vector(key string) *vectorValues {
 	token := fmt.Sprint(v.name, ":", key)
 	v.lock.RLock()
@@ -122,14 +120,15 @@ func (v *vectorLocal) vector(key string) *vectorValues {
 	v.vm[token] = values
 	return values
 }
-func (v *vectorLocal) read(vectors *vectorValues) int64 {
 
+func (v *vectorLocal) read(vectors *vectorValues) int64 {
 	value := int64(0)
 	for i := range vectors.vectors {
 		value += atomic.LoadInt64(&vectors.vectors[i])
 	}
 	return value
 }
+
 func (v *vectorLocal) refresh(key string) (int64, *vectorValues) {
 	vectors := v.vector(key)
 	seconds := time.Now().UnixNano()
@@ -138,11 +137,9 @@ func (v *vectorLocal) refresh(key string) (int64, *vectorValues) {
 
 	if index > last {
 		if index-last > v.size {
-
 			for i := int64(0); i < v.size; i++ {
 				atomic.StoreInt64(&vectors.vectors[i], 0)
 			}
-
 		} else {
 			for i := last + 1; i <= index; i++ {
 				atomic.StoreInt64(&vectors.vectors[i%v.size], 0)
@@ -151,6 +148,7 @@ func (v *vectorLocal) refresh(key string) (int64, *vectorValues) {
 	}
 	return index, vectors
 }
+
 func newVectorLocal(name string, uin, step time.Duration) *vectorLocal {
 	v := &vectorLocal{name: name, step: int64(step), size: int64(uin / step), vm: make(map[string]*vectorValues)}
 

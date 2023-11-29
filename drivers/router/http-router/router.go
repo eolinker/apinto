@@ -12,13 +12,14 @@ import (
 
 	"github.com/eolinker/eosc/eocontext"
 
+	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/apinto/drivers"
 	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	http_router "github.com/eolinker/apinto/router"
 	"github.com/eolinker/apinto/template"
-	"github.com/eolinker/eosc"
 )
 
 type HttpRouter struct {

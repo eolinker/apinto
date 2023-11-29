@@ -1,10 +1,12 @@
 package grey_strategy
 
 import (
-	"github.com/eolinker/apinto/drivers"
+	"reflect"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/setting"
-	"reflect"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 const Name = "strategy-grey"

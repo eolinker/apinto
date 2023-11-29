@@ -9,8 +9,9 @@ import (
 
 	grpc_context "github.com/eolinker/apinto/node/grpc-context"
 
-	"github.com/eolinker/apinto/router"
 	"google.golang.org/grpc"
+
+	"github.com/eolinker/apinto/router"
 
 	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"

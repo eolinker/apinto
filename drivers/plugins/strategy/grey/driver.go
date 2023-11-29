@@ -1,8 +1,9 @@
 package grey
 
 import (
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 type Config struct {

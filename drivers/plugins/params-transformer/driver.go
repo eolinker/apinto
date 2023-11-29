@@ -1,8 +1,9 @@
 package params_transformer
 
 import (
-	"github.com/eolinker/apinto/drivers"
 	"reflect"
+
+	"github.com/eolinker/apinto/drivers"
 
 	"github.com/eolinker/eosc"
 )

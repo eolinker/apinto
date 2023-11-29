@@ -1,10 +1,11 @@
 package grpc_proxy_rewrite
 
 import (
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 var _ eocontext.IFilter = (*ProxyRewrite)(nil)

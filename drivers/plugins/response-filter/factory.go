@@ -3,9 +3,10 @@ package response_filter
 import (
 	"strings"
 
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/ohler55/ojg/jp"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 const (

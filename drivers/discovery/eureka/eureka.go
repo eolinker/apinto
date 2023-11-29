@@ -6,13 +6,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc/utils/config"
+
+	"github.com/eolinker/apinto/drivers"
 
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/discovery"
 )
 
 var _ discovery.IDiscovery = (*eureka)(nil)

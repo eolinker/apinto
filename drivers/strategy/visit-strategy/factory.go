@@ -1,10 +1,12 @@
 package visit_strategy
 
 import (
-	"github.com/eolinker/apinto/drivers"
+	"reflect"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/setting"
-	"reflect"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 const Name = "strategy-visit"
@@ -13,7 +15,7 @@ var (
 	configType = reflect.TypeOf((*Config)(nil))
 )
 
-//Register 注册http路由驱动工厂
+// Register 注册http路由驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
 
 	register.RegisterExtenderDriver(Name, newFactory())

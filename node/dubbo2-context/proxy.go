@@ -1,6 +1,8 @@
 package dubbo2_context
 
-import dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
+import (
+	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
+)
 
 var _ dubbo2_context.IProxy = (*Proxy)(nil)
 

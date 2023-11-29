@@ -6,18 +6,14 @@ import (
 	"net"
 	"time"
 
-	http_entry "github.com/eolinker/apinto/entries/http-entry"
-
 	"github.com/eolinker/eosc"
-
-	"github.com/valyala/fasthttp"
-
-	"github.com/eolinker/eosc/utils/config"
-
-	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
-
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/eosc/utils/config"
+	"github.com/valyala/fasthttp"
+
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
+	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
 )
 
 var _ http_service.IHttpContext = (*cloneContext)(nil)
@@ -127,7 +123,6 @@ func (ctx *cloneContext) Response() http_service.IResponse {
 }
 
 func (ctx *cloneContext) SendTo(scheme string, node eoscContext.INode, timeout time.Duration) error {
-
 	host := node.Addr()
 	request := ctx.proxyRequest.Request()
 
@@ -158,11 +153,9 @@ func (ctx *cloneContext) SendTo(scheme string, node eoscContext.INode, timeout t
 
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)
 	return ctx.responseError
-
 }
 
 func (ctx *cloneContext) Context() context.Context {
-
 	return ctx.ctx
 }
 
@@ -202,7 +195,6 @@ func (ctx *cloneContext) RequestId() string {
 
 // Finish finish
 func (ctx *cloneContext) FastFinish() {
-
 	ctx.ctx = nil
 	ctx.app = nil
 	ctx.balance = nil
@@ -213,5 +205,4 @@ func (ctx *cloneContext) FastFinish() {
 	fasthttp.ReleaseResponse(ctx.response.Response)
 	ctx.response.Finish()
 	ctx.proxyRequest.Finish()
-
 }

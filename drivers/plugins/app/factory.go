@@ -1,11 +1,13 @@
 package app
 
 import (
-	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/drivers/app/manager"
+	"sync"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
-	"sync"
+
+	"github.com/eolinker/apinto/drivers"
+	"github.com/eolinker/apinto/drivers/app/manager"
 )
 
 const (

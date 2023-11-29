@@ -1,9 +1,10 @@
 package circuit_breaker
 
 import (
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"strconv"
 	"strings"
+
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 // 匹配接口状态码

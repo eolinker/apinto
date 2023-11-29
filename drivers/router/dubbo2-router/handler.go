@@ -6,11 +6,12 @@ import (
 
 	"github.com/eolinker/apinto/entries/ctx_key"
 
+	"github.com/eolinker/eosc/eocontext"
+	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
+
 	"github.com/eolinker/apinto/drivers/router/dubbo2-router/manager"
 	"github.com/eolinker/apinto/router"
 	"github.com/eolinker/apinto/service"
-	"github.com/eolinker/eosc/eocontext"
-	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
 )
 
 var _ router.IRouterHandler = (*dubboHandler)(nil)

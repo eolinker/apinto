@@ -7,8 +7,9 @@ import (
 
 	grpc_descriptor "github.com/eolinker/apinto/grpc-descriptor"
 
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 func check(v interface{}) (*Config, error) {

@@ -5,10 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/eolinker/apinto/checker"
-	"github.com/eolinker/apinto/router"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
+
+	"github.com/eolinker/apinto/checker"
+	"github.com/eolinker/apinto/router"
 )
 
 type readerHandler func(port int, request http_service.IRequestReader) (string, bool)

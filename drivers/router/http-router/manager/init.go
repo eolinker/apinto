@@ -3,12 +3,13 @@ package manager
 import (
 	"net"
 
-	"github.com/eolinker/apinto/drivers/router"
-	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 	"github.com/valyala/fasthttp"
+
+	"github.com/eolinker/apinto/drivers/router"
+	"github.com/eolinker/apinto/plugin"
 )
 
 var (

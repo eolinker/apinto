@@ -3,12 +3,13 @@ package cache
 import (
 	"sync"
 
+	"github.com/eolinker/eosc"
+	eoscContext "github.com/eolinker/eosc/eocontext"
+
 	"github.com/eolinker/apinto/drivers"
 	cache_strategy "github.com/eolinker/apinto/drivers/strategy/cache-strategy"
 	"github.com/eolinker/apinto/resources"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
-	"github.com/eolinker/eosc"
-	eoscContext "github.com/eolinker/eosc/eocontext"
 )
 
 type Strategy struct {

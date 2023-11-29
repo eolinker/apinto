@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/eosc/log"
 	"github.com/hashicorp/consul/api"
+
+	"github.com/eolinker/apinto/discovery"
 )
 
 type consulNodeInfo struct {

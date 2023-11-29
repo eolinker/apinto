@@ -8,12 +8,12 @@ import (
 
 const defaultScheme = "http"
 
-//Config eureka驱动配置
+// Config eureka驱动配置
 type Config struct {
 	Config AccessConfig `json:"config" label:"配置信息"`
 }
 
-//AccessConfig 接入地址配置
+// AccessConfig 接入地址配置
 type AccessConfig struct {
 	Address []string          `json:"address" label:"eureka地址"`
 	Params  map[string]string `json:"params" label:"参数"`

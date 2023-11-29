@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc/log"
+
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/drivers/counter"

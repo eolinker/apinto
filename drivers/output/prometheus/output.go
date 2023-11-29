@@ -2,14 +2,16 @@ package prometheus
 
 import (
 	"fmt"
-	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/output"
-	scope_manager "github.com/eolinker/apinto/scope-manager"
+	"net/http"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/router"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"net/http"
+
+	"github.com/eolinker/apinto/drivers"
+	"github.com/eolinker/apinto/output"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 )
 
 var _ output.IMetrics = (*PromOutput)(nil)

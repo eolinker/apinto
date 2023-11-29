@@ -3,9 +3,10 @@ package httpoutput
 import (
 	"encoding/json"
 
-	http_transport "github.com/eolinker/apinto/output/http-transport"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
+
+	http_transport "github.com/eolinker/apinto/output/http-transport"
 )
 
 type Handler struct {

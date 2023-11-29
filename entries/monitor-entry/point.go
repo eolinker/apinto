@@ -1,6 +1,8 @@
 package monitor_entry
 
-import "time"
+import (
+	"time"
+)
 
 var _ IPoint = (*Point)(nil)
 

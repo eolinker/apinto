@@ -1,13 +1,14 @@
 package dubbo2_router
 
 import (
-	"github.com/eolinker/apinto/utils"
-	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
 	"sort"
 	"strings"
 
+	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
+
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/router"
+	"github.com/eolinker/apinto/utils"
 )
 
 type RuleType = string

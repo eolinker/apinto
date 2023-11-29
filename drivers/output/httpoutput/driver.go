@@ -1,8 +1,9 @@
 package httpoutput
 
 import (
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {

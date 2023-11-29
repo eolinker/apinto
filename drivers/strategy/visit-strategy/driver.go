@@ -1,8 +1,9 @@
 package visit_strategy
 
 import (
-	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/strategy"
 )
 
 func checkConfig(conf *Config) error {

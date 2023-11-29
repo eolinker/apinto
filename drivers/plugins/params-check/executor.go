@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/eolinker/apinto/checker"
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+
+	"github.com/eolinker/apinto/checker"
+	"github.com/eolinker/apinto/drivers"
 )
 
 var (

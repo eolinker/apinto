@@ -1,15 +1,17 @@
 package dubbo2_router
 
 import (
+	"strings"
+	"time"
+
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/eocontext"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/drivers/router/dubbo2-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/template"
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/eocontext"
-	"strings"
-	"time"
 )
 
 type DubboRouter struct {

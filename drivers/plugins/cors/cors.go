@@ -3,13 +3,15 @@ package cors
 import (
 	"encoding/json"
 	"errors"
-	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/eocontext"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 var _ http_service.HttpFilter = (*CorsFilter)(nil)

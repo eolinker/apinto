@@ -81,7 +81,6 @@ In a word, Apinto API gateway enables the business development team to focus mor
 ![image](https://user-images.githubusercontent.com/25589530/149748340-dc544f79-a8f9-46f5-903d-a3af4fb8b16e.png)
 
 
-
 ### Deployment
 
 * Direct Deployment：[Deployment Tutorial](https://help.apinto.com/docs/apinto/quick/arrange.html)
@@ -97,7 +96,7 @@ In a word, Apinto API gateway enables the business development team to focus mor
 ```
 wget https://github.com/eolinker/apinto/releases/download/v0.12.1/apinto_v0.12.1_linux_amd64.tar.gz && tar -zxvf apinto_v0.12.1_linux_amd64.tar.gz && cd apinto
 ```
-Apinto supports running on the arm64 and amd64 architectures. 
+Apinto supports running on the arm64 and amd64 architectures.
 
 Please download the installation package of the corresponding architecture and system as required. [Click](https://github.com/eolinker/apinto/releases/) to jump to download the installation package.
 
@@ -125,7 +124,8 @@ apinto start
 - **Slack**：[Join us](https://join.slack.com/t/slack-zer6755/shared_invite/zt-u7wzqp1u-aNA0XK9Bdb3kOpN03jRmYQ)
 - **Official website**：[https://www.apinto.com](https://www.apinto.com)
 - **Forum**：[https://community.apinto.com](https://community.apinto.com)
-- **Wechat**：<img src="http://data.eolinker.com/course/2HdT4zd10b670318462bec90f0f390bef896c21cad66172.png" style="width:150px" />
+- **Wechat**：<img src="http://data.eolinker.com/course/2HdT4zd10b670318462bec90f0f390bef896c21cad66172.png"
+									style="width:150px"/>
 
 
 ### About

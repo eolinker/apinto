@@ -1,8 +1,9 @@
 package strategy
 
 import (
-	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/eosc/eocontext"
+
+	"github.com/eolinker/apinto/checker"
 )
 
 type FilterConfig map[string][]string
@@ -43,6 +44,7 @@ type FilterItem struct {
 	checker.Handler
 	name string
 }
+
 type Filters []*FilterItem
 
 func (fs Filters) Check(ctx eocontext.EoContext) bool {

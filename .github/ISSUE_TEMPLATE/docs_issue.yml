@@ -1,7 +1,7 @@
 name: "Documentation Issue"
 description: Issues related to documentation.
 title: "docs: "
-labels: [doc]
+labels: [ doc ]
 body:
   - type: markdown
     attributes:

@@ -3,10 +3,10 @@ package aksk
 import (
 	"fmt"
 
-	"github.com/eolinker/apinto/application"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
 
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/apinto/application"
 )
 
 var _ application.IAuth = (*aksk)(nil)

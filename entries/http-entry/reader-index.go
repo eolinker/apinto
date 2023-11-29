@@ -34,7 +34,6 @@ func (p ProxyReaders) ReadByIndex(index int, name string, ctx http_service.IHttp
 		return "", false
 	}
 	return v.ReadProxy("", proxies[index])
-
 }
 
 func (p ProxyReaders) Read(name string, ctx http_service.IHttpContext) (interface{}, bool) {

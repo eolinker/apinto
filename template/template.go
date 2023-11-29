@@ -1,9 +1,10 @@
 package template
 
 import (
-	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
+
+	"github.com/eolinker/apinto/plugin"
 )
 
 const (

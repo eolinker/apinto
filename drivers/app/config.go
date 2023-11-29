@@ -6,13 +6,14 @@ import (
 
 	"github.com/eolinker/eosc"
 
-	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/eosc/log"
+
+	"github.com/eolinker/apinto/application"
 
 	"github.com/eolinker/apinto/application/auth"
 )
 
-//Config App驱动配置
+// Config App驱动配置
 type Config struct {
 	Anonymous  bool              `json:"anonymous" label:"匿名" `
 	Disable    bool              `json:"disable" label:"是否禁用"`

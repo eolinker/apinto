@@ -1,6 +1,8 @@
 package apikey
 
-import "github.com/eolinker/apinto/application"
+import (
+	"github.com/eolinker/apinto/application"
+)
 
 type Config struct {
 	application.Auth

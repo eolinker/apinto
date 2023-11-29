@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/eolinker/eosc/eocontext"
-
 	"github.com/valyala/fasthttp"
 )
 
@@ -51,7 +50,6 @@ func readAddress(addr string) (scheme, host string) {
 }
 
 func (c *Client) getHostClient(addr string) (*fasthttp.HostClient, string, error) {
-
 	scheme, host := readAddress(addr)
 
 	isTLS := false
@@ -178,12 +176,12 @@ func (c *Client) ProxyTimeout(addr string, req *fasthttp.Request, resp *fasthttp
 func (c *Client) mCleaner(m map[string]*fasthttp.HostClient) {
 	mustStop := false
 
-	//sleep := c.MaxIdleConnDuration
-	//if sleep < time.Second {
+	// sleep := c.MaxIdleConnDuration
+	// if sleep < time.Second {
 	//	sleep = time.Second
-	//} else if sleep > 10*time.Second {
+	// } else if sleep > 10*time.Second {
 	//	sleep = 10 * time.Second
-	//}
+	// }
 	sleep := time.Second * 10
 	for {
 		c.mLock.Lock()

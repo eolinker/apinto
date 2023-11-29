@@ -2,11 +2,13 @@ package grpc_to_http
 
 import (
 	"fmt"
-	"github.com/eolinker/eosc/log"
 	"sync"
 
-	"github.com/eolinker/apinto/drivers"
+	"github.com/eolinker/eosc/log"
+
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 const (

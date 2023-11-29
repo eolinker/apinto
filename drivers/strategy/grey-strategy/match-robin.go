@@ -1,6 +1,8 @@
 package grey_strategy
 
-import "github.com/eolinker/eosc/eocontext"
+import (
+	"github.com/eolinker/eosc/eocontext"
+)
 
 type greyFlow struct {
 	flowRobin *Robin

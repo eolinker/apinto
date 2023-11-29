@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-//SftpClient sftp客户端
+// SftpClient sftp客户端
 type SftpClient struct {
 	client    *sftp.Client
 	passSize  int64
@@ -18,7 +18,7 @@ type SftpClient struct {
 	finish    chan error
 }
 
-//NewSftpClient new sftp客户端
+// NewSftpClient new sftp客户端
 func NewSftpClient(client *ssh.Client) (*SftpClient, error) {
 	sc, err := SftpConnect(client)
 	if err != nil {
@@ -32,7 +32,7 @@ func NewSftpClient(client *ssh.Client) (*SftpClient, error) {
 	}, nil
 }
 
-//ScpCopy scp复制
+// ScpCopy scp复制
 func (s *SftpClient) ScpCopy(localFilePath, remoteDir string) error {
 	var (
 		err error
@@ -72,7 +72,7 @@ func (s *SftpClient) ScpCopy(localFilePath, remoteDir string) error {
 	return nil
 }
 
-//GetProcess GetProcess
+// GetProcess GetProcess
 func (s *SftpClient) GetProcess() string {
 	if s.totalSize == 0 {
 		return "0.00"
@@ -80,13 +80,13 @@ func (s *SftpClient) GetProcess() string {
 	return fmt.Sprintf("%.2f", float64(s.passSize)*100/float64(s.totalSize))
 }
 
-//CheckPathIsExisted CheckPathIsExisted
+// CheckPathIsExisted CheckPathIsExisted
 func (s *SftpClient) CheckPathIsExisted(path string) error {
 	_, err := s.client.Stat(path)
 	return err
 }
 
-//Finish Finish
+// Finish Finish
 func (s *SftpClient) Finish() error {
 	//period := time.Duration(5) * time.Period
 	//t := time.NewTicker(period)
@@ -106,13 +106,13 @@ func (s *SftpClient) Finish() error {
 	return <-s.finish
 }
 
-//Close Close
+// Close Close
 func (s *SftpClient) Close() error {
 	close(s.finish)
 	return s.client.Close()
 }
 
-//SftpConnect SftpConnect
+// SftpConnect SftpConnect
 func SftpConnect(client *ssh.Client) (*sftp.Client, error) {
 	var (
 		sftpClient *sftp.Client

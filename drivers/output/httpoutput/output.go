@@ -1,10 +1,11 @@
 package httpoutput
 
 import (
+	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/output"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
-	"github.com/eolinker/eosc"
 )
 
 var _ output.IEntryOutput = (*HttpOutput)(nil)

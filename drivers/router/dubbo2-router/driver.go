@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/log"
+	"github.com/eolinker/eosc/utils/config"
+
 	"github.com/eolinker/apinto/drivers/router/dubbo2-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/template"
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/log"
-	"github.com/eolinker/eosc/utils/config"
 )
 
 var (

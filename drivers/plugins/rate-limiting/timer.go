@@ -23,7 +23,7 @@ type rateInfo struct {
 	day    *rateTimer
 }
 
-func (r *rateInfo) close()  {
+func (r *rateInfo) close() {
 	r.second = nil
 	r.minute = nil
 	r.hour = nil
@@ -32,13 +32,12 @@ func (r *rateInfo) close()  {
 
 type rateTimer struct {
 	// 已请求数量
-	requestCount     int64
+	requestCount int64
 	// 限制数量
-	limitCount	int64
-	timerType int
-	expire    time.Duration
-	startTime time.Time
-
+	limitCount int64
+	timerType  int
+	expire     time.Duration
+	startTime  time.Time
 }
 
 func CreateRateInfo(conf *Config) *rateInfo {
@@ -60,19 +59,19 @@ func CreateRateInfo(conf *Config) *rateInfo {
 
 func createTimer(timerType int, limitCount int64) *rateTimer {
 	return &rateTimer{
-		timerType: timerType,
+		timerType:    timerType,
 		requestCount: 0,
-		limitCount: limitCount,
-		startTime: time.Now(),
-		expire:expireTime[timerType],
+		limitCount:   limitCount,
+		startTime:    time.Now(),
+		expire:       expireTime[timerType],
 	}
 }
 
-func (r *rateTimer) add()  {
+func (r *rateTimer) add() {
 	atomic.AddInt64(&r.requestCount, 1)
 }
 
-func (r *rateTimer) reset()  {
+func (r *rateTimer) reset() {
 	atomic.StoreInt64(&r.requestCount, 1)
 	r.startTime = time.Now()
 }

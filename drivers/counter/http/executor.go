@@ -13,9 +13,10 @@ import (
 
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
+	"github.com/valyala/fasthttp"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/drivers/counter"
-	"github.com/valyala/fasthttp"
 
 	"github.com/eolinker/eosc"
 )

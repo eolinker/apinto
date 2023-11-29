@@ -2,11 +2,12 @@ package plugin
 
 import (
 	"fmt"
+	"reflect"
+	"sync"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/variable"
-	"reflect"
-	"sync"
 )
 
 var (

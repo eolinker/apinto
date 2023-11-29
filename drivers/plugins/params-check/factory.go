@@ -3,9 +3,10 @@ package params_check
 import (
 	"fmt"
 
+	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/eosc"
 )
 
 const (

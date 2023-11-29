@@ -1,8 +1,9 @@
 package plugin_manager
 
 import (
-	"github.com/eolinker/apinto/plugin"
 	eoscContext "github.com/eolinker/eosc/eocontext"
+
+	"github.com/eolinker/apinto/plugin"
 )
 
 type PluginObj struct {

@@ -18,19 +18,14 @@
 package getty
 
 import (
-	"github.com/eolinker/eosc/log"
 	"reflect"
-)
 
-import (
-	"github.com/eolinker/apinto/dubbo-getty"
-
-	perrors "github.com/pkg/errors"
-)
-
-import (
 	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
 	"dubbo.apache.org/dubbo-go/v3/remoting"
+	"github.com/eolinker/eosc/log"
+	perrors "github.com/pkg/errors"
+
+	"github.com/eolinker/apinto/dubbo-getty"
 )
 
 // RpcServerPackageHandler Read data from client and Write data to client

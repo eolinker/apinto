@@ -3,10 +3,11 @@ package consul
 import (
 	"context"
 	"fmt"
-	"github.com/eolinker/apinto/discovery"
-	"github.com/eolinker/apinto/drivers"
 	"sync"
 	"time"
+
+	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/apinto/drivers"
 
 	"github.com/eolinker/eosc/utils/config"
 

@@ -3,9 +3,10 @@ package polaris
 import (
 	"sync"
 
+	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/eosc"
 )
 
 const (

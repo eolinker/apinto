@@ -18,17 +18,19 @@
 package getty
 
 import (
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"dubbo.apache.org/dubbo-go/v3/common/constant"
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
 	"dubbo.apache.org/dubbo-go/v3/remoting"
 	hessian "github.com/apache/dubbo-go-hessian2"
 	gxtime "github.com/dubbogo/gost/time"
-	"github.com/eolinker/apinto/dubbo-getty"
 	"github.com/eolinker/eosc/log"
 	perrors "github.com/pkg/errors"
-	"sync"
-	"sync/atomic"
-	"time"
+
+	"github.com/eolinker/apinto/dubbo-getty"
 )
 
 const (

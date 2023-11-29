@@ -12,18 +12,19 @@
 package main
 
 import (
-	"github.com/eolinker/apinto/utils/version"
+	"os"
+
 	"github.com/eolinker/eosc"
 	_ "github.com/eolinker/eosc/debug"
 	"github.com/eolinker/eosc/env"
 	"github.com/eolinker/eosc/eoscli"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/process"
-	"os"
+
+	"github.com/eolinker/apinto/utils/version"
 )
 
 func init() {
-
 	process.Register(eosc.ProcessWorker, ProcessWorker)
 	process.Register(eosc.ProcessMaster, ProcessMaster)
 	process.Register(eosc.ProcessHelper, ProcessHelper)
@@ -33,7 +34,6 @@ func init() {
 }
 
 func main() {
-
 	if process.Run() {
 		log.Close()
 		return

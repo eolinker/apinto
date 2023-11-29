@@ -3,9 +3,10 @@ package certs
 import (
 	"crypto/tls"
 	"errors"
-	"github.com/eolinker/eosc/config"
 	"sync"
 	"sync/atomic"
+
+	"github.com/eolinker/eosc/config"
 )
 
 var errorCertificateNotExit = errors.New("not exist cert")

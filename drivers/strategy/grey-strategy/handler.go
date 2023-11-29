@@ -4,15 +4,14 @@ import (
 	"strings"
 	"time"
 
-	session_keep "github.com/eolinker/apinto/upstream/session-keep"
-
-	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/eosc/eocontext"
 
 	"github.com/eolinker/apinto/checker"
+	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/drivers/discovery/static"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/apinto/upstream/balance"
-	"github.com/eolinker/eosc/eocontext"
+	session_keep "github.com/eolinker/apinto/upstream/session-keep"
 )
 
 var (

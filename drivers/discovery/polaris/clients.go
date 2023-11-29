@@ -3,10 +3,11 @@ package polaris
 import (
 	"fmt"
 
-	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/eosc/log"
 	"github.com/polarismesh/polaris-go"
 	"github.com/polarismesh/polaris-go/pkg/config"
+
+	"github.com/eolinker/apinto/discovery"
 )
 
 var defaultNamespace = "default"

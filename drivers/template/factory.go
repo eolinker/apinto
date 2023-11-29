@@ -1,11 +1,11 @@
 package template
 
 import (
-	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/plugin"
+	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
 
-	"github.com/eolinker/eosc"
+	"github.com/eolinker/apinto/drivers"
+	"github.com/eolinker/apinto/plugin"
 )
 
 var DriverName = "plugin_template"

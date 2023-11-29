@@ -1,8 +1,9 @@
 package proxy_mirror
 
 import (
-	"github.com/eolinker/apinto/utils"
 	"strings"
+
+	"github.com/eolinker/apinto/utils"
 )
 
 type Config struct {

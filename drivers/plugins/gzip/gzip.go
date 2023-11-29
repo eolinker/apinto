@@ -3,11 +3,13 @@ package gzip
 import (
 	"bytes"
 	"compress/gzip"
-	"github.com/eolinker/apinto/drivers"
+	"strings"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"strings"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 var _ http_service.HttpFilter = (*Gzip)(nil)

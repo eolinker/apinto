@@ -5,9 +5,10 @@ import (
 
 	monitor_manager "github.com/eolinker/apinto/monitor-manager"
 
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 const (

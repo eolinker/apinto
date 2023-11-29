@@ -1,6 +1,8 @@
 package http_context
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrorNotForm      = errors.New("contentType is not Form")

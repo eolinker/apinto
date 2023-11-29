@@ -3,10 +3,11 @@ package response_rewrite
 import (
 	"strconv"
 
-	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
+
+	"github.com/eolinker/apinto/drivers"
+	"github.com/eolinker/apinto/utils"
 
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"

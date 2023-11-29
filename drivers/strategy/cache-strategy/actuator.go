@@ -8,10 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eolinker/apinto/drivers/strategy/cache-strategy/cache"
-	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+
+	"github.com/eolinker/apinto/drivers/strategy/cache-strategy/cache"
+	"github.com/eolinker/apinto/resources"
 )
 
 var (

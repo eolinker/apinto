@@ -14,10 +14,9 @@ var (
 )
 
 func RegisterActuator(handler ActuatorsHandler) {
-
 	actuatorsHandlers = append(actuatorsHandlers, handler)
 }
-func getActuatorsHandlers() []ActuatorsHandler {
 
+func getActuatorsHandlers() []ActuatorsHandler {
 	return actuatorsHandlers
 }

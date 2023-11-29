@@ -3,11 +3,12 @@ package monitor
 import (
 	monitor_entry "github.com/eolinker/apinto/entries/monitor-entry"
 
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 var _ eocontext.IFilter = (*worker)(nil)

@@ -3,10 +3,12 @@ package certs
 import (
 	"crypto/tls"
 	"crypto/x509"
+
+	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
-	"github.com/eolinker/eosc"
 )
 
 var (

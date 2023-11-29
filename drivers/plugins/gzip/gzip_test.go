@@ -4,9 +4,10 @@ import (
 	"net"
 	"testing"
 
-	http_context "github.com/eolinker/apinto/node/http-context"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/valyala/fasthttp"
+
+	http_context "github.com/eolinker/apinto/node/http-context"
 )
 
 var ctx http_service.IHttpContext

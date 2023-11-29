@@ -2,8 +2,10 @@ package http_to_dubbo2
 
 import (
 	"errors"
-	"github.com/eolinker/apinto/drivers"
+
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 func check(v interface{}) (*Config, error) {

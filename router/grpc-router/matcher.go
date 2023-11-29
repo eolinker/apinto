@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
+	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/router"
-	"github.com/eolinker/eosc/log"
 )
 
 type readerHandler func(port int, request grpc_context.IRequest) (string, bool)

@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/eolinker/eosc/eocontext"
+
 	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/upstream/balance"
-	"github.com/eolinker/eosc/eocontext"
 )
 
 func TestSend(t *testing.T) {

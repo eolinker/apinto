@@ -32,13 +32,16 @@ type InterfaceResult interface {
 type BoolResult interface {
 	Result() (bool, error)
 }
+
 type IntResult interface {
 	Result() (int64, error)
 }
+
 type StringResult interface {
 	Result() (string, error)
 	Bytes() ([]byte, error)
 }
+
 type StatusResult interface {
 	Result() error
 }
@@ -63,9 +66,11 @@ type stringResult struct {
 func NewStringResult(val string, err error) *stringResult {
 	return &stringResult{err: err, val: val}
 }
+
 func NewStringResultBytes(value []byte, err error) *stringResult {
 	return &stringResult{val: *(*string)(unsafe.Pointer(&value)), err: err}
 }
+
 func (s *stringResult) Result() (string, error) {
 	return s.val, s.err
 }

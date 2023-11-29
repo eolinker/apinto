@@ -6,10 +6,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/eolinker/apinto/application"
+	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/eosc"
+	"github.com/eolinker/apinto/application"
 )
 
 var (
@@ -18,7 +18,7 @@ var (
 	_                          eosc.ISetting = defaultAuthFactoryRegister
 )
 
-//IAuthFactory 鉴权工厂方法
+// IAuthFactory 鉴权工厂方法
 type IAuthFactory interface {
 	Create(tokenName string, position string, rule interface{}) (application.IAuth, error)
 	Alias() []string
@@ -27,7 +27,7 @@ type IAuthFactory interface {
 	UserType() reflect.Type
 }
 
-//IAuthFactoryRegister 实现了鉴权工厂管理器
+// IAuthFactoryRegister 实现了鉴权工厂管理器
 type IAuthFactoryRegister interface {
 	RegisterFactoryByKey(key string, factory IAuthFactory)
 	GetFactoryByKey(key string) (IAuthFactory, bool)
@@ -35,7 +35,7 @@ type IAuthFactoryRegister interface {
 	Alias() map[string]string
 }
 
-//driverRegister 驱动注册器
+// driverRegister 驱动注册器
 type driverRegister struct {
 	register    eosc.IRegister[IAuthFactory]
 	keys        []string
@@ -80,7 +80,7 @@ func (dm *driverRegister) ReadOnly() bool {
 	return true
 }
 
-//newAuthFactoryManager 创建auth工厂管理器
+// newAuthFactoryManager 创建auth工厂管理器
 func newAuthFactoryManager() *driverRegister {
 	return &driverRegister{
 		register:    eosc.NewRegister[IAuthFactory](),
@@ -90,12 +90,12 @@ func newAuthFactoryManager() *driverRegister {
 	}
 }
 
-//GetFactoryByKey 获取指定auth工厂
+// GetFactoryByKey 获取指定auth工厂
 func (dm *driverRegister) GetFactoryByKey(key string) (IAuthFactory, bool) {
 	return dm.register.Get(key)
 }
 
-//RegisterFactoryByKey 注册auth工厂
+// RegisterFactoryByKey 注册auth工厂
 func (dm *driverRegister) RegisterFactoryByKey(key string, factory IAuthFactory) {
 	err := dm.register.Register(key, factory, true)
 	if err != nil {
@@ -109,7 +109,7 @@ func (dm *driverRegister) RegisterFactoryByKey(key string, factory IAuthFactory)
 	}
 }
 
-//Keys 返回所有已注册的key
+// Keys 返回所有已注册的key
 func (dm *driverRegister) Keys() []string {
 	return dm.keys
 }
@@ -118,18 +118,18 @@ func (dm *driverRegister) Alias() map[string]string {
 	return dm.driverAlias
 }
 
-//FactoryRegister 注册auth工厂到默认auth工厂注册器
+// FactoryRegister 注册auth工厂到默认auth工厂注册器
 func FactoryRegister(key string, factory IAuthFactory) {
 
 	defaultAuthFactoryRegister.RegisterFactoryByKey(key, factory)
 }
 
-//Get 从默认auth工厂注册器中获取auth工厂
+// Get 从默认auth工厂注册器中获取auth工厂
 func Get(key string) (IAuthFactory, bool) {
 	return defaultAuthFactoryRegister.GetFactoryByKey(key)
 }
 
-//Keys 返回默认的auth工厂注册器中所有已注册的key
+// Keys 返回默认的auth工厂注册器中所有已注册的key
 func Keys() []string {
 	return defaultAuthFactoryRegister.Keys()
 }
@@ -138,7 +138,7 @@ func Alias() map[string]string {
 	return defaultAuthFactoryRegister.Alias()
 }
 
-//GetFactory 获取指定auth工厂，若指定的不存在则返回一个已注册的工厂
+// GetFactory 获取指定auth工厂，若指定的不存在则返回一个已注册的工厂
 func GetFactory(name string) (IAuthFactory, error) {
 	factory, ok := Get(name)
 	if !ok {

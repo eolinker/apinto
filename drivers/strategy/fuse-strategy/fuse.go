@@ -2,9 +2,11 @@ package fuse_strategy
 
 import (
 	"fmt"
-	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/eosc"
 	"reflect"
+
+	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 var (

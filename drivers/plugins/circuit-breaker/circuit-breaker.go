@@ -2,12 +2,14 @@ package circuit_breaker
 
 import (
 	"encoding/json"
-	"github.com/eolinker/apinto/drivers"
+	"strconv"
+	"time"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"strconv"
-	"time"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 var _ eocontext.IFilter = (*CircuitBreaker)(nil)

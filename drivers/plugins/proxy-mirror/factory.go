@@ -1,9 +1,10 @@
 package proxy_mirror
 
 import (
+	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/drivers/discovery/static"
-	"github.com/eolinker/eosc"
 )
 
 const (

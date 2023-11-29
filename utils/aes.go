@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 )
 
-//Padding 对明文进行填充
+// Padding 对明文进行填充
 func Padding(plainText []byte, blockSize int) []byte {
 	//计算要填充的长度
 	n := blockSize - len(plainText)%blockSize
@@ -17,7 +17,7 @@ func Padding(plainText []byte, blockSize int) []byte {
 	return plainText
 }
 
-//UnPadding 对密文删除填充
+// UnPadding 对密文删除填充
 func UnPadding(cipherText []byte) []byte {
 	//取出密文最后一个字节end
 	end := cipherText[len(cipherText)-1]
@@ -26,7 +26,7 @@ func UnPadding(cipherText []byte) []byte {
 	return cipherText
 }
 
-//AES_CBC_Encrypt AEC加密（CBC模式）
+// AES_CBC_Encrypt AEC加密（CBC模式）
 func AES_CBC_Encrypt(plainText []byte, key []byte) string {
 	//指定加密算法，返回一个AES算法的Block接口对象
 	block, err := aes.NewCipher(key)
@@ -47,7 +47,7 @@ func AES_CBC_Encrypt(plainText []byte, key []byte) string {
 	return base64.StdEncoding.EncodeToString(cipherText)
 }
 
-//AES_CBC_Decrypt AEC解密（CBC模式）
+// AES_CBC_Decrypt AEC解密（CBC模式）
 func AES_CBC_Decrypt(data string, key []byte) []byte {
 	cipherText, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {

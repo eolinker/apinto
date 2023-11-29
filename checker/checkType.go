@@ -1,6 +1,6 @@
 package checker
 
-//CheckType Checker类型
+// CheckType Checker类型
 type CheckType int
 
 const (

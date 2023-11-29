@@ -1,12 +1,13 @@
 package static
 
 import (
-	"github.com/eolinker/apinto/discovery"
-	health_check_http "github.com/eolinker/apinto/health-check-http"
 	"regexp"
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/eolinker/apinto/discovery"
+	health_check_http "github.com/eolinker/apinto/health-check-http"
 )
 
 type HeathCheckHandler struct {

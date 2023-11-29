@@ -22,24 +22,19 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/eolinker/eosc/log"
 	"net"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
-)
 
-import (
 	gxnet "github.com/dubbogo/gost/net"
 	gxsync "github.com/dubbogo/gost/sync"
 	gxtime "github.com/dubbogo/gost/time"
-
+	"github.com/eolinker/eosc/log"
 	"github.com/gorilla/websocket"
-
 	perrors "github.com/pkg/errors"
-
 	uatomic "go.uber.org/atomic"
 )
 

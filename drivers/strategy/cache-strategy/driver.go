@@ -2,9 +2,11 @@ package cache_strategy
 
 import (
 	"fmt"
+
+	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/strategy"
-	"github.com/eolinker/eosc"
 )
 
 func checkConfig(conf *Config) error {

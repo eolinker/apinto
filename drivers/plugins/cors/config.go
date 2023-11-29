@@ -2,8 +2,9 @@ package cors
 
 import (
 	"errors"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"strconv"
+
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 var (

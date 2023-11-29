@@ -4,8 +4,9 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/eocontext"
+
+	"github.com/eolinker/apinto/resources"
 )
 
 var (
@@ -15,7 +16,6 @@ var (
 func init() {
 	actuator := newActuator()
 	actuatorSet = actuator
-
 }
 
 type ActuatorSet interface {
@@ -31,14 +31,12 @@ type tActuatorSet struct {
 }
 
 func (a *tActuatorSet) Destroy() {
-
 }
 
 func (a *tActuatorSet) Set(id string, limiting *LimitingHandler) {
 	// 调用来源有锁
 	a.all[id] = limiting
 	a.rebuild()
-
 }
 
 func (a *tActuatorSet) Del(id string) {
@@ -48,7 +46,6 @@ func (a *tActuatorSet) Del(id string) {
 }
 
 func (a *tActuatorSet) rebuild() {
-
 	handlers := make([]*LimitingHandler, 0, len(a.all))
 	for _, h := range a.all {
 		if !h.stop {
@@ -62,13 +59,11 @@ func (a *tActuatorSet) rebuild() {
 }
 func newActuator() *tActuatorSet {
 	return &tActuatorSet{
-
 		all: make(map[string]*LimitingHandler),
 	}
 }
 
 func (a *tActuatorSet) Strategy(ctx eocontext.EoContext, next eocontext.IChain, scalars *Scalars) error {
-
 	a.lock.RLock()
 	handlers := a.handlers
 	a.lock.RUnlock()
@@ -97,7 +92,6 @@ func (hs handlerListSort) Len() int {
 }
 
 func (hs handlerListSort) Less(i, j int) bool {
-
 	return hs[i].priority < hs[j].priority
 }
 

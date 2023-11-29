@@ -7,32 +7,32 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	
+
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 const dateHeader = "x-gateway-date"
 
-//buildToSign 构建待加密的签名所需字符串
+// buildToSign 构建待加密的签名所需字符串
 func buildToSign(ctx http_service.IHttpContext, encType string, signedHeaders []string) string {
 	toSign := strings.Builder{}
 	toSign.WriteString(encType + "\n")
 	dh := ctx.Request().Header().GetHeader(dateHeader)
 	toSign.WriteString(dh + "\n")
-	
+
 	cr := buildHexCanonicalRequest(ctx, signedHeaders)
 	toSign.WriteString(strings.ToLower(cr))
 	return toSign.String()
 }
 
-//buildHexCanonicalRequest 构建规范消息头
+// buildHexCanonicalRequest 构建规范消息头
 func buildHexCanonicalRequest(ctx http_service.IHttpContext, signedHeaders []string) string {
 	cr := strings.Builder{}
-	
+
 	cr.WriteString(strings.ToUpper(ctx.Request().Method()) + "\n")
 	cr.WriteString(buildPath(ctx.Request().URI().Path()) + "\n")
 	cr.WriteString(ctx.Request().URI().RawQuery() + "\n")
-	
+
 	for _, header := range signedHeaders {
 		if strings.ToLower(header) == "host" {
 			cr.WriteString(buildHeaders(header, ctx.Request().Header().Host()) + "\n")
@@ -45,7 +45,7 @@ func buildHexCanonicalRequest(ctx http_service.IHttpContext, signedHeaders []str
 	cr.WriteString(strings.Join(signedHeaders, ";") + "\n")
 	body, _ := ctx.Request().Body().RawBody()
 	cr.WriteString(hexEncode(body))
-	
+
 	return hexEncode([]byte(cr.String()))
 }
 
@@ -72,7 +72,7 @@ func hMaxBySHA256(secretKey, toSign string) string {
 }
 
 func parseAuthorization(token string) (encType string, accessKey string, signHeaders []string, signature string, err error) {
-	
+
 	infos := strings.Split(token, ",")
 	if len(infos) < 3 {
 		err = errors.New("invalid authorization")
@@ -83,9 +83,9 @@ func parseAuthorization(token string) (encType string, accessKey string, signHea
 		return
 	}
 	signHeaders = parseSignHeaders(infos[1])
-	
+
 	signature = parseSignature(infos[2])
-	
+
 	return
 }
 

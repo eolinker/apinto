@@ -10,7 +10,7 @@
 
 Apinto网关基于GO语言模块化开发，5分钟极速部署，配置简单、易于维护，支持集群与动态扩容，并且提供几十款网关插件和实用的企业级插件，让用户开箱即用。
 
-## Demo 
+## Demo
 体验地址：[demo-dashboard.apinto.com](https://demo-dashboard.apinto.com/)
 
 提供了三个试用账号，避免被使用者挤下来
@@ -32,15 +32,16 @@ Apinto网关基于GO语言模块化开发，5分钟极速部署，配置简单�
 Apinto Dashboard github地址： https://github.com/eolinker/apinto-dashboard
 
 ## Apinto功能架构图：
-<img width="1664" alt="img_v2_22590d84-f8a4-4d3a-9c67-b481ecfdf1fg" src="https://user-images.githubusercontent.com/18322454/228448223-515a7feb-0c65-496e-85bc-1581b7a89cfe.png">
+<img width="1664" alt="img_v2_22590d84-f8a4-4d3a-9c67-b481ecfdf1fg"
+		 src="https://user-images.githubusercontent.com/18322454/228448223-515a7feb-0c65-496e-85bc-1581b7a89cfe.png">
 
 ## Apinto亮点特性
- Apinto API 网关以出色的用户体验和适用于各种企业级业务场景的控制台为特色。控制台具有四大亮点功能：集群管理、应用管理、精细服务治理和企业插件，能够满足企业对 API 网关更高级场景化需求的要求。 
+Apinto API 网关以出色的用户体验和适用于各种企业级业务场景的控制台为特色。控制台具有四大亮点功能：集群管理、应用管理、精细服务治理和企业插件，能够满足企业对 API 网关更高级场景化需求的要求。
 ### 集群管理
- Apinto 提供集群管理功能，可以一次性配置业务并将其发布到相应的集群。这解决了多集群维护多套业务配置的问题，显著提高了运维效率，并降低了繁杂配置时的事故率。
+Apinto 提供集群管理功能，可以一次性配置业务并将其发布到相应的集群。这解决了多集群维护多套业务配置的问题，显著提高了运维效率，并降低了繁杂配置时的事故率。
 ![](http://data.eolinker.com/course/Cdkvdtkdcc50a65d3e5b068bae658c343d7b6a188730218.png)
 ### 应用管理
- Apinto 网关推出应用管理概念，统一管理应用及其生命周期。作为业务通讯的发起者，应用贯穿整个调用链。Apinto 网关对应用请求的流量进行鉴权认证和服务治理，并对请求的流量进行监控告警，统计应用调用情况。
+Apinto 网关推出应用管理概念，统一管理应用及其生命周期。作为业务通讯的发起者，应用贯穿整个调用链。Apinto 网关对应用请求的流量进行鉴权认证和服务治理，并对请求的流量进行监控告警，统计应用调用情况。
 ### 精细化服务治理
 Apinto提出精细化流量管理方案，即所有调用方的请求流量都经过网关，通过对应用、API、上游服务、请求方式、IP、请求路径、应用自定义标签等组合条件筛选请求流量，执行限量、访问、熔断、灰度、缓存等策略规则，帮助企业快速、灵活地制定策略，以满足不同业务场景的需求，并全方位治理好服务。
 ![](http://data.eolinker.com/course/zqIaYaa0ac1273511504a4bad96e0e78de56e8e12850677.png)
@@ -147,6 +148,7 @@ apinto start
 
 - **官网**：[https://www.apinto.com](https://www.apinto.com/)
 - **论坛**：[https://community.apinto.com](https://community.apinto.com/)
-- **微信群**：<img src="http://data.eolinker.com/course/2HdT4zd10b670318462bec90f0f390bef896c21cad66172.png" style="width:150px" />
+- **微信群**：<img src="http://data.eolinker.com/course/2HdT4zd10b670318462bec90f0f390bef896c21cad66172.png"
+									style="width:150px"/>
 
 

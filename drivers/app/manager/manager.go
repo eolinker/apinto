@@ -4,12 +4,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/eolinker/apinto/application"
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/application"
 )
 
 // 管理器：可以通过driver快速获取驱动列表
-
 var _ IManager = (*Manager)(nil)
 
 type IManager interface {

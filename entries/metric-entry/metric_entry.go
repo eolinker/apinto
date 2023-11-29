@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	http_entry "github.com/eolinker/apinto/entries/http-entry"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
+
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
 )
 
 type metricEntry struct {

@@ -4,9 +4,10 @@ import (
 	"sort"
 	"strings"
 
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
+
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/router"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 type RuleType = string

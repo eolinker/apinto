@@ -7,17 +7,18 @@ import (
 type LabelReader interface {
 	GetLabel(name string) string
 }
+
 type metricsReader interface {
 	key() string
 	reader(labels LabelReader) string
 }
+
 type Metrics interface {
 	Metrics(ctx LabelReader) string
 	Key() string
 }
 
 func Parse(metrics []string) Metrics {
-
 	ms := make(metricsList, 0, len(metrics))
 
 	for _, k := range metrics {

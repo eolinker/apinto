@@ -52,12 +52,12 @@ func (r *Response) Finish() error {
 	r.proxyStatusCode = 0
 	return nil
 }
+
 func (r *Response) reset(resp *fasthttp.Response) {
 	r.Response = resp
 	r.ResponseHeader.reset(&resp.Header)
 	r.responseError = nil
 	r.proxyStatusCode = 0
-
 }
 
 func (r *Response) BodyLen() int {

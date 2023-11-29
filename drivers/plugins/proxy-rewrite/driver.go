@@ -2,10 +2,12 @@ package proxy_rewrite
 
 import (
 	"fmt"
-	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/eosc"
 	"reflect"
 	"regexp"
+
+	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 type Driver struct {

@@ -5,10 +5,11 @@ import (
 
 	"github.com/eolinker/apinto/drivers"
 
-	"github.com/eolinker/apinto/application"
-	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+
+	"github.com/eolinker/apinto/application"
+	"github.com/eolinker/apinto/application/auth"
 )
 
 type app struct {

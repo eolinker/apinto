@@ -4,13 +4,14 @@ import (
 	"sync"
 	"sync/atomic"
 
-	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
-	http_context "github.com/eolinker/apinto/node/http-context"
-	"github.com/eolinker/apinto/router"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
 	"github.com/valyala/fasthttp"
+
+	http_complete "github.com/eolinker/apinto/drivers/router/http-router/http-complete"
+	http_context "github.com/eolinker/apinto/node/http-context"
+	"github.com/eolinker/apinto/router"
 )
 
 var _ IManger = (*Manager)(nil)

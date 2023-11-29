@@ -21,23 +21,18 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/eolinker/eosc/log"
 	"io"
 	"net"
 	"runtime"
 	"sync"
 	"time"
-)
 
-import (
 	gxbytes "github.com/dubbogo/gost/bytes"
 	gxcontext "github.com/dubbogo/gost/context"
 	gxtime "github.com/dubbogo/gost/time"
-
+	"github.com/eolinker/eosc/log"
 	"github.com/gorilla/websocket"
-
 	perrors "github.com/pkg/errors"
-
 	uatomic "go.uber.org/atomic"
 )
 
@@ -247,7 +242,6 @@ func (s *session) IsClosed() bool {
 	select {
 	case <-s.done:
 		return true
-
 	default:
 		return false
 	}
@@ -265,7 +259,6 @@ func (s *session) SetMaxMsgLen(length int) {
 func (s *session) SetName(name string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-
 	s.name = name
 }
 

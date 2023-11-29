@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/brianvoe/gofakeit/v6"
 	"math/rand"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/brianvoe/gofakeit/v6"
 
 	"github.com/robertkrimen/otto"
 )

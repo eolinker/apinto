@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eolinker/apinto/strategy"
-
 	"github.com/eolinker/eosc/eocontext"
+
+	"github.com/eolinker/apinto/strategy"
 )
 
 var maxID = 1000

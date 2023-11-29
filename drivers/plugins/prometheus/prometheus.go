@@ -1,17 +1,19 @@
 package prometheus
 
 import (
+	"reflect"
+
 	metric_entry "github.com/eolinker/apinto/entries/metric-entry"
 	"github.com/eolinker/apinto/output"
-	"reflect"
 
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 var _ eocontext.IFilter = (*prometheus)(nil)

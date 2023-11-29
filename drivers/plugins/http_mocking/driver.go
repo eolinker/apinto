@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/eolinker/apinto/drivers"
-	grpc_descriptor "github.com/eolinker/apinto/grpc-descriptor"
+	"strings"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/log"
-	"strings"
+
+	"github.com/eolinker/apinto/drivers"
+	grpc_descriptor "github.com/eolinker/apinto/grpc-descriptor"
 )
 
 func check(v interface{}) (*Config, error) {

@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/eolinker/eosc/log"
 	"os"
+
+	"github.com/eolinker/eosc/log"
 )
 
 func InitCLILog() {

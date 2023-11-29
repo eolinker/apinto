@@ -1,10 +1,11 @@
 package http_to_grpc
 
 import (
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 type toGRPC struct {

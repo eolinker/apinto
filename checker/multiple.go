@@ -1,6 +1,8 @@
 package checker
 
-import "sort"
+import (
+	"sort"
+)
 
 type Handler interface {
 	Check(v string, has bool) bool

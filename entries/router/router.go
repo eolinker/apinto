@@ -1,6 +1,8 @@
 package router
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	DefaultRetry   = 0

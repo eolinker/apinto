@@ -3,14 +3,16 @@ package influxdbv2
 import (
 	"context"
 	"fmt"
+
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	monitor_entry "github.com/eolinker/apinto/entries/monitor-entry"
 
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 var _ eosc.IWorker = (*output)(nil)

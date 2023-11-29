@@ -1,6 +1,8 @@
 package cache_strategy
 
-import "github.com/eolinker/apinto/strategy"
+import (
+	"github.com/eolinker/apinto/strategy"
+)
 
 type Config struct {
 	Name        string                `json:"name" skip:"skip"`

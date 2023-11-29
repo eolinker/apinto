@@ -1,10 +1,12 @@
 package redis
 
 import (
-	"github.com/eolinker/apinto/drivers"
+	"reflect"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/utils/schema"
-	"reflect"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 var (

@@ -7,8 +7,9 @@ import (
 
 	"github.com/eolinker/apinto/drivers"
 
-	"github.com/eolinker/apinto/output"
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/output"
 )
 
 var _ output.IEntryOutput = (*Output)(nil)

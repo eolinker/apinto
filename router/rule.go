@@ -68,10 +68,12 @@ type MatcherChecker interface {
 	MatchCheck(request interface{}) bool
 	Weight() int
 }
+
 type MatcherCheckerItem interface {
 	checker.Checker
 	MatcherChecker
 }
+
 type RuleCheckers []MatcherCheckerItem
 
 func (rs RuleCheckers) Weight() int {

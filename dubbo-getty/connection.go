@@ -21,18 +21,16 @@ import (
 	"compress/flate"
 	"crypto/tls"
 	"fmt"
-	"github.com/eolinker/eosc/log"
-	"github.com/soheilhy/cmux"
 	"io"
 	"net"
 	"sync"
 	"time"
-)
 
-import (
+	"github.com/eolinker/eosc/log"
 	"github.com/golang/snappy"
 	"github.com/gorilla/websocket"
 	perrors "github.com/pkg/errors"
+	"github.com/soheilhy/cmux"
 	uatomic "go.uber.org/atomic"
 )
 
@@ -164,9 +162,9 @@ func (c *gettyConn) SetWriteTimeout(wTimeout time.Duration) {
 	}
 }
 
-/////////////////////////////////////////
+// ///////////////////////////////////////
 // getty tcp connection
-/////////////////////////////////////////
+// ///////////////////////////////////////
 
 type gettyTCPConn struct {
 	gettyConn
@@ -600,7 +598,6 @@ func (w *gettyWSConn) updateWriteDeadline() error {
 			w.wLastDeadline.Store(currentTime)
 		}
 	}
-
 	return nil
 }
 

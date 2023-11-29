@@ -2,9 +2,11 @@ package proxy_rewrite
 
 import (
 	"fmt"
-	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/eosc/eocontext"
 	"regexp"
+
+	"github.com/eolinker/eosc/eocontext"
+
+	"github.com/eolinker/apinto/drivers"
 
 	"github.com/eolinker/eosc"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"

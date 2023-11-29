@@ -1,9 +1,10 @@
 package limiting_strategy
 
 import (
+	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/strategy"
-	"github.com/eolinker/eosc"
 )
 
 func Check(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {

@@ -1,10 +1,11 @@
 package grey
 
 import (
-	"github.com/eolinker/apinto/drivers"
-	grey_strategy "github.com/eolinker/apinto/drivers/strategy/grey-strategy"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
+
+	"github.com/eolinker/apinto/drivers"
+	grey_strategy "github.com/eolinker/apinto/drivers/strategy/grey-strategy"
 )
 
 type Strategy struct {

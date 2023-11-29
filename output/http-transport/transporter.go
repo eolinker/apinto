@@ -18,7 +18,6 @@ func (t *Transporter) Write(data []byte) error {
 }
 
 func CreateTransporter(conf *Config) (formatter.ITransport, error) {
-
 	httpWriter := newHttpWriter()
 	transport := &Transporter{
 		writer: httpWriter,

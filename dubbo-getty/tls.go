@@ -21,11 +21,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/eolinker/eosc/log"
 	"os"
-)
 
-import (
+	"github.com/eolinker/eosc/log"
 	perrors "github.com/pkg/errors"
 )
 

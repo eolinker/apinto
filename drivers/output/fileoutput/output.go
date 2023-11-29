@@ -2,14 +2,17 @@ package fileoutput
 
 import (
 	"fmt"
-	scope_manager "github.com/eolinker/apinto/scope-manager"
-	"github.com/eolinker/eosc/router"
 	"net/http"
 	"reflect"
 
+	"github.com/eolinker/eosc/router"
+
+	scope_manager "github.com/eolinker/apinto/scope-manager"
+
+	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/output"
-	"github.com/eolinker/eosc"
 )
 
 var _ output.IEntryOutput = (*FileOutput)(nil)

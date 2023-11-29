@@ -1,11 +1,12 @@
 package counter
 
 import (
+	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/drivers/counter"
 	"github.com/eolinker/apinto/drivers/plugins/counter/matcher"
 	"github.com/eolinker/apinto/drivers/plugins/counter/separator"
-	"github.com/eolinker/eosc"
 )
 
 type Config struct {

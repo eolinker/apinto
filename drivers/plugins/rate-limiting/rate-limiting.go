@@ -3,11 +3,13 @@ package rate_limiting
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/eolinker/apinto/drivers"
+	"strconv"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"strconv"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 const (

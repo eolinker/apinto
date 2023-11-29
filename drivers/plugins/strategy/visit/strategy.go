@@ -1,10 +1,11 @@
 package visit
 
 import (
-	"github.com/eolinker/apinto/drivers"
-	visit_strategy "github.com/eolinker/apinto/drivers/strategy/visit-strategy"
 	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
+
+	"github.com/eolinker/apinto/drivers"
+	visit_strategy "github.com/eolinker/apinto/drivers/strategy/visit-strategy"
 )
 
 type Strategy struct {

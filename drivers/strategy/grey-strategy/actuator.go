@@ -5,9 +5,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+
+	"github.com/eolinker/apinto/strategy"
 )
 
 var (

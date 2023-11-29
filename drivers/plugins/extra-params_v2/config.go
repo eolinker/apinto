@@ -7,8 +7,9 @@ import (
 
 	"github.com/eolinker/eosc"
 
-	dynamic_params "github.com/eolinker/apinto/drivers/plugins/extra-params_v2/dynamic-params"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+
+	dynamic_params "github.com/eolinker/apinto/drivers/plugins/extra-params_v2/dynamic-params"
 )
 
 type Config struct {

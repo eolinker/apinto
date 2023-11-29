@@ -19,23 +19,18 @@ package getty
 
 import (
 	"crypto/tls"
-	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo"
-	"github.com/eolinker/eosc/log"
 	"net"
 	"reflect"
-)
 
-import (
-	"github.com/eolinker/apinto/dubbo-getty"
-
-	gxsync "github.com/dubbogo/gost/sync"
-)
-
-import (
 	"dubbo.apache.org/dubbo-go/v3/config"
 	"dubbo.apache.org/dubbo-go/v3/protocol"
+	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo"
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
 	"dubbo.apache.org/dubbo-go/v3/remoting"
+	gxsync "github.com/dubbogo/gost/sync"
+	"github.com/eolinker/eosc/log"
+
+	"github.com/eolinker/apinto/dubbo-getty"
 )
 
 type ServerOption func(*Server)

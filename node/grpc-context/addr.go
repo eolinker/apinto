@@ -1,6 +1,8 @@
 package grpc_context
 
-import "net"
+import (
+	"net"
+)
 
 var zeroTCPAddr = &net.TCPAddr{
 	IP: net.IPv4zero,

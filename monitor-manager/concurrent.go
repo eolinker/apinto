@@ -1,6 +1,8 @@
 package monitor_manager
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+)
 
 type concurrency struct {
 	count int32

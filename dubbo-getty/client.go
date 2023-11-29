@@ -22,23 +22,19 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"github.com/eolinker/eosc/log"
 	"net"
 	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
-)
 
-import (
 	"github.com/dubbogo/gost/bytes"
 	"github.com/dubbogo/gost/net"
 	gxsync "github.com/dubbogo/gost/sync"
 	gxtime "github.com/dubbogo/gost/time"
-
+	"github.com/eolinker/eosc/log"
 	"github.com/gorilla/websocket"
-
 	perrors "github.com/pkg/errors"
 )
 

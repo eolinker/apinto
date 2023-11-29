@@ -2,11 +2,12 @@ package discovery
 
 import (
 	"errors"
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/eocontext"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/eocontext"
 )
 
 var (

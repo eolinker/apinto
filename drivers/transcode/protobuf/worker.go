@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/eolinker/eosc"
+	"github.com/fullstorydev/grpcurl"
 	"github.com/jhump/protoreflect/desc/protoparse"
 
 	"github.com/eolinker/apinto/drivers"
 	grpc_descriptor "github.com/eolinker/apinto/grpc-descriptor"
-	"github.com/eolinker/eosc"
-	"github.com/fullstorydev/grpcurl"
 )
 
 type Worker struct {

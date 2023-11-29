@@ -8,12 +8,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"google.golang.org/grpc/credentials/insecure"
-
-	"google.golang.org/grpc/credentials"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -78,7 +76,7 @@ func (cc *ClientPool) getConn() (*grpc.ClientConn, error) {
 		return conn, nil
 	}
 
-	//gc old conn
+	// gc old conn
 	if conn != nil {
 		conn.Close()
 		atomic.AddInt64(&cc.connCont, -1)
@@ -87,7 +85,7 @@ func (cc *ClientPool) getConn() (*grpc.ClientConn, error) {
 	cc.locker.Lock()
 	defer cc.locker.Unlock()
 
-	//double check, Prevent have been initialized
+	// double check, Prevent have been initialized
 	if conn != nil && cc.checkState(conn) == nil {
 		return conn, nil
 	}
@@ -121,7 +119,7 @@ func (cc *ClientPool) connect() (*grpc.ClientConn, error) {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 	opts = append(opts,
-		//grpc.WithBlock(),
+		// grpc.WithBlock(),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:    cc.option.KeepAlive,
 			Timeout: cc.option.KeepAliveTimeout,

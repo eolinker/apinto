@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/eolinker/eosc"
-
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 

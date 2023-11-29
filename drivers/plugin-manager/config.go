@@ -2,9 +2,10 @@ package plugin_manager
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/variable"
-	"reflect"
 )
 
 const (
@@ -17,7 +18,7 @@ type PluginWorkerConfig struct {
 	Plugins []*PluginConfig `json:"plugins" yaml:"plugins"`
 }
 
-//PluginConfig 全局插件配置
+// PluginConfig 全局插件配置
 type PluginConfig struct {
 	Name       string                 `json:"name" yaml:"name" `
 	ID         string                 `json:"id" yaml:"id"`

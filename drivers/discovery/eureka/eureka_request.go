@@ -2,18 +2,18 @@ package eureka
 
 const eurekaStatusUp = "UP"
 
-//Application application
+// Application application
 type Application struct {
 	Name      string         `xml:"name"`
 	Instances []InstanceInfo `xml:"instance" json:"instance"`
 }
 
-//Instance instance
+// Instance instance
 type Instance struct {
 	Instance *InstanceInfo `xml:"instance" json:"instance"`
 }
 
-//InstanceInfo instanceInfo
+// InstanceInfo instanceInfo
 type InstanceInfo struct {
 	HostName                      string          `xml:"hostName" json:"hostName"`
 	HomePageURL                   string          `xml:"homePageUrl,omitempty" json:"homePageUrl,omitempty"`
@@ -39,20 +39,20 @@ type InstanceInfo struct {
 	AppGroupName                  string          `xml:"appGroupName,omitempty" json:"appGroupName,omitempty"`
 }
 
-//Port port
+// Port port
 type Port struct {
 	Port    int  `xml:",chardata" json:"$"`
 	Enabled bool `xml:"enabled,attr" json:"@enabled"`
 }
 
-//DataCenterInfo dataCenterInfo
+// DataCenterInfo dataCenterInfo
 type DataCenterInfo struct {
 	Name     string              `xml:"name" json:"name"`
 	Class    string              `xml:"class,attr" json:"@class"`
 	Metadata *DataCenterMetadata `xml:"metadata,omitempty" json:"metadata,omitempty"`
 }
 
-//DataCenterMetadata dataCenterMetaData
+// DataCenterMetadata dataCenterMetaData
 type DataCenterMetadata struct {
 	AmiLaunchIndex   string `xml:"ami-launch-index,omitempty" json:"ami-launch-index,omitempty"`
 	LocalHostname    string `xml:"local-hostname,omitempty" json:"local-hostname,omitempty"`
@@ -67,7 +67,7 @@ type DataCenterMetadata struct {
 	InstanceType     string `xml:"instance-type,omitempty" json:"instance-type,omitempty"`
 }
 
-//LeaseInfo leaseInfo
+// LeaseInfo leaseInfo
 type LeaseInfo struct {
 	EvictionDurationInSecs uint `xml:"evictionDurationInSecs,omitempty" json:"evictionDurationInSecs,omitempty"`
 	RenewalIntervalInSecs  int  `xml:"renewalIntervalInSecs,omitempty" json:"renewalIntervalInSecs,omitempty"`

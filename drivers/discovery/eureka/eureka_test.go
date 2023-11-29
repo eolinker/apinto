@@ -1,9 +1,10 @@
 package eureka
 
 import (
-	"github.com/eolinker/apinto/drivers"
 	"sync"
 	"testing"
+
+	"github.com/eolinker/apinto/drivers"
 
 	"github.com/eolinker/apinto/discovery"
 )

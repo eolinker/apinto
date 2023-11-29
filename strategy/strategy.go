@@ -1,6 +1,8 @@
 package strategy
 
-import eoscContext "github.com/eolinker/eosc/eocontext"
+import (
+	eoscContext "github.com/eolinker/eosc/eocontext"
+)
 
 type IStrategyHandler interface {
 	Strategy(ctx eoscContext.EoContext, next eoscContext.IChain) error

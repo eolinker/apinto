@@ -2,8 +2,9 @@ package checker
 
 import (
 	"fmt"
-	"github.com/eolinker/eosc/log"
 	"strings"
+
+	"github.com/eolinker/eosc/log"
 )
 
 //PrefixChecker 实现了Checker接口，能进行前缀匹配

@@ -74,7 +74,6 @@ func (ur *URIRequest) RawQuery() string {
 
 func (ur *URIRequest) SetPath(s string) {
 	ur.uri.SetPath(s)
-
 }
 
 func (ur *URIRequest) SetHost(host string) {

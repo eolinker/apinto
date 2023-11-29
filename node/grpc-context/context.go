@@ -7,19 +7,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-
-	"google.golang.org/grpc/metadata"
-
-	"google.golang.org/grpc/peer"
-
-	"github.com/eolinker/eosc/utils/config"
-
-	"google.golang.org/grpc"
-
 	"github.com/eolinker/eosc/eocontext"
-
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
+	"github.com/eolinker/eosc/utils/config"
+	"github.com/google/uuid"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 )
 
 var _ grpc_context.IGrpcContext = (*Context)(nil)
@@ -205,7 +199,6 @@ func (c *Context) SetResponse(response grpc_context.IResponse) {
 }
 
 func (c *Context) Invoke(node eocontext.INode, timeout time.Duration) error {
-
 	err := c.doInvoke(node.Addr(), timeout)
 	if err != nil {
 		node.Down()
@@ -213,6 +206,7 @@ func (c *Context) Invoke(node eocontext.INode, timeout time.Duration) error {
 	}
 	return nil
 }
+
 func (c *Context) doInvoke(address string, timeout time.Duration) error {
 	passHost, targetHost := c.GetUpstreamHostHandler().PassHost()
 	switch passHost {
@@ -274,6 +268,6 @@ func (c *Context) IsCloneable() bool {
 }
 
 func (c *Context) Clone() (eocontext.EoContext, error) {
-	//TODO
+	// TODO
 	return nil, fmt.Errorf("%s %w", "GrpcContext", eocontext.ErrEoCtxUnCloneable)
 }

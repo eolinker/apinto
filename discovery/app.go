@@ -1,9 +1,10 @@
 package discovery
 
 import (
-	"github.com/eolinker/eosc/eocontext"
 	"sync"
 	"sync/atomic"
+
+	"github.com/eolinker/eosc/eocontext"
 )
 
 var (

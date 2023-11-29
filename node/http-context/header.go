@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-
 	"github.com/valyala/fasthttp"
 )
 
@@ -114,7 +113,7 @@ func (r *ResponseHeader) reset(header *fasthttp.ResponseHeader) {
 	r.cache = http.Header{}
 	r.actions = nil
 	r.afterProxy = false
-	//r.refresh()
+	// r.refresh()
 }
 func (r *ResponseHeader) refresh() {
 	tmp := make(http.Header)

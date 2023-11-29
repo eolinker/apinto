@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/eolinker/apinto/utils/version"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
 	"github.com/eolinker/apinto/utils"
-	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/apinto/utils/version"
 )
 
 type IReader interface {
@@ -99,7 +99,7 @@ var (
 			return port, true
 		}),
 		"uri": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
-			//不带请求参数的uri
+			// 不带请求参数的uri
 			return ctx.Request().URI().Path(), true
 		}),
 		"url": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
@@ -180,12 +180,12 @@ var (
 			return ctx.Response().StatusCode(), true
 		}),
 		"time_iso8601": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
-			//带毫秒的ISO-8601时间格式
-			//return time.Now().Format("2006-01-02T15:04:05.000Z07:00"), true
+			// 带毫秒的ISO-8601时间格式
+			// return time.Now().Format("2006-01-02T15:04:05.000Z07:00"), true
 			return ctx.AcceptTime().Format("2006-01-02T15:04:05.000Z07:00"), true
 		}),
 		"time_local": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
-			//return time.Now().Format("2006-01-02 15:04:05"), true
+			// return time.Now().Format("2006-01-02 15:04:05"), true
 			return ctx.AcceptTime().Format("2006-01-02 15:04:05"), true
 		}),
 		"timestamp": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
@@ -211,7 +211,7 @@ var (
 			return ctx.Request().URI().Host(), true
 		}),
 		"error": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
-			//TODO 暂时忽略
+			// TODO 暂时忽略
 			return "", true
 		}),
 

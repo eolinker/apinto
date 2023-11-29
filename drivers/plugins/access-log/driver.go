@@ -2,6 +2,7 @@ package access_log
 
 import (
 	"fmt"
+
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/apinto/drivers"

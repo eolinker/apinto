@@ -13,6 +13,7 @@ import (
 var (
 	localCache ICache = (*cacheLocal)(nil)
 )
+
 var (
 	once       sync.Once
 	LocalCache func() ICache
@@ -20,7 +21,6 @@ var (
 
 func init() {
 	LocalCache = func() ICache {
-
 		once.Do(func() {
 			localCache = newCacher()
 			LocalCache = func() ICache {
@@ -29,16 +29,15 @@ func init() {
 		})
 		return localCache
 	}
-
 }
 
 type cacheLocal struct {
-	txLock sync.Mutex
-
+	txLock   sync.Mutex
 	keyLock  sync.Mutex
 	keyLocks map[string]*sync.Mutex
 	client   *freecache.Cache
 }
+
 type cacheLocalTX struct {
 	*cacheLocal
 }
@@ -46,6 +45,7 @@ type cacheLocalTX struct {
 func (n *cacheLocalTX) Tx() TX {
 	return n
 }
+
 func (n *cacheLocal) Tx() TX {
 	n.txLock.Lock()
 	return &cacheLocalTX{cacheLocal: n}
@@ -62,13 +62,11 @@ func (n *cacheLocal) Close() error {
 }
 
 func (n *cacheLocal) Set(ctx context.Context, key string, value []byte, expiration time.Duration) StatusResult {
-
 	err := n.client.Set([]byte(key), value, int(expiration.Seconds()))
 	return NewStatusResult(err)
 }
 
 func (n *cacheLocal) SetNX(ctx context.Context, key string, value []byte, expiration time.Duration) BoolResult {
-
 	old, err := n.client.GetOrSet([]byte(key), value, int(expiration.Seconds()))
 	if err != nil {
 		return NewBoolResult(false, err)
@@ -81,7 +79,6 @@ func (n *cacheLocal) DecrBy(ctx context.Context, key string, decrement int64, ex
 }
 
 func (n *cacheLocal) IncrBy(ctx context.Context, key string, incr int64, expiration time.Duration) IntResult {
-
 	n.keyLock.Lock()
 	lock, has := n.keyLocks[key]
 	if !has {
@@ -123,6 +120,7 @@ func (n *cacheLocal) IncrBy(ctx context.Context, key string, incr int64, expirat
 
 	return NewIntResult(value, nil)
 }
+
 func ToInt(b []byte) int64 {
 	v, err := strconv.ParseInt(string(b), 10, 64)
 	if err != nil {
@@ -130,17 +128,17 @@ func ToInt(b []byte) int64 {
 	}
 	return v
 }
-func ToBytes(v int64) []byte {
 
+func ToBytes(v int64) []byte {
 	return []byte(strconv.FormatInt(v, 10))
 }
+
 func (n *cacheLocal) Get(ctx context.Context, key string) StringResult {
 	data, err := n.client.Get([]byte(key))
 	if err != nil {
 		return NewStringResult("", err)
 	}
 	return NewStringResultBytes(data, err)
-
 }
 
 func (n *cacheLocal) GetDel(ctx context.Context, key string) StringResult {

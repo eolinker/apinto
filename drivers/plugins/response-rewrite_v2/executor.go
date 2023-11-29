@@ -1,10 +1,11 @@
 package response_rewrite_v2
 
 import (
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 var _ eocontext.IFilter = (*executor)(nil)

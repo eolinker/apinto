@@ -7,10 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
+
+	"github.com/eolinker/apinto/resources"
 )
 
 var (

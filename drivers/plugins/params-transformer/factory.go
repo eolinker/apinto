@@ -1,9 +1,10 @@
 package params_transformer
 
 import (
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/log"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 const (

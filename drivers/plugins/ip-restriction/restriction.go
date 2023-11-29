@@ -2,10 +2,12 @@ package ip_restriction
 
 import (
 	"encoding/json"
-	"github.com/eolinker/apinto/drivers"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+
+	"github.com/eolinker/apinto/drivers"
 )
 
 var _ http_service.HttpFilter = (*IPHandler)(nil)

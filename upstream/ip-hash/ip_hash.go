@@ -5,8 +5,9 @@ import (
 	"hash/crc32"
 	"time"
 
-	"github.com/eolinker/apinto/upstream/balance"
 	eoscContext "github.com/eolinker/eosc/eocontext"
+
+	"github.com/eolinker/apinto/upstream/balance"
 )
 
 const (
@@ -57,7 +58,6 @@ func (r *ipHash) Select(ctx eoscContext.EoContext) (eoscContext.INode, int, erro
 
 // Next 由现有节点根据ip_hash决策出一个可用节点
 func (r *ipHash) Next(org eoscContext.EoContext) (eoscContext.INode, int, error) {
-
 	readIp := org.RealIP()
 	nodes := r.Nodes()
 	size := len(nodes)

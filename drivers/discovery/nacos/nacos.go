@@ -8,8 +8,9 @@ import (
 
 	"github.com/eolinker/apinto/discovery"
 
-	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc/utils/config"
+
+	"github.com/eolinker/apinto/drivers"
 
 	"github.com/eolinker/eosc/log"
 

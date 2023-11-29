@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
+	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/router"
-	"github.com/eolinker/eosc/log"
 )
 
 type readerHandler func(port int, request dubbo2_context.IRequestReader) (string, bool)

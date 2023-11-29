@@ -3,9 +3,8 @@ package http_context
 import (
 	"fmt"
 
-	"github.com/eolinker/eosc/log"
-
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/eosc/log"
 	"github.com/valyala/fasthttp"
 )
 
@@ -15,18 +14,19 @@ type ProxyRequest struct {
 	RequestReader
 }
 
-//func (r *ProxyRequest) clone() *ProxyRequest {
+// func (r *ProxyRequest) clone() *ProxyRequest {
 //	return NewProxyRequest(r.Request(), r.remoteAddr)
-//}
+// }
 
 func (r *ProxyRequest) Finish() error {
-	//fasthttp.ReleaseRequest(r.req)
+	// fasthttp.ReleaseRequest(r.req)
 	err := r.RequestReader.Finish()
 	if err != nil {
 		log.Warn(err)
 	}
 	return nil
 }
+
 func (r *ProxyRequest) Header() http_service.IHeaderWriter {
 	return &r.headers
 }
@@ -44,7 +44,6 @@ var (
 )
 
 func (r *ProxyRequest) reset(request *fasthttp.Request, remoteAddr string) {
-
 	r.RequestReader.reset(request, remoteAddr)
 
 	forwardedFor := r.req.Header.PeekBytes(xforwardedforKey)
@@ -55,16 +54,15 @@ func (r *ProxyRequest) reset(request *fasthttp.Request, remoteAddr string) {
 	}
 
 	r.req.Header.Set("x-real-ip", r.realIP)
-
 }
 
-//func NewProxyRequest(request *fasthttp.Request, remoteAddr string) *ProxyRequest {
+// func NewProxyRequest(request *fasthttp.Request, remoteAddr string) *ProxyRequest {
 //	proxyRequest := fasthttp.AcquireRequest()
 //	request.CopyTo(proxyRequest)
 //	return &ProxyRequest{
 //		RequestReader: NewRequestReader(proxyRequest, remoteAddr),
 //	}
-//}
+// }
 
 func (r *ProxyRequest) SetMethod(s string) {
 	r.Request().Header.SetMethod(s)

@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/eolinker/apinto/resources"
 	"github.com/go-redis/redis/v8"
+
+	"github.com/eolinker/apinto/resources"
 )
 
 type statusResult struct {

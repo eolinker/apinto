@@ -1,8 +1,9 @@
 package http_router
 
 import (
-	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/eosc"
+
+	"github.com/eolinker/apinto/plugin"
 )
 
 type Config struct {

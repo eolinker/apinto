@@ -8,12 +8,13 @@ import (
 
 	session_keep "github.com/eolinker/apinto/upstream/session-keep"
 
-	"github.com/eolinker/apinto/discovery"
-	"github.com/eolinker/apinto/upstream/balance"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
+
+	"github.com/eolinker/apinto/discovery"
+	"github.com/eolinker/apinto/upstream/balance"
 )
 
 var (

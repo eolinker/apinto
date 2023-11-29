@@ -27,7 +27,6 @@ func NewSession(base eocontext.BalanceHandler) eocontext.BalanceHandler {
 }
 
 func (s *Session) Select(ctx eocontext.EoContext) (eocontext.INode, int, error) {
-
 	httpContext, err := http_context.Assert(ctx)
 	if err != nil {
 		return s.BalanceHandler.Select(ctx)

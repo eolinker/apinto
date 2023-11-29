@@ -8,12 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jhump/protoreflect/dynamic"
-
-	"github.com/jhump/protoreflect/desc"
-
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
 	"github.com/eolinker/eosc/log"
+	"github.com/jhump/protoreflect/desc"
+	"github.com/jhump/protoreflect/dynamic"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"

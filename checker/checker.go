@@ -10,7 +10,7 @@ var (
 	errorUnknownExpression = errors.New("unknown expression")
 )
 
-//Checker 路由指标检查器接口
+// Checker 路由指标检查器接口
 type Checker interface {
 	Handler
 	Key() string
@@ -18,7 +18,7 @@ type Checker interface {
 	Value() string
 }
 
-//Parse 可根据路由指标字符串生成相应的检查器
+// Parse 可根据路由指标字符串生成相应的检查器
 func Parse(pattern string) (Checker, error) {
 	pattern = strings.TrimSpace(pattern)
 
@@ -52,7 +52,7 @@ func Parse(pattern string) (Checker, error) {
 	return nil, fmt.Errorf("%s:%w", pattern, errorUnknownExpression)
 }
 
-//parseValue 根据不带等号的指标字符串生成检查器
+// parseValue 根据不带等号的指标字符串生成检查器
 func parseValue(v string) (Checker, error) {
 	switch v {
 	case "*": //任意

@@ -29,9 +29,9 @@ builds:
     binary: apinto
     builder: go
     gobinary: go
-#    ldflags:
-#      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser
-#      -
+    #    ldflags:
+    #      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.builtBy=goreleaser
+    #      -
     ldflags:
       - -s -w
       - -X "github.com/eolinker/apinto/utils/version.Version={{.Version}}"

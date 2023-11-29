@@ -68,7 +68,6 @@ func (dm *driverRegister) Keys() []string {
 
 // Register 注册balance工厂到默认balanceFactory注册器
 func Register(key string, factory IBalanceFactory) {
-
 	defaultBalanceFactoryRegister.RegisterFactoryByKey(key, factory)
 }
 

@@ -1,20 +1,21 @@
 package main
 
 import (
+	"github.com/eolinker/apinto/application/auth"
+	"github.com/eolinker/apinto/drivers/app"
 	"github.com/eolinker/apinto/drivers/certs"
 	http_counter "github.com/eolinker/apinto/drivers/counter/http"
 	nsq_counter "github.com/eolinker/apinto/drivers/counter/nsq"
 	"github.com/eolinker/apinto/drivers/discovery/consul"
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
-	"github.com/eolinker/apinto/drivers/discovery/static"
-
-	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/apinto/drivers/discovery/polaris"
+	"github.com/eolinker/apinto/drivers/discovery/static"
 	"github.com/eolinker/apinto/drivers/output/fileoutput"
 	"github.com/eolinker/apinto/drivers/output/httpoutput"
 	"github.com/eolinker/apinto/drivers/output/kafka"
 	"github.com/eolinker/apinto/drivers/output/nsq"
+	"github.com/eolinker/apinto/drivers/output/prometheus"
 	"github.com/eolinker/apinto/drivers/output/syslog"
 	plugin_manager "github.com/eolinker/apinto/drivers/plugin-manager"
 	"github.com/eolinker/apinto/drivers/resources/datasource/influxdbv2"
@@ -31,8 +32,6 @@ import (
 	"github.com/eolinker/apinto/drivers/template"
 	protocbuf "github.com/eolinker/apinto/drivers/transcode/protobuf"
 
-	"github.com/eolinker/apinto/drivers/app"
-	"github.com/eolinker/apinto/drivers/output/prometheus"
 	"github.com/eolinker/eosc"
 )
 

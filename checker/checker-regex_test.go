@@ -19,10 +19,10 @@ func Test_checkerRegexp_Check(t1 *testing.T) {
 		has bool
 	}
 	tests := []struct {
-		name   string
+		name    string
 		pattern string
-		args   args
-		want   bool
+		args    args
+		want    bool
 	}{
 		{
 			name:    "size",
@@ -36,9 +36,9 @@ func Test_checkerRegexp_Check(t1 *testing.T) {
 	}
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
-			t,err := newCheckerRegexpG(tt.pattern)
-			if err!= nil{
-				t1.Errorf("parse checker Regexp () error:%v, not want error",err)
+			t, err := newCheckerRegexpG(tt.pattern)
+			if err != nil {
+				t1.Errorf("parse checker Regexp () error:%v, not want error", err)
 				return
 			}
 			if got := t.Check(tt.args.v, tt.args.has); got != tt.want {

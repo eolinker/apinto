@@ -1,12 +1,13 @@
 package service
 
 import (
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/log"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/drivers/discovery/static"
 	iphash "github.com/eolinker/apinto/upstream/ip-hash"
 	roundrobin "github.com/eolinker/apinto/upstream/round-robin"
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/log"
 )
 
 var DriverName = "service_http"

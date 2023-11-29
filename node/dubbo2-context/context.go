@@ -16,17 +16,17 @@ import (
 	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
 	"dubbo.apache.org/dubbo-go/v3/protocol/invocation"
 	hessian "github.com/apache/dubbo-go-hessian2"
-	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc/eocontext"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
 	"github.com/google/uuid"
+
+	"github.com/eolinker/apinto/utils"
 )
 
 func NewDubboParamBody(typesList []string, valuesList []hessian.Object) *dubbo2_context.Dubbo2ParamBody {
-
 	valList := make([]interface{}, 0, len(valuesList))
 	for _, v := range valuesList {
 		valList = append(valList, v)
@@ -59,12 +59,10 @@ func (d *DubboContext) RealIP() string {
 }
 
 func (d *DubboContext) Response() dubbo2_context.IResponse {
-
 	return d.response
 }
 
 func NewContext(req *invocation.RPCInvocation, port int) dubbo2_context.IDubbo2Context {
-
 	t := time.Now()
 
 	method, typesList, valuesList := argumentsUnmarshal(req.Arguments())
@@ -169,7 +167,7 @@ func (d *DubboContext) dial(addr string, timeout time.Duration) error {
 		invoc.SetAttachment(k, v)
 	}
 
-	//源码中已对连接做了缓存池
+	// 源码中已对连接做了缓存池
 	dubboProtocol := dubbo.NewDubboProtocol()
 	invoker := dubboProtocol.Refer(url)
 	var resp interface{}
@@ -294,7 +292,7 @@ func (d *DubboContext) IsCloneable() bool {
 }
 
 func (d *DubboContext) Clone() (eocontext.EoContext, error) {
-	//TODO
+	// TODO
 	return nil, fmt.Errorf("%s %w", "DubboContext", eocontext.ErrEoCtxUnCloneable)
 }
 
@@ -328,11 +326,9 @@ func argumentsUnmarshal(arguments []interface{}) (string, []string, []hessian.Ob
 	}
 
 	return methodName, typeList, valueList
-
 }
 
 func formatData(value interface{}) interface{} {
-
 	switch valueTemp := value.(type) {
 	case map[interface{}]interface{}:
 		maps := make(map[string]interface{})

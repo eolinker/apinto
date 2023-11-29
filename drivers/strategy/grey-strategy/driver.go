@@ -2,10 +2,12 @@ package grey_strategy
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/eolinker/eosc"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/strategy"
-	"github.com/eolinker/eosc"
-	"strings"
 )
 
 func checkConfig(conf *Config) error {
