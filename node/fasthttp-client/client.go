@@ -56,7 +56,8 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 	isTLS := false
 	if strings.EqualFold(scheme, "https") {
 		isTLS = true
-		host = rewriteHost + nodeAddr
+		host = fmt.Sprintf("%s-%s", rewriteHost, nodeAddr)
+
 	} else if !strings.EqualFold(scheme, "http") {
 		return nil, "", fmt.Errorf("unsupported protocol %q. http and https are supported", scheme)
 	}
@@ -158,7 +159,7 @@ func (c *Client) ProxyTimeout(addr string, host string, req *fasthttp.Request, r
 	var requestURI string
 	redirectCount := 0
 	for {
-		client, scheme, err := c.getHostClient(addr, "")
+		client, scheme, err := c.getHostClient(addr, host)
 		if err != nil {
 			return err
 		}
