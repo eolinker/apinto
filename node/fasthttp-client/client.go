@@ -3,7 +3,6 @@ package fasthttp_client
 import (
 	"fmt"
 	"net"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -79,10 +78,24 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 	}
 	hc := m[host]
 	if hc == nil {
+		dial := Dial
+		dialAddr := addMissingPort(nodeAddr, isTLS)
+		httpAddr := dialAddr
+		if isTLS {
+			if rewriteHost != "" && rewriteHost != nodeAddr {
+
+				httpAddr = rewriteHost
+
+				dial = func(addr string) (net.Conn, error) {
+					return Dial(dialAddr)
+				}
+			}
+		}
+
 		hc = &fasthttp.HostClient{
-			Addr:               addMissingPort(nodeAddr, isTLS),
+			Addr:               httpAddr,
 			IsTLS:              isTLS,
-			Dial:               Dial,
+			Dial:               dial,
 			MaxConns:           DefaultMaxConns,
 			MaxConnWaitTimeout: DefaultMaxConnWaitTimeout,
 			RetryIf: func(request *fasthttp.Request) bool {
@@ -205,25 +218,4 @@ func (c *Client) mCleaner(m map[string]*fasthttp.HostClient) {
 		}
 		time.Sleep(sleep)
 	}
-}
-
-func addMissingPort(addr string, isTLS bool) string {
-	n := strings.Index(addr, ":")
-	if n >= 0 {
-		return addr
-	}
-	port := 80
-	if isTLS {
-		port = 443
-	}
-	return net.JoinHostPort(addr, strconv.Itoa(port))
-}
-
-func getRedirectURL(baseURL string, location []byte) (string, string) {
-	u := fasthttp.AcquireURI()
-	u.Update(baseURL)
-	u.UpdateBytes(location)
-	u.RequestURI()
-	defer fasthttp.ReleaseURI(u)
-	return fmt.Sprintf("%s://%s", u.Scheme(), u.Host()), u.String()
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -33,6 +35,7 @@ func init() {
 	debug.Register("/debug/dial", DebugHandleFun)
 	go reset()
 }
+
 func reset() {
 	t := time.NewTicker(time.Second * 10)
 	defer t.Stop()
@@ -85,4 +88,34 @@ type debugConn struct {
 func (c *debugConn) Close() error {
 	atomic.AddInt64(&closeCount, 1)
 	return c.Conn.Close()
+}
+func addMissingPort(addr string, isTLS bool) string {
+
+	n := strings.LastIndex(addr, ":")
+	if n >= 0 {
+		return addr
+	}
+	port := 80
+	if isTLS {
+		port = 443
+	}
+	return net.JoinHostPort(addr, strconv.Itoa(port))
+}
+func readPort(addr string) int {
+	n := strings.LastIndex(addr, ":")
+	if n >= 0 {
+		p, e := strconv.Atoi(addr[n+1:])
+		if e != nil {
+			return p
+		}
+	}
+	return 0
+}
+func getRedirectURL(baseURL string, location []byte) (string, string) {
+	u := fasthttp.AcquireURI()
+	u.Update(baseURL)
+	u.UpdateBytes(location)
+	u.RequestURI()
+	defer fasthttp.ReleaseURI(u)
+	return fmt.Sprintf("%s://%s", u.Scheme(), u.Host()), u.String()
 }
