@@ -136,17 +136,19 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 
 	host := node.Addr()
 	request := ctx.proxyRequest.Request()
-
+	rewriteHost := string(request.Host())
 	passHost, targetHost := ctx.GetUpstreamHostHandler().PassHost()
 	switch passHost {
 	case eoscContext.PassHost:
 	case eoscContext.NodeHost:
+		rewriteHost = host
 		request.URI().SetHost(host)
 	case eoscContext.ReWriteHost:
+		rewriteHost = targetHost
 		request.URI().SetHost(targetHost)
 	}
 	beginTime := time.Now()
-	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, node, request, &ctx.fastHttpRequestCtx.Response, timeout)
+	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, &ctx.fastHttpRequestCtx.Response, timeout)
 	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, beginTime, time.Now())
 	if ctx.response.responseError != nil {
 		agent.setStatusCode(504)

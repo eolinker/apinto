@@ -18,7 +18,7 @@ func TestMyselfProxyTimeout(t *testing.T) {
 	req.Header.SetContentType("application/json")
 	t.Log(string(req.URI().RequestURI()), req.URI().String(), string(req.URI().Host()), string(req.URI().Scheme()))
 	req.SetBody([]byte(`{"cpCode":"YTO","province":"广东省","city":"广州市"}`))
-	err := defaultClient.ProxyTimeout(addr, req, resp, 0)
+	err := defaultClient.ProxyTimeout(addr, "", req, resp, 0)
 	if err != nil {
 		t.Error(err)
 	}

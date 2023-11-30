@@ -13,9 +13,9 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func ProxyTimeout(scheme string, node eocontext.INode, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) error {
+func ProxyTimeout(scheme string, host string, node eocontext.INode, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) error {
 	addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
-	err := defaultClient.ProxyTimeout(addr, req, resp, timeout)
+	err := defaultClient.ProxyTimeout(addr, host, req, resp, timeout)
 	if err != nil {
 		node.Down()
 	}
@@ -50,13 +50,14 @@ func readAddress(addr string) (scheme, host string) {
 	return "http", addr
 }
 
-func (c *Client) getHostClient(addr string) (*fasthttp.HostClient, string, error) {
+func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostClient, string, error) {
 
-	scheme, host := readAddress(addr)
-
+	scheme, nodeAddr := readAddress(addr)
+	host := nodeAddr
 	isTLS := false
 	if strings.EqualFold(scheme, "https") {
 		isTLS = true
+		host = rewriteHost + nodeAddr
 	} else if !strings.EqualFold(scheme, "http") {
 		return nil, "", fmt.Errorf("unsupported protocol %q. http and https are supported", scheme)
 	}
@@ -79,7 +80,7 @@ func (c *Client) getHostClient(addr string) (*fasthttp.HostClient, string, error
 	hc := m[host]
 	if hc == nil {
 		hc = &fasthttp.HostClient{
-			Addr:               addMissingPort(host, isTLS),
+			Addr:               addMissingPort(nodeAddr, isTLS),
 			IsTLS:              isTLS,
 			Dial:               Dial,
 			MaxConns:           DefaultMaxConns,
@@ -129,7 +130,7 @@ func (c *Client) getHostClient(addr string) (*fasthttp.HostClient, string, error
 // continue in the background and the response will be discarded.
 // If requests take too long and the connection pool gets filled up please
 // try setting a ReadTimeout.
-func (c *Client) ProxyTimeout(addr string, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) error {
+func (c *Client) ProxyTimeout(addr string, host string, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) error {
 	request := req
 	request.Header.ResetConnectionClose()
 	request.Header.Set("Connection", "keep-alive")
@@ -144,7 +145,7 @@ func (c *Client) ProxyTimeout(addr string, req *fasthttp.Request, resp *fasthttp
 	var requestURI string
 	redirectCount := 0
 	for {
-		client, scheme, err := c.getHostClient(addr)
+		client, scheme, err := c.getHostClient(addr, "")
 		if err != nil {
 			return err
 		}
