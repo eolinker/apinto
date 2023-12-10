@@ -12,8 +12,6 @@ import (
 
 	"github.com/eolinker/apinto/resources"
 
-	"github.com/eolinker/apinto/drivers/counter"
-
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/drivers/plugins/counter/separator"
 
@@ -29,15 +27,10 @@ type executor struct {
 	drivers.WorkerBase
 	matchers         []matcher.IMatcher
 	separatorCounter separator.ICounter
-	counters         eosc.Untyped[string, counter.ICounter]
+	counters         eosc.Untyped[string, ICounter]
 	cacheID          string
 	cache            scope_manager.IProxyOutput[resources.ICache]
-	clientID         string
-	client           scope_manager.IProxyOutput[counter.IClient]
-	countPusherID    string
-	counterPusher    scope_manager.IProxyOutput[counter.ICountPusher]
 	keyGenerate      IKeyGenerator
-	countMode        string
 	once             sync.Once
 }
 
@@ -48,23 +41,12 @@ func (b *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err
 func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
 	b.once.Do(func() {
 		b.cache = scope_manager.Auto[resources.ICache](b.cacheID, "redis")
-		b.client = scope_manager.Auto[counter.IClient](b.clientID, "counter")
-		b.counterPusher = scope_manager.Auto[counter.ICountPusher](b.countPusherID, "counter-pusher")
 	})
 
-	variables, ok := b.keyGenerate.Variables(ctx)
-	if !ok {
-		return next.DoChain(ctx)
-	}
 	key := b.keyGenerate.Key(ctx)
 	ct, has := b.counters.Get(key)
 	if !has {
-		switch b.countMode {
-		case localMode:
-			ct = NewLocalCounter(key, variables, b.client, b.counterPusher)
-		case redisMode:
-			ct = NewRedisCounter(key, variables, b.cache, b.client, b.counterPusher)
-		}
+		ct = NewRedisCounter(key, b.cache)
 		b.counters.Set(key, ct)
 	}
 	var count int64 = 1
@@ -139,7 +121,6 @@ func (b *executor) Stop() error {
 
 func (b *executor) Destroy() {
 	b.cache = nil
-	b.client = nil
 	b.counters = nil
 	b.separatorCounter = nil
 	b.matchers = nil

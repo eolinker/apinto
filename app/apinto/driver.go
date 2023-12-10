@@ -2,8 +2,6 @@ package main
 
 import (
 	"github.com/eolinker/apinto/drivers/certs"
-	http_counter "github.com/eolinker/apinto/drivers/counter/http"
-	nsq_counter "github.com/eolinker/apinto/drivers/counter/nsq"
 	"github.com/eolinker/apinto/drivers/discovery/consul"
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
@@ -79,10 +77,6 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 
 	// 编码器
 	protocbuf.Register(extenderRegister)
-
-	// 计数器
-	http_counter.Register(extenderRegister)
-	nsq_counter.Register(extenderRegister)
 
 	// 证书
 	certs.Register(extenderRegister)

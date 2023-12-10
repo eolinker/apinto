@@ -50,10 +50,16 @@ func (m *jsonMatcher) Match(ctx http_service.IHttpContext) bool {
 		log.Errorf("parse body error: %v,body is %s", err, body)
 		return true
 	}
+	match := true
 	for _, p := range m.params {
 		results := p.expr.Get(tmp)
-		for _, v := range p.Value {
-			for _, r := range results {
+		if len(results) < 1 && p.Kind != "nil" {
+			return false
+		}
+		success := true
+		for _, r := range results {
+			for _, v := range p.Value {
+
 				switch p.Kind {
 				case "int":
 					t, ok := r.(int64)
@@ -61,9 +67,13 @@ func (m *jsonMatcher) Match(ctx http_service.IHttpContext) bool {
 						return false
 					}
 					val, _ := strconv.ParseInt(v, 10, 64)
-					if t == val {
-						return true
+					if t != val {
+						success = false
+						continue
 					}
+					success = true
+					break
+
 				case "bool":
 					t, ok := r.(bool)
 					if !ok {
@@ -73,18 +83,31 @@ func (m *jsonMatcher) Match(ctx http_service.IHttpContext) bool {
 					if err != nil {
 						return false
 					}
-					return t == val
+					if t != val {
+						success = false
+						continue
+					}
+					success = true
+					break
+					//return t == val
 				default:
 					t, ok := r.(string)
 					if !ok {
 						return false
 					}
-					if t == v {
-						return true
+					if t != v {
+						success = false
+						continue
 					}
+					success = true
+					break
 				}
 			}
 		}
+		if !success {
+			return false
+		}
+
 	}
-	return false
+	return match
 }
