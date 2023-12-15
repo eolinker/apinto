@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	maxBufSize = 32
+	maxBufSize = 4 * 1024 * 1024 // 4M
 )
 
 type Writer struct {
@@ -26,6 +26,7 @@ type Writer struct {
 	//multiBodySize int64
 	//multiBodies   []multiBody
 	bodyChan chan []byte
+	bodySize int
 	poolChan chan *producerPool
 }
 
@@ -141,14 +142,15 @@ func (n *Writer) doLoop() {
 			}
 
 			buf = append(buf, body)
+			n.bodySize += len(body)
 			if pool == nil {
 				timer.Reset(500 * time.Millisecond)
 				continue
 			}
-			if len(buf) >= maxBufSize {
+			if n.bodySize >= maxBufSize {
 				tmp := buf
 				buf = buf[:0]
-
+				n.bodySize = 0
 				err := pool.Publish(n.topic, tmp)
 				if err != nil {
 					log.Error("nsq publish error: ", err.Error())

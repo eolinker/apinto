@@ -13,7 +13,9 @@ func newProxy() *_Proxy {
 }
 
 func (p *_Proxy) Set(values []interface{}) {
-	p.pointer.Store(&values)
+	tmp := make([]interface{}, 0, len(values))
+	tmp = append(tmp, values...)
+	p.pointer.Store(&tmp)
 }
 
 func (p *_Proxy) List() []interface{} {

@@ -103,7 +103,7 @@ func (n *executor) Start() error {
 					for _, serviceName := range keys {
 						res, err := n.client.GetNodeList(serviceName)
 						if err != nil {
-							log.Warnf("executor %s:%w for service %s", n.Name(), discovery.ErrDiscoveryDown, serviceName)
+							log.Warnf("executor %s:%v for service %s,err:%v", n.Name(), discovery.ErrDiscoveryDown, serviceName, err)
 						}
 						//更新目标服务的节点列表
 						n.services.Set(serviceName, res)
