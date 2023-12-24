@@ -3,7 +3,6 @@ module github.com/eolinker/apinto
 go 1.19
 
 require (
-	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/Shopify/sarama v1.32.0
 	github.com/brianvoe/gofakeit/v6 v6.20.1
 	github.com/clbanning/mxj v1.8.4
@@ -28,6 +27,7 @@ require (
 	github.com/urfave/cli/v2 v2.23.4
 	github.com/valyala/fasthttp v1.47.0
 	golang.org/x/crypto v0.7.0
+	golang.org/x/net v0.8.0
 	google.golang.org/grpc v1.53.0
 	google.golang.org/protobuf v1.28.1
 )
@@ -37,7 +37,6 @@ require (
 	github.com/RoaringBitmap/roaring v0.7.1 // indirect
 	github.com/Workiva/go-datastructures v1.0.52 // indirect
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1704 // indirect
-	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/apache/dubbo-getty v1.4.8 // indirect
 	github.com/bits-and-blooms/bitset v1.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
@@ -78,7 +77,6 @@ require (
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.opencensus.io v0.23.0 // indirect
-	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
