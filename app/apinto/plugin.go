@@ -8,6 +8,7 @@ import (
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
 	grpc_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/grpc-proxy-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
+	js_inject "github.com/eolinker/apinto/drivers/plugins/js-inject"
 	params_check "github.com/eolinker/apinto/drivers/plugins/params-check"
 	"github.com/eolinker/apinto/drivers/plugins/prometheus"
 	request_file_parse "github.com/eolinker/apinto/drivers/plugins/request-file-parse"
@@ -15,6 +16,7 @@ import (
 	response_file_parse "github.com/eolinker/apinto/drivers/plugins/response-file-parse"
 	response_filter "github.com/eolinker/apinto/drivers/plugins/response-filter"
 	response_rewrite_v2 "github.com/eolinker/apinto/drivers/plugins/response-rewrite_v2"
+	rsa_filter "github.com/eolinker/apinto/drivers/plugins/rsa-filter"
 
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
 	body_check "github.com/eolinker/apinto/drivers/plugins/body-check"
@@ -88,6 +90,8 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	cors.Register(extenderRegister)
 	circuit_breaker.Register(extenderRegister)
 	app.Register(extenderRegister)
+	rsa_filter.Register(extenderRegister)
+	js_inject.Register(extenderRegister)
 
 	// 可观测性（输出内容到第三方）
 	access_log.Register(extenderRegister)

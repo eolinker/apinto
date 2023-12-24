@@ -95,7 +95,6 @@ func newClient(name string, address []string, params map[string]string) (*client
 func (c *client) GetNodeList(serviceName string) ([]discovery.NodeInfo, error) {
 	nodes := make([]discovery.NodeInfo, 0)
 	set := make(map[string]struct{})
-
 	instances, err := c.namingClient.SelectInstances(vo.SelectInstancesParam{
 		ServiceName: serviceName,
 		Clusters:    c.clusters,

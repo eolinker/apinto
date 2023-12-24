@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -50,7 +51,7 @@ type RouterServerHandler func(port int, listener net.Listener)
 func init() {
 	matchWriters[AnyTCP] = matchersToMatchWriters(cmux.Any())
 	matchWriters[TslTCP] = matchersToMatchWriters(cmux.TLS())
-	matchWriters[Http] = matchersToMatchWriters(cmux.HTTP1Fast())
+	matchWriters[Http] = matchersToMatchWriters(cmux.HTTP1Fast(http.MethodPatch))
 	matchWriters[Dubbo2] = matchersToMatchWriters(cmux.PrefixMatcher(string([]byte{0xda, 0xbb})))
 	matchWriters[GRPC] = []cmux.MatchWriter{cmux.HTTP2MatchHeaderFieldPrefixSendSettings("content-type", "application/grpc")}
 	var tf traffic.ITraffic

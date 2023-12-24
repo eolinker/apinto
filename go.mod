@@ -3,6 +3,7 @@ module github.com/eolinker/apinto
 go 1.19
 
 require (
+	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/Shopify/sarama v1.32.0
 	github.com/brianvoe/gofakeit/v6 v6.20.1
 	github.com/clbanning/mxj v1.8.4
@@ -36,6 +37,7 @@ require (
 	github.com/RoaringBitmap/roaring v0.7.1 // indirect
 	github.com/Workiva/go-datastructures v1.0.52 // indirect
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1704 // indirect
+	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/apache/dubbo-getty v1.4.8 // indirect
 	github.com/bits-and-blooms/bitset v1.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect

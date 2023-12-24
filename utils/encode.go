@@ -28,10 +28,11 @@ func B64Decode(input string) ([]byte, error) {
 }
 
 // B64Encode base64加密
-func B64Encode(input string) string {
-	result := base64.StdEncoding.EncodeToString([]byte(input))
-	result = strings.Replace(strings.Replace(strings.Replace(result, "=", "", -1), "/", "_", -1), "+", "-", -1)
-	return result
+func B64Encode(input []byte) string {
+	//result := base64.StdEncoding.EncodeToString([]byte(input))
+	//base64.RawStdEncoding.EncodeToString([]byte(input))
+	//result = strings.Replace(strings.Replace(strings.Replace(result, "=", "", -1), "/", "_", -1), "+", "-", -1)
+	return base64.StdEncoding.EncodeToString(input)
 }
 
 // QueryUrlEncode 对query进行url encode
