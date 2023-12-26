@@ -66,7 +66,7 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 		}
 	}
 
-	// 转发时传输铭文
+	// 转发时传输明文
 	ctx.Proxy().Body().SetRaw(orgContentType, decrBody)
 	ctx.Proxy().Header().SetHeader("Content-Type", orgContentType)
 	if next != nil {
@@ -95,7 +95,7 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 	}
 
 	ctx.Response().SetBody(encBody)
-	ctx.Response().SetHeader("Content-Type", ctx.Request().ContentType())
+	ctx.Response().SetHeader("Content-Type", "application/octet-stream")
 	ctx.Response().SetHeader("Origin-Content-Type", responseContentType)
 	return
 }
