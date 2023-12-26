@@ -26,7 +26,7 @@ type requestAgent struct {
 	hostAgent      *UrlAgent
 	remoteIP       string
 	remotePort     int
-	originHeader   *fasthttp.ResponseHeader
+	originHeader   fasthttp.ResponseHeader
 	headers        http.Header
 }
 
@@ -37,9 +37,6 @@ func (a *requestAgent) ResponseBody() string {
 func (a *requestAgent) ResponseHeaders() http.Header {
 	if a.headers != nil {
 		return a.headers
-	}
-	if a.originHeader == nil {
-		return make(http.Header)
 	}
 	headers := make(http.Header)
 	a.originHeader.VisitAll(func(key, value []byte) {
@@ -85,7 +82,7 @@ func (a *requestAgent) setRemotePort(port int) {
 	a.remotePort = port
 }
 
-func newRequestAgent(IRequest http_service.IRequest, host string, scheme string, header *fasthttp.ResponseHeader, beginTime, endTime time.Time) *requestAgent {
+func newRequestAgent(IRequest http_service.IRequest, host string, scheme string, header fasthttp.ResponseHeader, beginTime, endTime time.Time) *requestAgent {
 	return &requestAgent{IRequest: IRequest, host: host, scheme: scheme, beginTime: beginTime, endTime: endTime, originHeader: header}
 }
 
