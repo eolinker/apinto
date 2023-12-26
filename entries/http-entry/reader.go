@@ -1,7 +1,10 @@
 package http_entry
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"strconv"
@@ -329,7 +332,21 @@ var (
 			return proxy.ResponseLength(), true
 		}),
 		"response_body": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.ResponseBody(), true
+			body := proxy.ResponseBody()
+			encoding := proxy.ResponseHeaders().Get("Content-Encoding")
+			if encoding == "gzip" {
+				reader, err := gzip.NewReader(bytes.NewReader([]byte(body)))
+				if err != nil {
+					return "", false
+				}
+				defer reader.Close()
+				data, err := io.ReadAll(reader)
+				if err != nil {
+					return "", false
+				}
+				return string(data), true
+			}
+			return body, true
 		}),
 		"response_headers": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
 			result := make(map[string]string)
