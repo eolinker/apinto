@@ -1,6 +1,7 @@
 package http_entry
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"strconv"
@@ -271,8 +272,18 @@ var (
 
 			return proxy.Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
 		}),
+		"headers": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+			result := make(map[string]string)
+			for key, value := range proxy.Header().Headers() {
+				result[strings.ToLower(key)] = strings.Join(value, ";")
+			}
+			return result, true
+		}),
 		"uri": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
 			return proxy.URI().RequestURI(), true
+		}),
+		"url": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+			return fmt.Sprintf("%s://%s:%d%s", proxy.URI().Scheme(), proxy.RemoteIP(), proxy.RemotePort(), proxy.URI().RequestURI()), true
 		}),
 		"query": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
 			if name == "" {
@@ -291,7 +302,7 @@ var (
 			return proxy.URI().Host(), true
 		}),
 		"dst_ip": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.RemotePort(), true
+			return proxy.RemoteIP(), true
 		}),
 		"dst_port": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
 			return proxy.RemotePort(), true
@@ -319,6 +330,13 @@ var (
 		}),
 		"response_body": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
 			return proxy.ResponseBody(), true
+		}),
+		"response_headers": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+			result := make(map[string]string)
+			for key, value := range proxy.ResponseHeaders() {
+				result[strings.ToLower(key)] = strings.Join(value, ";")
+			}
+			return result, true
 		}),
 		"time": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
 			return proxy.ResponseTime(), true

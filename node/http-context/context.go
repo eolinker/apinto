@@ -149,7 +149,11 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	}
 	beginTime := time.Now()
 	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, &ctx.fastHttpRequestCtx.Response, timeout)
-	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, beginTime, time.Now())
+	var responseHeader *fasthttp.ResponseHeader
+	if ctx.response.Response != nil {
+		responseHeader = &ctx.response.Response.Header
+	}
+	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, responseHeader, beginTime, time.Now())
 	if ctx.response.responseError != nil {
 		agent.setStatusCode(504)
 	} else {

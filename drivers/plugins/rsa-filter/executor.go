@@ -37,6 +37,17 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 
 	body, _ := ctx.Request().Body().RawBody()
 	signature := ctx.Request().Header().GetHeader(e.requestSignHeader)
+	// 解密
+	decrBody, err := decrypt(body, e.privateKey)
+	if err != nil {
+		err = fmt.Errorf("decrypt body error: %w", err)
+		ctx.Response().SetBody([]byte(err.Error()))
+		ctx.Response().SetStatus(403, "403")
+		return err
+	}
+	ctx.SetLabel("request_body", string(decrBody))
+	ctx.WithValue("request_body_complete", 1)
+	ctx.Request().Header().Headers().Set("Content-Type", orgContentType)
 	if signature != "" {
 		decodeSign, err := utils.B64Decode(signature)
 		if err != nil {
@@ -53,15 +64,6 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 			ctx.Response().SetStatus(403, "403")
 			return err
 		}
-	}
-
-	// 解密
-	decrBody, err := decrypt(body, e.privateKey)
-	if err != nil {
-		err = fmt.Errorf("decrypt body error: %w", err)
-		ctx.Response().SetBody([]byte(err.Error()))
-		ctx.Response().SetStatus(403, "403")
-		return err
 	}
 
 	// 转发时传输铭文

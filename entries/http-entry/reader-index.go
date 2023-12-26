@@ -38,8 +38,17 @@ func (p ProxyReaders) ReadByIndex(index int, name string, ctx http_service.IHttp
 }
 
 func (p ProxyReaders) Read(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+	v, ok := p[name]
+	if ok {
+		proxies := ctx.Proxies()
+		proxyLen := len(proxies)
+		if proxyLen == 0 {
+			return "", false
+		}
+		return v.ReadProxy("", proxies[proxyLen-1])
+	}
 	ns := strings.SplitN(name, "_", 2)
-	v, ok := p[ns[0]]
+	v, ok = p[ns[0]]
 	if !ok {
 		return "", false
 	}
