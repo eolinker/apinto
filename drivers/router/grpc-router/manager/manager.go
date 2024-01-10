@@ -85,7 +85,7 @@ func (m *Manager) FastHandler(port int, srv interface{}, stream grpc.ServerStrea
 		}
 	} else {
 		log.Debug("match has:", port)
-		r.ServeHTTP(ctx)
+		r.Serve(ctx)
 	}
 
 	finishHandler := ctx.GetFinish()
