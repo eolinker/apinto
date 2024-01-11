@@ -73,6 +73,9 @@ func (m *Manager) Delete(id string) {
 
 func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 	httpContext := http_context.NewContext(ctx, port)
+	if !m.IPreRouterData.Server(httpContext) {
+		return
+	}
 	if m.matcher == nil {
 		httpContext.SetFinish(notFound)
 		httpContext.SetCompleteHandler(notFound)
