@@ -15,6 +15,8 @@ type ICache interface {
 	IncrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) IntResult
 	Get(ctx context.Context, key string) StringResult
 	GetDel(ctx context.Context, key string) StringResult
+	HMSetN(ctx context.Context, key string, fields map[string]interface{}, expiration time.Duration) BoolResult
+	HMGet(ctx context.Context, key string, fields ...string) ArrayInterfaceResult
 	Del(ctx context.Context, keys ...string) IntResult
 	Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) InterfaceResult
 	Tx() TX
@@ -23,6 +25,10 @@ type ICache interface {
 type TX interface {
 	ICache
 	Exec(ctx context.Context) error
+}
+
+type ArrayInterfaceResult interface {
+	Result() ([]interface{}, error)
 }
 
 type InterfaceResult interface {
@@ -115,5 +121,18 @@ func NewInterfaceResult(val interface{}, err error) *interfaceResult {
 }
 
 func (b *interfaceResult) Result() (interface{}, error) {
+	return b.val, b.err
+}
+
+type arrayInterfaceResult struct {
+	val []interface{}
+	err error
+}
+
+func NewArrayInterfaceResult(val []interface{}, err error) *arrayInterfaceResult {
+	return &arrayInterfaceResult{val: val, err: err}
+}
+
+func (b *arrayInterfaceResult) Result() ([]interface{}, error) {
 	return b.val, b.err
 }

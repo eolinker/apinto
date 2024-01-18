@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/eolinker/eosc/log"
+
 	"github.com/eolinker/apinto/resources"
 	"github.com/go-redis/redis/v8"
 )
@@ -97,6 +99,24 @@ func (r *Cmdable) Get(ctx context.Context, key string) resources.StringResult {
 func (r *Cmdable) GetDel(ctx context.Context, key string) resources.StringResult {
 	return r.cmdable.GetDel(ctx, key)
 
+}
+
+func (r *Cmdable) HMSetN(ctx context.Context, key string, fields map[string]interface{}, expiration time.Duration) resources.BoolResult {
+	pipeline := r.cmdable.Pipeline()
+	result := pipeline.HMSet(ctx, key, fields)
+	if expiration > 0 {
+		pipeline.Expire(ctx, key, expiration)
+	}
+	_, err := pipeline.Exec(ctx)
+	if err != nil {
+		log.Errorf("HMSetN error:%s", err.Error())
+		return nil
+	}
+	return result
+}
+
+func (r *Cmdable) HMGet(ctx context.Context, key string, fields ...string) resources.ArrayInterfaceResult {
+	return r.cmdable.HMGet(ctx, key, fields...)
 }
 
 func (r *Cmdable) Del(ctx context.Context, keys ...string) resources.IntResult {

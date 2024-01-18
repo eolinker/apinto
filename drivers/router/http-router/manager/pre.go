@@ -1,10 +1,12 @@
 package manager
 
 import (
+	"sync"
+
 	"github.com/eolinker/apinto/router"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
-	"sync"
+	"github.com/eolinker/eosc/log"
 )
 
 type IPreRouterData interface {
@@ -72,6 +74,7 @@ func (p *imlPreRouterData) Server(ctx eocontext.EoContext) (isContinue bool) {
 	if p == nil || p.handler == nil {
 		return true
 	}
+	log.Debug("pre router hander:", p.handler)
 	return p.handler.Server(ctx)
 }
 
@@ -90,6 +93,7 @@ func (p *imlPreRouterData) AddPreRouter(id string, method []string, path string,
 		path:    path,
 		handler: handler,
 	}
+	log.Debug("add pre router:", p.items)
 	p.handler = p.parse()
 }
 

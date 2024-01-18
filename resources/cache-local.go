@@ -152,6 +152,14 @@ func (n *cacheLocal) GetDel(ctx context.Context, key string) StringResult {
 	return NewStringResultBytes(bytes, nil)
 }
 
+func (n *cacheLocal) HMSetN(ctx context.Context, key string, fields map[string]interface{}, expiration time.Duration) BoolResult {
+	return NewBoolResult(false, errors.New("not support"))
+}
+
+func (n *cacheLocal) HMGet(ctx context.Context, key string, fields ...string) ArrayInterfaceResult {
+	return NewArrayInterfaceResult(nil, errors.New("not support"))
+}
+
 func (n *cacheLocal) Del(ctx context.Context, keys ...string) IntResult {
 	var count int64 = 0
 	for _, key := range keys {
