@@ -69,7 +69,7 @@ type imlPreRouterData struct {
 }
 
 func (p *imlPreRouterData) Server(ctx eocontext.EoContext) (isContinue bool) {
-	if p == nil {
+	if p == nil || p.handler == nil {
 		return true
 	}
 	return p.handler.Server(ctx)
