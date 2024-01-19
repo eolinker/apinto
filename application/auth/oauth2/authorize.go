@@ -92,6 +92,7 @@ func (a *AuthorizeHandler) Handle(ctx http_context.IHttpContext, client *Client,
 		return
 	}
 	cache := list[0]
+	query := url.Values{}
 	switch responseType {
 	case ResponseTypeCode:
 		{
@@ -114,7 +115,7 @@ func (a *AuthorizeHandler) Handle(ctx http_context.IHttpContext, client *Client,
 				ctx.Response().SetStatus(http.StatusInternalServerError, "server error")
 				return
 			}
-			uri.Query().Set("code", code)
+			query.Set("code", code)
 		}
 	case ResponseTypeToken:
 		{
@@ -124,18 +125,18 @@ func (a *AuthorizeHandler) Handle(ctx http_context.IHttpContext, client *Client,
 				ctx.Response().SetStatus(http.StatusInternalServerError, "server error")
 				return
 			}
-			uri.Query().Set("access_token", token.AccessToken)
-			uri.Query().Set("token_type", "bearer")
-			uri.Query().Set("expires_in", strconv.Itoa(token.ExpiresIn))
+			query.Set("access_token", token.AccessToken)
+			query.Set("token_type", "bearer")
+			query.Set("expires_in", strconv.Itoa(token.ExpiresIn))
 		}
 	}
 
 	state := params.Get("state")
 	if state != "" {
-		uri.Query().Set("state", state)
+		query.Set("state", state)
 	}
 	data, _ := json.Marshal(map[string]interface{}{
-		"redirect_uri": uri.String(),
+		"redirect_uri": fmt.Sprintf("%s?%s", uri.String(), query.Encode()),
 	})
 	ctx.Response().SetBody(data)
 	ctx.Response().SetStatus(http.StatusOK, "OK")

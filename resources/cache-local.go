@@ -131,9 +131,13 @@ func ToInt(b []byte) int64 {
 	return v
 }
 func ToBytes(v int64) []byte {
-
 	return []byte(strconv.FormatInt(v, 10))
 }
+
+func (n *cacheLocal) Keys(ctx context.Context, pattern string) StringSliceResult {
+	return NewStringSliceResult(nil, errors.New("not support"))
+}
+
 func (n *cacheLocal) Get(ctx context.Context, key string) StringResult {
 	data, err := n.client.Get([]byte(key))
 	if err != nil {

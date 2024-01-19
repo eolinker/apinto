@@ -13,6 +13,7 @@ type ICache interface {
 	SetNX(ctx context.Context, key string, value []byte, expiration time.Duration) BoolResult
 	DecrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) IntResult
 	IncrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) IntResult
+	Keys(ctx context.Context, key string) StringSliceResult
 	Get(ctx context.Context, key string) StringResult
 	GetDel(ctx context.Context, key string) StringResult
 	HMSetN(ctx context.Context, key string, fields map[string]interface{}, expiration time.Duration) BoolResult
@@ -44,6 +45,10 @@ type IntResult interface {
 type StringResult interface {
 	Result() (string, error)
 	Bytes() ([]byte, error)
+}
+
+type StringSliceResult interface {
+	Result() ([]string, error)
 }
 type StatusResult interface {
 	Result() error
@@ -108,6 +113,19 @@ func NewIntResult(val int64, err error) *intResult {
 }
 
 func (b *intResult) Result() (int64, error) {
+	return b.val, b.err
+}
+
+type stringSliceResult struct {
+	val []string
+	err error
+}
+
+func NewStringSliceResult(val []string, err error) *stringSliceResult {
+	return &stringSliceResult{val: val, err: err}
+}
+
+func (b *stringSliceResult) Result() ([]string, error) {
 	return b.val, b.err
 }
 

@@ -15,6 +15,7 @@ var (
 	stringError         = resources.NewStringResult("", ErrorNotInitRedis)
 	statusError         = resources.NewStatusResult(ErrorNotInitRedis)
 	interfaceError      = resources.NewInterfaceResult(nil, ErrorNotInitRedis)
+	stringSliceError    = resources.NewStringSliceResult(nil, ErrorNotInitRedis)
 	arrayInterfaceError = resources.NewArrayInterfaceResult(nil, ErrorNotInitRedis)
 )
 
@@ -44,6 +45,10 @@ func (e *Empty) DecrBy(ctx context.Context, key string, decrement int64, expirat
 
 func (e *Empty) IncrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
 	return intError
+}
+
+func (e *Empty) Keys(ctx context.Context, key string) resources.StringSliceResult {
+	return stringSliceError
 }
 
 func (e *Empty) Get(ctx context.Context, key string) resources.StringResult {

@@ -91,6 +91,10 @@ func (r *Cmdable) IncrBy(ctx context.Context, key string, decrement int64, expir
 	return result
 }
 
+func (r *Cmdable) Keys(ctx context.Context, key string) resources.StringSliceResult {
+	return r.cmdable.Keys(ctx, key)
+}
+
 func (r *Cmdable) Get(ctx context.Context, key string) resources.StringResult {
 	return r.cmdable.Get(ctx, key)
 

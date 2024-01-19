@@ -80,7 +80,7 @@ func (o *oauth2) Set(app application.IApp, users []application.ITransformConfig)
 				log.Error("extract hash error:", err, "client secret:", v.Pattern.ClientSecret)
 				continue
 			}
-			log.DebugF("hash rule: ", *hr)
+			log.Debug("hash rule: ", *hr)
 			client.hashRule = hr
 		}
 		registerClient(v.Pattern.ClientId, client)
