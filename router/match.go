@@ -9,5 +9,9 @@ type IMatcher interface {
 }
 
 type IRouterHandler interface {
-	ServeHTTP(ctx eoscContext.EoContext)
+	Serve(ctx eoscContext.EoContext)
+}
+
+type IRouterPreHandler interface {
+	Server(ctx eoscContext.EoContext) (isContinue bool)
 }

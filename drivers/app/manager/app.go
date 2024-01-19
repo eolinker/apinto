@@ -1,6 +1,12 @@
 package manager
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/eolinker/apinto/drivers/router/http-router/manager"
+
+	"github.com/eolinker/apinto/application/auth"
+)
 
 var _ IAppManager = (*AppManager)(nil)
 
@@ -52,9 +58,14 @@ func (a *AppManager) Set(appID string, driver string, ids []string) {
 		app.Set(appID, ids)
 		return
 	}
+
 	app = NewAppData()
 	app.Set(appID, ids)
 	a.apps[driver] = app
+	fac, _ := auth.GetFactory(driver)
+	for _, r := range fac.PreRouters() {
+		manager.AddPreRouter(r.ID, r.Method, r.Path, r.PreHandler)
+	}
 }
 
 func (a *AppManager) DelByDriver(driver string) {
@@ -66,8 +77,15 @@ func (a *AppManager) DelByDriver(driver string) {
 func (a *AppManager) DelByAppID(appID string) {
 	a.locker.RLock()
 	defer a.locker.RUnlock()
-	for _, app := range a.apps {
+	for driver, app := range a.apps {
 		app.Del(appID)
+		ids := app.All()
+		if len(ids) == 0 {
+			fac, _ := auth.GetFactory(driver)
+			for _, r := range fac.PreRouters() {
+				manager.DeletePreRouter(r.ID)
+			}
+		}
 	}
 }
 

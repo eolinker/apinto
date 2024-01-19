@@ -93,7 +93,7 @@ func (d *dubboManger) Handler(port int, req *invocation.RPCInvocation) protocol.
 
 	} else {
 		log.Debug("match has:", port)
-		match.ServeHTTP(ctx)
+		match.Serve(ctx)
 	}
 
 	finish := ctx.GetFinish()

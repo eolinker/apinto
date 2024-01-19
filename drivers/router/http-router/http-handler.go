@@ -34,7 +34,7 @@ type httpHandler struct {
 	timeout   time.Duration
 }
 
-func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
+func (h *httpHandler) Serve(ctx eocontext.EoContext) {
 	httpContext, err := http_context.Assert(ctx)
 	if err != nil {
 		return
