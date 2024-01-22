@@ -1,8 +1,14 @@
 package oauth2
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"sync"
+	"time"
+
+	"github.com/eolinker/apinto/utils"
 
 	"github.com/eolinker/apinto/resources"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
@@ -70,9 +76,13 @@ func (o *oauth2) Set(app application.IApp, users []application.ITransformConfig)
 	infos := make([]*application.UserInfo, 0, len(users))
 	for _, user := range users {
 		v, _ := user.Config().(*User)
-		client := &Client{
-			Pattern: &v.Pattern,
-			Expire:  v.Expire,
+		c := &client{
+			clientId:     v.Pattern.ClientId,
+			clientSecret: v.Pattern.ClientSecret,
+			clientType:   v.Pattern.ClientType,
+			redirectUrls: v.Pattern.RedirectUrls,
+			hashSecret:   v.Pattern.HashSecret,
+			expire:       v.Expire,
 		}
 		if v.Pattern.HashSecret {
 			hr, err := extractHashRule(v.Pattern.ClientSecret)
@@ -81,9 +91,9 @@ func (o *oauth2) Set(app application.IApp, users []application.ITransformConfig)
 				continue
 			}
 			log.Debug("hash rule: ", *hr)
-			client.hashRule = hr
+			c.hashRule = hr
 		}
-		registerClient(v.Pattern.ClientId, client)
+		registerClient(v.Pattern.ClientId, c)
 
 		infos = append(infos, &application.UserInfo{
 			Name:           v.Username(),
@@ -105,4 +115,28 @@ func (o *oauth2) Del(appID string) {
 
 func (o *oauth2) UserCount() int {
 	return o.users.Count()
+}
+
+func validToken(ctx context.Context, cache resources.ICache, token string) (string, error) {
+	redisKey := fmt.Sprintf("apinto:oauth2_access_tokens:%s:%s", os.Getenv("cluster_id"), token)
+	result, err := cache.HMGet(ctx, redisKey, "client_id", "access_token", "create_at", "expires_in").Result()
+	if err != nil {
+		return "", fmt.Errorf("redis HMGet %s error: %s", redisKey, err.Error())
+	}
+	var clientID, accessToken, createAt, expiresInStr string
+	_, err = utils.Scan(result, &clientID, &accessToken, &createAt, &expiresInStr)
+	if err != nil {
+		return "", fmt.Errorf("scan redis result error: %s", err.Error())
+	}
+	createAtTime, _ := strconv.ParseInt(createAt, 10, 64)
+	expiresIn, _ := strconv.ParseInt(expiresInStr, 10, 64)
+	createTime := time.UnixMilli(createAtTime)
+	if time.Now().After(createTime.Add(time.Duration(expiresIn) * time.Second)) {
+		// token过期
+		return "", fmt.Errorf("token expired")
+	}
+	if accessToken != token {
+		return "", fmt.Errorf("invalid token")
+	}
+	return clientID, nil
 }

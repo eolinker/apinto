@@ -9,6 +9,7 @@ import (
 	grpc_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/grpc-proxy-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
 	js_inject "github.com/eolinker/apinto/drivers/plugins/js-inject"
+	"github.com/eolinker/apinto/drivers/plugins/oauth2"
 	params_check "github.com/eolinker/apinto/drivers/plugins/params-check"
 	"github.com/eolinker/apinto/drivers/plugins/prometheus"
 	request_file_parse "github.com/eolinker/apinto/drivers/plugins/request-file-parse"
@@ -101,4 +102,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 
 	// 计数插件
 	counter.Register(extenderRegister)
+
+	// 鉴权插件
+	oauth2.Register(extenderRegister)
 }

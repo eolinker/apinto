@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/md5"
 	"crypto/rand"
-	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -18,14 +17,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eolinker/eosc/router"
+	"github.com/eolinker/apinto/utils"
+
+	"github.com/eolinker/apinto/application/auth/oauth2"
 
 	"github.com/eolinker/eosc/log"
 
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/eolinker/apinto/resources"
 )
@@ -53,7 +53,7 @@ type TokenData struct {
 
 func NewTokenHandler() *TokenHandler {
 	h := &TokenHandler{}
-	router.SetPath("aaaa", "/oauth_tokens/", h)
+
 	return h
 }
 
@@ -150,7 +150,7 @@ func getTokenByRedis(cache resources.ICache, redisKey string) (*TokenData, error
 	if err != nil {
 		return nil, err
 	}
-	_, err = Scan(result, &accessToken, &scope, &expiresIn, &createdAt, &refreshToken, &clientId)
+	_, err = utils.Scan(result, &accessToken, &scope, &expiresIn, &createdAt, &refreshToken, &clientId)
 	if err != nil {
 		return nil, err
 	}
@@ -180,41 +180,27 @@ func newError(code int, msg string) []byte {
 	return body
 }
 
-func (t *TokenHandler) Handle(ctx http_service.IHttpContext, client *Client, params url.Values) {
+func (e *executor) Token(ctx http_service.IHttpContext, client oauth2.IClient, params url.Values) ([]byte, error) {
 
 	grantType := params.Get("grant_type")
 	clientSecret := params.Get("client_secret")
 	state := params.Get("state")
-	if grantType == "" || !((grantType == GrantAuthorizationCode && client.EnableAuthorizationCode) || (grantType == GrantClientCredentials && client.EnableClientCredentials) || grantType == GrantRefreshToken) {
-		ctx.Response().SetBody([]byte(fmt.Sprintf("unsupported grant type: %s,client id is %s", grantType, client.ClientId)))
-		ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
-		return
+	if grantType == "" || !((grantType == GrantAuthorizationCode && e.cfg.EnableAuthorizationCode) || (grantType == GrantClientCredentials && e.cfg.EnableClientCredentials) || grantType == GrantRefreshToken) {
+		return nil, fmt.Errorf("unsupported grant type: %s,client id %s", grantType, client.ClientID())
+	}
+	err := client.MatchSecret(clientSecret)
+	if err != nil {
+		return nil, fmt.Errorf("client secret is not match: %s,client id %s", err.Error(), client.ClientID())
 	}
 
-	if client.HashSecret {
-		// 密钥经过加密
-		salt, _ := base64.RawStdEncoding.DecodeString(client.hashRule.salt)
-		secret := pbkdf2.Key([]byte(clientSecret), salt, client.hashRule.iterations, client.hashRule.length, sha512.New)
-		clientSecret = base64.RawStdEncoding.EncodeToString(secret)
-	}
-
-	if clientSecret != client.hashRule.value {
-		ctx.Response().SetBody([]byte(fmt.Sprintf("fail to match secret,now: %s,hope: %s,client id is %s", clientSecret, client.hashRule.value, client.ClientId)))
-		ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
-		return
-	}
 	type Response struct {
 		*Token
 		State string `json:"state,omitempty"`
 	}
-	t.once.Do(func() {
-		t.cache = scope_manager.Auto[resources.ICache]("", "redis")
-	})
-	list := t.cache.List()
+
+	list := e.cache.List()
 	if len(list) < 1 {
-		ctx.Response().SetBody([]byte("redis cache is not found"))
-		ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
-		return
+		return nil, fmt.Errorf("redis cache is not found,client id %s", client.ClientID())
 	}
 
 	cache := list[0]
@@ -222,38 +208,30 @@ func (t *TokenHandler) Handle(ctx http_service.IHttpContext, client *Client, par
 	case GrantRefreshToken:
 		refreshToken := params.Get("refresh_token")
 		if refreshToken == "" {
-			ctx.Response().SetBody([]byte("refresh token is required, client id is " + client.ClientId))
-			ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
-			return
+			return nil, fmt.Errorf("refresh token is required,client id %s", client.ClientID())
 		}
 
 		redisKey := fmt.Sprintf("apinto:oauth2_refresh_tokens:%s:%s", os.Getenv("cluster_id"), refreshToken)
 
 		result, err := cache.HMGet(ctx.Context(), redisKey, "refresh_token", "access_token").Result()
 		if err != nil {
-			ctx.Response().SetBody([]byte("fail to get refresh token, client id is " + client.ClientId))
-			ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
-			return
+			return nil, fmt.Errorf("fail to get refresh token,client id %s", client.ClientID())
 		}
 		var refreshTokenStr, accessTokenStr string
-		_, err = Scan(result, &refreshTokenStr, &accessTokenStr)
+		_, err = utils.Scan(result, &refreshTokenStr, &accessTokenStr)
 		if err != nil {
-			ctx.Response().SetBody([]byte("invalid refresh token, client id is " + client.ClientId))
-			ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
-			return
+			return nil, fmt.Errorf("scan refresh token error: %s,client id %s", err.Error(), client.ClientID())
 		}
 		if refreshTokenStr != refreshToken {
-			ctx.Response().SetBody([]byte("invalid refresh token, client id is " + client.ClientId))
-			ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
-			return
+			return nil, fmt.Errorf("invalid refresh token,client id %s", client.ClientID())
 		}
-		token, err := generateToken(ctx.Context(), cache, client.ClientId, client.TokenExpiration, client.RefreshTokenTTL, "", !client.ReuseRefreshToken)
-		if !client.PersistentRefreshToken {
+		token, err := generateToken(ctx.Context(), cache, client.ClientID(), e.cfg.TokenExpiration, e.cfg.RefreshTokenTtl, "", !e.cfg.ReuseRefreshToken)
+		if !e.cfg.PersistentRefreshToken {
 			// 不持久化refresh token
 			accessTokenRedisKey := fmt.Sprintf("apinto:oauth2_access_tokens:%s:%s", os.Getenv("cluster_id"), accessTokenStr)
 			cache.Del(ctx.Context(), accessTokenRedisKey)
 		}
-		if client.ReuseRefreshToken {
+		if e.cfg.ReuseRefreshToken {
 			// 重用refresh token
 			token.AccessToken = accessTokenStr
 			cache.HMSetN(ctx.Context(), redisKey, map[string]interface{}{
@@ -267,69 +245,52 @@ func (t *TokenHandler) Handle(ctx http_service.IHttpContext, client *Client, par
 			State: state,
 		}
 		data, _ := json.Marshal(response)
-		ctx.Response().SetBody(data)
-		ctx.Response().SetStatus(http.StatusOK, "ok")
-		return
+		return data, nil
 	case GrantAuthorizationCode:
 		code := params.Get("code")
 		if code == "" {
-			ctx.Response().SetBody([]byte("code is required, client id is " + client.ClientId))
-			ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
-			return
+			return nil, fmt.Errorf("code is required,client id %s", client.ClientID())
 		}
 		redisKey := fmt.Sprintf("apinto:oauth2_codes:%s:%s", os.Getenv("cluster_id"), code)
 		result, err := cache.HMGet(ctx.Context(), redisKey, "code", "scope").Result()
 		if err != nil {
-			ctx.Response().SetBody([]byte("fail to get code, client id is " + client.ClientId))
-			ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
-			return
+			return nil, fmt.Errorf("fail to get code: %s,client id %s", err.Error(), client.ClientID())
 		}
 		// 删除旧授权码
 		cache.Del(ctx.Context(), redisKey)
 		var codeStr, scope string
-		_, err = Scan(result, &codeStr, &scope)
+		_, err = utils.Scan(result, &codeStr, &scope)
 		if err != nil {
-			ctx.Response().SetBody([]byte("invalid code"))
-			ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
-			return
+			return nil, fmt.Errorf("scan code error: %s,client id %s", err.Error(), client.ClientID())
 		}
 		if codeStr != code {
-			ctx.Response().SetBody([]byte("invalid code"))
-			ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
-			return
+			return nil, fmt.Errorf("invalid code,client id %s", client.ClientID())
 		}
 
-		token, err := generateToken(ctx.Context(), cache, client.ClientId, client.TokenExpiration, client.RefreshTokenTTL, scope, true)
+		token, err := generateToken(ctx.Context(), cache, client.ClientID(), e.cfg.TokenExpiration, e.cfg.RefreshTokenTtl, scope, true)
 		if err != nil {
-			ctx.Response().SetBody([]byte(fmt.Sprintf("(%s)generate token error: %s", client.ClientId, err.Error())))
-			ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
-			return
+			return nil, fmt.Errorf("(%s)generate token error: %s", client.ClientID(), err.Error())
 		}
 		response := &Response{
 			Token: token,
 			State: state,
 		}
 		data, _ := json.Marshal(response)
-		ctx.Response().SetBody(data)
-		ctx.Response().SetStatus(http.StatusOK, "ok")
-		return
+		return data, nil
 	case GrantClientCredentials:
 		// 生成token
-		token, err := generateToken(ctx.Context(), cache, client.ClientId, client.TokenExpiration, client.RefreshTokenTTL, "", false)
+		token, err := generateToken(ctx.Context(), cache, client.ClientID(), e.cfg.TokenExpiration, e.cfg.RefreshTokenTtl, "", false)
 		if err != nil {
-			ctx.Response().SetBody([]byte(fmt.Sprintf("(%s)generate token error: %s", client.ClientId, err.Error())))
-			ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
-			return
+			return nil, fmt.Errorf("(%s)generate token error: %s", client.ClientID(), err.Error())
 		}
 		response := &Response{
 			Token: token,
 			State: state,
 		}
 		data, _ := json.Marshal(response)
-		ctx.Response().SetBody(data)
-		ctx.Response().SetStatus(http.StatusOK, "ok")
-		return
+		return data, nil
 	}
+	return nil, fmt.Errorf("unsupported grant type: %s,client id %s", grantType, client.ClientID())
 }
 
 func generateRandomString() string {
@@ -409,30 +370,6 @@ func generateToken(ctx context.Context, cache resources.ICache, clientID string,
 		RefreshToken: refreshToken,
 		Scope:        scope,
 	}, nil
-}
-
-func validToken(ctx context.Context, cache resources.ICache, token string) (string, error) {
-	redisKey := fmt.Sprintf("apinto:oauth2_access_tokens:%s:%s", os.Getenv("cluster_id"), token)
-	result, err := cache.HMGet(ctx, redisKey, "client_id", "access_token", "create_at", "expires_in").Result()
-	if err != nil {
-		return "", fmt.Errorf("redis HMGet %s error: %s", redisKey, err.Error())
-	}
-	var clientID, accessToken, createAt, expiresInStr string
-	_, err = Scan(result, &clientID, &accessToken, &createAt, &expiresInStr)
-	if err != nil {
-		return "", fmt.Errorf("scan redis result error: %s", err.Error())
-	}
-	createAtTime, _ := strconv.ParseInt(createAt, 10, 64)
-	expiresIn, _ := strconv.ParseInt(expiresInStr, 10, 64)
-	createTime := time.UnixMilli(createAtTime)
-	if time.Now().After(createTime.Add(time.Duration(expiresIn) * time.Second)) {
-		// token过期
-		return "", fmt.Errorf("token expired")
-	}
-	if accessToken != token {
-		return "", fmt.Errorf("invalid token")
-	}
-	return clientID, nil
 }
 
 type Token struct {
