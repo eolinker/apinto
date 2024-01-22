@@ -2,7 +2,6 @@ package oauth2
 
 import (
 	"fmt"
-	"net/http"
 	"reflect"
 
 	"github.com/eolinker/eosc/utils/schema"
@@ -46,20 +45,7 @@ func (f *factory) Alias() []string {
 }
 
 func (f *factory) PreRouters() []*auth.PreRouter {
-	return []*auth.PreRouter{
-		{
-			ID:         "/oauth2/token",
-			PreHandler: NewHandler(NewTokenHandler()),
-			Path:       "/oauth2/token",
-			Method:     []string{http.MethodPost},
-		},
-		{
-			ID:         "/oauth2/authorize",
-			PreHandler: NewHandler(NewAuthorizeHandler()),
-			Path:       "/oauth2/authorize",
-			Method:     []string{http.MethodPost},
-		},
-	}
+	return []*auth.PreRouter{}
 }
 
 func (f *factory) Create(tokenName string, position string, rule interface{}) (application.IAuth, error) {

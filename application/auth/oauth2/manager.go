@@ -1,16 +1,34 @@
 package oauth2
 
-import "github.com/eolinker/eosc"
+import (
+	"crypto/sha512"
+	"encoding/base64"
+	"fmt"
 
-func registerClient(clientId string, client *Client) {
+	"golang.org/x/crypto/pbkdf2"
+
+	"github.com/eolinker/eosc"
+)
+
+type IClient interface {
+	ClientID() string
+	ClientSecret() string
+	ClientType() string
+	HashSecret() bool
+	RedirectUrls() []string
+	MatchSecret(secret string) error
+	Expire() int64
+}
+
+func registerClient(clientId string, client IClient) {
 	manager.clients.Set(clientId, client)
 }
 
-func removeClient(clientId string) {
+func RemoveClient(clientId string) {
 	manager.clients.Del(clientId)
 }
 
-func getClient(clientId string) (*Client, bool) {
+func GetClient(clientId string) (IClient, bool) {
 	return manager.clients.Get(clientId)
 }
 
@@ -18,16 +36,55 @@ var manager = NewManager()
 
 // Manager 管理oauth2配置
 type Manager struct {
-	clients eosc.Untyped[string, *Client]
+	clients eosc.Untyped[string, IClient]
 }
 
 func NewManager() *Manager {
-	return &Manager{clients: eosc.BuildUntyped[string, *Client]()}
+	return &Manager{clients: eosc.BuildUntyped[string, IClient]()}
 }
 
-type Client struct {
-	*Pattern
-	// Expire 过期时间
-	Expire   int64
-	hashRule *hashRule
+type client struct {
+	clientId     string
+	clientSecret string
+	clientType   string
+	hashSecret   bool
+	redirectUrls []string
+	expire       int64
+	hashRule     *hashRule
+}
+
+func (c *client) ClientID() string {
+	return c.clientId
+}
+
+func (c *client) ClientSecret() string {
+	return c.clientSecret
+}
+
+func (c *client) ClientType() string {
+	return c.clientType
+}
+
+func (c *client) HashSecret() bool {
+	return c.hashSecret
+}
+
+func (c *client) RedirectUrls() []string {
+	return c.redirectUrls
+}
+
+func (c *client) Expire() int64 {
+	return c.expire
+}
+
+func (c *client) MatchSecret(clientSecret string) error {
+	if c.hashSecret {
+		salt, _ := base64.RawStdEncoding.DecodeString(c.hashRule.salt)
+		secret := pbkdf2.Key([]byte(clientSecret), salt, c.hashRule.iterations, c.hashRule.length, sha512.New)
+		clientSecret = base64.RawStdEncoding.EncodeToString(secret)
+	}
+	if c.clientSecret != clientSecret {
+		return fmt.Errorf("fail to match secret,now: %s,hope: %s,client id is %s", clientSecret, c.hashRule.value, c.clientId)
+	}
+	return nil
 }
