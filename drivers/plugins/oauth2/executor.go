@@ -52,24 +52,29 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 		}
 		return
 	}
+	defer func() {
+		if err != nil {
+			log.Error(err)
+			type errResp struct {
+				Message string `json:"message"`
+			}
+			msg, _ := json.Marshal(errResp{Message: "Unauthorized"})
+			ctx.Response().SetBody(msg)
+			ctx.Response().SetStatus(http.StatusUnauthorized, "unauthorized")
+		}
+	}()
 	client, has := oauth2.GetClient(clientId)
 	if !has {
 		err = fmt.Errorf("invalid client id")
-		ctx.Response().SetBody([]byte(err.Error()))
-		ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
 		return
 	}
 
 	if strings.ToUpper(ctx.Request().URI().Scheme()) != "HTTPS" && !e.cfg.AcceptHttpIfAlreadyTerminated {
 		err = fmt.Errorf("invalid scheme")
-		ctx.Response().SetBody([]byte(err.Error()))
-		ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
 		return
 	}
 	if client.Expire() > 0 && client.Expire() < time.Now().Unix() {
 		err = fmt.Errorf("client id is expired")
-		ctx.Response().SetBody([]byte("client id is expired"))
-		ctx.Response().SetStatus(http.StatusForbidden, "forbidden")
 		return
 	}
 
@@ -84,14 +89,7 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 		data, err = e.Token(ctx, client, params)
 	}
 	if err != nil {
-		log.Error(err)
-		type errResp struct {
-			Message string `json:"message"`
-		}
-		msg, _ := json.Marshal(errResp{Message: "Unauthorized"})
-		ctx.Response().SetBody(msg)
-		ctx.Response().SetStatus(http.StatusUnauthorized, "unauthorized")
-		return err
+		return
 	}
 	ctx.Response().SetBody(data)
 	ctx.Response().SetStatus(http.StatusOK, "ok")

@@ -83,7 +83,7 @@ func (c *client) MatchSecret(clientSecret string) error {
 		secret := pbkdf2.Key([]byte(clientSecret), salt, c.hashRule.iterations, c.hashRule.length, sha512.New)
 		clientSecret = base64.RawStdEncoding.EncodeToString(secret)
 	}
-	if c.clientSecret != clientSecret {
+	if c.hashRule.value != clientSecret {
 		return fmt.Errorf("fail to match secret,now: %s,hope: %s,client id is %s", clientSecret, c.hashRule.value, c.clientId)
 	}
 	return nil

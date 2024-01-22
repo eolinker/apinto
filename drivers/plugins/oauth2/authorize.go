@@ -35,7 +35,7 @@ func (e *executor) Authorize(ctx http_context.IHttpContext, client oauth2.IClien
 			break
 		}
 	}
-	if !matchScope {
+	if len(e.cfg.Scopes) > 0 && !matchScope {
 		return nil, fmt.Errorf("invalid scope,client id %s", client.ClientID())
 	}
 

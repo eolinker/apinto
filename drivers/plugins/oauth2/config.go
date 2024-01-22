@@ -1,6 +1,9 @@
 package oauth2
 
 import (
+	"sync"
+
+	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 )
 
@@ -28,5 +31,9 @@ type Config struct {
 }
 
 func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	return nil, nil
+	return &executor{
+		WorkerBase: drivers.Worker(id, name),
+		cfg:        conf,
+		once:       sync.Once{},
+	}, nil
 }
