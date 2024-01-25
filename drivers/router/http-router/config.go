@@ -6,12 +6,13 @@ import (
 )
 
 type Config struct {
-	Listen  int            `json:"listen" yaml:"listen" title:"port" description:"使用端口" default:"80" label:"端口号" maximum:"65535"`
-	Method  []string       `json:"method" yaml:"method" enum:"GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS" label:"请求方式"`
-	Host    []string       `json:"host" yaml:"host" label:"域名"`
-	Path    string         `json:"location"`
-	Rules   []Rule         `json:"rules" yaml:"rules" label:"路由规则"`
-	Service eosc.RequireId `json:"service" yaml:"service" skill:"github.com/eolinker/apinto/service.service.IService" required:"false" empty_label:"使用匿名服务" label:"目标服务"`
+	Listen    int            `json:"listen" yaml:"listen" title:"port" description:"使用端口" default:"80" label:"端口号" maximum:"65535"`
+	Method    []string       `json:"method" yaml:"method" enum:"GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS" label:"请求方式"`
+	Protocols []string       `json:"protocols" yaml:"protocols" enum:"http,https" label:"协议"`
+	Host      []string       `json:"host" yaml:"host" label:"域名"`
+	Path      string         `json:"location"`
+	Rules     []Rule         `json:"rules" yaml:"rules" label:"路由规则"`
+	Service   eosc.RequireId `json:"service" yaml:"service" skill:"github.com/eolinker/apinto/service.service.IService" required:"false" empty_label:"使用匿名服务" label:"目标服务"`
 
 	Status int               `json:"status" yaml:"status" label:"响应状态码" switch:"service===''" default:"200" maximum:"1000" minimum:"100"`
 	Header map[string]string `json:"header" yaml:"header" label:"响应头部" switch:"service===''"`

@@ -78,13 +78,16 @@ func (c *client) Expire() int64 {
 }
 
 func (c *client) MatchSecret(clientSecret string) error {
+	orgSecret := c.clientSecret
 	if c.hashSecret {
 		salt, _ := base64.RawStdEncoding.DecodeString(c.hashRule.salt)
 		secret := pbkdf2.Key([]byte(clientSecret), salt, c.hashRule.iterations, c.hashRule.length, sha512.New)
 		clientSecret = base64.RawStdEncoding.EncodeToString(secret)
+		orgSecret = c.hashRule.value
 	}
-	if c.hashRule.value != clientSecret {
-		return fmt.Errorf("fail to match secret,now: %s,hope: %s,client id is %s", clientSecret, c.hashRule.value, c.clientId)
+
+	if orgSecret != clientSecret {
+		return fmt.Errorf("fail to match secret,now: %s,hope: %s,client id is %s", clientSecret, orgSecret, c.clientId)
 	}
 	return nil
 }

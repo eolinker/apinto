@@ -115,7 +115,7 @@ func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 			Pattern: r.Value,
 		})
 	}
-	err := h.routerManager.Set(h.id, cfg.Listen, cfg.Host, methods, cfg.Path, appendRule, handler)
+	err := h.routerManager.Set(h.id, cfg.Listen, cfg.Protocols, cfg.Host, methods, cfg.Path, appendRule, handler)
 	if err != nil {
 		return err
 	}

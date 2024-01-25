@@ -91,7 +91,7 @@ func TestRoot_Add(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			if err := r.Add(tt.args.id, tt.args.handler, tt.args.port, tt.args.hosts, tt.args.methods, tt.args.path, tt.args.append); err != nil {
+			if err := r.Add(tt.args.id, tt.args.handler, tt.args.port, nil, tt.args.hosts, tt.args.methods, tt.args.path, tt.args.append); err != nil {
 				if tt.wantErr {
 					t.Logf("Add() error = %v\n", err)
 				} else {
