@@ -30,7 +30,7 @@ func (a *App) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain)
 	log.Debug("auth beginning")
 	err := a.auth(ctx)
 	if err != nil {
-		ctx.Response().SetStatus(403, "403")
+		ctx.Response().SetStatus(401, "Unauthorized")
 		ctx.Response().SetBody([]byte(err.Error()))
 		return err
 	}

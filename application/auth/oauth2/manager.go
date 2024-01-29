@@ -20,7 +20,7 @@ type IClient interface {
 	Expire() int64
 }
 
-func registerClient(clientId string, client IClient) {
+func RegisterClient(clientId string, client IClient) {
 	manager.clients.Set(clientId, client)
 }
 
@@ -32,15 +32,36 @@ func GetClient(clientId string) (IClient, bool) {
 	return manager.clients.Get(clientId)
 }
 
+func GetClientMap(id string) map[string]struct{} {
+	result := map[string]struct{}{}
+	apps, has := manager.apps.Get(id)
+	if !has {
+		return result
+	}
+	for key := range apps {
+		result[key] = struct{}{}
+	}
+	return result
+}
+
+func SetClientMap(id string, clientIds map[string]struct{}) {
+	manager.apps.Set(id, clientIds)
+}
+
+func DeleteClientMap(id string) (map[string]struct{}, bool) {
+	return manager.apps.Del(id)
+}
+
 var manager = NewManager()
 
 // Manager 管理oauth2配置
 type Manager struct {
 	clients eosc.Untyped[string, IClient]
+	apps    eosc.Untyped[string, map[string]struct{}]
 }
 
 func NewManager() *Manager {
-	return &Manager{clients: eosc.BuildUntyped[string, IClient]()}
+	return &Manager{clients: eosc.BuildUntyped[string, IClient](), apps: eosc.BuildUntyped[string, map[string]struct{}]()}
 }
 
 type client struct {

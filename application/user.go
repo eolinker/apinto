@@ -25,6 +25,7 @@ type UserInfo struct {
 	TokenName      string
 	Position       string
 	App            IApp
+	Additional     interface{}
 }
 
 var _ IUserManager = (*UserManager)(nil)

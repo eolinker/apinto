@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/eolinker/apinto/drivers/plugins/acl"
 	"github.com/eolinker/apinto/drivers/plugins/app"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	data_transform "github.com/eolinker/apinto/drivers/plugins/data-transform"
@@ -93,6 +94,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	app.Register(extenderRegister)
 	rsa_filter.Register(extenderRegister)
 	js_inject.Register(extenderRegister)
+	acl.Register(extenderRegister)
 
 	// 可观测性（输出内容到第三方）
 	access_log.Register(extenderRegister)
