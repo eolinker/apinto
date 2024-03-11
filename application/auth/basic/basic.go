@@ -33,14 +33,13 @@ func (b *basic) GetUser(ctx http_service.IHttpContext) (*application.UserInfo, b
 	}
 	username, password := parseToken(token)
 	if username == "" {
-		return nil, true
+		return nil, false
 	}
 	user, has := b.users.Get(username)
 	if has {
 		if password == user.Value {
 			return user, true
 		}
-		return nil, true
 	}
 	return nil, false
 }

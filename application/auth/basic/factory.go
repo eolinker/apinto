@@ -44,6 +44,10 @@ func (f *factory) Alias() []string {
 	}
 }
 
+func (f *factory) PreRouters() []*auth.PreRouter {
+	return nil
+}
+
 func (f *factory) Create(tokenName string, position string, rule interface{}) (application.IAuth, error) {
 	a := &basic{
 		id:        toId(tokenName, position),

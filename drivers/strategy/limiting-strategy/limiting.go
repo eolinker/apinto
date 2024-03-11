@@ -1,10 +1,10 @@
 package limiting_strategy
 
 import (
-	"fmt"
+	"reflect"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
-	"reflect"
 )
 
 var (
@@ -38,14 +38,14 @@ func (l *Limiting) Reset(v interface{}, workers map[eosc.RequireId]eosc.IWorker)
 	if !ok {
 		return eosc.ErrorConfigIsNil
 	}
-	if conf.Priority > 999 || conf.Priority < 1 {
-		return fmt.Errorf("priority value %d not allow ", conf.Priority)
-	}
+	//if conf.Priority > 999 || conf.Priority < 1 {
+	//	return fmt.Errorf("priority value %d not allow ", conf.Priority)
+	//}
 	confCore := conf
 	if reflect.DeepEqual(l.config, confCore) {
 		return nil
 	}
-	handler, err := NewLimitingHandler(confCore)
+	handler, err := NewLimitingHandler(l.Name(), confCore)
 	if err != nil {
 		return err
 	}

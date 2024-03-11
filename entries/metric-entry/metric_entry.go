@@ -2,12 +2,13 @@ package metric_entry
 
 import (
 	"fmt"
+	"strings"
+
 	http_entry "github.com/eolinker/apinto/entries/http-entry"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
-	"strings"
 )
 
 type metricEntry struct {
@@ -40,7 +41,7 @@ func (p *metricEntry) GetFloat(pattern string) (float64, bool) {
 
 func (p *metricEntry) Read(pattern string) string {
 	//会先从rule里面读，若rule没有相应的pattern，会从ctx里面读label
-	value := p.iEntry.Read(pattern)
+	value := eosc.ReadStringFromEntry(p.iEntry, pattern)
 	if value == "" {
 		value = "-"
 	}
@@ -86,7 +87,7 @@ func (p *proxyMetricEntry) Read(pattern string) string {
 		name := strings.TrimPrefix(pattern, p.prefix)
 		f, exist := p.proxyReaders[name]
 		if exist {
-			value, has := f.ReadProxy(name, p.proxy)
+			value, has := http_entry.ReadProxyFromProxyReader(f, p.proxy, name)
 			if !has {
 				value = "-"
 			}

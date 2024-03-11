@@ -56,7 +56,7 @@ func (a *apikey) Del(appID string) {
 	a.users.DelByAppID(appID)
 }
 
-//GetUser 鉴权处理
+// GetUser 鉴权处理
 func (a *apikey) GetUser(ctx http_service.IHttpContext) (*application.UserInfo, bool) {
 	token, has := application.GetToken(ctx, a.tokenName, a.position)
 	if !has || token == "" {

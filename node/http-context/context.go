@@ -4,7 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strconv"
+	"strings"
 	"time"
+
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
+
+	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/entries/ctx_key"
 
@@ -36,6 +42,7 @@ type HttpContext struct {
 	upstreamHostHandler eoscContext.UpstreamHostHandler
 	labels              map[string]string
 	port                int
+	entry               eosc.IEntry
 }
 
 func (ctx *HttpContext) RealIP() string {
@@ -68,6 +75,13 @@ func (ctx *HttpContext) GetBalance() eoscContext.BalanceHandler {
 
 func (ctx *HttpContext) SetBalance(handler eoscContext.BalanceHandler) {
 	ctx.balance = handler
+}
+
+func (ctx *HttpContext) GetEntry() eosc.IEntry {
+	if ctx.entry == nil {
+		ctx.entry = http_entry.NewEntry(ctx)
+	}
+	return ctx.entry
 }
 
 func (ctx *HttpContext) SetLabel(name, value string) {
@@ -122,25 +136,36 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 
 	host := node.Addr()
 	request := ctx.proxyRequest.Request()
-
+	rewriteHost := string(request.Host())
 	passHost, targetHost := ctx.GetUpstreamHostHandler().PassHost()
 	switch passHost {
 	case eoscContext.PassHost:
 	case eoscContext.NodeHost:
+		rewriteHost = host
 		request.URI().SetHost(host)
 	case eoscContext.ReWriteHost:
+		rewriteHost = targetHost
 		request.URI().SetHost(targetHost)
 	}
-
 	beginTime := time.Now()
-	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, node, request, &ctx.fastHttpRequestCtx.Response, timeout)
-	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, beginTime, time.Now())
+	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, &ctx.fastHttpRequestCtx.Response, timeout)
+	var responseHeader fasthttp.ResponseHeader
+	if ctx.response.Response != nil {
+		responseHeader = ctx.response.Response.Header
+	}
+	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, responseHeader, beginTime, time.Now())
 	if ctx.response.responseError != nil {
 		agent.setStatusCode(504)
 	} else {
 		ctx.response.ResponseHeader.refresh()
+		ip, port := parseAddr(ctx.fastHttpRequestCtx.Response.RemoteAddr().String())
+		agent.setRemoteIP(ip)
+		agent.setRemotePort(port)
+		ctx.response.remoteIP = ip
+		ctx.response.remotePort = port
 		agent.setStatusCode(ctx.fastHttpRequestCtx.Response.StatusCode())
 	}
+	agent.responseBody = string(ctx.response.Response.Body())
 
 	agent.setResponseLength(ctx.fastHttpRequestCtx.Response.Header.ContentLength())
 
@@ -210,7 +235,6 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 	//记录请求时间
 	copyContext.ctx = context.WithValue(ctx.Context(), http_service.KeyCloneCtx, true)
 	copyContext.WithValue(ctx_key.CtxKeyRetry, 0)
-	copyContext.WithValue(ctx_key.CtxKeyRetry, time.Duration(0))
 	return copyContext, nil
 }
 
@@ -226,6 +250,10 @@ func NewContext(ctx *fasthttp.RequestCtx, port int) *HttpContext {
 
 	// 原始请求最大读取body为8k，使用clone request
 	request := fasthttp.AcquireRequest()
+
+	if ctx.Request.IsBodyStream() && ctx.Request.Header.ContentLength() > 8*1024 {
+		ctx.Request.Body()
+	}
 	ctx.Request.CopyTo(request)
 	httpContext.requestReader.reset(request, remoteAddr)
 
@@ -270,4 +298,13 @@ func (ctx *HttpContext) FastFinish() {
 	ctx.fastHttpRequestCtx = nil
 	pool.Put(ctx)
 
+}
+
+func parseAddr(addr string) (string, int) {
+	a := strings.Split(addr, ":")
+	port := 0
+	if len(a) > 1 {
+		port, _ = strconv.Atoi(a[1])
+	}
+	return a[0], port
 }

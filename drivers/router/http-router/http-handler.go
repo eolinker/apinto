@@ -29,12 +29,12 @@ type httpHandler struct {
 	filters   eocontext.IChainPro
 	disable   bool
 	websocket bool
-
-	retry   int
-	timeout time.Duration
+	labels    map[string]string
+	retry     int
+	timeout   time.Duration
 }
 
-func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
+func (h *httpHandler) Serve(ctx eocontext.EoContext) {
 	httpContext, err := http_context.Assert(ctx)
 	if err != nil {
 		return
@@ -54,6 +54,11 @@ func (h *httpHandler) ServeHTTP(ctx eocontext.EoContext) {
 			return
 		}
 		ctx = wsCtx
+	}
+
+	for key, value := range h.labels {
+		// 设置标签
+		ctx.SetLabel(key, value)
 	}
 	//set retry timeout
 	ctx.WithValue(ctx_key.CtxKeyRetry, h.retry)

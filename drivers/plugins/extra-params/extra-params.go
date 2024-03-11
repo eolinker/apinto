@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/eolinker/apinto/drivers"
 	"mime"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/eolinker/apinto/drivers"
 
 	"github.com/ohler55/ojg/jp"
 
@@ -71,8 +72,21 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 		switch param.Position {
 		case "query":
 			{
-				v, _ := json.Marshal(paramValue)
-				value, err := getQueryValue(ctx, param, string(v))
+				v := ""
+				switch val := paramValue.(type) {
+				case string:
+					v = val
+				case int:
+					v = strconv.Itoa(val)
+				case float64:
+					v = strconv.FormatFloat(val, 'f', -1, 64)
+				case bool:
+					v = strconv.FormatBool(val)
+				default:
+					tmp, _ := json.Marshal(paramValue)
+					v = string(tmp)
+				}
+				value, err := getQueryValue(ctx, param, v)
 				if err != nil {
 					err = encodeErr(e.errorType, err.Error(), clientErrStatusCode)
 					return clientErrStatusCode, err
@@ -81,8 +95,22 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 			}
 		case "header":
 			{
-				v, _ := json.Marshal(paramValue)
-				value, err := getHeaderValue(headers, param, string(v))
+				v := ""
+				switch val := paramValue.(type) {
+				case string:
+					v = val
+				case int:
+					v = strconv.Itoa(val)
+				case float64:
+					v = strconv.FormatFloat(val, 'f', -1, 64)
+				case bool:
+					v = strconv.FormatBool(val)
+				default:
+					tmp, _ := json.Marshal(paramValue)
+					v = string(tmp)
+				}
+
+				value, err := getHeaderValue(headers, param, v)
 				if err != nil {
 					err = encodeErr(e.errorType, err.Error(), clientErrStatusCode)
 					return clientErrStatusCode, err

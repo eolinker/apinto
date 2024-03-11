@@ -39,14 +39,12 @@ func (ls listChecker) Check(v string, has bool) bool {
 
 func (m *multipleChecker) Check(v string, has bool) bool {
 	if has && m.equals != nil {
-		//全选逻辑处理
-		for k, _ := range m.equals {
-			if k == "ALL" {
-				return true
-			}
-		}
 
 		if ok := m.equals[v]; ok {
+			return true
+		}
+		//全选逻辑处理
+		if _, ok := m.equals["ALL"]; ok {
 			return true
 		}
 	}

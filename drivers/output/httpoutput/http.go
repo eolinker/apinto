@@ -1,6 +1,8 @@
 package httpoutput
 
 import (
+	"encoding/json"
+
 	http_transport "github.com/eolinker/apinto/output/http-transport"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
@@ -73,7 +75,12 @@ func create(config *Config) (formatter.ITransport, eosc.IFormatter, error) {
 	if !has {
 		return nil, nil, errFormatterType
 	}
-	fm, err := factory.Create(config.Formatter)
+	var extendCfg []byte
+	if config.Type == "json" {
+		extendCfg, _ = json.Marshal(config.ContentResize)
+	}
+
+	fm, err := factory.Create(config.Formatter, extendCfg)
 	if err != nil {
 		return nil, nil, err
 	}

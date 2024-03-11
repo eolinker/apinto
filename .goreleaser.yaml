@@ -7,10 +7,13 @@ builds:
     goarch:
       - amd64
       - arm64
+      - loong64
+      - mips64le
     goarm:
       - "6"
+      - "7"
     gomips:
-      - hardfloat
+      - softfloat
     goamd64:
       - v2
       - v3
@@ -19,6 +22,8 @@ builds:
       - linux_amd64
       - darwin_arm64
       - darwin_amd64
+      - linux_loong64
+      - linux_mips64le
     dir: ./app/apinto
     main: .
     binary: apinto

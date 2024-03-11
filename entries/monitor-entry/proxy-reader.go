@@ -2,8 +2,7 @@ package monitor_entry
 
 import (
 	"fmt"
-
-	"github.com/eolinker/eosc/utils"
+	"os"
 
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
@@ -29,10 +28,10 @@ func ReadProxy(ctx http_context.IHttpContext) []IPoint {
 		return make([]IPoint, 0, 1)
 	}
 
-	globalLabels := utils.GlobalLabelGet()
+	//globalLabels := utils.GlobalLabelGet()
 	labelMetrics := map[string]string{
-		"cluster": globalLabels["cluster_id"],
-		"node":    globalLabels["node_id"],
+		"cluster": os.Getenv("cluster_id"),
+		"node":    os.Getenv("node_id"),
 	}
 	for key, label := range labels {
 		value := ctx.GetLabel(label)

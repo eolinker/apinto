@@ -2,12 +2,13 @@ package http_router
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
-	"github.com/eolinker/apinto/drivers/router/http-router/websocket"
-
 	"github.com/eolinker/apinto/service"
+
+	"github.com/eolinker/apinto/drivers/router/http-router/websocket"
 
 	"github.com/eolinker/eosc/eocontext"
 
@@ -61,6 +62,7 @@ func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 		disable:     cfg.Disable,
 		websocket:   cfg.Websocket,
 		retry:       cfg.Retry,
+		labels:      cfg.Labels,
 		timeout:     time.Duration(cfg.TimeOut) * time.Millisecond,
 	}
 
@@ -86,7 +88,11 @@ func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 			// 当service未指定，使用默认返回
 			handler.completeHandler = http_complete.NewNoServiceCompleteHandler(cfg.Status, cfg.Header, cfg.Body)
 		} else {
-			serviceWorker, has := workers[cfg.Service]
+			s, err := url.PathUnescape(string(cfg.Service))
+			if err != nil {
+				s = string(cfg.Service)
+			}
+			serviceWorker, has := workers[eosc.RequireId(s)]
 			if !has || !serviceWorker.CheckSkill(service.ServiceSkill) {
 				return eosc.ErrorNotGetSillForRequire
 			}
@@ -109,7 +115,7 @@ func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 			Pattern: r.Value,
 		})
 	}
-	err := h.routerManager.Set(h.id, cfg.Listen, cfg.Host, methods, cfg.Path, appendRule, handler)
+	err := h.routerManager.Set(h.id, cfg.Listen, cfg.Protocols, cfg.Host, methods, cfg.Path, appendRule, handler)
 	if err != nil {
 		return err
 	}

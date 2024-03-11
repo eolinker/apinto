@@ -1,8 +1,9 @@
 package nsq
 
 import (
-	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"reflect"
+
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/output"
@@ -22,7 +23,8 @@ type NsqOutput struct {
 func (n *NsqOutput) Output(entry eosc.IEntry) error {
 	w := n.write
 	if w != nil {
-		return w.output(entry)
+		w.output(entry)
+		return nil
 	}
 	return eosc.ErrorWorkerNotRunning
 }

@@ -3,9 +3,12 @@ package redis
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/eolinker/eosc/log"
+
 	"github.com/eolinker/apinto/resources"
 	"github.com/go-redis/redis/v8"
-	"time"
 )
 
 type statusResult struct {
@@ -63,7 +66,9 @@ func (r *Cmdable) SetNX(ctx context.Context, key string, value []byte, expiratio
 func (r *Cmdable) DecrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
 	pipeline := r.cmdable.Pipeline()
 	result := pipeline.DecrBy(ctx, key, decrement)
-	pipeline.Expire(ctx, key, expiration)
+	if expiration > 0 {
+		pipeline.Expire(ctx, key, expiration)
+	}
 	_, err := pipeline.Exec(ctx)
 	if err != nil {
 		return nil
@@ -75,12 +80,19 @@ func (r *Cmdable) DecrBy(ctx context.Context, key string, decrement int64, expir
 func (r *Cmdable) IncrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
 	pipeline := r.cmdable.Pipeline()
 	result := pipeline.IncrBy(ctx, key, decrement)
-	pipeline.Expire(ctx, key, expiration)
+	if expiration > 0 {
+		pipeline.Expire(ctx, key, expiration)
+	}
+
 	_, err := pipeline.Exec(ctx)
 	if err != nil {
 		return nil
 	}
 	return result
+}
+
+func (r *Cmdable) Keys(ctx context.Context, key string) resources.StringSliceResult {
+	return r.cmdable.Keys(ctx, key)
 }
 
 func (r *Cmdable) Get(ctx context.Context, key string) resources.StringResult {
@@ -93,8 +105,36 @@ func (r *Cmdable) GetDel(ctx context.Context, key string) resources.StringResult
 
 }
 
+func (r *Cmdable) HMSetN(ctx context.Context, key string, fields map[string]interface{}, expiration time.Duration) resources.BoolResult {
+	pipeline := r.cmdable.Pipeline()
+	result := pipeline.HMSet(ctx, key, fields)
+	if expiration > 0 {
+		pipeline.Expire(ctx, key, expiration)
+	}
+	_, err := pipeline.Exec(ctx)
+	if err != nil {
+		log.Errorf("HMSetN error:%s", err.Error())
+		return nil
+	}
+	return result
+}
+
+func (r *Cmdable) HMGet(ctx context.Context, key string, fields ...string) resources.ArrayInterfaceResult {
+	return r.cmdable.HMGet(ctx, key, fields...)
+}
+
 func (r *Cmdable) Del(ctx context.Context, keys ...string) resources.IntResult {
 	return r.cmdable.Del(ctx, keys...)
+}
+
+func (r *Cmdable) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) resources.InterfaceResult {
+	switch s := script.(type) {
+	case string:
+		return redis.NewScript(s).Run(ctx, r.cmdable, keys, args...)
+	case *redis.Script:
+		return s.Run(ctx, r.cmdable, keys, args...)
+	}
+	return resources.NewInterfaceResult(nil, fmt.Errorf("script type error: %T", script))
 }
 
 type TxPipeline struct {

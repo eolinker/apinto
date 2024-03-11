@@ -7,16 +7,12 @@ import (
 )
 
 type IReaderIndex interface {
-	ReadByIndex(index int, name string, ctx http_service.IHttpContext) (string, bool)
+	ReadByIndex(index int, name string, ctx http_service.IHttpContext) (interface{}, bool)
 }
 
 type ProxyReaders map[string]IProxyReader
 
-func (p ProxyReaders) ReadByIndex(index int, name string, ctx http_service.IHttpContext) (string, bool) {
-	v, ok := p[name]
-	if !ok {
-		return "", false
-	}
+func (p ProxyReaders) ReadByIndex(index int, name string, ctx http_service.IHttpContext) (interface{}, bool) {
 	proxies := ctx.Proxies()
 	proxyLen := len(proxies)
 
@@ -26,14 +22,33 @@ func (p ProxyReaders) ReadByIndex(index int, name string, ctx http_service.IHttp
 	if index == -1 {
 		index = proxyLen - 1
 	}
-
-	return v.ReadProxy(name, proxies[index])
+	v, ok := p[name]
+	if !ok {
+		fs := strings.SplitN(name, "_", 2)
+		if len(fs) == 2 {
+			v, ok = p[fs[0]]
+			if ok {
+				return v.ReadProxy(fs[1], proxies[index])
+			}
+		}
+		return "", false
+	}
+	return v.ReadProxy("", proxies[index])
 
 }
 
-func (p ProxyReaders) Read(name string, ctx http_service.IHttpContext) (string, bool) {
+func (p ProxyReaders) Read(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+	v, ok := p[name]
+	if ok {
+		proxies := ctx.Proxies()
+		proxyLen := len(proxies)
+		if proxyLen == 0 {
+			return "", false
+		}
+		return v.ReadProxy("", proxies[proxyLen-1])
+	}
 	ns := strings.SplitN(name, "_", 2)
-	v, ok := p[ns[0]]
+	v, ok = p[ns[0]]
 	if !ok {
 		return "", false
 	}

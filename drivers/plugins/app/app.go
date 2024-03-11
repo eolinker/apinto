@@ -30,7 +30,7 @@ func (a *App) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain)
 	log.Debug("auth beginning")
 	err := a.auth(ctx)
 	if err != nil {
-		ctx.Response().SetStatus(403, "403")
+		ctx.Response().SetStatus(401, "Unauthorized")
 		ctx.Response().SetBody([]byte(err.Error()))
 		return err
 	}
@@ -99,6 +99,7 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 			setLabels(ctx, user.App.Labels())
 			ctx.SetLabel("application_id", user.App.Id())
 			ctx.SetLabel("application", user.App.Name())
+			ctx.SetLabel("token", user.Name)
 			log.Debug("application name is ", user.App.Name())
 			if user.HideCredential {
 				application.HideToken(ctx, user.TokenName, user.Position)
@@ -113,7 +114,7 @@ func (a *App) auth(ctx http_service.IHttpContext) error {
 	if has {
 		return nil
 	}
-	return errors.New("invalid user")
+	return errors.New("missing or invalid token")
 }
 
 func setLabels(ctx http_service.IHttpContext, labels map[string]string) {

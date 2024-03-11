@@ -116,17 +116,22 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 		}
 
 		request.URI()
+		host := ""
 		passHost, targetHost := ctx.GetUpstreamHostHandler().PassHost()
 		switch passHost {
 		case eocontext.PassHost:
-			request.URI().SetHost(strings.Join(ctx.Proxy().Headers().Get(":authority"), ","))
+			host = strings.Join(ctx.Proxy().Headers().Get(":authority"), ",")
+			request.URI().SetHost(host)
 		case eocontext.NodeHost:
 			request.URI().SetHost(node.Addr())
+			host = node.Addr()
 		case eocontext.ReWriteHost:
 			request.URI().SetHost(targetHost)
+			host = targetHost
 		}
 		response := fasthttp.AcquireResponse()
-		lastErr = fasthttp_client.ProxyTimeout(scheme, node, request, response, timeOut)
+
+		lastErr = fasthttp_client.ProxyTimeout(scheme, host, node, request, response, timeOut)
 		if lastErr == nil {
 			return newGRPCResponse(ctx, response, methodDesc)
 		}

@@ -1,8 +1,9 @@
 package scope_manager
 
 import (
-	"github.com/eolinker/eosc"
 	"sync"
+
+	"github.com/eolinker/eosc"
 )
 
 var (
@@ -29,25 +30,24 @@ func Get[T any](scopeName string) IProxyOutput[T] {
 			scopes.Set(scopeName, proxy)
 		}
 	}
-
 	return create[T](proxy)
 }
 
-func Set(name string, value interface{}, scopes ...string) {
+func Set(name string, value interface{}, ss ...string) {
 	locker.Lock()
 	defer locker.Unlock()
 	del(name)
 
-	set(name, value, append(scopes, name))
+	set(name, value, ss)
 	rebuild()
 }
 
-func set(name string, value interface{}, scopes []string) {
-	if len(scopes) < 1 {
+func set(name string, value interface{}, ss []string) {
+	if len(ss) < 1 {
 		return
 	}
-	connScope.Set(name, scopes)
-	for _, scope := range scopes {
+	connScope.Set(name, ss)
+	for _, scope := range ss {
 		output, has := connOutput.Get(scope)
 		if !has {
 			output = eosc.BuildUntyped[string, interface{}]()
@@ -77,9 +77,9 @@ func Del(name string) {
 }
 
 func del(name string) {
-	scopes, has := connScope.Del(name)
+	ss, has := connScope.Del(name)
 	if has {
-		for _, scope := range scopes {
+		for _, scope := range ss {
 			output, has := connOutput.Get(scope)
 			if !has {
 				continue

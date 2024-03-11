@@ -1,14 +1,15 @@
 package monitor_manager
 
 import (
+	"os"
+	"reflect"
+	"time"
+
 	"github.com/eolinker/apinto/entries/monitor-entry"
 	"github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/log"
-	"github.com/eolinker/eosc/utils"
-	"reflect"
-	"time"
 )
 
 var _ IManager = (*MonitorManager)(nil)
@@ -36,11 +37,10 @@ func (o *MonitorManager) RemoveCurrencyAPI(apiID string) {
 	v, ok := o.concurrentApis.Del(apiID)
 	if ok {
 		now := time.Now()
-		globalLabel := utils.GlobalLabelGet()
 		tags := map[string]string{
 			"api":     apiID,
-			"cluster": globalLabel["cluster"],
-			"node":    globalLabel["node"],
+			"cluster": os.Getenv("cluster_id"),
+			"node":    os.Getenv("node_id"),
 		}
 		fields := map[string]interface{}{
 			"value": v.Get(),
@@ -120,9 +120,8 @@ func (o *MonitorManager) proxyOutput(v scope_manager.IProxyOutput[monitor_entry.
 
 func (o *MonitorManager) genNodePoints() []monitor_entry.IPoint {
 	now := time.Now()
-	globalLabel := utils.GlobalLabelGet()
-	cluster := globalLabel["cluster"]
-	node := globalLabel["node"]
+	cluster := os.Getenv("cluster_id")
+	node := os.Getenv("node_id")
 	points := make([]monitor_entry.IPoint, 0, o.concurrentApis.Count())
 	for key, value := range o.concurrentApis.All() {
 		tags := map[string]string{

@@ -212,16 +212,19 @@ func (b *BodyRequestHandler) resetFile() error {
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
 
-	for name, fs := range multipartForm.File {
+	for _, fs := range multipartForm.File {
 		for _, f := range fs {
 			fio, err := f.Open()
 			if err != nil {
 				return err
 			}
-
-			part, err := writer.CreateFormFile(name, f.Filename)
+			//part, err := writer.CreateFormFile(name, f.Filename)
+			//if err != nil {
+			//	fio.Close()
+			//	return err
+			//}
+			part, err := writer.CreatePart(f.Header)
 			if err != nil {
-				fio.Close()
 				return err
 			}
 

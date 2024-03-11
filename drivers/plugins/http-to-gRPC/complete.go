@@ -97,7 +97,7 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 
 	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
-	if !ok {
+	if !ok || timeout == 0 {
 		timeout = router.DefaultTimeout
 	}
 
@@ -119,60 +119,63 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 			return err
 		}
 		conn, lastErr = dial(node, timeout, opts...)
-		if lastErr != nil {
-			log.Error("dial error: ", lastErr)
-			continue
+		if lastErr == nil {
+			break
 		}
-		var descSource grpcurl.DescriptorSource
-		if h.reflect {
-			refClient := grpcreflect.NewClientV1Alpha(newCtx, reflectpb.NewServerReflectionClient(conn))
-			refSource := grpcurl.DescriptorSourceFromServer(newCtx, refClient)
-			if descSource == nil {
-				descSource = refSource
-			} else {
-				descSource = &compositeSource{reflection: refSource, file: descSource}
-			}
+		log.Error("dial error: ", lastErr)
+	}
+	if lastErr != nil {
+		return lastErr
+	}
+	defer conn.Close()
+	var descSource grpcurl.DescriptorSource
+	if h.reflect {
+		refClient := grpcreflect.NewClientV1Alpha(newCtx, reflectpb.NewServerReflectionClient(conn))
+		refSource := grpcurl.DescriptorSourceFromServer(newCtx, refClient)
+		if descSource == nil {
+			descSource = refSource
 		} else {
-			descSource = h.descriptor.Descriptor()
+			descSource = &compositeSource{reflection: refSource, file: descSource}
 		}
+	} else {
+		descSource = h.descriptor.Descriptor()
+	}
 
-		rf, formatter, err := grpcurl.RequestParserAndFormatter(h.format, descSource, in, options)
-		if err != nil {
-			return fmt.Errorf("failed to construct request parser and formatter for %s", h.format)
-		}
-		response := NewResponse()
-		handler := &grpcurl.DefaultEventHandler{
-			VerbosityLevel: 2,
-			Out:            response,
-			Formatter:      formatter,
-		}
-		err = grpcurl.InvokeRPC(newCtx, descSource, conn, symbol, md, handler, rf.Next)
-		if err != nil {
-			if errStatus, ok := status.FromError(err); ok {
-				data, _ := json.Marshal(StatusErr{
-					Code: fmt.Sprintf("%s", errStatus.Code()),
-					Msg:  errStatus.Message(),
-				})
-				ctx.Response().SetBody(data)
-				return err
-			}
-			err = fmt.Errorf("error invoking method %s", symbol)
+	rf, formatter, err := grpcurl.RequestParserAndFormatter(h.format, descSource, in, options)
+	if err != nil {
+		return fmt.Errorf("failed to construct request parser and formatter for %s", h.format)
+	}
+	response := NewResponse()
+	handler := &grpcurl.DefaultEventHandler{
+		VerbosityLevel: 2,
+		Out:            response,
+		Formatter:      formatter,
+	}
+	err = grpcurl.InvokeRPC(newCtx, descSource, conn, symbol, md, handler, rf.Next)
+	if err != nil {
+		if errStatus, ok := status.FromError(err); ok {
 			data, _ := json.Marshal(StatusErr{
-				Code: fmt.Sprintf("%s", codes.Unavailable),
-				Msg:  err.Error(),
+				Code: fmt.Sprintf("%s", errStatus.Code()),
+				Msg:  errStatus.Message(),
 			})
-
 			ctx.Response().SetBody(data)
 			return err
 		}
-		for key, value := range response.Header() {
-			ctx.Response().SetHeader(key, value)
-		}
-		ctx.Response().SetHeader("content-type", "application/json")
-		ctx.Response().SetBody(response.Body())
-		return nil
+		err = fmt.Errorf("error invoking method %s,error: %v", symbol, err)
+		data, _ := json.Marshal(StatusErr{
+			Code: fmt.Sprintf("%s", codes.Unavailable),
+			Msg:  err.Error(),
+		})
+
+		ctx.Response().SetBody(data)
+		return err
 	}
-	return lastErr
+	for key, value := range response.Header() {
+		ctx.Response().SetHeader(key, value)
+	}
+	ctx.Response().SetHeader("content-type", "application/json")
+	ctx.Response().SetBody(response.Body())
+	return nil
 }
 
 type StatusErr struct {

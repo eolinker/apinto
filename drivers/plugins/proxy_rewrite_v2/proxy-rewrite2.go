@@ -2,6 +2,10 @@ package proxy_rewrite_v2
 
 import (
 	"fmt"
+	"net/url"
+
+	"github.com/eolinker/eosc/log"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
@@ -84,7 +88,17 @@ func (p *ProxyRewrite) rewrite(ctx http_service.IHttpContext) bool {
 		for _, pPath := range p.prefixPath {
 			if strings.HasPrefix(oldPath, pPath.PrefixPathMatch) {
 				newPath := strings.Replace(oldPath, pPath.PrefixPathMatch, pPath.PrefixPathReplace, 1)
-				ctx.Proxy().URI().SetPath(newPath)
+				uri, err := url.Parse(newPath)
+				if err != nil {
+					log.Errorf("parse prefix path replace error: %v", err)
+					break
+				}
+
+				ctx.Proxy().URI().SetPath(uri.Path)
+				for key := range uri.Query() {
+					ctx.Proxy().URI().AddQuery(key, uri.Query().Get(key))
+				}
+
 				pathMatch = true
 				break
 			}
