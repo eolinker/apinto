@@ -45,6 +45,16 @@ func newHostMatcher(children map[string]router.IMatcher) router.IMatcher {
 	}
 }
 
+func newProtocolMatcher(children map[string]router.IMatcher) router.IMatcher {
+	return &SimpleMatcher{
+		children: children,
+		name:     "protocol",
+		read: func(port int, request http_service.IRequestReader) (string, bool) {
+			return strings.ToLower(request.URI().Scheme()), true
+		},
+	}
+}
+
 type SimpleMatcher struct {
 	children map[string]router.IMatcher
 	read     readerHandler

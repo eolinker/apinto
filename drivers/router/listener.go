@@ -50,6 +50,7 @@ type RouterServerHandler func(port int, listener net.Listener)
 
 func init() {
 	matchWriters[AnyTCP] = matchersToMatchWriters(cmux.Any())
+
 	matchWriters[TslTCP] = matchersToMatchWriters(cmux.TLS())
 	matchWriters[Http] = matchersToMatchWriters(cmux.HTTP1Fast(http.MethodPatch))
 	matchWriters[Dubbo2] = matchersToMatchWriters(cmux.PrefixMatcher(string([]byte{0xda, 0xbb})))

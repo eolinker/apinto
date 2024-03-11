@@ -74,6 +74,8 @@ func (o *oauth2) Check(appID string, users []application.ITransformConfig) error
 
 func (o *oauth2) Set(app application.IApp, users []application.ITransformConfig) {
 	infos := make([]*application.UserInfo, 0, len(users))
+	clientIDMap := make(map[string]struct{})
+	oldClientIDMap := GetClientMap(app.Id())
 	for _, user := range users {
 		v, _ := user.Config().(*User)
 		c := &client{
@@ -93,8 +95,9 @@ func (o *oauth2) Set(app application.IApp, users []application.ITransformConfig)
 			log.Debug("hash rule: ", *hr)
 			c.hashRule = hr
 		}
-		registerClient(v.Pattern.ClientId, c)
-
+		RegisterClient(v.Pattern.ClientId, c)
+		clientIDMap[v.Pattern.ClientId] = struct{}{}
+		delete(oldClientIDMap, v.Pattern.ClientId)
 		infos = append(infos, &application.UserInfo{
 			Name:           v.Username(),
 			Value:          v.Pattern.ClientSecret,
@@ -106,11 +109,20 @@ func (o *oauth2) Set(app application.IApp, users []application.ITransformConfig)
 			App:            app,
 		})
 	}
+	for clientID := range oldClientIDMap {
+		RemoveClient(clientID)
+	}
+	SetClientMap(app.Id(), clientIDMap)
 	o.users.Set(app.Id(), infos)
 }
 
 func (o *oauth2) Del(appID string) {
 	o.users.DelByAppID(appID)
+	oldClientIDMap, _ := DeleteClientMap(appID)
+	for clientID := range oldClientIDMap {
+		RemoveClient(clientID)
+	}
+
 }
 
 func (o *oauth2) UserCount() int {

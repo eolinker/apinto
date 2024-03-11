@@ -8,7 +8,7 @@ import (
 var _ IRouterData = (*RouterData)(nil)
 
 type IRouterData interface {
-	Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) IRouterData
+	Set(id string, port int, protocols []string, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) IRouterData
 	Delete(id string) IRouterData
 	Parse() (router.IMatcher, error)
 }
@@ -19,7 +19,7 @@ type RouterData struct {
 func (rs *RouterData) Parse() (router.IMatcher, error) {
 	root := http_router.NewRoot()
 	for _, v := range rs.data {
-		err := root.Add(v.Id, v.HttpHandler, v.Port, v.Hosts, v.Method, v.Path, v.Appends)
+		err := root.Add(v.Id, v.HttpHandler, v.Port, v.Protocols, v.Hosts, v.Method, v.Path, v.Appends)
 		if err != nil {
 			return nil, err
 		}
@@ -31,10 +31,11 @@ func (rs *RouterData) set(r *Router) *RouterData {
 	rs.data[r.Id] = r
 	return rs
 }
-func (rs *RouterData) Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) IRouterData {
+func (rs *RouterData) Set(id string, port int, protocols []string, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) IRouterData {
 	r := &Router{
 		Id:          id,
 		Port:        port,
+		Protocols:   protocols,
 		Hosts:       hosts,
 		Method:      method,
 		Path:        path,
