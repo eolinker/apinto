@@ -82,29 +82,33 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 	a.lock.RLock()
 	handlers := a.handlers
 	a.lock.RUnlock()
-
+	pass := true
 	for _, handler := range handlers {
-		//check筛选条件
+		// 匹配Filter
 		if !handler.filter.Check(httpCtx) {
+			// 未命中，下一条规则
 			continue
 		}
-
-		//第一个判断条件为访问规则必须是允许,并且生效范围检测出是黑名单                 第二个判断条件为访问规则必须是拒绝,并且生效返回检测出是黑名单
-		if (handler.rule.visit && !handler.rule.effectFilter.Check(ctx)) || (!handler.rule.visit && handler.rule.effectFilter.Check(ctx)) {
-			ctx.SetLabel("handler", "visit")
-			httpCtx.Response().SetStatus(403, "")
-			errInfo := "not allowed"
-			httpCtx.Response().SetBody([]byte(errInfo))
-			return errors.New(errInfo)
+		// 匹配资源
+		match := handler.rule.effectFilter.Check(ctx)
+		if match {
+			// 匹配成功
+			pass = handler.rule.visit
+			break
 		}
-
+		pass = !handler.rule.visit
 		if handler.rule.isContinue {
 			continue
 		}
 		break
-
 	}
-
+	if !pass {
+		ctx.SetLabel("handler", "visit")
+		httpCtx.Response().SetStatus(403, "")
+		errInfo := "not allowed"
+		httpCtx.Response().SetBody([]byte(errInfo))
+		return errors.New(errInfo)
+	}
 	if next != nil {
 		return next.DoChain(ctx)
 	}

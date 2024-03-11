@@ -2,6 +2,7 @@ package limiting_strategy
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"strconv"
 	"testing"
@@ -12,7 +13,7 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 )
 
-var maxID = 1000
+var maxID = 10000
 
 type EmptyContext struct {
 	labels map[string]string
@@ -22,7 +23,7 @@ func NewEmptyContext() *EmptyContext {
 	e := &EmptyContext{
 		labels: map[string]string{
 			//"api": strconv.Itoa(rand.Intn(maxID)),
-			"api": strconv.Itoa(1),
+			"api": strconv.Itoa(maxID),
 		},
 	}
 	return e
@@ -151,11 +152,15 @@ func BenchmarkLimiting(b *testing.B) {
 	handlers := make([]*LimitingHandler, 0, maxID)
 	for i := 0; i < maxID; i++ {
 		name := strconv.Itoa(i + 1)
+		apis := make([]string, 0, maxID)
+		for j := 0; j < 1000; j++ {
+			apis = append(apis, fmt.Sprintf("%d", j+1))
+		}
 		handler, _ := NewLimitingHandler(name, &Config{
 			Stop:     false,
-			Priority: 0,
+			Priority: i,
 			Filters: strategy.FilterConfig{
-				"api": []string{name},
+				"api": apis,
 			},
 		})
 		handlers = append(handlers, handler)
@@ -168,7 +173,7 @@ func BenchmarkLimiting(b *testing.B) {
 		for _, h := range handlers {
 			if h.Filter().Check(ctx) {
 				//fmt.Printf("match %s\n", h.name)
-				break
+				continue
 			}
 		}
 		//fmt.Println("spend time:", time.Now().Sub(begin))
