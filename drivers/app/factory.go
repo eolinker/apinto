@@ -3,6 +3,8 @@ package app
 import (
 	"sync"
 
+	openid_connect_jwt "github.com/eolinker/apinto/application/auth/openid-connect-jwt"
+
 	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/apinto/application/auth/aksk"
 	"github.com/eolinker/apinto/application/auth/apikey"
@@ -36,6 +38,7 @@ func NewFactory() eosc.IExtenderDriverFactory {
 		aksk.Register()
 		jwt.Register()
 		oauth2.Register()
+		openid_connect_jwt.Register()
 		appManager = manager.NewManager(auth.Alias(), auth.Keys())
 		bean.Injection(&appManager)
 	})

@@ -18,7 +18,7 @@ var notFound = new(HttpNotFoundHandler)
 var completeCaller = http_complete.NewHttpCompleteCaller()
 
 type IManger interface {
-	Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) error
+	Set(id string, port int, protocols []string, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) error
 	Delete(id string)
 	AddPreRouter(id string, method []string, path string, handler router.IRouterPreHandler)
 	DeletePreRouter(id string)
@@ -43,10 +43,10 @@ func NewManager() *Manager {
 		IPreRouterData: newImlPreRouterData()}
 }
 
-func (m *Manager) Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) error {
+func (m *Manager) Set(id string, port int, protocols []string, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	routersData := m.routersData.Set(id, port, hosts, method, path, append, router)
+	routersData := m.routersData.Set(id, port, protocols, hosts, method, path, append, router)
 	matchers, err := routersData.Parse()
 	if err != nil {
 		log.Error("parse router data error: ", err)

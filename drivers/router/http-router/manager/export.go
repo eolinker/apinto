@@ -3,7 +3,7 @@ package manager
 import "github.com/eolinker/apinto/router"
 
 func Set(id string, port int, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) error {
-	return routerManager.Set(id, port, hosts, method, path, append, router)
+	return routerManager.Set(id, port, nil, hosts, method, path, append, router)
 }
 func Delete(id string) {
 	routerManager.Delete(id)
