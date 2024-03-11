@@ -1,7 +1,7 @@
-package jwt
+package oauth2
 
 import (
-	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/eolinker/eosc/utils/schema"
@@ -12,7 +12,7 @@ import (
 
 var _ auth.IAuthFactory = (*factory)(nil)
 
-var driverName = "jwt"
+var driverName = "oauth2"
 
 // Register 注册auth驱动工厂
 func Register() {
@@ -39,32 +39,20 @@ func (f *factory) UserType() reflect.Type {
 
 func (f *factory) Alias() []string {
 	return []string{
-		"jwt",
+		"oauth2",
+		"oauth2_auth",
 	}
 }
 
 func (f *factory) PreRouters() []*auth.PreRouter {
-	return nil
+	return []*auth.PreRouter{}
 }
 
 func (f *factory) Create(tokenName string, position string, rule interface{}) (application.IAuth, error) {
-	baseConfig, ok := rule.(*application.BaseConfig)
-	if !ok {
-		return nil, errors.New("invalid jwt config")
-	}
-	cfg, ok := baseConfig.Config().(*Rule)
-	if !ok {
-		return nil, errors.New("invalid jwt config")
-	}
-	id, err := cfg.ToID()
-	if err != nil {
-		return nil, err
-	}
-	a := &jwt{
-		id:        id,
+	a := &oauth2{
+		id:        toId(tokenName, position),
 		tokenName: tokenName,
 		position:  position,
-		cfg:       cfg,
 		users:     application.NewUserManager(),
 	}
 	return a, nil
@@ -75,8 +63,12 @@ func NewFactory() auth.IAuthFactory {
 	typ := reflect.TypeOf((*Config)(nil))
 	render, _ := schema.Generate(typ, nil)
 	return &factory{
-		configType: reflect.TypeOf((*Rule)(nil)),
+		configType: typ,
 		render:     render,
 		userType:   reflect.TypeOf((*User)(nil)),
 	}
+}
+
+func toId(tokenName, position string) string {
+	return fmt.Sprintf("%s@%s@%s", tokenName, position, driverName)
 }

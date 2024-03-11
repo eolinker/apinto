@@ -12,12 +12,12 @@ import (
 )
 
 var (
-	chainProxy eocontext.IChainPro
+	chainProxy    eocontext.IChainPro
+	routerManager = NewManager()
 )
 
 func init() {
 
-	var routerManager = NewManager()
 	serverHandler := func(port int, ln net.Listener) {
 		server := fasthttp.Server{
 			StreamRequestBody:            true,

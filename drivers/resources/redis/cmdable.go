@@ -9,12 +9,14 @@ import (
 )
 
 var (
-	ErrorNotInitRedis = errors.New("redis not init")
-	intError          = resources.NewIntResult(0, ErrorNotInitRedis)
-	boolError         = resources.NewBoolResult(false, ErrorNotInitRedis)
-	stringError       = resources.NewStringResult("", ErrorNotInitRedis)
-	statusError       = resources.NewStatusResult(ErrorNotInitRedis)
-	interfaceError    = resources.NewInterfaceResult(nil, ErrorNotInitRedis)
+	ErrorNotInitRedis   = errors.New("redis not init")
+	intError            = resources.NewIntResult(0, ErrorNotInitRedis)
+	boolError           = resources.NewBoolResult(false, ErrorNotInitRedis)
+	stringError         = resources.NewStringResult("", ErrorNotInitRedis)
+	statusError         = resources.NewStatusResult(ErrorNotInitRedis)
+	interfaceError      = resources.NewInterfaceResult(nil, ErrorNotInitRedis)
+	stringSliceError    = resources.NewStringSliceResult(nil, ErrorNotInitRedis)
+	arrayInterfaceError = resources.NewArrayInterfaceResult(nil, ErrorNotInitRedis)
 )
 
 type Empty struct {
@@ -45,6 +47,10 @@ func (e *Empty) IncrBy(ctx context.Context, key string, decrement int64, expirat
 	return intError
 }
 
+func (e *Empty) Keys(ctx context.Context, key string) resources.StringSliceResult {
+	return stringSliceError
+}
+
 func (e *Empty) Get(ctx context.Context, key string) resources.StringResult {
 	return stringError
 }
@@ -55,6 +61,14 @@ func (e *Empty) GetDel(ctx context.Context, key string) resources.StringResult {
 
 func (e *Empty) Del(ctx context.Context, keys ...string) resources.IntResult {
 	return intError
+}
+
+func (e *Empty) HMSetN(ctx context.Context, key string, fields map[string]interface{}, expiration time.Duration) resources.BoolResult {
+	return boolError
+}
+
+func (e *Empty) HMGet(ctx context.Context, key string, fields ...string) resources.ArrayInterfaceResult {
+	return arrayInterfaceError
 }
 
 func (e *Empty) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) resources.InterfaceResult {

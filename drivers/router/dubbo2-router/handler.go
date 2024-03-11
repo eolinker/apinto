@@ -31,7 +31,7 @@ type dubboHandler struct {
 
 var completeCaller = manager.NewCompleteCaller()
 
-func (d *dubboHandler) ServeHTTP(ctx eocontext.EoContext) {
+func (d *dubboHandler) Serve(ctx eocontext.EoContext) {
 
 	dubboCtx, err := dubbo2_context.Assert(ctx)
 	if err != nil {

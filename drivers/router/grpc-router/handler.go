@@ -31,7 +31,7 @@ type grpcRouter struct {
 	timeout  time.Duration
 }
 
-func (h *grpcRouter) ServeHTTP(ctx eocontext.EoContext) {
+func (h *grpcRouter) Serve(ctx eocontext.EoContext) {
 	grpcContext, err := grpc_context.Assert(ctx)
 	if err != nil {
 		return
