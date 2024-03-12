@@ -69,7 +69,7 @@ func (ur *URIRequest) GetQuery(key string) string {
 }
 
 func (ur *URIRequest) RawQuery() string {
-	return string(ur.uri.QueryString())
+	return string(ur.uri.QueryArgs().String())
 }
 
 func (ur *URIRequest) SetPath(s string) {
