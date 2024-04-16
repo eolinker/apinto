@@ -16,12 +16,12 @@ type Response struct {
 	ContentType string   `json:"content_type" label:"Content-Type"`
 	Charset     string   `json:"charset" label:"Charset"`
 	Headers     []Header `json:"headers" label:"Header参数"` //key:value
-	Body        string   `json:"body" label:"Body"`
+	Body        string   `json:"body" label:"Body" description:"body模版, 支持 ${label} 语法"`
 }
 
 type Header struct {
-	Key   string `json:"key" yaml:"key"`
-	Value string `json:"value" yaml:"value"`
+	Key   string `json:"key" yaml:"key" label:"header key" description:"header 的key,支持 ${label}"`
+	Value string `json:"value" yaml:"value" label:"header value" description:"header 的值, 支持${label}"`
 }
 
 type header struct {

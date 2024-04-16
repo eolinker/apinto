@@ -96,14 +96,7 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cac
 		metrics := handler.rule.metric.Metrics(ctx)
 
 		if handler.IsFuse(ctx.Context(), metrics, cache) {
-			res := handler.rule.response
-			httpCtx.Response().SetStatus(res.statusCode, "")
-			for _, h := range res.headers {
-				httpCtx.Response().SetHeader(h.key, h.value)
-			}
-			httpCtx.Response().SetHeader("Content-Type", fmt.Sprintf("%s; charset=%s", res.contentType, res.charset))
-
-			httpCtx.Response().SetBody([]byte(res.Body(httpCtx.Labels())))
+			handler.rule.response.Response(httpCtx)
 			ctx.SetLabel("handler", "fuse")
 			return nil
 		} else {
