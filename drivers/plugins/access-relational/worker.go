@@ -71,7 +71,7 @@ var (
 		ContentType: "text/plain",
 		Charset:     "utf-8",
 		Headers:     nil,
-		Body:        `403 Forbidden`,
+		Body:        http.StatusText(http.StatusForbidden),
 	})
 )
 

@@ -2,6 +2,7 @@ package limiting_strategy
 
 import (
 	"fmt"
+	"github.com/eolinker/apinto/utils/response"
 	"strings"
 
 	"github.com/eolinker/apinto/strategy"
@@ -46,10 +47,10 @@ func (s *StrategyResponseConf) SetBodyLabel(labels map[string]string) string {
 }
 
 type Rule struct {
-	Metrics  []string             `json:"metrics" label:"限流计数器名"`
-	Query    Threshold            `json:"query" label:"请求限制" description:"按请求次数"`
-	Traffic  Threshold            `json:"traffic" label:"流量限制" description:"按请求内容大小"`
-	Response StrategyResponseConf `json:"response" label:"响应内容"`
+	Metrics  []string          `json:"metrics" label:"限流计数器名"`
+	Query    Threshold         `json:"query" label:"请求限制" description:"按请求次数"`
+	Traffic  Threshold         `json:"traffic" label:"流量限制" description:"按请求内容大小"`
+	Response response.Response `json:"response" label:"响应内容"`
 }
 
 type Config struct {
