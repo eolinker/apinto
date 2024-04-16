@@ -1,80 +1,33 @@
 package metrics
 
 import (
+	"fmt"
+	"github.com/eolinker/eosc/metrics"
 	"strings"
 )
 
-type LabelReader interface {
-	GetLabel(name string) string
-}
-type metricsReader interface {
-	key() string
-	reader(labels LabelReader) string
-}
-type Metrics interface {
-	Metrics(ctx LabelReader) string
-	Key() string
-}
+type Metrics = metrics.Metrics
 
-func Parse(metrics []string) Metrics {
+func Parse(keys []string) Metrics {
 
-	ms := make(metricsList, 0, len(metrics))
-
-	for _, k := range metrics {
+	bs := make([]string, 0, len(keys))
+	for _, k := range keys {
 		l := len(k)
 		if l == 0 {
 			continue
 		}
-		if len(k) > 2 {
+		if len(k) >= 2 {
 			if k[0] == '{' && k[l-1] == '}' {
 				r := k[1 : l-1]
 				if len(r) == 0 {
 					continue
 				}
-				ms = append(ms, metricsLabelReader(r))
+				bs = append(bs, fmt.Sprintf("${%s}", r))
 				continue
 			}
 		}
-		ms = append(ms, metricsConst(k))
+		bs = append(bs, k)
 	}
 
-	return ms
-}
-
-type metricsLabelReader string
-
-func (m metricsLabelReader) key() string {
-	return string(m)
-}
-
-func (m metricsLabelReader) reader(labels LabelReader) string {
-	return labels.GetLabel(string(m))
-}
-
-type metricsConst string
-
-func (m metricsConst) key() string {
-	return string(m)
-}
-
-func (m metricsConst) reader(labels LabelReader) string {
-	return string(m)
-}
-
-type metricsList []metricsReader
-
-func (ms metricsList) Key() string {
-	vs := make([]string, len(ms))
-	for i, r := range ms {
-		vs[i] = r.key()
-	}
-	return strings.Join(vs, "-")
-}
-
-func (ms metricsList) Metrics(ctx LabelReader) string {
-	vs := make([]string, len(ms))
-	for i, r := range ms {
-		vs[i] = r.reader(ctx)
-	}
-	return strings.Join(vs, "-")
+	return metrics.Parse(strings.Join(bs, "-"))
 }

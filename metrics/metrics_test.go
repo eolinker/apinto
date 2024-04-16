@@ -10,37 +10,7 @@ type LabelReaderTest map[string]string
 func (m LabelReaderTest) GetLabel(name string) string {
 	return m[name]
 }
-
-func Test_metricsList_Metrics(t *testing.T) {
-	type args struct {
-		ctx LabelReader
-	}
-	tests := []struct {
-		name string
-		ms   metricsList
-		args args
-		want string
-	}{
-		{
-			name: "test",
-			ms:   metricsList{metricsConst("name"), metricsLabelReader("name")},
-			args: args{
-				ctx: LabelReaderTest{
-					"name": "test",
-				},
-			},
-			want: "name-test",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.ms.Metrics(tt.args.ctx); got != tt.want {
-				t.Errorf("Metrics() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
+ 
 func TestParse(t *testing.T) {
 	ctx := LabelReaderTest{
 		"name": "test",
