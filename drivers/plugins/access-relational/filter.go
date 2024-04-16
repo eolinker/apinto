@@ -37,6 +37,5 @@ func (a *AccessRelational) DoHttpFilter(ctx http_context.IHttpContext, next eoco
 }
 
 func (a *AccessRelational) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
-	//TODO implement me
-	panic("implement me")
+	return http_context.DoHttpFilter(a, ctx, next)
 }
