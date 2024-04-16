@@ -2,6 +2,7 @@ package response
 
 import (
 	"fmt"
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/metrics"
@@ -62,12 +63,13 @@ func (r *responseHandler) Response(ctx eocontext.EoContext) {
 	if err != nil {
 		return
 	}
+	entry := http_entry.NewEntry(httpCtx)
 	httpCtx.Response().SetStatus(r.status, "")
 	for _, h := range r.headers {
-		k := h.key.Metrics(httpCtx)
-		v := h.value.Metrics(httpCtx)
+		k := h.key.Metrics(entry)
+		v := h.value.Metrics(entry)
 		httpCtx.Response().SetHeader(k, v)
 	}
-	httpCtx.Response().SetHeader("Content-Type", fmt.Sprintf("%s; charset=%s", r.contentType.Metrics(httpCtx), r.charset.Metrics(httpCtx)))
-	httpCtx.Response().SetBody([]byte(r.body.Metrics(httpCtx)))
+	httpCtx.Response().SetHeader("Content-Type", fmt.Sprintf("%s; charset=%s", r.contentType.Metrics(entry), r.charset.Metrics(entry)))
+	httpCtx.Response().SetBody([]byte(r.body.Metrics(entry)))
 }

@@ -1,6 +1,7 @@
 package access_relational
 
 import (
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"strconv"
@@ -13,9 +14,10 @@ func (a *AccessRelational) DoHttpFilter(ctx http_context.IHttpContext, next eoco
 		return next.DoChain(ctx)
 	}
 	now := time.Now().UnixMilli()
+	entry := http_entry.NewEntry(ctx)
 	for _, rule := range a.rules {
-		key := rule.key.Metrics(ctx)
-		field := rule.field.Metrics(ctx)
+		key := rule.key.Metrics(entry)
+		field := rule.field.Metrics(entry)
 		v, has := a.data.Get(key, field)
 		if !has {
 			// 规则不存在

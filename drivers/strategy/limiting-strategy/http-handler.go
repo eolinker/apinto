@@ -2,6 +2,7 @@ package limiting_strategy
 
 import (
 	"errors"
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
 	"github.com/eolinker/apinto/utils/response"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -40,6 +41,7 @@ func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*LimitingHandl
 	contentLength, _ := strconv.ParseInt(httpContext.Request().Header().GetHeader("content-length"), 10, 64)
 
 	metricsAlready := newSet(len(handlers))
+	entry := http_entry.NewEntry(httpContext)
 	for _, h := range handlers {
 		if h.Filter().Check(ctx) {
 			key := h.Metrics().Key()
@@ -47,7 +49,7 @@ func (hd *actuatorHttp) Check(ctx eocontext.EoContext, handlers []*LimitingHandl
 				continue
 			}
 			metricsAlready.Add(key)
-			metricsValue := h.Metrics().Metrics(ctx)
+			metricsValue := h.Metrics().Metrics(entry)
 
 			if h.query.Second > 0 && scalars.QuerySecond.Get(metricsValue) >= h.query.Second {
 

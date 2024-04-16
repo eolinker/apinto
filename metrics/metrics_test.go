@@ -7,10 +7,10 @@ import (
 
 type LabelReaderTest map[string]string
 
-func (m LabelReaderTest) GetLabel(name string) string {
+func (m LabelReaderTest) ReadLabel(name string) string {
 	return m[name]
 }
- 
+
 func TestParse(t *testing.T) {
 	ctx := LabelReaderTest{
 		"name": "test",
