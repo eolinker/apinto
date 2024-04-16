@@ -48,17 +48,14 @@ func (a *AccessRelational) Reset(conf interface{}, workers map[eosc.RequireId]eo
 }
 
 func (a *AccessRelational) Stop() error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (a *AccessRelational) Destroy() {
-	//TODO implement me
-	panic("implement me")
+
 }
 func (a *AccessRelational) CheckSkill(skill string) bool {
-	//TODO implement me
-	panic("implement me")
+	return http_context.FilterSkillName == skill
 }
 func assert(v interface{}) (*Config, error) {
 	cfg, ok := v.(*Config)

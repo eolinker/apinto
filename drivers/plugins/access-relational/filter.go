@@ -18,10 +18,12 @@ func (a *AccessRelational) DoHttpFilter(ctx http_context.IHttpContext, next eoco
 		field := rule.field.Metrics(ctx)
 		v, has := a.data.Get(key, field)
 		if !has {
+			// 规则不存在
 			continue
 		}
 		timestamp, _ := strconv.ParseInt(v, 10, 64)
-		if timestamp == 0 || timestamp > now {
+		if timestamp <= 0 || timestamp > now {
+			// 校验通过
 			return next.DoChain(ctx)
 		}
 	}
