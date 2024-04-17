@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/eolinker/apinto/utils/response"
+	"github.com/eolinker/eosc/metrics"
 	"strconv"
 	"time"
 
-	"github.com/eolinker/apinto/metrics"
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/apinto/strategy"
 )
@@ -102,7 +102,7 @@ func NewFuseHandler(conf *Config) (*FuseHandler, error) {
 		codeStatusMap[code] = codeStatusError
 	}
 	rule := &ruleHandler{
-		metric:             metrics.Parse([]string{conf.Rule.Metric}),
+		metric:             metrics.ParseArray([]string{conf.Rule.Metric}, "-"),
 		fuseConditionCount: conf.Rule.FuseCondition.Count,
 
 		fuseTime: fuseTimeConf{

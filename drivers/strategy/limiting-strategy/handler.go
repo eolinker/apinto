@@ -1,9 +1,9 @@
 package limiting_strategy
 
 import (
-	"github.com/eolinker/apinto/metrics"
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/apinto/utils/response"
+	"github.com/eolinker/eosc/metrics"
 )
 
 type ThresholdUint struct {
@@ -52,7 +52,7 @@ func NewLimitingHandler(name string, conf *Config) (*LimitingHandler, error) {
 		return nil, err
 	}
 
-	mts := metrics.Parse(conf.Rule.Metrics)
+	mts := metrics.ParseArray(conf.Rule.Metrics)
 
 	return &LimitingHandler{
 		name:     name,

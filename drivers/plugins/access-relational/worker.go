@@ -18,21 +18,15 @@ var (
 
 type AccessRelational struct {
 	drivers.WorkerBase
-	data     eosc.ICustomerVar
-	rules    []*ruleHandler
+	rules    []ruleHandler
 	response response.IResponse
 }
 
-type ruleHandler struct {
-	key   metrics.Metrics
-	field metrics.Metrics
-}
-
-func (a *AccessRelational) Start() error {
+func (w *AccessRelational) Start() error {
 	return nil
 }
 
-func (a *AccessRelational) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
+func (w *AccessRelational) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	config, err := assert(conf)
 	if err != nil {
 		return err
@@ -41,20 +35,20 @@ func (a *AccessRelational) Reset(conf interface{}, workers map[eosc.RequireId]eo
 	if err != nil {
 		return err
 	}
-	iResponse, handlers := parseConfig(config)
-	a.response = iResponse
-	a.rules = handlers
+	iResponse, handlers := w.parseConfig(config)
+	w.response = iResponse
+	w.rules = handlers
 	return nil
 }
 
-func (a *AccessRelational) Stop() error {
+func (w *AccessRelational) Stop() error {
 	return nil
 }
 
-func (a *AccessRelational) Destroy() {
+func (w *AccessRelational) Destroy() {
 
 }
-func (a *AccessRelational) CheckSkill(skill string) bool {
+func (w *AccessRelational) CheckSkill(skill string) bool {
 	return http_context.FilterSkillName == skill
 }
 func assert(v interface{}) (*Config, error) {
@@ -75,23 +69,29 @@ var (
 	})
 )
 
-func parseConfig(config *Config) (response.IResponse, []*ruleHandler) {
+func (w *AccessRelational) newHandler(a, b string) ruleHandler {
+	am := metrics.Parse(a)
+	bm := metrics.Parse(b)
+	if am == nil || bm == nil {
+		return nil
+	}
+	return &handler{
+		a: am,
+		b: bm,
+	}
+}
+func (w *AccessRelational) parseConfig(config *Config) (response.IResponse, []ruleHandler) {
 
 	responseHandler := response.Parse(config.Response)
 	if responseHandler == nil {
 		responseHandler = defaultResponse
 	}
-	rules := make([]*ruleHandler, 0)
+	rules := make([]ruleHandler, 0)
 	for _, rule := range config.Rules {
-		key := metrics.Parse(rule.KeyRule)
-		field := metrics.Parse(rule.AccessRule)
-		if key == nil || field == nil {
-			continue
+		rh := w.newHandler(rule.A, rule.B)
+		if rh != nil {
+			rules = append(rules, rh)
 		}
-		rules = append(rules, &ruleHandler{
-			key:   key,
-			field: field,
-		})
 	}
 	return responseHandler, rules
 }
