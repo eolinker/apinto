@@ -6,6 +6,7 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/metrics"
+	"net/http"
 )
 
 type IResponse interface {
@@ -64,7 +65,7 @@ func (r *responseHandler) Response(ctx eocontext.EoContext) {
 		return
 	}
 	entry := http_entry.NewEntry(httpCtx)
-	httpCtx.Response().SetStatus(r.status, "")
+	httpCtx.Response().SetStatus(r.status, http.StatusText(r.status))
 	for _, h := range r.headers {
 		k := h.key.Metrics(entry)
 		v := h.value.Metrics(entry)
