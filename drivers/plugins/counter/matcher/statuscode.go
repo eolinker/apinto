@@ -2,7 +2,7 @@ package matcher
 
 import http_service "github.com/eolinker/eosc/eocontext/http-context"
 
-func NewStatusCodeMatcher(codes []int) *statusCodeMatcher {
+func NewStatusCodeMatcher(codes []int) IMatcher {
 	return &statusCodeMatcher{codes: codes}
 }
 

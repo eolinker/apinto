@@ -11,7 +11,7 @@ import (
 	"github.com/ohler55/ojg/oj"
 )
 
-func NewJsonMatcher(params []*MatchParam) *jsonMatcher {
+func NewJsonMatcher(params []*MatchParam) IMatcher {
 	ps := make([]*jsonMatchParam, 0, len(params))
 	for _, p := range params {
 		key := p.Key
