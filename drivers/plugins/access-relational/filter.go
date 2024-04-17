@@ -13,11 +13,9 @@ func (w *AccessRelational) DoHttpFilter(ctx http_context.IHttpContext, next eoco
 	}
 	entry := http_entry.NewEntry(ctx)
 	for _, rule := range w.rules {
-		if !rule.Check(entry) {
-			continue
+		if rule.Check(entry) {
+			return next.DoChain(ctx)
 		}
-		return next.DoChain(ctx)
-
 	}
 
 	httpContext, err := http_context.Assert(ctx)
