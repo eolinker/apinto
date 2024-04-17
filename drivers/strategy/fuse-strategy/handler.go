@@ -3,11 +3,11 @@ package fuse_strategy
 import (
 	"context"
 	"fmt"
+	"github.com/eolinker/apinto/utils/response"
+	"github.com/eolinker/eosc/metrics"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/eolinker/apinto/metrics"
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/apinto/strategy"
 )
@@ -78,7 +78,7 @@ type ruleHandler struct {
 	fuseConditionCount    int64
 	fuseTime              fuseTimeConf
 	recoverConditionCount int64
-	response              strategyResponseConf
+	response              response.IResponse
 	codeStatusMap         map[int]codeStatus
 }
 
@@ -87,50 +87,10 @@ type fuseTimeConf struct {
 	maxTime time.Duration
 }
 
-type strategyResponseConf struct {
-	statusCode  int
-	contentType string
-	charset     string
-	headers     []header
-	body        string
-}
-
-func (s *strategyResponseConf) Body(labels map[string]string) string {
-	tempBody := s.body
-
-	tempBody = strings.ReplaceAll(tempBody, "$api", fmt.Sprintf("%s(%s)", labels["api"], labels["api_id"]))
-	tempBody = strings.ReplaceAll(tempBody, "$api_id", labels["api_id"])
-	tempBody = strings.ReplaceAll(tempBody, "$api_name", labels["api"])
-
-	tempBody = strings.ReplaceAll(tempBody, "$application", fmt.Sprintf("%s(%s)", labels["application"], labels["application_id"]))
-	tempBody = strings.ReplaceAll(tempBody, "$application_id", labels["application_id"])
-	tempBody = strings.ReplaceAll(tempBody, "$application_name", labels["application"])
-
-	tempBody = strings.ReplaceAll(tempBody, "$service", labels["service"])
-	tempBody = strings.ReplaceAll(tempBody, "$service_id", labels["service"])
-	tempBody = strings.ReplaceAll(tempBody, "$service_name", labels["service"])
-	tempBody = strings.ReplaceAll(tempBody, "ip", labels["ip"])
-
-	return tempBody
-}
-
-type header struct {
-	key   string
-	value string
-}
-
 func NewFuseHandler(conf *Config) (*FuseHandler, error) {
 	filter, err := strategy.ParseFilter(conf.Filters)
 	if err != nil {
 		return nil, err
-	}
-
-	headers := make([]header, 0)
-	for _, v := range conf.Rule.Response.Header {
-		headers = append(headers, header{
-			key:   v.Key,
-			value: v.Value,
-		})
 	}
 
 	codeStatusMap := make(map[int]codeStatus)
@@ -142,7 +102,7 @@ func NewFuseHandler(conf *Config) (*FuseHandler, error) {
 		codeStatusMap[code] = codeStatusError
 	}
 	rule := &ruleHandler{
-		metric:             metrics.Parse([]string{conf.Rule.Metric}),
+		metric:             metrics.ParseArray([]string{conf.Rule.Metric}, "-"),
 		fuseConditionCount: conf.Rule.FuseCondition.Count,
 
 		fuseTime: fuseTimeConf{
@@ -151,13 +111,7 @@ func NewFuseHandler(conf *Config) (*FuseHandler, error) {
 		},
 		recoverConditionCount: conf.Rule.RecoverCondition.Count,
 
-		response: strategyResponseConf{
-			statusCode:  conf.Rule.Response.StatusCode,
-			contentType: conf.Rule.Response.ContentType,
-			charset:     conf.Rule.Response.Charset,
-			headers:     headers,
-			body:        conf.Rule.Response.Body,
-		},
+		response:      response.Parse(conf.Rule.Response),
 		codeStatusMap: codeStatusMap,
 	}
 	return &FuseHandler{

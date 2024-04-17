@@ -2,6 +2,7 @@ package fuse_strategy
 
 import (
 	"fmt"
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
 	"sort"
 	"strconv"
 	"sync"
@@ -86,24 +87,17 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cac
 	a.lock.RLock()
 	handlers := a.handlers
 	a.lock.RUnlock()
-
+	entry := http_entry.NewEntry(httpCtx)
 	for _, handler := range handlers {
 		//check筛选条件
 		if !handler.filter.Check(httpCtx) {
 			continue
 		}
 
-		metrics := handler.rule.metric.Metrics(ctx)
+		metrics := handler.rule.metric.Metrics(entry)
 
 		if handler.IsFuse(ctx.Context(), metrics, cache) {
-			res := handler.rule.response
-			httpCtx.Response().SetStatus(res.statusCode, "")
-			for _, h := range res.headers {
-				httpCtx.Response().SetHeader(h.key, h.value)
-			}
-			httpCtx.Response().SetHeader("Content-Type", fmt.Sprintf("%s; charset=%s", res.contentType, res.charset))
-
-			httpCtx.Response().SetBody([]byte(res.Body(httpCtx.Labels())))
+			handler.rule.response.Response(httpCtx)
 			ctx.SetLabel("handler", "fuse")
 			return nil
 		} else {

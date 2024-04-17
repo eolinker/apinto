@@ -10,6 +10,7 @@ import (
 
 var (
 	_            eosc.IEntry = (*Entry)(nil)
+	_            eosc.IEntry = (*ChildEntry)(nil)
 	ProxiesChild             = "proxies"
 )
 
@@ -17,7 +18,11 @@ type Entry struct {
 	ctx http_service.IHttpContext
 }
 
-func NewEntry(ctx http_service.IHttpContext) *Entry {
+func (e *Entry) ReadLabel(pattern string) string {
+	return eosc.String(e.Read(pattern))
+}
+
+func NewEntry(ctx http_service.IHttpContext) eosc.IEntry {
 	return &Entry{ctx: ctx}
 }
 
@@ -49,6 +54,10 @@ type ChildEntry struct {
 	index       int
 	pre         string
 	childReader IReaderIndex
+}
+
+func (c *ChildEntry) ReadLabel(pattern string) string {
+	return eosc.String(c.Read(pattern))
 }
 
 func (c *ChildEntry) Read(pattern string) interface{} {

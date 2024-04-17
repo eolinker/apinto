@@ -10,8 +10,8 @@ type Config struct {
 	Method    []string       `json:"method" yaml:"method" enum:"GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS" label:"请求方式"`
 	Protocols []string       `json:"protocols" yaml:"protocols" enum:"http,https" label:"协议"`
 	Host      []string       `json:"host" yaml:"host" label:"域名"`
-	Path      string         `json:"location"`
-	Rules     []Rule         `json:"rules" yaml:"rules" label:"路由规则"`
+	Path      string         `json:"location" yaml:"location" label:"路由路径"`
+	Rules     []Rule         `json:"rules" yaml:"rules" label:"额外路由规则"`
 	Service   eosc.RequireId `json:"service" yaml:"service" skill:"github.com/eolinker/apinto/service.service.IService" required:"false" empty_label:"使用匿名服务" label:"目标服务"`
 
 	Status int               `json:"status" yaml:"status" label:"响应状态码" switch:"service===''" default:"200" maximum:"1000" minimum:"100"`

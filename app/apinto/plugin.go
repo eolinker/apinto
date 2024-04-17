@@ -1,6 +1,7 @@
 package main
 
 import (
+	access_relational "github.com/eolinker/apinto/drivers/plugins/access-relational"
 	"github.com/eolinker/apinto/drivers/plugins/acl"
 	"github.com/eolinker/apinto/drivers/plugins/app"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
@@ -95,7 +96,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	rsa_filter.Register(extenderRegister)
 	js_inject.Register(extenderRegister)
 	acl.Register(extenderRegister)
-
+	access_relational.Register(extenderRegister)
 	// 可观测性（输出内容到第三方）
 	access_log.Register(extenderRegister)
 	prometheus.Register(extenderRegister)
