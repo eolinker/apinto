@@ -27,7 +27,7 @@ func (a *aksk) GetUser(ctx http_service.IHttpContext) (*application.UserInfo, bo
 	encType, ak, signHeaders, signature, err := parseAuthorization(token)
 	if err != nil {
 		log.DebugF("[%s] get user error: %s", driverName, err)
-		return nil, true
+		return nil, false
 	}
 	user, has := a.users.Get(ak)
 	if has {
@@ -42,7 +42,7 @@ func (a *aksk) GetUser(ctx http_service.IHttpContext) (*application.UserInfo, bo
 				}
 			}
 		default:
-			return nil, true
+			return nil, false
 		}
 	}
 	return nil, false

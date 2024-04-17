@@ -61,7 +61,7 @@ func (h *Complete) Complete(org eocontext.EoContext) error {
 			return err
 		}
 
-		conn, resp, lastErr = DialWithTimeout(node, ctx.Proxy().URI().Path(), ctx.Proxy().URI().RawQuery(), ctx.Proxy().Header().Headers(), timeOut)
+		conn, resp, lastErr = DialWithTimeout(node, scheme, ctx.Proxy().URI().Path(), ctx.Proxy().URI().RawQuery(), ctx.Proxy().Header().Headers(), timeOut)
 		if lastErr == nil {
 			resp.Body.Close()
 			ctx.SetUpstreamConn(&Conn{conn})
