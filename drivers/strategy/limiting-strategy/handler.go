@@ -52,7 +52,7 @@ func NewLimitingHandler(name string, conf *Config) (*LimitingHandler, error) {
 		return nil, err
 	}
 
-	mts := metrics.ParseArray(conf.Rule.Metrics)
+	mts := metrics.ParseArray(conf.Rule.Metrics, "-")
 
 	return &LimitingHandler{
 		name:     name,
