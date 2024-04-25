@@ -16,6 +16,11 @@ var (
 	once        sync.Once
 )
 
+func init() {
+	once.Do(func() {
+		bean.Autowired(&customerVar)
+	})
+}
 func Register(register eosc.IExtenderDriverRegister) {
 	register.RegisterExtenderDriver(Name, NewFactory())
 }
@@ -30,9 +35,7 @@ func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 }
 
 func Create(id string, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	once.Do(func() {
-		bean.Autowired(&customerVar)
-	})
+
 	err := Check(v, workers)
 	if err != nil {
 		return nil, err
