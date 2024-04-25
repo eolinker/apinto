@@ -3,6 +3,7 @@ package monitor
 import (
 	"fmt"
 	"reflect"
+	"runtime/debug"
 
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
@@ -35,6 +36,12 @@ func getList(ids []eosc.RequireId) ([]monitor_entry.IOutput, error) {
 
 func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
 	log.Info("create monitor worker...")
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("recover create worker...", r)
+			log.Debug(debug.Stack())
+		}
+	}()
 	list, err := getList(conf.Output)
 	if err != nil {
 		return nil, err
