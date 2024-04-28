@@ -5,6 +5,7 @@ var (
 	LabelApp      = "app"
 	LabelUpstream = "upstream"
 	LabelHandler  = "handler"
+	LabelProvider = "provider"
 )
 
 var labels = map[string]string{
@@ -12,4 +13,5 @@ var labels = map[string]string{
 	LabelApp:      "application",
 	LabelHandler:  "handler",
 	LabelUpstream: "service",
+	LabelProvider: "provider",
 }

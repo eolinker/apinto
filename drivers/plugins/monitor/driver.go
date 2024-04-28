@@ -57,6 +57,6 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 	} else {
 		monitorManager.SetProxyOutput(id, scope_manager.Get[monitor_entry.IOutput]("monitor"))
 	}
-
+	log.Info("finish monitor worker...")
 	return o, nil
 }

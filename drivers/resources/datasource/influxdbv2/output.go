@@ -3,6 +3,7 @@ package influxdbv2
 import (
 	"context"
 	"fmt"
+
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	monitor_entry "github.com/eolinker/apinto/entries/monitor-entry"
@@ -49,7 +50,9 @@ func (o *output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 		return fmt.Errorf("connect influxdbv2 eror: %w", err)
 	}
 	o.client = client
+	o.cfg = cfg
 	scope_manager.Set(o.Id(), o, o.cfg.Scopes...)
+
 	return nil
 }
 
