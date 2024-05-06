@@ -1,10 +1,8 @@
 package limiting_strategy
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/eolinker/apinto/strategy"
+	"github.com/eolinker/apinto/utils/response"
 )
 
 type Threshold struct {
@@ -13,43 +11,11 @@ type Threshold struct {
 	Hour   int64 `json:"hour" label:"每小时限制"`
 }
 
-type Header struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
-// StrategyResponseConf 策略返回内容配置
-type StrategyResponseConf struct {
-	StatusCode  int       `json:"status_code" label:"HTTP状态码"`
-	ContentType string    `json:"content_type" label:"Content-Type"`
-	Charset     string    `json:"charset" label:"Charset"`
-	Headers     []*Header `json:"header" label:"Header参数"`
-	Body        string    `json:"body" label:"Body"`
-}
-
-func (s *StrategyResponseConf) SetBodyLabel(labels map[string]string) string {
-	body := s.Body
-	body = strings.ReplaceAll(body, "$api", fmt.Sprintf("%s(%s)", labels["api"], labels["api_id"]))
-	body = strings.ReplaceAll(body, "$api_id", labels["api_id"])
-	body = strings.ReplaceAll(body, "$api_name", labels["api"])
-
-	body = strings.ReplaceAll(body, "$application", fmt.Sprintf("%s(%s)", labels["application"], labels["application_id"]))
-	body = strings.ReplaceAll(body, "$application_id", labels["application_id"])
-	body = strings.ReplaceAll(body, "$application_name", labels["application"])
-
-	body = strings.ReplaceAll(body, "$service", labels["service"])
-	body = strings.ReplaceAll(body, "$service_id", labels["service"])
-	body = strings.ReplaceAll(body, "$service_name", labels["service"])
-	body = strings.ReplaceAll(body, "ip", labels["ip"])
-
-	return body
-}
-
 type Rule struct {
-	Metrics  []string             `json:"metrics" label:"限流计数器名"`
-	Query    Threshold            `json:"query" label:"请求限制" description:"按请求次数"`
-	Traffic  Threshold            `json:"traffic" label:"流量限制" description:"按请求内容大小"`
-	Response StrategyResponseConf `json:"response" label:"响应内容"`
+	Metrics  []string          `json:"metrics" label:"限流计数器名"`
+	Query    Threshold         `json:"query" label:"请求限制" description:"按请求次数"`
+	Traffic  Threshold         `json:"traffic" label:"流量限制" description:"按请求内容大小"`
+	Response response.Response `json:"response" label:"响应内容"`
 }
 
 type Config struct {

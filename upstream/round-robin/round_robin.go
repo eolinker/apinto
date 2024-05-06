@@ -87,7 +87,7 @@ func (r *roundRobin) Next() (eoscContext.INode, int, error) {
 		return nil, 0, errNoValidNode
 	}
 	for {
-		index := r.index
+		index := r.index % r.size
 		r.index = (r.index + 1) % r.size
 		if len(r.downNodes) >= r.size {
 			return nil, 0, errNoValidNode

@@ -12,7 +12,12 @@ func InitCLILog() {
 		TimestampFormat:  "2006-01-02 15:04:05",
 		CallerPrettyfier: nil,
 	}
-	transport := log.NewTransport(os.Stdout, env.ErrorLevel())
+	level, err := log.ParseLevel(env.ErrorLevel())
+	if err != nil {
+		level = log.InfoLevel
+	}
+
+	transport := log.NewTransport(os.Stdout, level)
 	transport.SetFormatter(formatter)
 	log.Reset(transport)
 }

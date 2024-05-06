@@ -23,8 +23,10 @@ type client struct {
 
 func newClient(name string, address []string, params map[string]string) (*client, error) {
 	clientConfig := &constant.ClientConfig{
-		LogDir:   fmt.Sprintf("%s/nacos/current/%s", env.LogDir(), name),
-		CacheDir: fmt.Sprintf("%s/nacos/cache/%s", env.LogDir(), name),
+		LogDir:               fmt.Sprintf("%s/nacos/current/%s", env.LogDir(), name),
+		CacheDir:             fmt.Sprintf("%s/nacos/cache/%s", env.LogDir(), name),
+		NotLoadCacheAtStart:  true,
+		UpdateCacheWhenEmpty: true,
 		//LogLevel: env.ErrorLevel().String(),
 	}
 	//获取namespaceId, username,password

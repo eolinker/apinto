@@ -123,11 +123,13 @@ func (p *PluginManager) createFilters(conf map[string]*plugin.Config) []eocontex
 			log.Error("plg manager: fail to createFilters filter,error is ", err)
 			continue
 		}
+		log.DebugF("create worker %s@%s start", plg.Name, p.name)
 		worker, err := plg.drive.Create(fmt.Sprintf("%s@%s", plg.Name, p.name), plg.Name, confObj, nil)
 		if err != nil {
 			log.Error("plg manager: fail to createFilters filter,error is ", err)
 			continue
 		}
+		log.DebugF("create worker %s done", worker.Id())
 		fi, ok := worker.(eocontext.IFilter)
 		if !ok {
 			log.Error("extender ", plg.ID, " not plg for http-service.Filter")
