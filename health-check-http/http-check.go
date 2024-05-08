@@ -62,7 +62,8 @@ func (h *HTTPCheck) doCheckLoop(nodes discovery.INodes) {
 			return
 		case <-ticker.C:
 			{
-				h.check(nodes.All())
+
+				h.check(nodes)
 			}
 		}
 	}
@@ -88,13 +89,13 @@ func (h *HTTPCheck) Stop() {
 }
 
 // check 对待检查的节点集合进行检测，入参：nodes map[agentID][nodeID]*checkNode
-func (h *HTTPCheck) check(nodes []discovery.INode) {
+func (h *HTTPCheck) check(nodes discovery.INodes) {
 
 	/*对每个节点地址进行检测
 	成功则将属于该地址的所有节点的状态都置于可运行，并从HTTPCheck维护的待检测节点列表中移除
 	失败则下次定时检查再进行检测
 	*/
-	for _, ns := range nodes {
+	for _, ns := range nodes.All() {
 		if ns.Status() != discovery.Down {
 			continue
 		}

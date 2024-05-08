@@ -1,253 +1,109 @@
 package round_robin
 
-type nodeDemo struct {
-	label map[string]string
-	ip    string
-	port  int
-	down  bool
+import (
+	"github.com/eolinker/apinto/drivers/discovery/static"
+	"github.com/eolinker/eosc/eocontext"
+	"runtime"
+	"sync"
+	"testing"
+	"time"
+)
+
+type demoNode struct {
 }
 
-var testDemos = []struct {
-	name  string
-	nodes map[string]nodeDemo
-	count map[string]int
-}{
-	{
-		name: "权重相等",
-		nodes: map[string]nodeDemo{
-			"demo1": {
-				label: map[string]string{
-					"weight": "10",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo2": {
-				label: map[string]string{
-					"weight": "10",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo3": {
-				label: map[string]string{
-					"weight": "10",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo4": {
-				label: map[string]string{
-					"weight": "10",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-		},
-		count: map[string]int{
-			"demo1": 5,
-			"demo2": 5,
-			"demo3": 5,
-			"demo4": 5,
-		},
-	},
-	{
-		name: "权重4:3:2:1",
-		nodes: map[string]nodeDemo{
-			"demo1": {
-				label: map[string]string{
-					"weight": "40",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo2": {
-				label: map[string]string{
-					"weight": "30",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo3": {
-				label: map[string]string{
-					"weight": "20",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo4": {
-				label: map[string]string{
-					"weight": "10",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-		},
-		count: map[string]int{
-			"demo1": 8,
-			"demo2": 6,
-			"demo3": 4,
-			"demo4": 2,
-		},
-	},
-	{
-		name: "权重4:3:2:1，down调权重40的节点",
-		nodes: map[string]nodeDemo{
-			"demo1": {
-				label: map[string]string{
-					"weight": "40",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-				down: true,
-			},
-			"demo2": {
-				label: map[string]string{
-					"weight": "30",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo3": {
-				label: map[string]string{
-					"weight": "20",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo4": {
-				label: map[string]string{
-					"weight": "10",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-		},
-		count: map[string]int{
-			"demo1": 1,
-			"demo2": 10,
-			"demo3": 6,
-			"demo4": 3,
-		},
-	},
-	{
-		name: "权重4:3:2:1，down调权重30的节点",
-		nodes: map[string]nodeDemo{
-			"demo1": {
-				label: map[string]string{
-					"weight": "40",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo2": {
-				label: map[string]string{
-					"weight": "30",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-				down: true,
-			},
-			"demo3": {
-				label: map[string]string{
-					"weight": "20",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo4": {
-				label: map[string]string{
-					"weight": "10",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-		},
-		count: map[string]int{
-			"demo1": 12,
-			"demo2": 1,
-			"demo3": 5,
-			"demo4": 2,
-		},
-	},
-	{
-		name: "权重4:3:2:1，down调权重20的节点",
-		nodes: map[string]nodeDemo{
-			"demo1": {
-				label: map[string]string{
-					"weight": "40",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo2": {
-				label: map[string]string{
-					"weight": "30",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo3": {
-				label: map[string]string{
-					"weight": "20",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-				down: true,
-			},
-			"demo4": {
-				label: map[string]string{
-					"weight": "10",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-		},
-		count: map[string]int{
-			"demo1": 10,
-			"demo2": 7,
-			"demo3": 1,
-			"demo4": 2,
-		},
-	},
-	{
-		name: "权重4:3:2:1，down调权重10的节点",
-		nodes: map[string]nodeDemo{
-			"demo1": {
-				label: map[string]string{
-					"weight": "40",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo2": {
-				label: map[string]string{
-					"weight": "30",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo3": {
-				label: map[string]string{
-					"weight": "20",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-			},
-			"demo4": {
-				label: map[string]string{
-					"weight": "10",
-				},
-				ip:   "127.0.0.1",
-				port: 8580,
-				down: true,
-			},
-		},
-		count: map[string]int{
-			"demo1": 9,
-			"demo2": 6,
-			"demo3": 4,
-			"demo4": 1,
-		},
-	},
+func (d *demoNode) GetAttrs() eocontext.Attrs {
+	return make(eocontext.Attrs)
+}
+
+func (d *demoNode) GetAttrByName(name string) (string, bool) {
+	return "", false
+}
+
+func (d *demoNode) ID() string {
+	return "127.0.0.1:8080"
+}
+
+func (d *demoNode) IP() string {
+	return "127.0.0.1"
+}
+
+func (d *demoNode) Port() int {
+	return 8080
+}
+
+func (d *demoNode) Addr() string {
+	return "127.0.0.1:8080"
+}
+
+func (d *demoNode) Status() eocontext.NodeStatus {
+	return eocontext.Running
+}
+
+func (d *demoNode) Up() {
+}
+
+func (d *demoNode) Down() {
+}
+
+func (d *demoNode) Leave() {
+}
+
+type demo struct {
+	nodeSing demoNode
+}
+
+func (d *demo) Nodes() []eocontext.INode {
+	return []eocontext.INode{&d.nodeSing}
+}
+
+func Test_roundRobin_Next_Retry_demo(t *testing.T) {
+	app := new(demo)
+	robin := newRoundRobin(app, "http", time.Second)
+	testDoRetry(robin, t)
+
+}
+func testDoRetry(robin *roundRobin, t *testing.T) {
+
+	timer := time.NewTimer(time.Second * 60)
+	for {
+		select {
+		case <-timer.C:
+			return
+		default:
+
+		}
+		node, _, err := robin.Select(nil)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		//t.Log(i, next.Addr())
+		node.Down()
+	}
+}
+func Test_roundRobin_Next_Retry_Status(t *testing.T) {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+	discovery := static.CreateAnonymous(&static.Config{
+		HealthOn: false,
+		Health:   nil,
+	})
+
+	app, err := discovery.GetApp("127.0.0.1:8080;127.0.0.1:8081")
+	if err != nil {
+		return
+	}
+
+	robin := newRoundRobin(app, "http", time.Second)
+	wg := sync.WaitGroup{}
+	wg.Add(runtime.NumCPU())
+	for i := 0; i < runtime.NumCPU(); i++ {
+		go func() {
+			defer wg.Done()
+			testDoRetry(robin, t)
+		}()
+
+	}
+	wg.Wait()
 }

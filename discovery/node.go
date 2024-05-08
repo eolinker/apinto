@@ -3,8 +3,6 @@ package discovery
 import (
 	"fmt"
 	"github.com/eolinker/eosc/eocontext"
-	"sync/atomic"
-	"time"
 )
 
 // NodeStatus 节点状态类型
@@ -25,7 +23,6 @@ type INode interface {
 	Addr() string
 	Port() int
 	Status() NodeStatus
-	Last() time.Time
 	Up()
 	Down()
 	Leave()
@@ -39,19 +36,7 @@ type _BaseNode struct {
 	port int
 
 	status        NodeStatus
-	lastTime      atomic.Pointer[time.Time]
 	statusChecker _INodeStatusCheck
-}
-
-func (n *_BaseNode) Last() time.Time {
-	t := n.lastTime.Load()
-	if t != nil {
-		now := time.Now()
-		n.lastTime.Store(&now)
-		t = n.lastTime.Load()
-	}
-	return *t
-
 }
 
 func newBaseNode(id string, ip string, port int, statusChecker _INodeStatusCheck) *_BaseNode {
