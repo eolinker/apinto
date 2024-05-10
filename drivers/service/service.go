@@ -39,14 +39,8 @@ func (s *Service) PassHost() (eocontext.PassHostMod, string) {
 }
 
 func (s *Service) Nodes() []eocontext.INode {
-	all := s.app.Nodes()
-	ns := make([]eocontext.INode, 0, len(all))
-	for _, n := range all {
-		if n.Status() == eocontext.Running {
-			ns = append(ns, n)
-		}
-	}
-	return ns
+	return s.app.Nodes()
+	 
 }
 
 func (s *Service) Scheme() string {

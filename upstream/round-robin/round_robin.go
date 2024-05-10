@@ -3,11 +3,14 @@ package round_robin
 import (
 	"errors"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"time"
+
+	"github.com/eolinker/apinto/utils/queue"
 
 	eoscContext "github.com/eolinker/eosc/eocontext"
 
-	"github.com/eolinker/apinto/discovery"
 	"github.com/eolinker/apinto/upstream/balance"
 )
 
@@ -25,6 +28,9 @@ var (
 func Register() {
 	balance.Register(name, newRoundRobinFactory())
 }
+func noValidNodeHandler() (eoscContext.INode, int, error) {
+	return nil, 0, errNoValidNode
+}
 
 func newRoundRobinFactory() *roundRobinFactory {
 	return &roundRobinFactory{}
@@ -39,30 +45,29 @@ func (r roundRobinFactory) Create(app eoscContext.EoApp, scheme string, timeout 
 }
 
 type node struct {
-	weight int
-	eoscContext.INode
+	index           int
+	weight          int64
+	effectiveWeight int64
+	node            eoscContext.INode
 }
 
 type roundRobin struct {
 	eoscContext.EoApp
 	scheme  string
 	timeout time.Duration
-	// nodes 节点列表
-	nodes []node
-	// 节点数量
+
+	// 节点数量,也是每次最大遍历数
 	size int
-	// index 当前索引
-	index int
+
 	// gcdWeight 权重最大公约数
-	gcdWeight int
-	// maxWeight 权重最大值
-	maxWeight int
+	gcdWeight int64
 
-	cw int
+	nextHandler func() (eoscContext.INode, int, error)
 
-	updateTime time.Time
-
-	downNodes map[int]eoscContext.INode
+	locker        sync.Mutex
+	nodeQueueNext queue.Queue[node]
+	nodeQueue     queue.Queue[node]
+	updateTime    int64
 }
 
 func (r *roundRobin) Scheme() string {
@@ -74,69 +79,94 @@ func (r *roundRobin) TimeOut() time.Duration {
 }
 
 func (r *roundRobin) Select(ctx eoscContext.EoContext) (eoscContext.INode, int, error) {
+	r.tryReset()
+	if r.nextHandler != nil {
+		return r.nextHandler()
+	}
+
 	return r.Next()
 }
 
 // Next 由现有节点根据round_Robin决策出一个可用节点
 func (r *roundRobin) Next() (eoscContext.INode, int, error) {
-	if time.Now().Sub(r.updateTime) > time.Second*30 {
-		// 当上次节点更新时间与当前时间间隔超过30s，则重新设置节点
-		r.set()
-	}
-	if r.size < 1 {
-		return nil, 0, errNoValidNode
-	}
-	for {
-		index := r.index % r.size
-		r.index = (r.index + 1) % r.size
-		if len(r.downNodes) >= r.size {
-			return nil, 0, errNoValidNode
-		}
 
-		if index == 0 {
-			r.cw = r.cw - r.gcdWeight
-			if r.cw <= 0 {
-				r.cw = r.maxWeight
-				if r.cw == 0 {
-					return nil, 0, errNoValidNode
-				}
-			}
-		}
+	r.locker.Lock()
+	defer r.locker.Unlock()
+	for i := 0; i < r.size; i++ {
 
-		if r.nodes[index].weight >= r.cw {
-			if r.nodes[index].Status() == discovery.Down {
-				r.downNodes[index] = r.nodes[index]
-				continue
-			}
-			return r.nodes[index], index, nil
+		if r.nodeQueue.Empty() {
+			r.nodeQueue, r.nodeQueueNext = r.nodeQueueNext, r.nodeQueue
 		}
+		entry := r.nodeQueue.Pop()
+		nodeValue := entry.Value()
+
+		nodeValue.effectiveWeight -= r.gcdWeight
+
+		if nodeValue.effectiveWeight > 0 {
+			r.nodeQueue.Push(entry)
+		} else {
+			nodeValue.effectiveWeight = nodeValue.weight
+			r.nodeQueueNext.Push(entry)
+		}
+		if nodeValue.node.Status() == eoscContext.Down {
+			// 如果节点down( 开启健康检查才会出现down 状态) 则去拿下一个节点
+			continue
+		}
+		return nodeValue.node, nodeValue.index, nil
 	}
+	return nil, 0, errNoValidNode
+
 }
 
-func (r *roundRobin) set() {
-	r.downNodes = make(map[int]eoscContext.INode)
+func (r *roundRobin) tryReset() {
+	now := time.Now().Unix()
+	if now-atomic.LoadInt64(&r.updateTime) < 30 {
+		return
+	}
+	r.locker.Lock()
+	defer r.locker.Unlock()
+	if now-atomic.LoadInt64(&r.updateTime) < 30 {
+		return
+	}
+	atomic.StoreInt64(&r.updateTime, now)
+
 	nodes := r.Nodes()
-	r.size = len(nodes)
-	ns := make([]node, 0, r.size)
-	for i, n := range nodes {
+	size := len(nodes)
+	if size == 0 {
+		r.nextHandler = noValidNodeHandler
+		return
+	}
+	if size == 1 {
+		node := nodes[0]
+		r.nextHandler = func() (eoscContext.INode, int, error) {
+			return node, 0, nil
+		}
+		return
+	}
+
+	ns := make([]*node, 0, size)
+	gcdWeight := int64(0)
+	for _, n := range nodes {
 
 		weight, _ := n.GetAttrByName("weight")
-		w, _ := strconv.Atoi(weight)
+		w, _ := strconv.ParseInt(weight, 10, 64)
 		if w == 0 {
 			w = 1
 		}
-		nd := node{w, n}
-		ns = append(ns, nd)
-		if i == 0 {
-			r.maxWeight = w
-			r.gcdWeight = w
-			continue
+		nd := &node{
+			weight: w, effectiveWeight: w,
+			node: n,
 		}
-		r.gcdWeight = gcd(w, r.gcdWeight)
-		r.maxWeight = max(w, r.maxWeight)
+		ns = append(ns, nd)
+
+		gcdWeight = gcd(w, gcdWeight) // 计算权重的最大公约数
 	}
-	r.nodes = ns
-	r.updateTime = time.Now()
+	r.size = size
+
+	r.gcdWeight = gcdWeight
+	r.nodeQueue = queue.NewQueue(ns...)
+	r.nodeQueueNext = queue.NewQueue[node]()
+	r.nextHandler = nil
 }
 
 func newRoundRobin(app eoscContext.EoApp, scheme string, timeout time.Duration) *roundRobin {
@@ -145,19 +175,22 @@ func newRoundRobin(app eoscContext.EoApp, scheme string, timeout time.Duration) 
 		scheme:  scheme,
 		timeout: timeout,
 	}
-	r.set()
+
 	return r
 }
 
-func gcd(a, b int) int {
-	c := a % b
-	if c == 0 {
-		return b
-	}
-	return gcd(b, c)
+type intType interface {
+	int | int64 | int32 | int16 | int8 | uint64 | uint32 | uint16 | uint8 | uint
 }
 
-func max(a, b int) int {
+func gcd[T intType](a, b T) T {
+	for b != 0 {
+		a, b = b, a%b
+	}
+	return a
+}
+
+func max[T intType](a, b T) T {
 	if a > b {
 		return a
 	}

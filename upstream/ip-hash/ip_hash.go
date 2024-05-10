@@ -61,6 +61,9 @@ func (r *ipHash) Next(org eoscContext.EoContext) (eoscContext.INode, int, error)
 	readIp := org.RealIP()
 	nodes := r.Nodes()
 	size := len(nodes)
+	if size == 1 {
+		return nodes[0], 0, nil
+	}
 	if size < 1 {
 		return nil, 0, errNoValidNode
 	}
