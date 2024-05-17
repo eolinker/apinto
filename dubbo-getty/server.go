@@ -337,8 +337,9 @@ func (s *server) runUDPEventLoop(newSession NewSessionCallback) {
 		ss = newUDPSession(conn, s)
 		if err = newSession(ss); err != nil {
 			conn.Close()
-			panic(err.Error())
+			return
 		}
+
 		ss.(*session).run()
 	}()
 }
