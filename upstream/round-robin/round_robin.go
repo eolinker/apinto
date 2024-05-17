@@ -2,11 +2,12 @@ package round_robin
 
 import (
 	"errors"
-	"github.com/eolinker/apinto/utils/queue"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/eolinker/apinto/utils/queue"
 
 	eoscContext "github.com/eolinker/eosc/eocontext"
 
@@ -101,7 +102,7 @@ func (r *roundRobin) Next() (eoscContext.INode, int, error) {
 
 		nodeValue.effectiveWeight -= r.gcdWeight
 
-		if nodeValue.weight > 0 {
+		if nodeValue.effectiveWeight > 0 {
 			r.nodeQueue.Push(entry)
 		} else {
 			nodeValue.effectiveWeight = nodeValue.weight
