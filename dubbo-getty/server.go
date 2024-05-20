@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"github.com/eolinker/eosc/log"
 	"net"
@@ -270,7 +271,7 @@ func (s *server) accept(newSession NewSessionCallback) (Session, error) {
 		return nil, perrors.WithStack(err)
 	}
 	if gxnet.IsSameAddr(conn.RemoteAddr(), conn.LocalAddr()) {
-		log.Warnf("conn.localAddr{%s} == conn.RemoteAddr", conn.LocalAddr().String(), conn.RemoteAddr().String())
+		log.Warnf("conn.localAddr{%s} == conn.RemoteAddr{%s}", conn.LocalAddr().String(), conn.RemoteAddr().String())
 		return nil, perrors.WithStack(errSelfConnect)
 	}
 
@@ -303,7 +304,8 @@ func (s *server) runTCPEventLoop(newSession NewSessionCallback) {
 			}
 			client, err = s.accept(newSession)
 			if err != nil {
-				if netErr, ok := perrors.Cause(err).(net.Error); ok && netErr.Timeout() {
+				var netErr net.Error
+				if errors.As(perrors.Cause(err), &netErr) && netErr.Timeout() {
 					if delay == 0 {
 						delay = 5 * time.Millisecond
 					} else {
@@ -314,8 +316,8 @@ func (s *server) runTCPEventLoop(newSession NewSessionCallback) {
 					}
 					continue
 				}
-				log.Warnf("server{%s}.Accept() = err {%+v}", s.addr, perrors.WithStack(err))
-				continue
+				log.Warnf("server{%s}.Accept() = err {%+v}", s.addr, perrors.Cause(err))
+				break
 			}
 			delay = 0
 			client.(*session).run()
