@@ -39,7 +39,12 @@ function buildApp(){
            -X 'github.com/eolinker/apinto/utils/version.goVersion=$(go version)'
            -X 'github.com/eolinker/apinto/utils/version.eoscVersion=${EOSC_VERSION}'"
     echo -e "build $APP:go build -ldflags "-w -s $flags" -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w -s $flags" -o ${OUTPATH}/$APP ${BasePath}/app/$APP
+    ARCH=$3
+    if [[ "$ARCH" = "" ]]
+    then
+    		ARCH="amd64"
+    fi
+    CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -ldflags "-w -s $flags" -o ${OUTPATH}/$APP ${BasePath}/app/$APP
 #    echo "build $APP:${buildCMD}"
 
 #    echo `${buildCMD}`
@@ -56,8 +61,15 @@ function buildApp(){
 function packageApp(){
     APP=$1
     VERSION=$2
-    cd "${BasePath}/out/${APP}-${VERSION}"
-    tar -zcf "${BasePath}/out/${APP}-${VERSION}.linux.x64.tar.gz" --xform 's#^#apinto/#'  *
+    ARCH=$3
+    if [[ "$ARCH" = "" ]]
+    then
+    		ARCH="amd64"
+    fi
+    cp -r "${BasePath}/out/${APP}-${VERSION}" "${BasePath}/out/${APP}"
+		cd "${BasePath}/out"
+    tar -zcf "${BasePath}/out/${APP}_${VERSION}_linux_${ARCH}.tar.gz" ${APP}
+    rm -rf "${BasePath}/out/${APP}"
     cd "${BasePath}"
 }
 

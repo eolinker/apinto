@@ -1,6 +1,8 @@
 module github.com/eolinker/apinto
 
-go 1.19
+go 1.21
+
+toolchain go1.21.1
 
 require (
 	github.com/Shopify/sarama v1.32.0
@@ -85,14 +87,6 @@ require (
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	go.etcd.io/bbolt v1.3.9 // indirect
-	go.etcd.io/etcd/api/v3 v3.5.13 // indirect
-	go.etcd.io/etcd/client/pkg/v3 v3.5.13 // indirect
-	go.etcd.io/etcd/client/v2 v2.305.13 // indirect
-	go.etcd.io/etcd/client/v3 v3.5.13 // indirect
-	go.etcd.io/etcd/pkg/v3 v3.5.13 // indirect
-	go.etcd.io/etcd/raft/v3 v3.5.13 // indirect
-	go.etcd.io/etcd/server/v3 v3.5.13 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.opentelemetry.io/otel/metric v1.20.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
@@ -164,6 +158,14 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
+	go.etcd.io/bbolt v1.3.9 // indirect
+	go.etcd.io/etcd/api/v3 v3.5.13 // indirect
+	go.etcd.io/etcd/client/pkg/v3 v3.5.13 // indirect
+	go.etcd.io/etcd/client/v2 v2.305.13 // indirect
+	go.etcd.io/etcd/client/v3 v3.5.13 // indirect
+	go.etcd.io/etcd/pkg/v3 v3.5.13 // indirect
+	go.etcd.io/etcd/raft/v3 v3.5.13 // indirect
+	go.etcd.io/etcd/server/v3 v3.5.13 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.46.0 // indirect
 	go.opentelemetry.io/otel v1.20.0 // indirect
 	go.opentelemetry.io/otel/trace v1.20.0 // indirect
