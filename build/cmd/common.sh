@@ -11,14 +11,20 @@ BasePath=$(pwd) ## 项目根目录
 # 生成版本号
 function genVersion(){
 
-    if [[ "$1" = "" ]]
-    then
-       v=$(git rev-parse --short HEAD)
-       time=$(date "+%Y%m%d%H")
-       echo "$time-$v"
-       exit 0
-    fi
-    echo "$1"
+   # 判断是否传参
+     if [ -n "$1" ]; then
+       echo "$1"
+       return
+     fi
+     # 是否安装了 git
+
+     tag=$(git describe --abbrev=0 --tags)
+
+     if [ $? -ne 0 ]; then
+       tag=$(git rev-parse --short HEAD)
+     fi
+
+     echo "${tag}"
 }
 
 # 构建app
@@ -40,10 +46,11 @@ function buildApp(){
            -X 'github.com/eolinker/apinto/utils/version.eoscVersion=${EOSC_VERSION}'"
     echo -e "build $APP:go build -ldflags "-w -s $flags" -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
     ARCH=$3
-    if [[ "$ARCH" = "" ]]
+    if [[ "$ARCH" == "" ]]
     then
     		ARCH="amd64"
     fi
+    echo "CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -ldflags \"-w -s $flags\" -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
     CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -ldflags "-w -s $flags" -o ${OUTPATH}/$APP ${BasePath}/app/$APP
 #    echo "build $APP:${buildCMD}"
 

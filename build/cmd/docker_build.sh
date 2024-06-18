@@ -5,6 +5,7 @@ echo $0
 
 #VERSION=`git describe --abbrev=0 --tags`
 VERSION=$(genVersion $1)
+
 Username="eolinker"
 if [[ "$2" != "" ]]
 then
@@ -12,15 +13,20 @@ then
 fi
 
 ARCH=$3
+PLATFORM=""
 if [[ "$ARCH" == "" ]]
 then
 		ARCH="amd64"
 fi
-
+if [[ "$ARCH" == "amd64" ]]
+then
+	PLATFORM="--platform=linux/amd64"
+fi
+./build/cmd/package.sh ${VERSION} ${ARCH}
 PackageName=apinto_${VERSION}_linux_${ARCH}.tar.gz
 cp out/${PackageName} ./build/resources/apinto.linux.x64.tar.gz
 
-docker build -t ${Username}/apinto-gateway:${VERSION}-${ARCH} -f ./build/cmd/Dockerfile ./build/resources
+docker build $PLATFORM -t ${Username}/apinto-gateway:${VERSION}-${ARCH} -f ./build/cmd/Dockerfile ./build/resources
 
 rm -rf ./build/resources/apinto.linux.x64.tar.gz
 
