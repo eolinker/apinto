@@ -18,7 +18,7 @@ RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shang
 
 #解压网关程序压缩包
 COPY ./apinto.linux.x64.tar.gz /
-RUN tar -zxvf apinto.linux.x64.tar.gz && rm -rf apinto.linux.x64.tar.gz
+RUN tar -zxvf apinto.linux.x64.tar.gz && ls /${AppName} / && rm -rf ../apinto.linux.x64.tar.gz
 
 #复制程序默认配置文件以及修改脚本权限
 RUN mkdir /etc/${AppName}

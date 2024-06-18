@@ -24,7 +24,7 @@ func TestSend(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	balanceHandler, err := balanceFactory.Create("", 0)
+	balanceHandler, err := balanceFactory.Create(anonymous, "", 0)
 	if err != nil {
 		t.Error(err)
 		return
@@ -52,6 +52,10 @@ func (t *testApp) TimeOut() time.Duration {
 
 type testAppContext struct {
 	app eocontext.EoApp
+}
+
+func (t *testAppContext) RealIP() string {
+	return "127.0.0.1"
 }
 
 func (t *testAppContext) RequestId() string {

@@ -3,17 +3,30 @@
 echo $0
 . $(dirname $0)/common.sh
 
-VERSION=`git describe --abbrev=0 --tags`
+#VERSION=`git describe --abbrev=0 --tags`
+VERSION=$(genVersion $1)
+
 Username="eolinker"
-if [[ "$1" != "" ]]
+if [[ "$2" != "" ]]
 then
-		Username=$1
+		Username=$2
 fi
 
-PackageName=apinto_${VERSION}_linux_amd64.tar.gz
-cp dist/${PackageName} ./build/resources/apinto.linux.x64.tar.gz
+ARCH=$3
+PLATFORM=""
+if [[ "$ARCH" == "" ]]
+then
+		ARCH="amd64"
+fi
+if [[ "$ARCH" == "amd64" ]]
+then
+	PLATFORM="--platform=linux/amd64"
+fi
+./build/cmd/package.sh ${VERSION} ${ARCH}
+PackageName=apinto_${VERSION}_linux_${ARCH}.tar.gz
+cp out/${PackageName} ./build/resources/apinto.linux.x64.tar.gz
 
-docker build -t ${Username}/apinto-gateway:${VERSION} -f ./build/resources/Dockerfile ./build/resources
+docker build $PLATFORM -t ${Username}/apinto-gateway:${VERSION}-${ARCH} -f ./build/cmd/Dockerfile ./build/resources
 
 rm -rf ./build/resources/apinto.linux.x64.tar.gz
 
