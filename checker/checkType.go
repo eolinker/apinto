@@ -1,6 +1,6 @@
 package checker
 
-//CheckType Checker类型
+// CheckType Checker类型
 type CheckType int
 
 const (
@@ -28,4 +28,5 @@ const (
 	CheckTypeAll
 	// CheckMultiple 复合匹配
 	CheckMultiple
+	CheckTypeIP
 )

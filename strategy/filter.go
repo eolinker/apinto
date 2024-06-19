@@ -17,6 +17,14 @@ func ParseFilter(config FilterConfig) (IFilter, error) {
 		cks := make([]checker.Checker, 0, len(patterns))
 
 		for _, p := range patterns {
+			if name == "ip" {
+				c, err := newIPChecker(p)
+				if err != nil {
+					return nil, err
+				}
+				cks = append(cks, c)
+				continue
+			}
 			c, err := checker.Parse(p)
 			if err != nil {
 				return nil, err
