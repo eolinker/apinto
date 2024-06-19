@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/eolinker/eosc/log"
+
 	"github.com/eolinker/apinto/drivers/router/http-router/manager"
 	"github.com/eolinker/apinto/plugin"
 	"github.com/eolinker/apinto/service"
 	"github.com/eolinker/apinto/template"
-	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
 
 	"github.com/eolinker/eosc"
@@ -30,7 +31,7 @@ func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 
 // Create 创建一个http路由驱动实例
 func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	log.Debug("create http router worker: ", pluginManager)
+	//log.Debug("create http router worker: ", pluginManager)
 	r := &HttpRouter{
 		id:            id,
 		name:          name,
@@ -40,6 +41,7 @@ func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker)
 
 	err := r.reset(v, workers)
 	if err != nil {
+		log.Error("create http router worker error: ", err)
 		return nil, err
 	}
 	return r, err

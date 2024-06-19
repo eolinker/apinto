@@ -4,6 +4,7 @@ import (
 	access_relational "github.com/eolinker/apinto/drivers/plugins/access-relational"
 	"github.com/eolinker/apinto/drivers/plugins/acl"
 	"github.com/eolinker/apinto/drivers/plugins/app"
+	auto_redirect "github.com/eolinker/apinto/drivers/plugins/auto-redirect"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	data_transform "github.com/eolinker/apinto/drivers/plugins/data-transform"
 	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
@@ -86,6 +87,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	response_filter.Register(extenderRegister)
 	gzip.Register(extenderRegister)
 	response_file_parse.Register(extenderRegister)
+	auto_redirect.Register(extenderRegister)
 
 	// 安全相关插件
 	ip_restriction.Register(extenderRegister)

@@ -126,7 +126,7 @@ func (r *ResponseHeader) refresh() {
 		if strings.TrimSpace(t) == "" {
 			continue
 		}
-		vs := strings.Split(t, ":")
+		vs := strings.SplitN(t, ":", 2)
 		if len(vs) < 2 {
 			if vs[0] == "" {
 				continue

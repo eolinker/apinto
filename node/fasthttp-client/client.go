@@ -155,39 +155,39 @@ func (c *Client) ProxyTimeout(addr string, host string, req *fasthttp.Request, r
 			resp.SetConnectionClose()
 		}
 	}()
-	var deadline time.Time
-	var requestURI string
-	redirectCount := 0
-	for {
-		client, scheme, err := c.getHostClient(addr, host)
-		if err != nil {
-			return err
-		}
-
-		request.URI().SetScheme(scheme)
-
-		if redirectCount == 0 {
-			deadline = time.Now().Add(timeout)
-		} else {
-			request.SetRequestURI(requestURI)
-		}
-
-		err = client.DoDeadline(req, resp, deadline)
-		if err != nil {
-			return err
-		}
-		if !fasthttp.StatusCodeIsRedirect(resp.StatusCode()) || redirectCount >= DefaultMaxRedirectCount {
-			break
-		}
-		redirectCount++
-		location := resp.Header.Peek("Location")
-		if len(location) == 0 {
-			return fasthttp.ErrMissingLocation
-		}
-		addr, requestURI = getRedirectURL(req.URI().String(), location)
+	//var deadline time.Time
+	//var requestURI string
+	//redirectCount := 0
+	//for {
+	client, scheme, err := c.getHostClient(addr, host)
+	if err != nil {
+		return err
 	}
 
-	return nil
+	request.URI().SetScheme(scheme)
+
+	//if redirectCount == 0 {
+	//	deadline = time.Now().Add(timeout)
+	//} else {
+	//	request.SetRequestURI(requestURI)
+	//}
+
+	return client.DoTimeout(req, resp, timeout)
+	//if err != nil {
+	//	return err
+	//}
+	//if !fasthttp.StatusCodeIsRedirect(resp.StatusCode()) || redirectCount >= DefaultMaxRedirectCount {
+	//	break
+	//}
+	//redirectCount++
+	//location := resp.Header.Peek("Location")
+	//if len(location) == 0 {
+	//	return fasthttp.ErrMissingLocation
+	//}
+	//addr, requestURI = getRedirectURL(req.URI().String(), location)
+	//}
+
+	//return nil
 }
 
 func (c *Client) mCleaner(m map[string]*fasthttp.HostClient) {
