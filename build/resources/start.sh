@@ -16,7 +16,7 @@ set -e
 
 if [[ $APINTO_DEBUG == "true" ]]; then
 		#Launch the gateway
-    ./apinto start
+    ./apinto debug master
     echo "[$(date "+%Y-%m-%d %H:%M:%S")] Gateway Stop"
     exit 0
 fi

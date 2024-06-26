@@ -15,10 +15,10 @@ fi
 
 set +e
 #Check whether there is a POD ID in the result
-ips=$( echo ${response} | jq -r '.subsets[].addresses[].ip' )
-
+hostnames=$( echo ${response} | jq -r '.subsets[].addresses[].hostname' )
+podHostName=$(hostname)
 #If the ips is null
-if [[ "$( echo ${ips} )" == '' ]]
+if [[ "$( echo ${hostnames} )" == '' ]]
 then
     echo "There are no pods ip in Service "
     exit 1
@@ -27,12 +27,12 @@ fi
 set -e
 
 #Traverses all the Node's IP
-for ip in ${ips}
+for hn in ${hostnames}
 do
-  if [ ${ip} != ${POD_IP} ]
+  if [ ${hn} != ${podHostName} ]
   then
   #join the cluster
-    ./apinto join --addr=${ip}:${APINTO_ADMIN_PORT}
+    ./apinto join --addr=${hn}.${SVC_NAME}:${APINTO_ADMIN_PORT}
     break
   fi
 done
