@@ -18,7 +18,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Name:         "router",
 			Label:        "路由",
 			Desc:         "路由",
-			Dependencies: []string{"service", "template"},
+			Dependencies: []string{"service", "template", "transcode"},
 			AppendLabels: []string{"host", "service", "listen", "disable"},
 			Drivers: []*eosc.DriverConfig{
 				{
