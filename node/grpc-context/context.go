@@ -228,12 +228,13 @@ func (c *Context) doInvoke(address string, timeout time.Duration) error {
 
 	c.proxy.Headers().Set("grpc-timeout", fmt.Sprintf("%dn", timeout))
 	clientCtx, _ := context.WithCancel(metadata.NewOutgoingContext(c.Context(), c.proxy.Headers().Copy()))
-	clientStream, err := grpc.NewClientStream(clientCtx, clientStreamDescForProxying, clientConn, c.proxy.FullMethodName())
+	serverHeaders := &metadata.MD{}
+	clientStream, err := grpc.NewClientStream(clientCtx, clientStreamDescForProxying, clientConn, c.proxy.FullMethodName(), grpc.Header(serverHeaders))
 	if err != nil {
 		return err
 	}
 	c.finish = true
-	go c.readError(c.serverStream, clientStream, c.response)
+	go c.readError(c.serverStream, clientStream, serverHeaders, c.response)
 	return nil
 }
 
