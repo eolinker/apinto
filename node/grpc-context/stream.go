@@ -21,12 +21,12 @@ var (
 	}
 )
 
-func (c *Context) readError(serverStream grpc.ServerStream, clientStream grpc.ClientStream, serverHeaders *metadata.MD, response grpc_context.IResponse) {
-	c.errChan <- handlerStream(serverStream, clientStream, serverHeaders, response)
+func (c *Context) readError(serverStream grpc.ServerStream, clientStream grpc.ClientStream, serverHeaders *metadata.MD, trailers *metadata.MD, response grpc_context.IResponse) {
+	c.errChan <- handlerStream(serverStream, clientStream, serverHeaders, trailers, response)
 	close(c.errChan)
 }
 
-func handlerStream(serverStream grpc.ServerStream, clientStream grpc.ClientStream, serverHeaders *metadata.MD, response grpc_context.IResponse) error {
+func handlerStream(serverStream grpc.ServerStream, clientStream grpc.ClientStream, serverHeaders *metadata.MD, trailers *metadata.MD, response grpc_context.IResponse) error {
 
 	// Explicitly *do not close* s2cErrChan and c2sErrChan, otherwise the select below will not terminate.
 	// Channels do not have to be closed, it is just a control flow mechanism, see
@@ -58,7 +58,7 @@ func handlerStream(serverStream grpc.ServerStream, clientStream grpc.ClientStrea
 			//} else {
 			serverStream.SendHeader(metadata.Join(response.Headers(), *serverHeaders))
 			//}
-			serverStream.SetTrailer(metadata.Join(response.Trailer(), clientStream.Trailer()))
+			serverStream.SetTrailer(metadata.Join(response.Trailer(), *trailers))
 			// c2sErr will contain RPC error from client code. If not io.EOF return the RPC error as server stream error.
 			if c2sErr != io.EOF {
 				return c2sErr
