@@ -3,15 +3,15 @@ package grpc_context
 import (
 	"io"
 
-	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 var (
@@ -72,7 +72,7 @@ func handlerStream(serverStream grpc.ServerStream, clientStream grpc.ClientStrea
 func forwardClientToServer(src grpc.ClientStream, dst grpc.ServerStream) chan error {
 	ret := make(chan error, 1)
 	go func() {
-		f := &anypb.Any{}
+
 		// This is a bit of a hack, but client to server headers are only readable after first client msg is
 		// received but must be written to server stream before the first msg is flushed.
 		// This is the only place to do it nicely.
@@ -85,7 +85,10 @@ func forwardClientToServer(src grpc.ClientStream, dst grpc.ServerStream) chan er
 			ret <- err
 			return
 		}
+		f := &emptypb.Empty{}
+
 		for {
+
 			if err := src.RecvMsg(f); err != nil {
 				ret <- err // this can be io.EOF which is happy case
 				break
@@ -102,8 +105,9 @@ func forwardClientToServer(src grpc.ClientStream, dst grpc.ServerStream) chan er
 func forwardServerToClient(src grpc.ServerStream, dst grpc.ClientStream) chan error {
 	ret := make(chan error, 1)
 	go func() {
-		f := &anypb.Any{}
+		f := &emptypb.Empty{}
 		for {
+
 			if err := src.RecvMsg(f); err != nil {
 				ret <- err // this can be io.EOF which is happy case
 				break

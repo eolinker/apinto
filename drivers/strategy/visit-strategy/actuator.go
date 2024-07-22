@@ -83,6 +83,7 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 	handlers := a.handlers
 	a.lock.RUnlock()
 	pass := true
+	var name string
 	for _, handler := range handlers {
 		// 匹配Filter
 		if !handler.filter.Check(httpCtx) {
@@ -94,9 +95,11 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 		if match {
 			// 匹配成功
 			pass = handler.rule.visit
+			name = handler.name
 			break
 		}
 		pass = !handler.rule.visit
+		name = handler.name
 		if handler.rule.isContinue {
 			continue
 		}
@@ -107,6 +110,8 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 		httpCtx.Response().SetStatus(403, "")
 		errInfo := "not allowed"
 		httpCtx.Response().SetBody([]byte(errInfo))
+		ctx.WithValue("is_block", true)
+		ctx.SetLabel("block_name", name)
 		return errors.New(errInfo)
 	}
 	if next != nil {

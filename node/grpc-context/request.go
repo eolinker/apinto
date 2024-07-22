@@ -33,6 +33,7 @@ type Request struct {
 }
 
 func (r *Request) SetHost(s string) {
+	r.headers.Set(":authority", s)
 	r.host = s
 }
 

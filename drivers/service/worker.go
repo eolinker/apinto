@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/service"
 )
@@ -11,6 +12,7 @@ var (
 
 	ErrorInvalidDiscovery = errors.New("invalid Discovery")
 )
+
 var _ service.IService = (*serviceWorker)(nil)
 
 type serviceWorker struct {

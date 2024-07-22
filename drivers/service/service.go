@@ -24,8 +24,8 @@ var (
 
 type Service struct {
 	eocontext.BalanceHandler
-	app discovery.IApp
-
+	app     discovery.IApp
+	title   string
 	scheme  string
 	timeout time.Duration
 
@@ -40,7 +40,7 @@ func (s *Service) PassHost() (eocontext.PassHostMod, string) {
 
 func (s *Service) Nodes() []eocontext.INode {
 	return s.app.Nodes()
-	 
+
 }
 
 func (s *Service) Scheme() string {
@@ -57,6 +57,7 @@ func (s *Service) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorke
 	if !ok {
 		return fmt.Errorf("need %s,now %s", config.TypeNameOf((*Config)(nil)), config.TypeNameOf(conf))
 	}
+	s.title = data.Title
 	data.rebuild()
 	if reflect.DeepEqual(data, s.lastConfig) {
 		return nil
@@ -147,4 +148,8 @@ func compareArray[T comparable](a, b []T) bool {
 		}
 	}
 	return true
+}
+
+func (s *Service) Title() string {
+	return s.title
 }

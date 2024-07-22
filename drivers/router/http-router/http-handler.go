@@ -23,15 +23,14 @@ type httpHandler struct {
 	routerName  string
 	routerId    string
 	serviceName string
-
-	finisher  eocontext.FinishHandler
-	service   service.IService
-	filters   eocontext.IChainPro
-	disable   bool
-	websocket bool
-	labels    map[string]string
-	retry     int
-	timeout   time.Duration
+	finisher    eocontext.FinishHandler
+	service     service.IService
+	filters     eocontext.IChainPro
+	disable     bool
+	websocket   bool
+	labels      map[string]string
+	retry       int
+	timeout     time.Duration
 }
 
 func (h *httpHandler) Serve(ctx eocontext.EoContext) {
@@ -70,6 +69,7 @@ func (h *httpHandler) Serve(ctx eocontext.EoContext) {
 	ctx.SetLabel("service", h.serviceName)
 	if h.service != nil {
 		ctx.SetLabel("service_id", h.service.Id())
+		ctx.SetLabel("service_title", h.service.Title())
 	}
 
 	ctx.SetLabel("method", httpContext.Request().Method())

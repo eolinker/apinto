@@ -77,6 +77,7 @@ func (a *tActuatorSet) Strategy(ctx eocontext.EoContext, next eocontext.IChain, 
 		if ach.Assert(ctx) {
 			err := ach.Check(ctx, handlers, scalars)
 			if err != nil {
+
 				ctx.SetLabel("handler", "limiting")
 				return err
 			}

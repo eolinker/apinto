@@ -3,10 +3,11 @@ package redis
 import (
 	"context"
 	"fmt"
+
 	"strconv"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	redis "github.com/go-redis/redis/v8"
 )
 
 type Vector struct {
