@@ -36,7 +36,7 @@ func (hd *actuatorHttp) Assert(ctx eocontext.EoContext) bool {
 	return true
 }
 
-func (hd *actuatorHttp) compareAndAddCount(ctx http_service.IHttpContext, vector resources.Vector, metricsValue, handlerName, period string, threshold int64, response response.IResponse) error {
+func (hd *actuatorHttp) compareAndAddCount(ctx http_service.IHttpContext, vector resources.Vector, metricsValue, period, handlerName string, threshold int64, response response.IResponse) error {
 	if vector.Get(metricsValue) >= threshold {
 		setLimitingStrategyContent(ctx, handlerName, response)
 		log.DebugF("refuse by limiting strategy %s of %s query.", handlerName, period)
@@ -48,7 +48,7 @@ func (hd *actuatorHttp) compareAndAddCount(ctx http_service.IHttpContext, vector
 	return nil
 }
 
-func (hd *actuatorHttp) compareAndAddLength(ctx http_service.IHttpContext, vector resources.Vector, metricsValue, handlerName, period string, threshold, contentLength int64, response response.IResponse) error {
+func (hd *actuatorHttp) compareAndAddLength(ctx http_service.IHttpContext, vector resources.Vector, metricsValue, period, handlerName string, threshold, contentLength int64, response response.IResponse) error {
 	if vector.Get(metricsValue) >= threshold {
 		setLimitingStrategyContent(ctx, handlerName, response)
 		log.DebugF("refuse by limiting strategy %s of %s traffic.", handlerName, period)
