@@ -317,99 +317,189 @@ var (
 	}
 
 	proxyFields = ProxyReaders{
-		"header": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			if name == "" {
-				return url.Values(proxy.Header().Headers()).Encode(), true
-			}
+		"header": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				if name == "" {
+					return url.Values(proxy.Header().Headers()).Encode(), true
+				}
 
-			return proxy.Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
-		}),
-		"headers": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			result := make(map[string]string)
-			for key, value := range proxy.Header().Headers() {
-				result[strings.ToLower(key)] = strings.Join(value, ";")
-			}
-			return result, true
-		}),
-		"uri": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.URI().RequestURI(), true
-		}),
-		"url": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return fmt.Sprintf("%s://%s:%d%s", proxy.URI().Scheme(), proxy.RemoteIP(), proxy.RemotePort(), proxy.URI().RequestURI()), true
-		}),
-		"query": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			if name == "" {
-				return utils.QueryUrlEncode(proxy.URI().RawQuery()), true
-			}
-			return url.QueryEscape(proxy.URI().GetQuery(name)), true
-		}),
-		"body": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			body, err := proxy.Body().RawBody()
-			if err != nil {
-				return "", false
-			}
-			return string(body), true
-		}),
-		"addr": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.URI().Host(), true
-		}),
-		"dst_ip": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.RemoteIP(), true
-		}),
-		"dst_port": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.RemotePort(), true
-		}),
-		"scheme": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.URI().Scheme(), true
-		}),
-		"method": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.Method(), true
-		}),
-		"status": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.StatusCode(), true
-		}),
-		"path": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.URI().Path(), true
-		}),
-		"host": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.Header().Host(), true
-		}),
-		"request_length": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.ContentLength(), true
-		}),
-		"response_length": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.ResponseLength(), true
-		}),
-		"response_body": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			body := proxy.ResponseBody()
-			encoding := proxy.ResponseHeaders().Get("Content-Encoding")
-			if encoding == "gzip" {
-				reader, err := gzip.NewReader(bytes.NewReader([]byte(body)))
+				return proxy.Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				if name == "" {
+					return url.Values(proxy.Header().Headers()).Encode(), true
+				}
+				return proxy.Header().GetHeader(strings.Replace(name, "_", "-", -1)), true
+			}),
+		},
+		"headers": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				result := make(map[string]string)
+				for key, value := range proxy.Header().Headers() {
+					result[strings.ToLower(key)] = strings.Join(value, ";")
+				}
+				return result, true
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				result := make(map[string]string)
+				for key, value := range proxy.Header().Headers() {
+					result[strings.ToLower(key)] = strings.Join(value, ";")
+				}
+				return result, true
+			}),
+		},
+		"uri": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return proxy.URI().RequestURI(), true
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				return proxy.URI().RequestURI(), true
+			}),
+		},
+		"url": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return fmt.Sprintf("%s://%s:%d%s", proxy.URI().Scheme(), proxy.RemoteIP(), proxy.RemotePort(), proxy.URI().RequestURI()), true
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				return fmt.Sprintf("%s://%s:%d%s", proxy.URI().Scheme(), "unknown", 0, proxy.URI().RequestURI()), true
+			}),
+		},
+		"query": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				if name == "" {
+					return utils.QueryUrlEncode(proxy.URI().RawQuery()), true
+				}
+				return url.QueryEscape(proxy.URI().GetQuery(name)), true
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				if name == "" {
+					return utils.QueryUrlEncode(proxy.URI().RawQuery()), true
+				}
+				return url.QueryEscape(proxy.URI().GetQuery(name)), true
+			}),
+		},
+		"body": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				body, err := proxy.Body().RawBody()
 				if err != nil {
 					return "", false
 				}
-				defer reader.Close()
-				data, err := io.ReadAll(reader)
+				return string(body), true
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				body, err := proxy.Body().RawBody()
 				if err != nil {
 					return "", false
 				}
-				return string(data), true
-			}
-			return body, true
-		}),
-		"response_headers": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			result := make(map[string]string)
-			for key, value := range proxy.ResponseHeaders() {
-				result[strings.ToLower(key)] = strings.Join(value, ";")
-			}
-			return result, true
-		}),
-		"time": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.ResponseTime(), true
-		}),
-		"msec": ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
-			return proxy.ProxyTime().UnixMilli(), true
-		}),
+				return string(body), true
+			}),
+		},
+		"addr": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return proxy.URI().Host(), true
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				return proxy.URI().Host(), true
+			}),
+		},
+		"dst_ip": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return proxy.RemoteIP(), true
+			}),
+		},
+		"dst_port": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return proxy.RemotePort(), true
+			}),
+		},
+		"scheme": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return proxy.URI().Scheme(), true
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				return proxy.URI().Scheme(), true
+			}),
+		},
+		"method": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return proxy.Method(), true
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				return proxy.Method(), true
+			}),
+		},
+		"status": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return proxy.StatusCode(), true
+			}),
+		},
+		"path": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return proxy.URI().Path(), true
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				return proxy.URI().Path(), true
+			}),
+		},
+		"host": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return proxy.Header().Host(), true
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				return proxy.Header().Host(), true
+			}),
+		},
+		"request_length": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return proxy.ContentLength(), true
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				return proxy.ContentLength(), true
+			}),
+		},
+		"response_length": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return proxy.ResponseLength(), true
+			}),
+		},
+		"response_body": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				body := proxy.ResponseBody()
+				encoding := proxy.ResponseHeaders().Get("Content-Encoding")
+				if encoding == "gzip" {
+					reader, err := gzip.NewReader(bytes.NewReader([]byte(body)))
+					if err != nil {
+						return "", false
+					}
+					defer reader.Close()
+					data, err := io.ReadAll(reader)
+					if err != nil {
+						return "", false
+					}
+					return string(data), true
+				}
+				return body, true
+			}),
+		},
+		"response_headers": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				result := make(map[string]string)
+				for key, value := range proxy.ResponseHeaders() {
+					result[strings.ToLower(key)] = strings.Join(value, ";")
+				}
+				return result, true
+			}),
+		},
+		"time": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return proxy.ResponseTime(), true
+			}),
+		},
+		"msec": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				return proxy.ProxyTime().UnixMilli(), true
+			}),
+		},
 	}
 )
 

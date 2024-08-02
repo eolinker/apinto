@@ -54,7 +54,7 @@ func (o *tProducer) reset(cfg *ProducerConfig) (err error) {
 	o.input = o.producer.Input()
 	ctx, cancel := context.WithCancel(context.Background())
 	o.cancel = cancel
-	go o.work(o.producer, ctx)
+	go o.work(o.producer, ctx, cfg)
 	return nil
 }
 
@@ -90,6 +90,7 @@ func (o *tProducer) output(entry eosc.IEntry) error {
 	if o.conf.PartitionType == "hash" {
 		msg.Key = sarama.StringEncoder(eosc.ReadStringFromEntry(entry, o.conf.PartitionKey))
 	}
+	log.DebugF("kafka send addr: %s, topic: %s, data: %s", o.conf.Address, o.conf.Topic, data)
 	o.write(msg)
 
 	return nil
@@ -100,13 +101,14 @@ func (o *tProducer) write(msg *sarama.ProducerMessage) {
 	//if !o.enable {
 	//	return
 	//}
+
 	if o.input != nil {
 		o.input <- msg
 	}
 
 }
 
-func (o *tProducer) work(producer sarama.AsyncProducer, ctx context.Context) {
+func (o *tProducer) work(producer sarama.AsyncProducer, ctx context.Context, cfg *ProducerConfig) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -116,14 +118,17 @@ func (o *tProducer) work(producer sarama.AsyncProducer, ctx context.Context) {
 			}
 			return
 		case err := <-producer.Errors():
+			log.DebugF("receive error.kafka addr: %s,kafka topic: %s,kafka partition: %d", cfg.Address, cfg.Topic, cfg.Partition)
 			if err != nil {
 				log.Warnf("kafka error:%s", err.Error())
 			}
 		case success, ok := <-producer.Successes():
+			log.DebugF("receive success.kafka addr: %s,kafka topic: %s,kafka partition: %d", cfg.Address, cfg.Topic, cfg.Partition)
 			if !ok {
+				log.Errorf("kafka producer closed")
 				return
 			}
-			log.Debug("kafka success:%s", success)
+			log.DebugF("kafka success:%s", success)
 		}
 	}
 }

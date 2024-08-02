@@ -43,7 +43,7 @@ func (p ProxyReaders) Read(name string, ctx http_service.IHttpContext) (interfac
 		proxies := ctx.Proxies()
 		proxyLen := len(proxies)
 		if proxyLen == 0 {
-			return "", false
+			return v.ReadRequest("", ctx.Proxy())
 		}
 		return v.ReadProxy("", proxies[proxyLen-1])
 	}
@@ -61,4 +61,23 @@ func (p ProxyReaders) Read(name string, ctx http_service.IHttpContext) (interfac
 		return v.ReadProxy(ns[1], proxies[proxyLen-1])
 	}
 	return v.ReadProxy("", proxies[proxyLen-1])
+}
+
+type proxyReader struct {
+	ProxyReadFunc
+	ProxyReadRequestFunc
+}
+
+func (p *proxyReader) ReadRequest(name string, proxy http_service.IRequest) (interface{}, bool) {
+	if p.ProxyReadRequestFunc == nil {
+		return "", false
+	}
+	return p.ProxyReadRequestFunc(name, proxy)
+}
+
+func (p *proxyReader) ReadProxy(name string, proxy http_service.IProxy) (interface{}, bool) {
+	if p.ProxyReadFunc == nil {
+		return "", false
+	}
+	return p.ProxyReadFunc(name, proxy)
 }

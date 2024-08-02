@@ -7,6 +7,7 @@ import (
 )
 
 type IProxyReader interface {
+	ReadRequest(name string, proxy http_service.IRequest) (interface{}, bool)
 	ReadProxy(name string, proxy http_service.IProxy) (interface{}, bool)
 }
 
@@ -36,6 +37,8 @@ func ReadProxyFromProxyReader(reader IProxyReader, proxy http_service.IProxy, ke
 	}
 	return data, true
 }
+
+type ProxyReadRequestFunc func(name string, proxy http_service.IRequest) (interface{}, bool)
 
 type ProxyReadFunc func(name string, proxy http_service.IProxy) (interface{}, bool)
 
