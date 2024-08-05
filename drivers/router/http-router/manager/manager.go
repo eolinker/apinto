@@ -46,6 +46,9 @@ func NewManager() *Manager {
 func (m *Manager) Set(id string, port int, protocols []string, hosts []string, method []string, path string, append []AppendRule, router router.IRouterHandler) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+	if len(protocols) == 0 {
+		protocols = []string{"http", "https"}
+	}
 	routersData := m.routersData.Set(id, port, protocols, hosts, method, path, append, router)
 	matchers, err := routersData.Parse()
 	if err != nil {
