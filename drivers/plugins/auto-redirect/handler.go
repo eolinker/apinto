@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/eolinker/apinto/drivers/discovery/static"
 	"github.com/eolinker/apinto/upstream/balance"
@@ -37,7 +36,8 @@ const maxRedirectCount = 10
 type handler struct {
 	drivers.WorkerBase
 	maxRedirectCount int
-	timeout          time.Duration
+	autoRedirect     bool
+	redirectPrefix   string
 }
 
 func (r *handler) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
@@ -54,6 +54,15 @@ func (r *handler) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.ICh
 			log.Error(err)
 			return err
 		}
+	}
+	if !r.autoRedirect {
+		location := ctx.Response().GetHeader("Location")
+		urlStr, err := insertPrefix(location, r.redirectPrefix)
+		if err != nil {
+			return nil
+		}
+		ctx.Response().SetHeader("Location", urlStr)
+		return nil
 	}
 	for i := 0; i < r.maxRedirectCount; i++ {
 		if !fasthttp.StatusCodeIsRedirect(ctx.Response().StatusCode()) {
@@ -145,5 +154,16 @@ func readPort(addr string) int {
 	return 0
 }
 
-type redirectBalance struct {
+func insertPrefix(location string, prefix string) (string, error) {
+	// Parse the input URL
+	parsedURL, err := url.Parse(location)
+	if err != nil {
+		return "", err
+	}
+
+	// Insert the prefix into the path
+	parsedURL.Path = strings.TrimSuffix(prefix+parsedURL.Path, "/")
+
+	// Return the modified URL as a string
+	return parsedURL.String(), nil
 }
