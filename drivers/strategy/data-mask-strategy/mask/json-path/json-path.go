@@ -51,6 +51,9 @@ func (k *driver) Exec(body []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	if n == nil {
+		return nil, fmt.Errorf("parse json failed")
+	}
 
 	result := k.expr.Get(n)
 	if len(result) > 0 {

@@ -75,7 +75,9 @@ func (o *tProducer) close() {
 }
 
 func (o *tProducer) output(entry eosc.IEntry) error {
+	log.DebugF("kafka output begin...")
 	if o.producer == nil && o.formatter == nil {
+		log.DebugF("kafka producer and formatter is nil")
 		return nil
 	}
 

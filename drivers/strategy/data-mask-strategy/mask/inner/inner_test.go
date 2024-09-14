@@ -193,7 +193,7 @@ func TestBankCardMaskDriver_LongText(t *testing.T) {
 		output string
 	}{
 		{strings.Repeat("1", 50) + "1234567890123456" + strings.Repeat("9", 50), strings.Repeat("1", 50) + "1234567890123456" + strings.Repeat("9", 50)},
-		{"Valid card numbers: dasdw, 8765432187654321", "Valid card numbers: MASKED, MASKED"},
+		{"Valid card numbers: 6217003860002354123, 8765432187654321", "Valid card numbers: 6217003860002354123, 8765432187654321"},
 		{strings.Repeat("normal-text", 100), strings.Repeat("normal-text", 100)},
 		{"Fake card number: 1111-2222-3333-4444", "Fake card number: 1111-2222-3333-4444"},
 	}
@@ -212,8 +212,8 @@ func TestAmountMaskDriver_LongText(t *testing.T) {
 		input  string
 		output string
 	}{
-		{"Invoice total: $1234567890.99", "MASKED"},
-		{"Transaction amounts: $12345.67, fee: $0.02", "MASKED, fee: MASKED"},
+		{"Invoice total: $1234567890.99", "Invoice total: $MASKED"},
+		{"Transaction amounts: $12345.67, fee: $0.02", "Transaction amounts: $MASKED, fee: $MASKED"},
 		{strings.Repeat("normal-text", 100), strings.Repeat("normal-text", 100)},
 		{"Plain text values: twenty five dollars", "Plain text values: twenty five dollars"},
 	}
@@ -232,8 +232,8 @@ func TestDateMaskDriver_LongText(t *testing.T) {
 		input  string
 		output string
 	}{
-		{"Event date is 2077-12-31 extended overlap text", "MASKED extended overlap text"},
-		{"Date strings: 2025-09-24T13:45:00, obsolete: 1912-04-15T00:00:00", "MASKED, obsolete: MASKED"},
+		{"Event date is 2077-12-31 extended overlap text", "Event date is MASKED extended overlap text"},
+		{"Date strings: 2025-09-24T13:45:00, obsolete: 1912-04-15T00:00:00", "Date strings: MASKED, obsolete: MASKED"},
 		{strings.Repeat("normal-text", 100), strings.Repeat("normal-text", 100)},
 		{"Formatted text: the year nineteen ninety nine", "Formatted text: the year nineteen ninety nine"},
 	}

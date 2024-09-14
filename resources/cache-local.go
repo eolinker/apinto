@@ -106,7 +106,7 @@ func (n *cacheLocal) IncrBy(ctx context.Context, key string, incr int64, expirat
 	}()
 
 	v, err := n.client.Get([]byte(key))
-	if err != nil || len(v) != 8 {
+	if err != nil {
 		v = ToBytes(incr)
 		err := n.client.Set([]byte(key), v, int(expiration.Seconds()))
 		if err != nil {

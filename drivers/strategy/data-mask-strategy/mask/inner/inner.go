@@ -63,8 +63,8 @@ func (k *driver) String() string {
 }
 
 var (
-	moneyRegex    = regexp.MustCompile(`^(-?\d+)(\.\d{1,2})?$`)
-	dateTimeRegex = regexp.MustCompile(`^(\d{4})[-/.](0[1-9]|1[0-2])[-/.](0[1-9]|[12][0-9]|3[01])(?:[\sT](\d{2}):([0-5][0-9])(:([0-5][0-9]))?)?$`)
+	moneyRegex    = regexp.MustCompile(`(-?\d+)(\.\d{1,2})?`)
+	dateTimeRegex = regexp.MustCompile(`(\d{4})[-/.](0[1-9]|1[0-2])[-/.](0[1-9]|[12][0-9]|3[01])(?:[\sT](\d{2}):([0-5][0-9])(:([0-5][0-9]))?)?`)
 )
 
 func newAmountMaskDriver(maskFunc mask.MaskFunc) mask.IInnerMask {
