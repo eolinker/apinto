@@ -27,12 +27,22 @@ type Config struct {
 	PartitionKey  string               `json:"partition_key" yaml:"partition_key" switch:"partition_type==='hash'"`
 	Type          string               `json:"type" yaml:"type" enum:"json,line" label:"输出格式"`
 	ContentResize []ContentResize      `json:"content_resize" yaml:"content_resize" label:"内容截断配置" switch:"type===json"`
+	Filters       []*Filter            `json:"filters" yaml:"conditions" label:"过滤条件"`
 	Formatter     eosc.FormatterConfig `json:"formatter" yaml:"formatter" label:"格式化配置"`
 }
 
 type ContentResize struct {
 	Size   int    `json:"size" label:"内容截断大小" description:"单位：M" default:"10" minimum:"0"`
 	Suffix string `json:"suffix" label:"匹配标签后缀"`
+}
+
+const (
+	equalCondition = "equal"
+)
+
+type Filter struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type ProducerConfig struct {
@@ -46,6 +56,7 @@ type ProducerConfig struct {
 	Type          string               `json:"type" yaml:"type"`
 	ContentResize []ContentResize      `json:"content_resize" yaml:"content_resize"`
 	Formatter     eosc.FormatterConfig `json:"formatter" yaml:"formatter"`
+	Filters       []*Filter            `json:"filters" yaml:"conditions" label:"过滤条件"`
 }
 
 func (c *Config) doCheck() (*ProducerConfig, error) {
@@ -115,5 +126,6 @@ func (c *Config) doCheck() (*ProducerConfig, error) {
 	p.ContentResize = conf.ContentResize
 	p.Formatter = conf.Formatter
 	p.Conf = s
+	p.Filters = conf.Filters
 	return p, nil
 }

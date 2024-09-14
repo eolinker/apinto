@@ -165,6 +165,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "熔断策略",
 					Desc:  "熔断策略",
 				},
+				{
+					Id:    "eolinker.com:apinto:strategy-data_mask",
+					Name:  "data_mask",
+					Label: "数据脱敏策略",
+					Desc:  "数据脱敏策略",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},

@@ -21,6 +21,7 @@ import (
 	response_filter "github.com/eolinker/apinto/drivers/plugins/response-filter"
 	response_rewrite_v2 "github.com/eolinker/apinto/drivers/plugins/response-rewrite_v2"
 	rsa_filter "github.com/eolinker/apinto/drivers/plugins/rsa-filter"
+	data_mask "github.com/eolinker/apinto/drivers/plugins/strategy/data-mask"
 
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
 	body_check "github.com/eolinker/apinto/drivers/plugins/body-check"
@@ -57,6 +58,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	grey.Register(extenderRegister)
 	visit.Register(extenderRegister)
 	fuse.Register(extenderRegister)
+	data_mask.Register(extenderRegister)
 
 	// Dubbo协议相关插件
 	dubbo2_proxy_rewrite.Register(extenderRegister)

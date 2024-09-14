@@ -6,6 +6,7 @@ import (
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
 	"github.com/eolinker/apinto/drivers/discovery/static"
+	data_mask_strategy "github.com/eolinker/apinto/drivers/strategy/data-mask-strategy"
 
 	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/apinto/drivers/discovery/polaris"
@@ -74,6 +75,7 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	grey_strategy.Register(extenderRegister)
 	visit_strategy.Register(extenderRegister)
 	fuse_strategy.Register(extenderRegister)
+	data_mask_strategy.Register(extenderRegister)
 
 	// 编码器
 	protocbuf.Register(extenderRegister)

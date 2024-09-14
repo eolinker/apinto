@@ -12,12 +12,13 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"github.com/ohler55/ojg/jp"
-	"github.com/ohler55/ojg/oj"
 	"math/big"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/ohler55/ojg/jp"
+	"github.com/ohler55/ojg/oj"
 )
 
 type jwtToken struct {
@@ -83,18 +84,18 @@ func (m *signingMethod) Verify(signingString, signature string, key interface{})
 			if !ok {
 				return errInvalidKeyType
 			}
-			
+
 			// Decode signature, for comparison
 			sig, err := decodeSegment(signature)
 			if err != nil {
 				return err
 			}
-			
+
 			// Can we use the specified hashing method?
 			if !m.Hash.Available() {
 				return errHashUnavailable
 			}
-			
+
 			// This signing method is symmetric, so we validate the signature
 			// by reproducing the signature from the signing string and key, then
 			// comparing that against the provided signature.
@@ -103,47 +104,47 @@ func (m *signingMethod) Verify(signingString, signature string, key interface{})
 			if !hmac.Equal(sig, hasher.Sum(nil)) {
 				return errSignatureInvalid
 			}
-			
+
 			// No validation errors.  Signature is good.
 			return nil
 		}
 	case "RS256", "RS384", "RS512":
 		{
 			var err error
-			
+
 			// Decode the signature
 			var sig []byte
 			if sig, err = decodeSegment(signature); err != nil {
 				return err
 			}
-			
+
 			var rsaKey *rsa.PublicKey
 			var ok bool
-			
+
 			if rsaKey, ok = key.(*rsa.PublicKey); !ok {
 				return errInvalidKeyType
 			}
-			
+
 			// Create hasher
 			if !m.Hash.Available() {
 				return errHashUnavailable
 			}
 			hasher := m.Hash.New()
 			hasher.Write([]byte(signingString))
-			
+
 			// Verify the signature
 			return rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
 		}
 	case "ES256", "ES384", "ES512":
 		{
 			var err error
-			
+
 			// Decode the signature
 			var sig []byte
 			if sig, err = decodeSegment(signature); err != nil {
 				return err
 			}
-			
+
 			// GetEmployee the key
 			var ecdsaKey *ecdsa.PublicKey
 			switch k := key.(type) {
@@ -152,26 +153,26 @@ func (m *signingMethod) Verify(signingString, signature string, key interface{})
 			default:
 				return errInvalidKeyType
 			}
-			
+
 			if len(sig) != 2*m.KeySize {
 				return errECDSAVerification
 			}
-			
+
 			r := big.NewInt(0).SetBytes(sig[:m.KeySize])
 			s := big.NewInt(0).SetBytes(sig[m.KeySize:])
-			
+
 			// Create hasher
 			if !m.Hash.Available() {
 				return errHashUnavailable
 			}
 			hasher := m.Hash.New()
 			hasher.Write([]byte(signingString))
-			
+
 			// Verify the signature
 			if verifystatus := ecdsa.Verify(ecdsaKey, hasher.Sum(nil), r, s); verifystatus == true {
 				return nil
 			}
-			
+
 			return errECDSAVerification
 		}
 	default:
@@ -187,33 +188,33 @@ func (m *signingMethod) Sign(signingString string, key interface{}) (string, err
 				if !m.Hash.Available() {
 					return "", errHashUnavailable
 				}
-				
+
 				hasher := hmac.New(m.Hash.New, keyBytes)
 				hasher.Write([]byte(signingString))
-				
+
 				return encodeSegment(hasher.Sum(nil)), nil
 			}
-			
+
 			return "", errInvalidKeyType
 		}
 	case "RS256", "RS384", "RS512":
 		{
 			var rsaKey *rsa.PrivateKey
 			var ok bool
-			
+
 			// Validate type of key
 			if rsaKey, ok = key.(*rsa.PrivateKey); !ok {
 				return "", errInvalidKey
 			}
-			
+
 			// Create the hasher
 			if !m.Hash.Available() {
 				return "", errHashUnavailable
 			}
-			
+
 			hasher := m.Hash.New()
 			hasher.Write([]byte(signingString))
-			
+
 			// Sign the string and return the encoded bytes
 			if sigBytes, err := rsa.SignPKCS1v15(rand.Reader, rsaKey, m.Hash, hasher.Sum(nil)); err == nil {
 				return encodeSegment(sigBytes), nil
@@ -231,41 +232,41 @@ func (m *signingMethod) Sign(signingString string, key interface{}) (string, err
 			default:
 				return "", errInvalidKeyType
 			}
-			
+
 			// Create the hasher
 			if !m.Hash.Available() {
 				return "", errHashUnavailable
 			}
-			
+
 			hasher := m.Hash.New()
 			hasher.Write([]byte(signingString))
-			
+
 			// Sign the string and return r, s
 			if r, s, err := ecdsa.Sign(rand.Reader, ecdsaKey, hasher.Sum(nil)); err == nil {
 				curveBits := ecdsaKey.Curve.Params().BitSize
-				
+
 				if m.CurveBits != curveBits {
 					return "", errInvalidKey
 				}
-				
+
 				keyBytes := curveBits / 8
 				if curveBits%8 > 0 {
 					keyBytes++
 				}
-				
+
 				// We serialize the outpus (r and s) into big-endian byte arrays and pad
 				// them with zeros on the left to make sure the sizes work out. Both arrays
 				// must be keyBytes long, and the output must be 2*keyBytes long.
 				rBytes := r.Bytes()
 				rBytesPadded := make([]byte, keyBytes)
 				copy(rBytesPadded[keyBytes-len(rBytes):], rBytes)
-				
+
 				sBytes := s.Bytes()
 				sBytesPadded := make([]byte, keyBytes)
 				copy(sBytesPadded[keyBytes-len(sBytes):], sBytes)
-				
+
 				out := append(rBytesPadded, sBytesPadded...)
-				
+
 				return encodeSegment(out), nil
 			} else {
 				return "", err
@@ -290,7 +291,7 @@ func decodeSegment(seg string) ([]byte, error) {
 	if l := len(seg) % 4; l > 0 {
 		seg += strings.Repeat("=", 4-l)
 	}
-	
+
 	return base64.URLEncoding.DecodeString(seg)
 }
 
@@ -299,16 +300,16 @@ func encodeSegment(seg []byte) string {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(seg), "=")
 }
 
-//ParseRSAPublicKeyFromPEM parse PEM encoded PKCS1 or PKCS8 public key
+// ParseRSAPublicKeyFromPEM parse PEM encoded PKCS1 or PKCS8 public key
 func ParseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 	var err error
-	
+
 	// parse PEM block
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {
 		return nil, errKeyMustBePEMEncoded
 	}
-	
+
 	// parse the key
 	var parsedKey interface{}
 	if parsedKey, err = x509.ParsePKIXPublicKey(block.Bytes); err != nil {
@@ -318,26 +319,26 @@ func ParseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 			return nil, err
 		}
 	}
-	
+
 	var pkey *rsa.PublicKey
 	var ok bool
 	if pkey, ok = parsedKey.(*rsa.PublicKey); !ok {
 		return nil, errNotRSAPublicKey
 	}
-	
+
 	return pkey, nil
 }
 
-//ParseECPublicKeyFromPEM parse PEM encoded PKCS1 or PKCS8 public key
+// ParseECPublicKeyFromPEM parse PEM encoded PKCS1 or PKCS8 public key
 func ParseECPublicKeyFromPEM(key []byte) (*ecdsa.PublicKey, error) {
 	var err error
-	
+
 	// parse PEM block
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {
 		return nil, errKeyMustBePEMEncoded
 	}
-	
+
 	// parse the key
 	var parsedKey interface{}
 	if parsedKey, err = x509.ParsePKIXPublicKey(block.Bytes); err != nil {
@@ -347,13 +348,13 @@ func ParseECPublicKeyFromPEM(key []byte) (*ecdsa.PublicKey, error) {
 			return nil, err
 		}
 	}
-	
+
 	var pkey *ecdsa.PublicKey
 	var ok bool
 	if pkey, ok = parsedKey.(*ecdsa.PublicKey); !ok {
 		return nil, errNotECPublicKey
 	}
-	
+
 	return pkey, nil
 }
 
@@ -365,7 +366,7 @@ func b64Decode(input string) (string, error) {
 		padlen := 4 - remainder
 		input = input + strings.Repeat("=", padlen)
 	}
-	// 将原字符串中的"_","-"分别用"/"和"+"替换
+	// 将原字符串中的"_","-"分别用"/"和"+"替换x
 	input = strings.Replace(strings.Replace(input, "_", "/", -1), "-", "+", -1)
 	result, err := base64.StdEncoding.DecodeString(input)
 	return string(result), err
@@ -377,7 +378,7 @@ func tokenize(token string) []string {
 	if len(parts) == 3 {
 		return parts
 	}
-	
+
 	return nil
 }
 
@@ -396,7 +397,7 @@ func decodeToken(token string) (*jwtToken, error) {
 	if err != nil {
 		return nil, errors.New("[jwt_auth] Invalid base64 encoded JSON")
 	}
-	
+
 	if err = json.Unmarshal([]byte(headerD64), &header); err != nil {
 		return nil, errors.New("[jwt_auth] Invalid JSON")
 	}
@@ -426,9 +427,9 @@ func decodeToken(token string) (*jwtToken, error) {
 	return &jwtToken{Token: token, Header64: header64, Claims64: claims64, Signature64: signature64, Header: header, Claims: claims, Signature: signature}, nil
 }
 
-//verifySignature 验证签名
+// verifySignature 验证签名
 func verifySignature(token *jwtToken, key string) error {
-	
+
 	var k interface{}
 	switch token.Header["alg"].(string) {
 	case "HS256", "HS384", "HS512":
@@ -459,23 +460,23 @@ func verifySignature(token *jwtToken, key string) error {
 	return newSigningMethod(token.Header["alg"].(string)).Verify(token.Header64+"."+token.Claims64, token.Signature64, k)
 }
 
-//verifyRegisteredClaims 验证签发字段
+// verifyRegisteredClaims 验证签发字段
 func verifyRegisteredClaims(token *jwtToken, claimsToVerify []string) error {
 	if claimsToVerify == nil {
 		claimsToVerify = []string{}
 	}
-	
+
 	for _, claimName := range claimsToVerify {
 		var claim int64 = 0
 		if _, ok := token.Claims[claimName]; ok {
-			
+
 			if typeOfData(token.Claims[claimName]) == reflect.Float64 {
 				claimFloat64, success := token.Claims[claimName].(float64)
 				if success {
 					claim = int64(claimFloat64)
 				}
 			}
-			
+
 		}
 		if claim < 1 {
 			return errors.New("[jwt_auth] " + claimName + " must be a number")
@@ -496,7 +497,7 @@ func verifyRegisteredClaims(token *jwtToken, claimsToVerify []string) error {
 	return nil
 }
 
-//获取数据的类型
+// 获取数据的类型
 func typeOfData(data interface{}) reflect.Kind {
 	value := reflect.ValueOf(data)
 	valueType := value.Kind()
@@ -506,13 +507,13 @@ func typeOfData(data interface{}) reflect.Kind {
 	return valueType
 }
 
-//doJWTAuthentication 进行JWT鉴权
+// doJWTAuthentication 进行JWT鉴权
 func (j *jwt) doJWTAuthentication(tokenStr string) (string, error) {
 	token, err := decodeToken(tokenStr)
 	if err != nil {
 		return "", errors.New("Bad token; " + err.Error())
 	}
-	
+
 	key := ""
 	keyClaimName := "iss"
 	if _, ok := token.Claims[keyClaimName]; ok {
@@ -520,11 +521,11 @@ func (j *jwt) doJWTAuthentication(tokenStr string) (string, error) {
 	} else if _, ok = token.Header[keyClaimName]; ok {
 		key = token.Header[keyClaimName].(string)
 	}
-	
+
 	if key == "" {
 		return "", errors.New("no mandatory " + keyClaimName + " in claims")
 	}
-	
+
 	algorithm := token.Header["alg"].(string)
 	if j.cfg.Algorithm != algorithm {
 		return "", fmt.Errorf("no match algorithm,need %s,now %s", j.cfg.Algorithm, algorithm)
@@ -541,20 +542,20 @@ func (j *jwt) doJWTAuthentication(tokenStr string) (string, error) {
 	} else {
 		jwtSecretValue = j.cfg.RsaPublicKey
 	}
-	
+
 	if jwtSecretValue == "" {
 		return "", errors.New("invalid key/secret")
 	}
-	
+
 	if err = verifySignature(token, jwtSecretValue); err != nil {
 		return "", errors.New("[jwt_auth] Invalid signature")
 	}
 	if err = verifyRegisteredClaims(token, j.cfg.ClaimsToVerify); err != nil {
 		return "", err
 	}
-	
+
 	data, _ := json.Marshal(token.Claims)
-	
+
 	return getUserByPath(data, j.cfg.Path)
 }
 
