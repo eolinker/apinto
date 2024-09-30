@@ -11,7 +11,6 @@ const (
 
 type IService interface {
 	eosc.IWorker
-	eoscContext.EoApp
 	eoscContext.BalanceHandler
 	eoscContext.UpstreamHostHandler
 	Title() string
