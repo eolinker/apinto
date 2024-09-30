@@ -18,7 +18,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Name:         "router",
 			Label:        "路由",
 			Desc:         "路由",
-			Dependencies: []string{"service", "template", "transcode"},
+			Dependencies: []string{"service", "template", "transcode", "ai-provider"},
 			AppendLabels: []string{"host", "service", "listen", "disable"},
 			Drivers: []*eosc.DriverConfig{
 				{
@@ -283,6 +283,22 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Name:  "protobuf",
 					Label: "protobuf编码器",
 					Desc:  "protobuf编码器",
+				},
+			},
+			Mod: eosc.ProfessionConfig_Worker,
+		},
+		{
+			Name:         "ai-provider",
+			Label:        "AI服务提供者",
+			Desc:         "AI服务提供者",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:apinto:openai",
+					Name:  "openAI",
+					Label: "openAI",
+					Desc:  "openAI",
 				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,

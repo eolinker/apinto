@@ -3,6 +3,8 @@ package main
 import (
 	access_relational "github.com/eolinker/apinto/drivers/plugins/access-relational"
 	"github.com/eolinker/apinto/drivers/plugins/acl"
+	ai_formatter "github.com/eolinker/apinto/drivers/plugins/ai-formatter"
+	ai_prompt "github.com/eolinker/apinto/drivers/plugins/ai-prompt"
 	"github.com/eolinker/apinto/drivers/plugins/app"
 	auto_redirect "github.com/eolinker/apinto/drivers/plugins/auto-redirect"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
@@ -112,4 +114,8 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 
 	// 鉴权插件
 	oauth2.Register(extenderRegister)
+
+	// ai相关插件
+	ai_prompt.Register(extenderRegister)
+	ai_formatter.Register(extenderRegister)
 }

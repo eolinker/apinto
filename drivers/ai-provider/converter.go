@@ -1,14 +1,5 @@
 package ai_provider
 
-import (
-	"github.com/eolinker/eosc/eocontext"
-)
-
-type IConverter interface {
-	RequestConvert(ctx eocontext.EoContext) error
-	ResponseConvert(ctx eocontext.EoContext) error
-}
-
 type ClientRequest struct {
 	Messages []*Message `json:"messages"`
 }
