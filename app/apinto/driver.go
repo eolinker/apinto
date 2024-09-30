@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/eolinker/apinto/drivers/ai-provider/openAI"
 	"github.com/eolinker/apinto/drivers/certs"
 	"github.com/eolinker/apinto/drivers/discovery/consul"
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
@@ -82,4 +83,7 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 
 	// 证书
 	certs.Register(extenderRegister)
+
+	// AI供应商
+	openAI.Register(extenderRegister)
 }

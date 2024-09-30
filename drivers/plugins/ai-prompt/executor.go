@@ -88,10 +88,11 @@ func (e *executor) Start() error {
 }
 
 func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
-	cfg, ok := conf.(*Config)
-	if !ok {
-		return errors.New("invalid config")
-	}
+
+	return nil
+}
+
+func (e *executor) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 	variables := make(map[string]bool)
 	required := false
 
