@@ -143,9 +143,11 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	case eoscContext.NodeHost:
 		rewriteHost = host
 		request.URI().SetHost(host)
+		//ctx.proxyRequest.Header().SetHost(targetHost)
 	case eoscContext.ReWriteHost:
 		rewriteHost = targetHost
 		request.URI().SetHost(targetHost)
+		//ctx.proxyRequest.Header().SetHost(targetHost)
 	}
 	beginTime := time.Now()
 	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, &ctx.fastHttpRequestCtx.Response, timeout)
@@ -153,17 +155,23 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	if ctx.response.Response != nil {
 		responseHeader = ctx.response.Response.Header
 	}
+
 	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, responseHeader, beginTime, time.Now())
+
 	if ctx.response.responseError != nil {
 		agent.setStatusCode(504)
 	} else {
 		ctx.response.ResponseHeader.refresh()
+
+		agent.setStatusCode(ctx.fastHttpRequestCtx.Response.StatusCode())
+	}
+
+	if ctx.fastHttpRequestCtx.Response.RemoteAddr() != nil {
 		ip, port := parseAddr(ctx.fastHttpRequestCtx.Response.RemoteAddr().String())
 		agent.setRemoteIP(ip)
 		agent.setRemotePort(port)
 		ctx.response.remoteIP = ip
 		ctx.response.remotePort = port
-		agent.setStatusCode(ctx.fastHttpRequestCtx.Response.StatusCode())
 	}
 	agent.responseBody = string(ctx.response.Response.Body())
 

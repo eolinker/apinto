@@ -1,6 +1,7 @@
 package fasthttp_client
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net"
 	"strings"
@@ -94,8 +95,11 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 		}
 
 		hc = &fasthttp.HostClient{
-			Addr:               httpAddr,
-			IsTLS:              isTLS,
+			Addr:  httpAddr,
+			IsTLS: isTLS,
+			TLSConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
 			Dial:               dial,
 			MaxConns:           DefaultMaxConns,
 			MaxConnWaitTimeout: DefaultMaxConnWaitTimeout,
