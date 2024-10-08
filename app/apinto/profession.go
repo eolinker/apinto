@@ -296,7 +296,7 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Drivers: []*eosc.DriverConfig{
 				{
 					Id:    "eolinker.com:apinto:openai",
-					Name:  "openAI",
+					Name:  "openai",
 					Label: "openAI",
 					Desc:  "openAI",
 				},

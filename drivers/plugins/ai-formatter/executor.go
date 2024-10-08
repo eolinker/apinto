@@ -13,9 +13,9 @@ import (
 
 type executor struct {
 	drivers.WorkerBase
-	model     string
-	extender  map[string]interface{}
-	converter convert.IConverter
+	provider string
+	model    string
+	extender map[string]interface{}
 }
 
 func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
@@ -23,7 +23,15 @@ func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err
 }
 
 func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IChain) error {
-	err := e.converter.RequestConvert(ctx, e.extender)
+	v, has := convert.Get(e.provider)
+	if !has {
+		return errors.New("provider not implement IConverterDriver")
+	}
+	converter, has := v.GetConverter(e.model)
+	if !has {
+		return errors.New("invalid model")
+	}
+	err := converter.RequestConvert(ctx, e.extender)
 	if err != nil {
 		return err
 	}
@@ -33,7 +41,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			return err
 		}
 	}
-	return e.converter.ResponseConvert(ctx)
+	return converter.ResponseConvert(ctx)
 }
 
 func (e *executor) Destroy() {
@@ -48,30 +56,27 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (e *executor) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
-	w, ok := workers[cfg.Provider]
-	if !ok {
-		return errors.New("invalid provider")
+	v, has := convert.Get(string(cfg.Provider))
+	if !has {
+		return errors.New("provider not implement IConverterDriver")
 	}
-	if v, ok := w.(convert.IConverterDriver); ok {
-		converter, has := v.GetConverter(cfg.Model)
-		if !has {
-			return errors.New("invalid model")
-		}
-		f, has := v.GetModel(cfg.Model)
-		if !has {
-			return errors.New("invalid model")
-		}
+	_, has = v.GetConverter(cfg.Model)
+	if !has {
+		return errors.New("invalid model")
+	}
+	f, has := v.GetModel(cfg.Model)
+	if !has {
+		return errors.New("invalid model")
+	}
 
-		extender, err := f(cfg.Config)
-		if err != nil {
-			return err
-		}
-		e.converter = converter
-		e.model = cfg.Model
-		e.extender = extender
-		return nil
+	extender, err := f(cfg.Config)
+	if err != nil {
+		return err
 	}
-	return errors.New("provider not implement IConverterDriver")
+	e.provider = string(cfg.Provider)
+	e.model = cfg.Model
+	e.extender = extender
+	return nil
 }
 
 func (e *executor) Stop() error {

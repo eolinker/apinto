@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	http_context "github.com/eolinker/eosc/eocontext/http-context"
+
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 
 	"github.com/eolinker/apinto/convert"
@@ -46,6 +48,7 @@ type executor struct {
 }
 
 type Converter struct {
+	apikey         string
 	balanceHandler eocontext.BalanceHandler
 	converter      convert.IConverter
 }
@@ -54,7 +57,13 @@ func (c *Converter) RequestConvert(ctx eocontext.EoContext, extender map[string]
 	if c.balanceHandler != nil {
 		ctx.SetBalance(c.balanceHandler)
 	}
-	return c.converter.RequestConvert(ctx, extender)
+	httpContext, err := http_context.Assert(ctx)
+	if err != nil {
+		return err
+	}
+	httpContext.Proxy().Header().SetHeader("Authorization", "Bearer "+c.apikey)
+
+	return c.converter.RequestConvert(httpContext, extender)
 }
 
 func (c *Converter) ResponseConvert(ctx eocontext.EoContext) error {
@@ -67,7 +76,7 @@ func (e *executor) GetConverter(model string) (convert.IConverter, bool) {
 		return nil, false
 	}
 
-	return &Converter{balanceHandler: e.BalanceHandler, converter: converter}, true
+	return &Converter{balanceHandler: e.BalanceHandler, converter: converter, apikey: e.apikey}, true
 }
 
 func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
@@ -75,7 +84,10 @@ func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
 		return nil, false
 	}
 	return func(cfg string) (map[string]interface{}, error) {
-		return nil, nil
+		result := map[string]interface{}{
+			"model": model,
+		}
+		return result, nil
 	}, true
 }
 
@@ -111,13 +123,15 @@ func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) 
 	} else {
 		e.BalanceHandler = nil
 	}
-
 	e.apikey = conf.APIKey
+	convert.Set(e.Id(), e)
+
 	return nil
 }
 
 func (e *executor) Stop() error {
 	e.BalanceHandler = nil
+	convert.Del(e.Id())
 	return nil
 }
 

@@ -8,9 +8,9 @@ import (
 )
 
 type Config struct {
-	APIKey       string `json:"api_key"`
+	APIKey       string `json:"openai_api_key"`
 	Organization string `json:"organization"`
-	Base         string `json:"base"`
+	Base         string `json:"openai_api_base"`
 }
 
 func checkConfig(v interface{}) (*Config, error) {

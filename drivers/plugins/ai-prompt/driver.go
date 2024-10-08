@@ -9,6 +9,6 @@ func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker)
 	w := &executor{
 		WorkerBase: drivers.Worker(id, name),
 	}
-	err := w.Reset(v, workers)
+	err := w.reset(v, workers)
 	return w, err
 }
