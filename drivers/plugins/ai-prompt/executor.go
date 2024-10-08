@@ -35,17 +35,15 @@ func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err
 }
 
 func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IChain) error {
-	if len(e.variables) > 0 {
-		body, err := ctx.Proxy().Body().RawBody()
-		if err != nil {
-			return err
-		}
-		body, err = genRequestMessage(body, e.prompt, e.variables, e.required)
-		if err != nil {
-			return err
-		}
-		ctx.Proxy().Body().SetRaw("application/json", body)
+	body, err := ctx.Proxy().Body().RawBody()
+	if err != nil {
+		return err
 	}
+	body, err = genRequestMessage(body, e.prompt, e.variables, e.required)
+	if err != nil {
+		return err
+	}
+	ctx.Proxy().Body().SetRaw("application/json", body)
 
 	if next != nil {
 		return next.DoChain(ctx)
@@ -76,8 +74,10 @@ func genRequestMessage(body []byte, prompt string, variables map[string]bool, re
 			Content: prompt,
 		},
 	}
-	baseMsg.Config.Messages = append(messages, baseMsg.Config.Messages...)
-	return json.Marshal(baseMsg)
+	messages = append(messages, baseMsg.Config.Messages...)
+	return json.Marshal(map[string]interface{}{
+		"messages": messages,
+	})
 }
 
 func (e *executor) Destroy() {
