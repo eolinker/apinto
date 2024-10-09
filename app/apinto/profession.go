@@ -300,6 +300,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "openAI",
 					Desc:  "openAI",
 				},
+				{
+					Id:    "eolinker.com:apinto:google", // 插件ID
+					Name:  "google",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "google",
+					Desc:  "google",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},

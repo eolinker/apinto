@@ -86,4 +86,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 
 	// AI供应商
 	openAI.Register(extenderRegister)
+
 }
