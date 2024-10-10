@@ -68,14 +68,17 @@ func genRequestMessage(body []byte, prompt string, variables map[string]bool, re
 		}
 		prompt = strings.Replace(prompt, fmt.Sprintf("{{%s}}", k), baseMsg.Config.Variables[k], -1)
 	}
-
 	messages := []Message{
 		{
 			Role:    "system",
 			Content: prompt,
 		},
 	}
-	messages = baseMsg.Config.Messages
+	if prompt != "" {
+		messages = append(messages, baseMsg.Config.Messages...)
+	} else {
+		messages = baseMsg.Config.Messages
+	}
 	return json.Marshal(map[string]interface{}{
 		"messages": messages,
 	})
