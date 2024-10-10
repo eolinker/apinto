@@ -74,7 +74,11 @@ func genRequestMessage(body []byte, prompt string, variables map[string]bool, re
 			Content: prompt,
 		},
 	}
-	messages = append(messages, baseMsg.Config.Messages...)
+	if prompt != "" {
+		messages = append(messages, baseMsg.Config.Messages...)
+	} else {
+		messages = baseMsg.Config.Messages
+	}
 	return json.Marshal(map[string]interface{}{
 		"messages": messages,
 	})
