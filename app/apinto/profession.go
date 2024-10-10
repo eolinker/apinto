@@ -303,8 +303,8 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 				{
 					Id:    "eolinker.com:apinto:google", // 插件ID
 					Name:  "google",                     // 驱动名称，应和定义文件的provider字段一致
-					Label: "google",
-					Desc:  "google",
+					Label: "Google",
+					Desc:  "Google",
 				},
 				{
 					Id:    "eolinker.com:apinto:moonshot", // 插件ID
