@@ -5,8 +5,8 @@ type ClientRequest struct {
 }
 
 type Content struct {
-	Part map[string]interface{} `json:"part"`
-	Role string                 `json:"role"`
+	Parts []map[string]interface{} `json:"parts"`
+	Role  string                   `json:"role"`
 }
 
 type Response struct {

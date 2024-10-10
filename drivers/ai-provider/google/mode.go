@@ -61,14 +61,18 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	messages := make([]Content, 0, len(baseCfg.Config.Messages)+1)
 	for _, m := range baseCfg.Config.Messages {
 		role := "user"
-		if m.Role == "system" {
+		if m.Role == "system" && len(baseCfg.Config.Messages) > 1 {
 			role = "model"
 		}
-		messages = append(messages, Content{
-			Role: role,
-			Part: map[string]interface{}{
+		parts := make([]map[string]interface{}, 0, 1)
+		if m.Content != "" {
+			parts = append(parts, map[string]interface{}{
 				"text": m.Content,
-			},
+			})
+		}
+		messages = append(messages, Content{
+			Role:  role,
+			Parts: parts,
 		})
 	}
 	baseCfg.SetAppend("contents", messages)
@@ -106,9 +110,12 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 			role = "assistant"
 		}
 		text := ""
-		if v, ok := msg.Content.Part["text"]; ok {
-			text = v.(string)
+		if len(msg.Content.Parts) > 0 {
+			if v, ok := msg.Content.Parts[0]["text"]; ok {
+				text = v.(string)
+			}
 		}
+
 		responseBody.Message = ai_provider.Message{
 			Role:    role,
 			Content: text,
