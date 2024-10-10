@@ -66,7 +66,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	if err != nil {
 		return err
 	}
-	log.Info("body log:%s", body)
+	log.Info("body log:%s", messages)
 	httpContext.Proxy().Body().SetRaw("application/json", body)
 
 	return nil
