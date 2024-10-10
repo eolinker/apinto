@@ -2,13 +2,12 @@ package moonshot
 
 import (
 	"encoding/json"
-
-	"github.com/eolinker/eosc"
-
 	"github.com/eolinker/apinto/convert"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
+	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/eosc/log"
 )
 
 var (
@@ -67,6 +66,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	if err != nil {
 		return err
 	}
+	log.Info("body log:%s", body)
 	httpContext.Proxy().Body().SetRaw("application/json", body)
 
 	return nil
