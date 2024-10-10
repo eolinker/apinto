@@ -1,0 +1,9 @@
+provider: moonshot
+label:
+  zh_Hans: 月之暗面
+  en_US: Moonshot
+description:
+  en_US: Models provided by Moonshot, such as moonshot-v1-8k, moonshot-v1-32k, and moonshot-v1-128k.
+  zh_Hans: Moonshot 提供的模型，例如 moonshot-v1-8k、moonshot-v1-32k 和 moonshot-v1-128k。
+supported_model_types:
+  - llm
