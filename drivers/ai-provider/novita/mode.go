@@ -26,7 +26,7 @@ type Chat struct {
 
 func NewChat() *Chat {
 	return &Chat{
-		endPoint: "/v3/openai",
+		endPoint: "/v3/openai/chat/completions",
 	}
 }
 
