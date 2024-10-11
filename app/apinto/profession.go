@@ -318,6 +318,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "tongyi",
 					Desc:  "tongyi",
 				},
+				{
+					Id:    "eolinker.com:apinto:zhipuai", // 插件ID
+					Name:  "zhipuai",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "zhipuai",
+					Desc:  "zhipuai",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
