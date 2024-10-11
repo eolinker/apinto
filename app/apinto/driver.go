@@ -4,6 +4,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/fireworks"
 	"github.com/eolinker/apinto/drivers/ai-provider/google"
 	"github.com/eolinker/apinto/drivers/ai-provider/moonshot"
+	"github.com/eolinker/apinto/drivers/ai-provider/novita"
 	"github.com/eolinker/apinto/drivers/ai-provider/openAI"
 	"github.com/eolinker/apinto/drivers/ai-provider/tongyi"
 	"github.com/eolinker/apinto/drivers/ai-provider/zhipuai"
@@ -97,4 +98,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	tongyi.Register(extenderRegister)
 	zhipuai.Register(extenderRegister)
 	fireworks.Register(extenderRegister)
+	novita.Register(extenderRegister)
 }

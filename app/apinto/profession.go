@@ -330,6 +330,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "fireworks",
 					Desc:  "fireworks",
 				},
+				{
+					Id:    "eolinker.com:apinto:novita", // 插件ID
+					Name:  "novita",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "novita",
+					Desc:  "novita",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
