@@ -312,6 +312,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "moonshot",
 					Desc:  "moonshot",
 				},
+				{
+					Id:    "eolinker.com:apinto:tongyi", // 插件ID
+					Name:  "tongyi",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "tongyi",
+					Desc:  "tongyi",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
