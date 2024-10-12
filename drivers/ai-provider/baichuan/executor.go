@@ -97,20 +97,12 @@ func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
 				return result, nil
 			}
 			modelCfg := mapToStruct[ModelConfig](tmp)
-			result["frequency_penalty"] = modelCfg.FrequencyPenalty
 			if modelCfg.MaxTokens >= 1 {
 				result["max_tokens"] = modelCfg.MaxTokens
 			}
 
-			result["presence_penalty"] = modelCfg.PresencePenalty
 			result["temperature"] = modelCfg.Temperature
 			result["top_p"] = modelCfg.TopP
-			if modelCfg.ResponseFormat == "" {
-				modelCfg.ResponseFormat = "text"
-			}
-			result["response_format"] = map[string]interface{}{
-				"type": modelCfg.ResponseFormat,
-			}
 		}
 		return result, nil
 	}, true
@@ -148,12 +140,9 @@ func (e *executor) CheckSkill(skill string) bool {
 }
 
 type ModelConfig struct {
-	FrequencyPenalty float64 `json:"frequency_penalty"`
-	MaxTokens        int     `json:"max_tokens"`
-	PresencePenalty  float64 `json:"presence_penalty"`
-	ResponseFormat   string  `json:"response_format"`
-	Temperature      float64 `json:"temperature"`
-	TopP             float64 `json:"top_p"`
+	MaxTokens   int     `json:"max_tokens"`
+	Temperature float64 `json:"temperature"`
+	TopP        float64 `json:"top_p"`
 }
 
 func mapToStruct[T any](tmp map[string]interface{}) *T {
