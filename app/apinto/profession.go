@@ -342,6 +342,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "mistralai",
 					Desc:  "mistralai",
 				},
+				{
+					Id:    "eolinker.com:apinto:anthropic", // 插件ID
+					Name:  "anthropic",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Anthropic",
+					Desc:  "Anthropic",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},

@@ -1,6 +1,7 @@
 package main
 
 import (
+	anthropic "github.com/eolinker/apinto/drivers/ai-provider/authropic"
 	"github.com/eolinker/apinto/drivers/ai-provider/fireworks"
 	"github.com/eolinker/apinto/drivers/ai-provider/google"
 	"github.com/eolinker/apinto/drivers/ai-provider/mistralai"
@@ -101,4 +102,6 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	fireworks.Register(extenderRegister)
 	novita.Register(extenderRegister)
 	mistralai.Register(extenderRegister)
+
+	anthropic.Register(extenderRegister)
 }
