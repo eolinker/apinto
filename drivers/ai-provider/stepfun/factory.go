@@ -5,7 +5,7 @@ import (
 	"github.com/eolinker/eosc"
 )
 
-var name = "tongyi"
+var name = "stepfun"
 
 // Register 注册驱动
 func Register(register eosc.IExtenderDriverRegister) {
