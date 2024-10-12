@@ -1,0 +1,20 @@
+provider: stepfun
+label:
+  zh_Hans: 阶跃星辰
+  en_US: Stepfun
+description:
+  en_US: Models provided by stepfun, such as step-1-8k, step-1-32k、step-1v-8k、step-1v-32k, step-1-128k and step-1-256k
+  zh_Hans: 阶跃星辰提供的模型，例如 step-1-8k、step-1-32k、step-1v-8k、step-1v-32k、step-1-128k 和 step-1-256k。
+icon_small:
+  en_US: icon_s_en.svg
+icon_large:
+  en_US: icon_l_en.svg
+background: "#FFFFFF"
+help:
+  title:
+    en_US: Get your API Key from stepfun
+    zh_Hans: 从 stepfun 获取 API Key
+  url:
+    en_US: https://platform.stepfun.com/interface-key
+supported_model_types:
+  - llm

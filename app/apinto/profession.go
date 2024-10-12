@@ -354,6 +354,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "Baichuan",
 					Desc:  "Baichuan",
 				},
+				{
+					Id:    "eolinker.com:apinto:stepfun", // 插件ID
+					Name:  "stepfun",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Stepfun",
+					Desc:  "Stepfun",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
