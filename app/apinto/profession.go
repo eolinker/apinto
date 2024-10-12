@@ -348,6 +348,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "Anthropic",
 					Desc:  "Anthropic",
 				},
+				{
+					Id:    "eolinker.com:apinto:baichuan", // 插件ID
+					Name:  "baichuan",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Baichuan",
+					Desc:  "Baichuan",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
