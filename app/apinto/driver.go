@@ -9,6 +9,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/moonshot"
 	"github.com/eolinker/apinto/drivers/ai-provider/novita"
 	"github.com/eolinker/apinto/drivers/ai-provider/openAI"
+	"github.com/eolinker/apinto/drivers/ai-provider/stepfun"
 	"github.com/eolinker/apinto/drivers/ai-provider/tongyi"
 	"github.com/eolinker/apinto/drivers/ai-provider/zhipuai"
 	"github.com/eolinker/apinto/drivers/certs"
@@ -107,4 +108,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	anthropic.Register(extenderRegister)
 
 	baichuan.Register(extenderRegister)
+	stepfun.Register(extenderRegister)
 }
