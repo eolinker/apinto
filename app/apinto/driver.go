@@ -11,6 +11,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/moonshot"
 	"github.com/eolinker/apinto/drivers/ai-provider/novita"
 	"github.com/eolinker/apinto/drivers/ai-provider/openAI"
+	"github.com/eolinker/apinto/drivers/ai-provider/openrouter"
 	"github.com/eolinker/apinto/drivers/ai-provider/perfxcloud"
 	"github.com/eolinker/apinto/drivers/ai-provider/stepfun"
 	"github.com/eolinker/apinto/drivers/ai-provider/tongyi"
@@ -117,4 +118,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	perfxcloud.Register(extenderRegister)
 	cohere.Register(extenderRegister)
 	deepseek.Register(extenderRegister)
+	openrouter.Register(extenderRegister)
 }
