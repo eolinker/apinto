@@ -366,6 +366,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "Yi",
 					Desc:  "Yi",
 				},
+				{
+					Id:    "eolinker.com:apinto:perfxcloud", // 插件ID
+					Name:  "perfxcloud",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Perfxcloud",
+					Desc:  "Perfxcloud",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
