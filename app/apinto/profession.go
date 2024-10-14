@@ -372,6 +372,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "Perfxcloud",
 					Desc:  "Perfxcloud",
 				},
+				{
+					Id:    "eolinker.com:apinto:cohere", // 插件ID
+					Name:  "cohere",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Cohere",
+					Desc:  "Cohere",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},

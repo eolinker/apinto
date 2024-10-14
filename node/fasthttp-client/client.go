@@ -175,7 +175,7 @@ func (c *Client) ProxyTimeout(addr string, host string, req *fasthttp.Request, r
 	//} else {
 	//	request.SetRequestURI(requestURI)
 	//}
-
+	//log.Info("requestURI:", request.URI().String()+", host:", request.Host(), " body:", string(request.Body()))
 	return client.DoTimeout(req, resp, timeout)
 	//if err != nil {
 	//	return err
