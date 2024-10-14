@@ -11,6 +11,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/openAI"
 	"github.com/eolinker/apinto/drivers/ai-provider/stepfun"
 	"github.com/eolinker/apinto/drivers/ai-provider/tongyi"
+	"github.com/eolinker/apinto/drivers/ai-provider/wenxin"
 	"github.com/eolinker/apinto/drivers/ai-provider/zhipuai"
 	"github.com/eolinker/apinto/drivers/certs"
 	"github.com/eolinker/apinto/drivers/discovery/consul"
@@ -109,4 +110,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 
 	baichuan.Register(extenderRegister)
 	stepfun.Register(extenderRegister)
+	wenxin.Register(extenderRegister)
 }
