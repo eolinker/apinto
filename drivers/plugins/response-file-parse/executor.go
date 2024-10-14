@@ -79,10 +79,12 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 			return nil
 		}
 		if fileName, ok := paramsMap[e.fileKey]; ok {
+			fileName = strings.Trim(fileName, "\"")
 			if fileName != "" {
 				suffix := fileName[strings.LastIndex(fileName, ".")+1:]
-				if _, ok := e.validSuf[suffix]; !ok {
-					log.Errorf("file suffix is not valid,name is %s,suffix is %s", e.fileKey, suffix)
+				if _, ok = e.validSuf[suffix]; !ok {
+
+					log.Errorf("file suffix is not valid,name is %s,suffix is %s,valid suffix is %v", e.fileKey, suffix, e.validSuf)
 					return nil
 				}
 				body := ctx.Response().GetBody()
