@@ -3,6 +3,8 @@ package response_file_parse
 import (
 	"strings"
 
+	"github.com/eolinker/apinto/utils"
+
 	"golang.org/x/text/encoding/charmap"
 
 	"github.com/eolinker/eosc/log"
@@ -96,6 +98,7 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 					}
 				}
 				size := len(out)
+				ctx.WithValue("file_sha256", utils.HexEncode(out))
 				ctx.WithValue("response_body", string(out))
 				ctx.WithValue("file_direction", "download")
 				ctx.WithValue("file_name", fileName)
