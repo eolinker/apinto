@@ -16,6 +16,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/perfxcloud"
 	"github.com/eolinker/apinto/drivers/ai-provider/stepfun"
 	"github.com/eolinker/apinto/drivers/ai-provider/tongyi"
+	"github.com/eolinker/apinto/drivers/ai-provider/upstage"
 	"github.com/eolinker/apinto/drivers/ai-provider/wenxin"
 	"github.com/eolinker/apinto/drivers/ai-provider/yi"
 	"github.com/eolinker/apinto/drivers/ai-provider/zhipuai"
@@ -123,4 +124,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	deepseek.Register(extenderRegister)
 	openrouter.Register(extenderRegister)
 	groq.Register(extenderRegister)
+	upstage.Register(extenderRegister)
 }

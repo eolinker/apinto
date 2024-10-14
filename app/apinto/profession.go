@@ -402,6 +402,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "GroqCloud",
 					Desc:  "GroqCloud",
 				},
+				{
+					Id:    "eolinker.com:apinto:upstage", // 插件ID
+					Name:  "upstage",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "upstage",
+					Desc:  "upstage",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
