@@ -5,8 +5,8 @@ type ClientRequest struct {
 }
 
 type ClientResponse struct {
-	Message      Message `json:"message"`
-	FinishReason string  `json:"finish_reason"`
+	Message      Message `json:"message,omitempty"`
+	FinishReason string  `json:"finish_reason,omitempty"`
 	Code         int     `json:"code"`
 	Error        string  `json:"error"`
 }

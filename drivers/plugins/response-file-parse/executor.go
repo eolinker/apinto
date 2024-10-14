@@ -3,6 +3,8 @@ package response_file_parse
 import (
 	"strings"
 
+	"github.com/eolinker/apinto/utils"
+
 	"golang.org/x/text/encoding/charmap"
 
 	"github.com/eolinker/eosc/log"
@@ -79,10 +81,12 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 			return nil
 		}
 		if fileName, ok := paramsMap[e.fileKey]; ok {
+			fileName = strings.Trim(fileName, "\"")
 			if fileName != "" {
 				suffix := fileName[strings.LastIndex(fileName, ".")+1:]
-				if _, ok := e.validSuf[suffix]; !ok {
-					log.Errorf("file suffix is not valid,name is %s,suffix is %s", e.fileKey, suffix)
+				if _, ok = e.validSuf[suffix]; !ok {
+
+					log.Errorf("file suffix is not valid,name is %s,suffix is %s,valid suffix is %v", e.fileKey, suffix, e.validSuf)
 					return nil
 				}
 				body := ctx.Response().GetBody()
@@ -94,6 +98,7 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 					}
 				}
 				size := len(out)
+				ctx.WithValue("file_sha256", utils.HexEncode(out))
 				ctx.WithValue("response_body", string(out))
 				ctx.WithValue("file_direction", "download")
 				ctx.WithValue("file_name", fileName)

@@ -14,6 +14,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/perfxcloud"
 	"github.com/eolinker/apinto/drivers/ai-provider/stepfun"
 	"github.com/eolinker/apinto/drivers/ai-provider/tongyi"
+	"github.com/eolinker/apinto/drivers/ai-provider/wenxin"
 	"github.com/eolinker/apinto/drivers/ai-provider/yi"
 	"github.com/eolinker/apinto/drivers/ai-provider/zhipuai"
 	"github.com/eolinker/apinto/drivers/certs"
@@ -113,6 +114,7 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 
 	baichuan.Register(extenderRegister)
 	stepfun.Register(extenderRegister)
+	wenxin.Register(extenderRegister)
 	yi.Register(extenderRegister)
 	perfxcloud.Register(extenderRegister)
 	cohere.Register(extenderRegister)

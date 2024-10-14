@@ -361,6 +361,10 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Desc:  "Stepfun",
 				},
 				{
+					Id:    "eolinker.com:apinto:wenxin", // 插件ID
+					Name:  "wenxin",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Wenxin",
+					Desc:  "Wenxin",
 					Id:    "eolinker.com:apinto:yi", // 插件ID
 					Name:  "yi",                     // 驱动名称，应和定义文件的provider字段一致
 					Label: "Yi",
