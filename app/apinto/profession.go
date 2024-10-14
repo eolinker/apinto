@@ -365,10 +365,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Name:  "wenxin",                     // 驱动名称，应和定义文件的provider字段一致
 					Label: "Wenxin",
 					Desc:  "Wenxin",
+				},
+				{
 					Id:    "eolinker.com:apinto:yi", // 插件ID
 					Name:  "yi",                     // 驱动名称，应和定义文件的provider字段一致
-					Label: "Yi",
-					Desc:  "Yi",
+					Label: "yi",
+					Desc:  "yi",
 				},
 				{
 					Id:    "eolinker.com:apinto:perfxcloud", // 插件ID
@@ -393,6 +395,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Name:  "openrouter",                     // 驱动名称，应和定义文件的provider字段一致
 					Label: "OpenRouter",
 					Desc:  "OpenRouter",
+				},
+				{
+					Id:    "eolinker.com:apinto:groq", // 插件ID
+					Name:  "groq",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "GroqCloud",
+					Desc:  "GroqCloud",
 				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
