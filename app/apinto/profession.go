@@ -378,6 +378,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "Cohere",
 					Desc:  "Cohere",
 				},
+				{
+					Id:    "eolinker.com:apinto:deepseek", // 插件ID
+					Name:  "deepseek",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Deepseek",
+					Desc:  "Deepseek",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
