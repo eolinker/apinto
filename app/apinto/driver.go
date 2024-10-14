@@ -7,6 +7,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/deepseek"
 	"github.com/eolinker/apinto/drivers/ai-provider/fireworks"
 	"github.com/eolinker/apinto/drivers/ai-provider/google"
+	"github.com/eolinker/apinto/drivers/ai-provider/groq"
 	"github.com/eolinker/apinto/drivers/ai-provider/mistralai"
 	"github.com/eolinker/apinto/drivers/ai-provider/moonshot"
 	"github.com/eolinker/apinto/drivers/ai-provider/novita"
@@ -121,4 +122,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	cohere.Register(extenderRegister)
 	deepseek.Register(extenderRegister)
 	openrouter.Register(extenderRegister)
+	groq.Register(extenderRegister)
 }
