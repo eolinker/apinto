@@ -365,6 +365,28 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Name:  "wenxin",                     // 驱动名称，应和定义文件的provider字段一致
 					Label: "Wenxin",
 					Desc:  "Wenxin",
+					Id:    "eolinker.com:apinto:yi", // 插件ID
+					Name:  "yi",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Yi",
+					Desc:  "Yi",
+				},
+				{
+					Id:    "eolinker.com:apinto:perfxcloud", // 插件ID
+					Name:  "perfxcloud",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Perfxcloud",
+					Desc:  "Perfxcloud",
+				},
+				{
+					Id:    "eolinker.com:apinto:cohere", // 插件ID
+					Name:  "cohere",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Cohere",
+					Desc:  "Cohere",
+				},
+				{
+					Id:    "eolinker.com:apinto:deepseek", // 插件ID
+					Name:  "deepseek",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Deepseek",
+					Desc:  "Deepseek",
 				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,

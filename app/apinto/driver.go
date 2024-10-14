@@ -3,15 +3,19 @@ package main
 import (
 	anthropic "github.com/eolinker/apinto/drivers/ai-provider/authropic"
 	"github.com/eolinker/apinto/drivers/ai-provider/baichuan"
+	"github.com/eolinker/apinto/drivers/ai-provider/cohere"
+	"github.com/eolinker/apinto/drivers/ai-provider/deepseek"
 	"github.com/eolinker/apinto/drivers/ai-provider/fireworks"
 	"github.com/eolinker/apinto/drivers/ai-provider/google"
 	"github.com/eolinker/apinto/drivers/ai-provider/mistralai"
 	"github.com/eolinker/apinto/drivers/ai-provider/moonshot"
 	"github.com/eolinker/apinto/drivers/ai-provider/novita"
 	"github.com/eolinker/apinto/drivers/ai-provider/openAI"
+	"github.com/eolinker/apinto/drivers/ai-provider/perfxcloud"
 	"github.com/eolinker/apinto/drivers/ai-provider/stepfun"
 	"github.com/eolinker/apinto/drivers/ai-provider/tongyi"
 	"github.com/eolinker/apinto/drivers/ai-provider/wenxin"
+	"github.com/eolinker/apinto/drivers/ai-provider/yi"
 	"github.com/eolinker/apinto/drivers/ai-provider/zhipuai"
 	"github.com/eolinker/apinto/drivers/certs"
 	"github.com/eolinker/apinto/drivers/discovery/consul"
@@ -111,4 +115,8 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	baichuan.Register(extenderRegister)
 	stepfun.Register(extenderRegister)
 	wenxin.Register(extenderRegister)
+	yi.Register(extenderRegister)
+	perfxcloud.Register(extenderRegister)
+	cohere.Register(extenderRegister)
+	deepseek.Register(extenderRegister)
 }
