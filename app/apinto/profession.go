@@ -360,6 +360,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "Stepfun",
 					Desc:  "Stepfun",
 				},
+				{
+					Id:    "eolinker.com:apinto:yi", // 插件ID
+					Name:  "yi",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Yi",
+					Desc:  "Yi",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
