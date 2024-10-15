@@ -101,8 +101,12 @@ func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
 				result["max_tokens"] = modelCfg.MaxTokens
 			}
 
-			result["temperature"] = modelCfg.Temperature
-			result["top_p"] = modelCfg.TopP
+			if modelCfg.Temperature > 0 {
+				result["temperature"] = modelCfg.Temperature
+			}
+			if modelCfg.TopP > 0 {
+				result["top_p"] = modelCfg.TopP
+			}
 		}
 		return result, nil
 	}, true
