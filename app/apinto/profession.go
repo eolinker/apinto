@@ -408,6 +408,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "upstage",
 					Desc:  "upstage",
 				},
+				{
+					Id:    "eolinker.com:apinto:minimax", // 插件ID
+					Name:  "minimax",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "minimax",
+					Desc:  "minimax",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},

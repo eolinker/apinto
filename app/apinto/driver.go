@@ -8,6 +8,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/fireworks"
 	"github.com/eolinker/apinto/drivers/ai-provider/google"
 	"github.com/eolinker/apinto/drivers/ai-provider/groq"
+	"github.com/eolinker/apinto/drivers/ai-provider/minimax"
 	"github.com/eolinker/apinto/drivers/ai-provider/mistralai"
 	"github.com/eolinker/apinto/drivers/ai-provider/moonshot"
 	"github.com/eolinker/apinto/drivers/ai-provider/novita"
@@ -125,4 +126,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	openrouter.Register(extenderRegister)
 	groq.Register(extenderRegister)
 	upstage.Register(extenderRegister)
+	minimax.Register(extenderRegister)
 }
