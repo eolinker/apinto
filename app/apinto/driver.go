@@ -3,6 +3,7 @@ package main
 import (
 	anthropic "github.com/eolinker/apinto/drivers/ai-provider/authropic"
 	"github.com/eolinker/apinto/drivers/ai-provider/baichuan"
+	"github.com/eolinker/apinto/drivers/ai-provider/chatglm"
 	"github.com/eolinker/apinto/drivers/ai-provider/cohere"
 	"github.com/eolinker/apinto/drivers/ai-provider/deepseek"
 	"github.com/eolinker/apinto/drivers/ai-provider/fireworks"
@@ -127,4 +128,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	groq.Register(extenderRegister)
 	upstage.Register(extenderRegister)
 	minimax.Register(extenderRegister)
+	chatglm.Register(extenderRegister)
 }
