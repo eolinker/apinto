@@ -414,6 +414,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "minimax",
 					Desc:  "minimax",
 				},
+				{
+					Id:    "eolinker.com:apinto:chatglm", // 插件ID
+					Name:  "chatglm",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "chatglm",
+					Desc:  "chatglm",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
