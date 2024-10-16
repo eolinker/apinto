@@ -391,6 +391,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Desc:  "Deepseek",
 				},
 				{
+					Id:    "eolinker.com:apinto:hunyuan", // 插件ID
+					Name:  "hunyuan",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Hunyuan",
+					Desc:  "Hunyuan",
+				},
+				{
 					Id:    "eolinker.com:apinto:openrouter", // 插件ID
 					Name:  "openrouter",                     // 驱动名称，应和定义文件的provider字段一致
 					Label: "OpenRouter",

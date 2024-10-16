@@ -8,6 +8,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/deepseek"
 	"github.com/eolinker/apinto/drivers/ai-provider/fireworks"
 	"github.com/eolinker/apinto/drivers/ai-provider/google"
+	"github.com/eolinker/apinto/drivers/ai-provider/hunyuan"
 	"github.com/eolinker/apinto/drivers/ai-provider/groq"
 	"github.com/eolinker/apinto/drivers/ai-provider/minimax"
 	"github.com/eolinker/apinto/drivers/ai-provider/mistralai"
@@ -124,6 +125,7 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	perfxcloud.Register(extenderRegister)
 	cohere.Register(extenderRegister)
 	deepseek.Register(extenderRegister)
+	hunyuan.Register(extenderRegister)
 	openrouter.Register(extenderRegister)
 	groq.Register(extenderRegister)
 	upstage.Register(extenderRegister)
