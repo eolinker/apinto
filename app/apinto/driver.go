@@ -9,8 +9,8 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/deepseek"
 	"github.com/eolinker/apinto/drivers/ai-provider/fireworks"
 	"github.com/eolinker/apinto/drivers/ai-provider/google"
-	"github.com/eolinker/apinto/drivers/ai-provider/hunyuan"
 	"github.com/eolinker/apinto/drivers/ai-provider/groq"
+	"github.com/eolinker/apinto/drivers/ai-provider/hunyuan"
 	"github.com/eolinker/apinto/drivers/ai-provider/minimax"
 	"github.com/eolinker/apinto/drivers/ai-provider/mistralai"
 	"github.com/eolinker/apinto/drivers/ai-provider/moonshot"
@@ -18,6 +18,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/openAI"
 	"github.com/eolinker/apinto/drivers/ai-provider/openrouter"
 	"github.com/eolinker/apinto/drivers/ai-provider/perfxcloud"
+	"github.com/eolinker/apinto/drivers/ai-provider/spark"
 	"github.com/eolinker/apinto/drivers/ai-provider/stepfun"
 	"github.com/eolinker/apinto/drivers/ai-provider/tongyi"
 	"github.com/eolinker/apinto/drivers/ai-provider/upstage"
@@ -133,4 +134,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	minimax.Register(extenderRegister)
 	chatglm.Register(extenderRegister)
 	bedrock.Register(extenderRegister)
+	spark.Register(extenderRegister)
 }

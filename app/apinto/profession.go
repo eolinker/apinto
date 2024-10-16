@@ -432,6 +432,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "AWS Bedrock",
 					Desc:  "AWS Bedrock",
 				},
+				{
+					Id:    "eolinker.com:apinto:spark", // 插件ID
+					Name:  "spark",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "讯飞星火",
+					Desc:  "讯飞星火",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
