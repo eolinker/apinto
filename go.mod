@@ -6,6 +6,7 @@ toolchain go1.21.1
 
 require (
 	github.com/Shopify/sarama v1.32.0
+	github.com/aws/aws-sdk-go v1.27.0
 	github.com/brianvoe/gofakeit/v6 v6.20.1
 	github.com/clbanning/mxj v1.8.4
 	github.com/coocood/freecache v1.2.2
@@ -34,6 +35,7 @@ require (
 	golang.org/x/net v0.22.0
 	google.golang.org/grpc v1.61.0
 	google.golang.org/protobuf v1.34.2
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -96,7 +98,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (

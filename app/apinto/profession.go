@@ -426,6 +426,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "chatglm",
 					Desc:  "chatglm",
 				},
+				{
+					Id:    "eolinker.com:apinto:bedrock", // 插件ID
+					Name:  "bedrock",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "AWS Bedrock",
+					Desc:  "AWS Bedrock",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},

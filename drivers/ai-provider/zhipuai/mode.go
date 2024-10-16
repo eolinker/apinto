@@ -2,6 +2,7 @@ package zhipuai
 
 import (
 	"encoding/json"
+
 	"github.com/eolinker/apinto/convert"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc"

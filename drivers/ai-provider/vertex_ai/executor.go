@@ -1,4 +1,4 @@
-package openAI
+package vertex_ai
 
 import (
 	"embed"
@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	//go:embed openai.yaml
+	//go:embed vertex_ai.yaml
 	providerContent []byte
 	//go:embed *
 	providerDir  embed.FS
@@ -38,8 +38,8 @@ func init() {
 	}
 	for key, value := range models {
 		if value.ModelProperties != nil {
-			if v, ok := modelModes[value.ModelProperties.Mode]; ok {
-				modelConvert[key] = v
+			if f, ok := modelModes[value.ModelProperties.Mode]; ok {
+				modelConvert[key] = f(value.Model)
 			}
 		}
 	}
@@ -59,7 +59,7 @@ func (c *Converter) RequestConvert(ctx eocontext.EoContext, extender map[string]
 	if err != nil {
 		return err
 	}
-	httpContext.Proxy().Header().SetHeader("Authorization", "Bearer "+c.apikey)
+	httpContext.Proxy().URI().SetQuery("key", c.apikey)
 
 	return c.converter.RequestConvert(httpContext, extender)
 }
@@ -70,8 +70,8 @@ func (c *Converter) ResponseConvert(ctx eocontext.EoContext) error {
 
 type executor struct {
 	drivers.WorkerBase
-	apikey string
 	eocontext.BalanceHandler
+	apikey string
 }
 
 func (e *executor) GetConverter(model string) (convert.IConverter, bool) {
@@ -88,10 +88,7 @@ func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
 		return nil, false
 	}
 	return func(cfg string) (map[string]interface{}, error) {
-
-		result := map[string]interface{}{
-			"model": model,
-		}
+		result := map[string]interface{}{}
 		if cfg != "" {
 			tmp := make(map[string]interface{})
 			if err := json.Unmarshal([]byte(cfg), &tmp); err != nil {
@@ -99,20 +96,12 @@ func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
 				return result, nil
 			}
 			modelCfg := ai_provider.MapToStruct[ModelConfig](tmp)
-			result["frequency_penalty"] = modelCfg.FrequencyPenalty
-			if modelCfg.MaxTokens >= 1 {
-				result["max_tokens"] = modelCfg.MaxTokens
-			}
-
-			result["presence_penalty"] = modelCfg.PresencePenalty
-			result["temperature"] = modelCfg.Temperature
-			result["top_p"] = modelCfg.TopP
-			if modelCfg.ResponseFormat == "" {
-				modelCfg.ResponseFormat = "text"
-			}
-			result["response_format"] = map[string]interface{}{
-				"type": modelCfg.ResponseFormat,
-			}
+			generationConfig := make(map[string]interface{})
+			generationConfig["maxOutputTokens"] = modelCfg.MaxOutputTokens
+			generationConfig["temperature"] = modelCfg.Temperature
+			generationConfig["topP"] = modelCfg.TopP
+			generationConfig["topK"] = modelCfg.TopK
+			result["generationConfig"] = generationConfig
 		}
 		return result, nil
 	}, true
@@ -132,8 +121,8 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
-	if conf.Base != "" {
-		u, err := url.Parse(conf.Base)
+	if conf.Location != "" {
+		u, err := url.Parse(conf.Location)
 		if err != nil {
 			return err
 		}
@@ -150,14 +139,12 @@ func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) 
 	} else {
 		e.BalanceHandler = nil
 	}
-	e.apikey = conf.APIKey
+	e.apikey = conf.ProjectID
 	convert.Set(e.Id(), e)
-
 	return nil
 }
 
 func (e *executor) Stop() error {
-	e.BalanceHandler = nil
 	convert.Del(e.Id())
 	return nil
 }
@@ -167,10 +154,9 @@ func (e *executor) CheckSkill(skill string) bool {
 }
 
 type ModelConfig struct {
-	FrequencyPenalty float64 `json:"frequency_penalty"`
-	MaxTokens        int     `json:"max_tokens"`
-	PresencePenalty  float64 `json:"presence_penalty"`
-	ResponseFormat   string  `json:"response_format"`
+	ResponseMimeType string  `json:"response_format"`
+	MaxOutputTokens  int     `json:"max_tokens_to_sample"`
 	Temperature      float64 `json:"temperature"`
 	TopP             float64 `json:"top_p"`
+	TopK             int     `json:"top_k"`
 }

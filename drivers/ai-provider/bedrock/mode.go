@@ -1,18 +1,22 @@
-package tongyi
+package bedrock
 
 import (
 	"encoding/json"
+	"fmt"
+
+	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/convert"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
+type FNewModelMode func(string) IModelMode
+
 var (
-	modelModes = map[string]IModelMode{
-		ai_provider.ModeChat.String(): NewChat(),
+	modelModes = map[string]FNewModelMode{
+		ai_provider.ModeChat.String(): NewChat,
 	}
 )
 
@@ -25,9 +29,9 @@ type Chat struct {
 	endPoint string
 }
 
-func NewChat() *Chat {
+func NewChat(model string) IModelMode {
 	return &Chat{
-		endPoint: "/compatible-mode/v1/chat/completions",
+		endPoint: fmt.Sprintf("/model/%s/converse", model),
 	}
 }
 
@@ -51,14 +55,22 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	if err != nil {
 		return err
 	}
-	messages := make([]Message, 0, len(baseCfg.Config.Messages)+1)
+	messages := make([]Message, 0, len(baseCfg.Config.Messages))
+	systemMessage := make([]Content, 0)
+
 	for _, m := range baseCfg.Config.Messages {
-		messages = append(messages, Message{
-			Role:    m.Role,
-			Content: m.Content,
-		})
+		if m.Role == "system" {
+			systemMessage = append(systemMessage, Content{Text: m.Content})
+		} else {
+			messages = append(messages, Message{
+				Role:    m.Role,
+				Content: []*Content{{Text: m.Content}},
+			})
+		}
 	}
 	baseCfg.SetAppend("messages", messages)
+	baseCfg.SetAppend("system", systemMessage)
+
 	for k, v := range extender {
 		baseCfg.SetAppend(k, v)
 	}
@@ -67,6 +79,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 		return err
 	}
 	httpContext.Proxy().Body().SetRaw("application/json", body)
+
 	return nil
 }
 
@@ -85,13 +98,13 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		return err
 	}
 	responseBody := &ai_provider.ClientResponse{}
-	if len(data.Config.Choices) > 0 {
-		msg := data.Config.Choices[0]
+	if data.Config.Output.Message != nil && len(data.Config.Output.Message.Content) > 0 {
+		msg := data.Config.Output.Message
 		responseBody.Message = ai_provider.Message{
-			Role:    msg.Message.Role,
-			Content: msg.Message.Content,
+			Role:    msg.Role,
+			Content: msg.Content[0].Text,
 		}
-		responseBody.FinishReason = msg.FinishReason
+		responseBody.FinishReason = data.Config.StopReason
 	} else {
 		responseBody.Code = -1
 		responseBody.Error = "no response"

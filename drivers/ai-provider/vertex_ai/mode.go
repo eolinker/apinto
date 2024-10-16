@@ -1,20 +1,27 @@
-package tongyi
+package vertex_ai
 
 import (
 	"encoding/json"
+	"fmt"
+
+	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/convert"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
+type FNewModelMode func(string) IModelMode
+
 var (
-	modelModes = map[string]IModelMode{
-		ai_provider.ModeChat.String(): NewChat(),
+	modelModes = map[string]FNewModelMode{
+		ai_provider.ModeChat.String(): NewChat,
 	}
 )
+
+type ModelFactory struct {
+}
 
 type IModelMode interface {
 	Endpoint() string
@@ -25,9 +32,9 @@ type Chat struct {
 	endPoint string
 }
 
-func NewChat() *Chat {
+func NewChat(model string) IModelMode {
 	return &Chat{
-		endPoint: "/compatible-mode/v1/chat/completions",
+		endPoint: fmt.Sprintf("/v1beta/models/%s:generateContent", model),
 	}
 }
 
@@ -51,14 +58,24 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	if err != nil {
 		return err
 	}
-	messages := make([]Message, 0, len(baseCfg.Config.Messages)+1)
+	messages := make([]Content, 0, len(baseCfg.Config.Messages)+1)
 	for _, m := range baseCfg.Config.Messages {
-		messages = append(messages, Message{
-			Role:    m.Role,
-			Content: m.Content,
+		role := "user"
+		if m.Role == "system" && len(baseCfg.Config.Messages) > 1 {
+			role = "model"
+		}
+		parts := make([]map[string]interface{}, 0, 1)
+		if m.Content != "" {
+			parts = append(parts, map[string]interface{}{
+				"text": m.Content,
+			})
+		}
+		messages = append(messages, Content{
+			Role:  role,
+			Parts: parts,
 		})
 	}
-	baseCfg.SetAppend("messages", messages)
+	baseCfg.SetAppend("contents", messages)
 	for k, v := range extender {
 		baseCfg.SetAppend(k, v)
 	}
@@ -67,6 +84,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 		return err
 	}
 	httpContext.Proxy().Body().SetRaw("application/json", body)
+
 	return nil
 }
 
@@ -85,11 +103,22 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		return err
 	}
 	responseBody := &ai_provider.ClientResponse{}
-	if len(data.Config.Choices) > 0 {
-		msg := data.Config.Choices[0]
+	if len(data.Config.Candidates) > 0 {
+		msg := data.Config.Candidates[0]
+		role := "user"
+		if msg.Content.Role == "model" {
+			role = "assistant"
+		}
+		text := ""
+		if len(msg.Content.Parts) > 0 {
+			if v, ok := msg.Content.Parts[0]["text"]; ok {
+				text = v.(string)
+			}
+		}
+
 		responseBody.Message = ai_provider.Message{
-			Role:    msg.Message.Role,
-			Content: msg.Message.Content,
+			Role:    role,
+			Content: text,
 		}
 		responseBody.FinishReason = msg.FinishReason
 	} else {

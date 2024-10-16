@@ -1,18 +1,22 @@
-package tongyi
+package hunyuan
 
 import (
 	"encoding/json"
+	"fmt"
+
+	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/convert"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
+type FNewModelMode func(string) IModelMode
+
 var (
-	modelModes = map[string]IModelMode{
-		ai_provider.ModeChat.String(): NewChat(),
+	modelModes = map[string]FNewModelMode{
+		ai_provider.ModeChat.String(): NewChat,
 	}
 )
 
@@ -25,9 +29,9 @@ type Chat struct {
 	endPoint string
 }
 
-func NewChat() *Chat {
+func NewChat(model string) IModelMode {
 	return &Chat{
-		endPoint: "/compatible-mode/v1/chat/completions",
+		endPoint: "/",
 	}
 }
 
@@ -52,13 +56,29 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 		return err
 	}
 	messages := make([]Message, 0, len(baseCfg.Config.Messages)+1)
-	for _, m := range baseCfg.Config.Messages {
-		messages = append(messages, Message{
-			Role:    m.Role,
-			Content: m.Content,
-		})
+	msgLen := len(baseCfg.Config.Messages)
+	if msgLen < 1 {
+		return fmt.Errorf("message length is less than 1")
 	}
-	baseCfg.SetAppend("messages", messages)
+	if msgLen == 1 {
+		messages = append(messages, Message{
+			Role:    "user",
+			Content: baseCfg.Config.Messages[0].Content,
+		})
+	} else {
+		messages = append(messages, Message{
+			Role:    "user",
+			Content: baseCfg.Config.Messages[0].Content,
+		})
+		for _, m := range baseCfg.Config.Messages {
+			messages = append(messages, Message{
+				Role:    m.Role,
+				Content: m.Content,
+			})
+		}
+	}
+
+	baseCfg.SetAppend("Messages", messages)
 	for k, v := range extender {
 		baseCfg.SetAppend(k, v)
 	}
@@ -67,6 +87,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 		return err
 	}
 	httpContext.Proxy().Body().SetRaw("application/json", body)
+
 	return nil
 }
 
@@ -85,17 +106,20 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		return err
 	}
 	responseBody := &ai_provider.ClientResponse{}
-	if len(data.Config.Choices) > 0 {
-		msg := data.Config.Choices[0]
+	if len(data.Config.Response.Choices) > 0 {
+		//if data.Config.Object == "chat.completion" {
+		msg := data.Config.Response.Choices[0]
 		responseBody.Message = ai_provider.Message{
 			Role:    msg.Message.Role,
 			Content: msg.Message.Content,
 		}
 		responseBody.FinishReason = msg.FinishReason
+		//}
 	} else {
 		responseBody.Code = -1
-		responseBody.Error = "no response"
+		responseBody.Error = data.Config.Response.Error.Message
 	}
+
 	body, err = json.Marshal(responseBody)
 	if err != nil {
 		return err

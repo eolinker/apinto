@@ -105,7 +105,7 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 				ctx.WithValue("file_suffix", suffix)
 				ctx.WithValue("file_size", size)
 				if int64(size) > e.largeWarn {
-					ctx.WithValue("file_large_warn", e.largeWarnStr)
+					ctx.WithValue("file_size_warn", e.largeWarnStr)
 				}
 			}
 		}

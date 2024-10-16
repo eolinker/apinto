@@ -3,6 +3,7 @@ package main
 import (
 	anthropic "github.com/eolinker/apinto/drivers/ai-provider/authropic"
 	"github.com/eolinker/apinto/drivers/ai-provider/baichuan"
+	"github.com/eolinker/apinto/drivers/ai-provider/bedrock"
 	"github.com/eolinker/apinto/drivers/ai-provider/chatglm"
 	"github.com/eolinker/apinto/drivers/ai-provider/cohere"
 	"github.com/eolinker/apinto/drivers/ai-provider/deepseek"
@@ -131,4 +132,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	upstage.Register(extenderRegister)
 	minimax.Register(extenderRegister)
 	chatglm.Register(extenderRegister)
+	bedrock.Register(extenderRegister)
 }
