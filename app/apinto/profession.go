@@ -438,6 +438,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "讯飞星火",
 					Desc:  "讯飞星火",
 				},
+				{
+					Id:    "eolinker.com:apinto:nvidia", // 插件ID
+					Name:  "nvidia",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Nvidia",
+					Desc:  "Nvidia",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},

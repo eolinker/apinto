@@ -15,6 +15,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/mistralai"
 	"github.com/eolinker/apinto/drivers/ai-provider/moonshot"
 	"github.com/eolinker/apinto/drivers/ai-provider/novita"
+	"github.com/eolinker/apinto/drivers/ai-provider/nvidia"
 	"github.com/eolinker/apinto/drivers/ai-provider/openAI"
 	"github.com/eolinker/apinto/drivers/ai-provider/openrouter"
 	"github.com/eolinker/apinto/drivers/ai-provider/perfxcloud"
@@ -135,4 +136,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	chatglm.Register(extenderRegister)
 	bedrock.Register(extenderRegister)
 	spark.Register(extenderRegister)
+	nvidia.Register(extenderRegister)
 }
