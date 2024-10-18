@@ -23,6 +23,8 @@ RUN mkdir /etc/${AppName}
 RUN cp /${AppName}/${AppName}.yml.tpl /etc/${AppName}/${AppName}.yml && cp /${AppName}/config.yml.tpl /etc/${AppName}/config.yml
 RUN chmod 777 /${AppName}/start.sh && chmod 777 /${AppName}/join.sh && chmod 777 /${AppName}/leave.sh
 
+ADD jq /usr/local/bin/jq
+
 WORKDIR /${AppName}
 
 #容器启动命令
