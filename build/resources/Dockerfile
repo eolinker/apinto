@@ -22,6 +22,7 @@ RUN tar -zxvf apinto.linux.x64.tar.gz && rm -rf apinto.linux.x64.tar.gz
 RUN mkdir /etc/${AppName}
 RUN cp /${AppName}/${AppName}.yml.tpl /etc/${AppName}/${AppName}.yml && cp /${AppName}/config.yml.tpl /etc/${AppName}/config.yml
 RUN chmod 777 /${AppName}/start.sh && chmod 777 /${AppName}/join.sh && chmod 777 /${AppName}/leave.sh
+ADD check_remove.sh /apinto/check_remove.sh
 
 ADD jq /usr/local/bin/jq
 
