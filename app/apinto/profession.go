@@ -455,6 +455,11 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Name:  "fakegpt",                     // 驱动名称，应和定义文件的provider字段一致
 					Label: "Fake GPT",
 					Desc:  "Fake GPT",
+				},{
+,					Id:    "eolinker.com:apinto:zhinao", // 插件ID
+					Name:  "zhinao",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "zhinao",
+					Desc:  "zhinao",
 				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,

@@ -27,6 +27,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/vertex_ai"
 	"github.com/eolinker/apinto/drivers/ai-provider/wenxin"
 	"github.com/eolinker/apinto/drivers/ai-provider/yi"
+	"github.com/eolinker/apinto/drivers/ai-provider/zhinao"
 	"github.com/eolinker/apinto/drivers/ai-provider/zhipuai"
 	"github.com/eolinker/apinto/drivers/certs"
 	"github.com/eolinker/apinto/drivers/discovery/consul"
@@ -141,4 +142,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	nvidia.Register(extenderRegister)
 	vertex_ai.Register(extenderRegister)
 	fakegpt.Register(extenderRegister)
+	zhinao.Register(extenderRegister)
 }
