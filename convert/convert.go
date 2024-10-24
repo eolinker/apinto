@@ -11,6 +11,11 @@ type IConverter interface {
 	RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error
 	ResponseConvert(ctx eocontext.EoContext) error
 }
+
+type IChildConverter interface {
+	IConverter
+	Endpoint() string
+}
 type FGenerateConfig func(cfg string) (map[string]interface{}, error)
 
 func CheckSkill(skill string) bool {

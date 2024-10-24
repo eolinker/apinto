@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -150,23 +148,14 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 
 func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 	base := fmt.Sprintf("https://bedrock-runtime.%s.amazonaws.com", conf.Region)
-	u, err := url.Parse(base)
+	balanceHandler, err := ai_provider.NewBalanceHandler(e.Id(), base, 0)
 	if err != nil {
 		return err
-	}
-	hosts := strings.Split(u.Host, ":")
-	ip := hosts[0]
-	port := 80
-	if u.Scheme == "https" {
-		port = 443
-	}
-	if len(hosts) > 1 {
-		port, _ = strconv.Atoi(hosts[1])
 	}
 	e.cfg = &basicConfig{
 		signer:         v4.NewSigner(credentials.NewStaticCredentials(conf.AccessKey, conf.SecretKey, "")),
 		region:         conf.Region,
-		BalanceHandler: ai_provider.NewBalanceHandler(u.Scheme, 0, []eocontext.INode{ai_provider.NewBaseNode(e.Id(), ip, port)}),
+		BalanceHandler: balanceHandler,
 	}
 	convert.Set(e.Id(), e)
 

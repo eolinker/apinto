@@ -1,11 +1,8 @@
-package anthropic
+package fakegpt
 
 import (
 	"embed"
-	"encoding/json"
 	"fmt"
-
-	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/drivers"
 
@@ -19,7 +16,7 @@ import (
 )
 
 var (
-	//go:embed anthropic.yaml
+	//go:embed fakegpt.yaml
 	providerContent []byte
 	//go:embed *
 	providerDir  embed.FS
@@ -43,22 +40,16 @@ func init() {
 }
 
 type Converter struct {
-	apikey         string
-	version        string
-	balanceHandler eocontext.BalanceHandler
-	converter      convert.IConverter
+	apikey    string
+	converter convert.IConverter
 }
 
 func (c *Converter) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
-	if c.balanceHandler != nil {
-		ctx.SetBalance(c.balanceHandler)
-	}
 	httpContext, err := http_context.Assert(ctx)
 	if err != nil {
 		return err
 	}
-	httpContext.Proxy().Header().SetHeader("x-api-key", c.apikey)
-	httpContext.Proxy().Header().SetHeader("anthropic-version", c.version)
+	httpContext.Proxy().Header().SetHeader("Authorization", "Bearer "+c.apikey)
 
 	return c.converter.RequestConvert(httpContext, extender)
 }
@@ -69,9 +60,7 @@ func (c *Converter) ResponseConvert(ctx eocontext.EoContext) error {
 
 type executor struct {
 	drivers.WorkerBase
-	apikey  string
-	version string
-	eocontext.BalanceHandler
+	apikey string
 }
 
 func (e *executor) GetConverter(model string) (convert.IConverter, bool) {
@@ -80,7 +69,7 @@ func (e *executor) GetConverter(model string) (convert.IConverter, bool) {
 		return nil, false
 	}
 
-	return &Converter{balanceHandler: e.BalanceHandler, converter: converter, apikey: e.apikey, version: e.version}, true
+	return &Converter{converter: converter, apikey: e.apikey}, true
 }
 
 func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
@@ -92,26 +81,7 @@ func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
 		result := map[string]interface{}{
 			"model": model,
 		}
-		if cfg != "" {
-			tmp := make(map[string]interface{})
-			if err := json.Unmarshal([]byte(cfg), &tmp); err != nil {
-				log.Errorf("unmarshal config error: %v, cfg: %s", err, cfg)
-				return result, nil
-			}
-			modelCfg := ai_provider.MapToStruct[ModelConfig](tmp)
-			if modelCfg.MaxTokens >= 1 {
-				result["max_tokens"] = modelCfg.MaxTokens
-			}
 
-			result["temperature"] = modelCfg.Temperature
-			result["top_p"] = modelCfg.TopP
-			if modelCfg.ResponseFormat == "" {
-				modelCfg.ResponseFormat = "text"
-			}
-			result["response_format"] = map[string]interface{}{
-				"type": modelCfg.ResponseFormat,
-			}
-		}
 		return result, nil
 	}, true
 }
@@ -130,16 +100,7 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
-	if conf.Base != "" {
-		balanceHandler, err := ai_provider.NewBalanceHandler(e.Id(), conf.Base, 0)
-		if err != nil {
-			return err
-		}
-		e.BalanceHandler = balanceHandler
-	} else {
-		e.BalanceHandler = nil
-	}
-	e.version = conf.Version
+
 	e.apikey = conf.APIKey
 	convert.Set(e.Id(), e)
 
@@ -147,7 +108,6 @@ func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) 
 }
 
 func (e *executor) Stop() error {
-	e.BalanceHandler = nil
 	convert.Del(e.Id())
 	return nil
 }
@@ -157,9 +117,10 @@ func (e *executor) CheckSkill(skill string) bool {
 }
 
 type ModelConfig struct {
-	MaxTokens      int     `json:"max_tokens"`
-	ResponseFormat string  `json:"response_format"`
-	Temperature    float64 `json:"temperature"`
-	TopP           float64 `json:"top_p"`
-	TopK           int     `json:"top_k"`
+	FrequencyPenalty float64 `json:"frequency_penalty"`
+	MaxTokens        int     `json:"max_tokens"`
+	PresencePenalty  float64 `json:"presence_penalty"`
+	ResponseFormat   string  `json:"response_format"`
+	Temperature      float64 `json:"temperature"`
+	TopP             float64 `json:"top_p"`
 }

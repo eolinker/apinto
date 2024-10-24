@@ -4,9 +4,6 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"net/url"
-	"strconv"
-	"strings"
 
 	"github.com/eolinker/eosc/log"
 
@@ -122,20 +119,11 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 
 func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 	if conf.Base != "" {
-		u, err := url.Parse(conf.Base)
+		balanceHandler, err := ai_provider.NewBalanceHandler(e.Id(), conf.Base, 0)
 		if err != nil {
 			return err
 		}
-		hosts := strings.Split(u.Host, ":")
-		ip := hosts[0]
-		port := 80
-		if u.Scheme == "https" {
-			port = 443
-		}
-		if len(hosts) > 1 {
-			port, _ = strconv.Atoi(hosts[1])
-		}
-		e.BalanceHandler = ai_provider.NewBalanceHandler(u.Scheme, 0, []eocontext.INode{ai_provider.NewBaseNode(e.Id(), ip, port)})
+		e.BalanceHandler = balanceHandler
 	} else {
 		e.BalanceHandler = nil
 	}

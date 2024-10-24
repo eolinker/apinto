@@ -7,6 +7,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/chatglm"
 	"github.com/eolinker/apinto/drivers/ai-provider/cohere"
 	"github.com/eolinker/apinto/drivers/ai-provider/deepseek"
+	"github.com/eolinker/apinto/drivers/ai-provider/fakegpt"
 	"github.com/eolinker/apinto/drivers/ai-provider/fireworks"
 	"github.com/eolinker/apinto/drivers/ai-provider/google"
 	"github.com/eolinker/apinto/drivers/ai-provider/groq"
@@ -23,6 +24,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/stepfun"
 	"github.com/eolinker/apinto/drivers/ai-provider/tongyi"
 	"github.com/eolinker/apinto/drivers/ai-provider/upstage"
+	"github.com/eolinker/apinto/drivers/ai-provider/vertex_ai"
 	"github.com/eolinker/apinto/drivers/ai-provider/wenxin"
 	"github.com/eolinker/apinto/drivers/ai-provider/yi"
 	"github.com/eolinker/apinto/drivers/ai-provider/zhipuai"
@@ -137,4 +139,6 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	bedrock.Register(extenderRegister)
 	spark.Register(extenderRegister)
 	nvidia.Register(extenderRegister)
+	vertex_ai.Register(extenderRegister)
+	fakegpt.Register(extenderRegister)
 }

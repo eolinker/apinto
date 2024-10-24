@@ -1,18 +1,22 @@
 package vertex_ai
 
 import (
+	"context"
 	"embed"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/url"
-	"strconv"
-	"strings"
+	"time"
+
+	"golang.org/x/oauth2/google"
+
+	"golang.org/x/oauth2"
 
 	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/drivers"
-
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
+	dns "google.golang.org/api/dns/v1beta2"
 
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 
@@ -26,9 +30,13 @@ var (
 	providerContent []byte
 	//go:embed *
 	providerDir  embed.FS
-	modelConvert = make(map[string]convert.IConverter)
+	modelConvert = make(map[string]convert.IChildConverter)
 
-	_ convert.IConverterDriver = (*executor)(nil)
+	_      convert.IConverterDriver = (*executor)(nil)
+	scopes                          = []string{
+		dns.CloudPlatformReadOnlyScope,
+		dns.CloudPlatformScope,
+	}
 )
 
 func init() {
@@ -46,21 +54,32 @@ func init() {
 }
 
 type Converter struct {
-	apikey         string
 	balanceHandler eocontext.BalanceHandler
-	converter      convert.IConverter
+	model          string
+	token          *oauth2.Token
+	jwtData        []byte
+	projectId      string
+	location       string
+	converter      convert.IChildConverter
 }
 
 func (c *Converter) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
 	if c.balanceHandler != nil {
 		ctx.SetBalance(c.balanceHandler)
 	}
+	if c.token.Expiry.Before(time.Now()) {
+		t, err := newToken(ctx.Context(), c.jwtData)
+		if err != nil {
+			return err
+		}
+		c.token = t
+	}
 	httpContext, err := http_context.Assert(ctx)
 	if err != nil {
 		return err
 	}
-	httpContext.Proxy().URI().SetQuery("key", c.apikey)
-
+	httpContext.Proxy().Header().SetHeader("Authorization", fmt.Sprintf("Bearer %s", c.token.AccessToken))
+	httpContext.Proxy().URI().SetPath(fmt.Sprintf(c.converter.Endpoint(), c.projectId, c.location, c.model))
 	return c.converter.RequestConvert(httpContext, extender)
 }
 
@@ -71,7 +90,10 @@ func (c *Converter) ResponseConvert(ctx eocontext.EoContext) error {
 type executor struct {
 	drivers.WorkerBase
 	eocontext.BalanceHandler
-	apikey string
+	token     *oauth2.Token
+	projectId string
+	location  string
+	jwtData   []byte
 }
 
 func (e *executor) GetConverter(model string) (convert.IConverter, bool) {
@@ -80,7 +102,7 @@ func (e *executor) GetConverter(model string) (convert.IConverter, bool) {
 		return nil, false
 	}
 
-	return &Converter{balanceHandler: e.BalanceHandler, converter: converter, apikey: e.apikey}, true
+	return &Converter{balanceHandler: e.BalanceHandler, converter: converter, token: e.token, jwtData: e.jwtData, projectId: e.projectId, location: e.location, model: model}, true
 }
 
 func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
@@ -96,12 +118,24 @@ func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
 				return result, nil
 			}
 			modelCfg := ai_provider.MapToStruct[ModelConfig](tmp)
-			generationConfig := make(map[string]interface{})
-			generationConfig["maxOutputTokens"] = modelCfg.MaxOutputTokens
-			generationConfig["temperature"] = modelCfg.Temperature
-			generationConfig["topP"] = modelCfg.TopP
-			generationConfig["topK"] = modelCfg.TopK
-			result["generationConfig"] = generationConfig
+			if modelCfg.MaxOutputTokens > 0 {
+				result["maxOutputTokens"] = modelCfg.MaxOutputTokens
+			}
+			if modelCfg.Temperature > 0 {
+				result["temperature"] = modelCfg.Temperature
+			}
+			if modelCfg.TopP > 0 {
+				result["topP"] = modelCfg.TopP
+			}
+			if modelCfg.TopK > 1 {
+				result["topK"] = modelCfg.TopK
+			}
+			if modelCfg.FrequencyPenalty > 0 {
+				result["frequencyPenalty"] = modelCfg.FrequencyPenalty
+			}
+			if modelCfg.PresencePenalty > 0 {
+				result["presencePenalty"] = modelCfg.PresencePenalty
+			}
 		}
 		return result, nil
 	}, true
@@ -121,25 +155,24 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
-	if conf.Location != "" {
-		u, err := url.Parse(conf.Location)
-		if err != nil {
-			return err
-		}
-		hosts := strings.Split(u.Host, ":")
-		ip := hosts[0]
-		port := 80
-		if u.Scheme == "https" {
-			port = 443
-		}
-		if len(hosts) > 1 {
-			port, _ = strconv.Atoi(hosts[1])
-		}
-		e.BalanceHandler = ai_provider.NewBalanceHandler(u.Scheme, 0, []eocontext.INode{ai_provider.NewBaseNode(e.Id(), ip, port)})
-	} else {
-		e.BalanceHandler = nil
+	jwtData, err := base64.RawStdEncoding.DecodeString(conf.ServiceAccountKey)
+	token, err := newToken(context.Background(), jwtData)
+	if err != nil {
+		return err
 	}
-	e.apikey = conf.ProjectID
+	base := fmt.Sprintf("https://%s-aiplatform.googleapis.com", conf.Location)
+	if conf.Base != "" {
+		base = conf.Base
+	}
+	balanceHandler, err := ai_provider.NewBalanceHandler(e.Id(), base, 0)
+	if err != nil {
+		return err
+	}
+	e.BalanceHandler = balanceHandler
+	e.projectId = conf.ProjectID
+	e.location = conf.Location
+	e.token = token
+	e.jwtData = jwtData
 	convert.Set(e.Id(), e)
 	return nil
 }
@@ -154,9 +187,18 @@ func (e *executor) CheckSkill(skill string) bool {
 }
 
 type ModelConfig struct {
-	ResponseMimeType string  `json:"response_format"`
-	MaxOutputTokens  int     `json:"max_tokens_to_sample"`
+	MaxOutputTokens  int     `json:"max_tokens"`
 	Temperature      float64 `json:"temperature"`
+	FrequencyPenalty float64 `json:"frequency_penalty"`
+	PresencePenalty  float64 `json:"presence_penalty"`
 	TopP             float64 `json:"top_p"`
 	TopK             int     `json:"top_k"`
+}
+
+func newToken(ctx context.Context, data []byte) (*oauth2.Token, error) {
+	cfg, err := google.JWTConfigFromJSON(data, scopes...)
+	if err != nil {
+		return nil, err
+	}
+	return cfg.TokenSource(ctx).Token()
 }
