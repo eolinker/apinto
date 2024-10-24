@@ -2,7 +2,6 @@ package vertex_ai
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/eolinker/eosc"
 
@@ -12,7 +11,7 @@ import (
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
-type FNewModelMode func(string) IModelMode
+type FNewModelMode func(string) convert.IChildConverter
 
 var (
 	modelModes = map[string]FNewModelMode{
@@ -20,21 +19,15 @@ var (
 	}
 )
 
-type ModelFactory struct {
-}
-
-type IModelMode interface {
-	Endpoint() string
-	convert.IConverter
-}
-
 type Chat struct {
+	model    string
 	endPoint string
 }
 
-func NewChat(model string) IModelMode {
+func NewChat(model string) convert.IChildConverter {
 	return &Chat{
-		endPoint: fmt.Sprintf("/v1beta/models/%s:generateContent", model),
+		endPoint: "/v1/projects/%s/locations/%s/publishers/google/models/%s:generateContent",
+		model:    model,
 	}
 }
 
@@ -52,7 +45,6 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 		return err
 	}
 	// 设置转发地址
-	httpContext.Proxy().URI().SetPath(c.endPoint)
 	baseCfg := eosc.NewBase[ai_provider.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {

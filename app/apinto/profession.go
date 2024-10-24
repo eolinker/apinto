@@ -445,7 +445,18 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Desc:  "Nvidia",
 				},
 				{
-					Id:    "eolinker.com:apinto:zhinao", // 插件ID
+					Id:    "eolinker.com:apinto:vertex_ai", // 插件ID
+					Name:  "vertex_ai",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Vertex AI",
+					Desc:  "Vertex AI",
+				},
+				{
+					Id:    "eolinker.com:apinto:fakegpt", // 插件ID
+					Name:  "fakegpt",                     // 驱动名称，应和定义文件的provider字段一致
+					Label: "Fake GPT",
+					Desc:  "Fake GPT",
+				},{
+,					Id:    "eolinker.com:apinto:zhinao", // 插件ID
 					Name:  "zhinao",                     // 驱动名称，应和定义文件的provider字段一致
 					Label: "zhinao",
 					Desc:  "zhinao",

@@ -100,6 +100,7 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 							out = append(out, v)
 						}
 					}
+					ctx.WithValue("rw_flag", 1)
 					ctx.WithValue("file_sha256", utils.HexEncode(out))
 					ctx.SetLabel("request_body", string(out))
 					ctx.SetLabel("file_direction", "upload")

@@ -98,6 +98,7 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 					}
 				}
 				size := len(out)
+				ctx.WithValue("rw_flag", 0)
 				ctx.WithValue("file_sha256", utils.HexEncode(out))
 				ctx.WithValue("response_body", string(out))
 				ctx.WithValue("file_direction", "download")

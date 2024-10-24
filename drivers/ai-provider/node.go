@@ -2,6 +2,9 @@ package ai_provider
 
 import (
 	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/eolinker/eosc/eocontext"
@@ -68,8 +71,22 @@ func (n *_BaseNode) Leave() {
 	n.status = eocontext.Leave
 }
 
-func NewBalanceHandler(scheme string, timeout time.Duration, nodes []eocontext.INode) eocontext.BalanceHandler {
-	return &_BalanceHandler{scheme: scheme, timeout: timeout, nodes: nodes}
+func NewBalanceHandler(id string, base string, timeout time.Duration) (eocontext.BalanceHandler, error) {
+	u, err := url.Parse(base)
+	if err != nil {
+		return nil, err
+	}
+	hosts := strings.Split(u.Host, ":")
+	ip := hosts[0]
+	port := 80
+	if u.Scheme == "https" {
+		port = 443
+	}
+	if len(hosts) > 1 {
+		port, _ = strconv.Atoi(hosts[1])
+	}
+
+	return &_BalanceHandler{scheme: u.Scheme, timeout: timeout, nodes: []eocontext.INode{NewBaseNode(id, ip, port)}}, nil
 }
 
 type _BalanceHandler struct {
