@@ -7,6 +7,8 @@ import (
 	"mime/multipart"
 	"strings"
 
+	"github.com/eolinker/apinto/utils"
+
 	"golang.org/x/text/encoding/charmap"
 
 	"github.com/eolinker/eosc/log"
@@ -98,7 +100,8 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 							out = append(out, v)
 						}
 					}
-
+					ctx.WithValue("rw_flag", 1)
+					ctx.WithValue("file_sha256", utils.HexEncode(out))
 					ctx.SetLabel("request_body", string(out))
 					ctx.SetLabel("file_direction", "upload")
 					ctx.SetLabel("file_name", h.Filename)

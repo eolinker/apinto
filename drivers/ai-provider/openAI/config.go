@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	APIKey       string `json:"openai_api_key"`
-	Organization string `json:"organization"`
+	Organization string `json:"openai_organization"`
 	Base         string `json:"openai_api_base"`
 }
 
