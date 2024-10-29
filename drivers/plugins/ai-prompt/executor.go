@@ -41,6 +41,11 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	}
 	body, err = genRequestMessage(body, e.prompt, e.variables, e.required)
 	if err != nil {
+		result := make(map[string]interface{})
+		result["code"] = -1
+		result["error"] = err.Error()
+		marData, _ := json.Marshal(result)
+		ctx.Response().SetBody(marData)
 		return err
 	}
 	ctx.Proxy().Body().SetRaw("application/json", body)
