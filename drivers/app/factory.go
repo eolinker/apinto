@@ -3,6 +3,8 @@ package app
 import (
 	"sync"
 
+	para_hmac "github.com/eolinker/apinto/application/auth/para-hmac"
+
 	openid_connect_jwt "github.com/eolinker/apinto/application/auth/openid-connect-jwt"
 
 	"github.com/eolinker/apinto/application/auth"
@@ -39,6 +41,7 @@ func NewFactory() eosc.IExtenderDriverFactory {
 		jwt.Register()
 		oauth2.Register()
 		openid_connect_jwt.Register()
+		para_hmac.Register()
 		appManager = manager.NewManager(auth.Alias(), auth.Keys())
 		bean.Injection(&appManager)
 	})
