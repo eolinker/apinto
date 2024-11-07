@@ -11,7 +11,7 @@ response=$(curl -s "https://kubernetes.default.svc:443/api/v1/namespaces/${SVC_N
 if [[ ${response} =~ 'Failure' ]]
 then
     echo ${response}
-    exit 1
+    exit 0
 fi
 
 set +e
