@@ -34,6 +34,7 @@ import (
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
 	"github.com/eolinker/apinto/drivers/discovery/static"
+	auth_interceptor "github.com/eolinker/apinto/drivers/plugins/auth-interceptor"
 	data_mask_strategy "github.com/eolinker/apinto/drivers/strategy/data-mask-strategy"
 
 	"github.com/eolinker/apinto/application/auth"
@@ -82,6 +83,7 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	// 应用
 	app.Register(extenderRegister)
 	auth.Register(extenderRegister)
+	auth_interceptor.Register(extenderRegister)
 
 	// 插件相关
 	plugin_manager.Register(extenderRegister)

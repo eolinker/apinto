@@ -26,6 +26,7 @@ require (
 	github.com/ohler55/ojg v1.12.9
 	github.com/pkg/sftp v1.13.4
 	github.com/polarismesh/polaris-go v1.1.0
+	github.com/redis/go-redis/v9 v9.7.0
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
 	github.com/soheilhy/cmux v0.1.5
 	github.com/stretchr/testify v1.9.0
