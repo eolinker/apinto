@@ -23,6 +23,7 @@ import (
 	response_filter "github.com/eolinker/apinto/drivers/plugins/response-filter"
 	response_rewrite_v2 "github.com/eolinker/apinto/drivers/plugins/response-rewrite_v2"
 	rsa_filter "github.com/eolinker/apinto/drivers/plugins/rsa-filter"
+	script_handler "github.com/eolinker/apinto/drivers/plugins/script-handler"
 	data_mask "github.com/eolinker/apinto/drivers/plugins/strategy/data-mask"
 
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
@@ -118,4 +119,6 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	// ai相关插件
 	ai_prompt.Register(extenderRegister)
 	ai_formatter.Register(extenderRegister)
+
+	script_handler.Register(extenderRegister)
 }

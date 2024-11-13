@@ -30,6 +30,7 @@ require (
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
 	github.com/soheilhy/cmux v0.1.5
 	github.com/stretchr/testify v1.9.0
+	github.com/traefik/yaegi v0.16.1
 	github.com/urfave/cli/v2 v2.23.4
 	github.com/valyala/fasthttp v1.47.0
 	golang.org/x/crypto v0.21.0
