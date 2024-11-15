@@ -95,7 +95,9 @@ func redirect(ctx http_service.IHttpContext) error {
 		}
 		ctx.SetBalance(balanceHandler)
 	}
-	ctx.Proxy().URI().SetPath(u.RawPath)
+	ctx.Proxy().URI().SetPath(u.Path)
+	ctx.Proxy().URI().SetRawQuery(u.Query().Encode())
+	//ctx.Proxy().URI().SetPath(u.RawPath)
 
 	err = ctx.GetComplete().Complete(ctx)
 	if err != nil {
