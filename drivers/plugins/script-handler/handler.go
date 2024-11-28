@@ -15,7 +15,8 @@ import (
 
 type Script struct {
 	drivers.WorkerBase
-	fn func(ctx http_service.IHttpContext) error
+	stage string
+	fn    func(ctx http_service.IHttpContext) error
 }
 
 func (a *Script) Destroy() {
@@ -81,9 +82,21 @@ func (a *Script) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.ICha
 			log.Errorf("script invoke error: %v", err)
 		}
 	}()
-	err := a.fn(ctx)
-	if err != nil {
-		return err
+	if a.stage == "" || a.stage == "request" {
+		err := a.fn(ctx)
+		if err != nil {
+			log.Errorf("exec request script error: %s", err.Error())
+			return err
+		}
 	}
-	return next.DoChain(ctx)
+
+	err := next.DoChain(ctx)
+	if err != nil {
+		err := a.fn(ctx)
+		if err != nil {
+			log.Errorf("exec response script error: %s", err.Error())
+			return err
+		}
+	}
+	return nil
 }

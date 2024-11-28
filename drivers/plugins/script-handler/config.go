@@ -12,6 +12,7 @@ type Config struct {
 	Script  string `json:"script" label:"调用的脚本"`
 	Package string `json:"package" label:"调用的包名"`
 	Fname   string `json:"fname" label:"调用函数名,需定义时返回error"`
+	Stage   string `json:"stage" label:"脚本执行阶段，request或response,默认request"`
 }
 
 // 初始化插件执行实例
@@ -27,6 +28,7 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 
 	return &Script{
 		WorkerBase: drivers.Worker(id, name),
+		stage:      conf.Stage,
 		fn:         fn,
 	}, nil
 

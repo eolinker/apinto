@@ -88,35 +88,6 @@ func (r *redisClient) Close() {
 	r.client = nil
 }
 
-//func getRedisClient(name string, redisCfg *RedisConfig) (redis.UniversalClient, error) {
-//	client, ok := redisPoolMap[name]
-//	if !ok {
-//		pool = &redis.Pool{
-//			MaxIdle:     8,
-//			MaxActive:   0,
-//			IdleTimeout: 60,
-//			Dial: func() (redis.Conn, error) {
-//				conn, err := redis.Dial("tcp", address)
-//				if err != nil {
-//					return nil, err
-//				}
-//				if password != "" {
-//					if _, err := conn.Do("AUTH", password); err != nil {
-//						conn.Close()
-//						return nil, err
-//					}
-//				}
-//				if _, err := conn.Do("SELECT", db); err != nil {
-//					conn.Close()
-//					return nil, err
-//				}
-//				return conn, err
-//			},
-//		}
-//
-//	}
-//}
-
 func initRedis(cfg *RedisConfig) (redis.UniversalClient, error) {
 	var client redis.UniversalClient
 	switch cfg.Mode {
