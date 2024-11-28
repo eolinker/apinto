@@ -1,10 +1,25 @@
 # 名称：apinto镜像，携带了部署k8s集群所需要的脚本
+<<<<<<< Updated upstream
 # 创建时间：2022-3-30
 FROM centos:7.9.2009
 MAINTAINER eolink
 
 #声明端口
 EXPOSE 9400 8099
+=======
+# 创建时间：2024-11-19
+FROM alpine:latest
+
+RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine|https://mirrors.aliyun.com/alpine|g' /etc/apk/repositories  \
+    && apk update \
+    && apk add --no-cache bash tzdata
+
+RUN apk add --no-cache netcat-openbsd
+
+ENV TZ=Asia/Shanghai
+
+RUN cp /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone
+>>>>>>> Stashed changes
 
 #设置环境变量
 ARG AppName=apinto
@@ -12,20 +27,30 @@ ARG AppName=apinto
 #定义数据卷
 VOLUME /var/lib/${AppName}
 
+<<<<<<< Updated upstream
 RUN ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo "Asia/Shanghai" > /etc/timezone
 
 #解压网关程序压缩包
 COPY ./apinto.linux.x64.tar.gz /
 RUN tar -zxvf apinto.linux.x64.tar.gz && rm -rf apinto.linux.x64.tar.gz
+=======
+#解压网关程序压缩包
+COPY ./apinto.linux.x64.tar.gz /
+RUN tar -zxvf apinto.linux.x64.tar.gz && ls /${AppName} / && rm -rf ../apinto.linux.x64.tar.gz
+>>>>>>> Stashed changes
 
 #复制程序默认配置文件以及修改脚本权限
 RUN mkdir /etc/${AppName}
 RUN cp /${AppName}/${AppName}.yml.tpl /etc/${AppName}/${AppName}.yml && cp /${AppName}/config.yml.tpl /etc/${AppName}/config.yml
+<<<<<<< Updated upstream
 RUN chmod 777 /${AppName}/start.sh && chmod 777 /${AppName}/join.sh && chmod 777 /${AppName}/leave.sh
 ADD check_remove.sh /apinto/check_remove.sh
 RUN chmod 777 /apinto/check_remove.sh
 
 ADD jq /usr/local/bin/jq
+=======
+RUN chmod 777 /${AppName}/*.sh
+>>>>>>> Stashed changes
 
 WORKDIR /${AppName}
 
