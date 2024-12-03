@@ -11,7 +11,7 @@ require (
 	github.com/clbanning/mxj v1.8.4
 	github.com/coocood/freecache v1.2.2
 	github.com/dubbogo/gost v1.13.1
-	github.com/eolinker/eosc v0.18.1
+	github.com/eolinker/eosc v0.18.2
 	github.com/fasthttp/websocket v1.5.0
 	github.com/fullstorydev/grpcurl v1.8.7
 	github.com/go-redis/redis/v8 v8.11.5
@@ -26,9 +26,11 @@ require (
 	github.com/ohler55/ojg v1.12.9
 	github.com/pkg/sftp v1.13.4
 	github.com/polarismesh/polaris-go v1.1.0
+	github.com/redis/go-redis/v9 v9.7.0
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
 	github.com/soheilhy/cmux v0.1.5
 	github.com/stretchr/testify v1.9.0
+	github.com/traefik/yaegi v0.16.1
 	github.com/urfave/cli/v2 v2.23.4
 	github.com/valyala/fasthttp v1.47.0
 	golang.org/x/crypto v0.21.0

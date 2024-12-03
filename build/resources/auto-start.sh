@@ -6,6 +6,15 @@ set -e  # 在命令失败时退出
 APINTO_LOG_DIR="/var/log/apinto"
 APINTO_LOG_FILE="$APINTO_LOG_DIR/error.log"
 
+if [[ "${HOSTNAME}" != "" && ${SERVICE} != "" && ${NAMESPACE} != "" ]];then
+	# 替换配置文件中的 {IP}
+	CONFIG_FILE="/etc/apinto/config.yml"
+	IP=${HOSTNAME}.${SERVICE}.${NAMESPACE}.svc.cluster.local
+	cp -f config.yml.k8s.tpl ${CONFIG_FILE}
+	sed -i "s/{IP}/${IP}/g" "$CONFIG_FILE"
+  echo "Replaced {IP} with ${IP} in $CONFIG_FILE."
+fi
+
 # 启动 Apinto
 echo "Starting Apinto..."
 ./apinto start

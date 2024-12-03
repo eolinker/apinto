@@ -105,13 +105,14 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 		}
 		break
 	}
+	ctx.SetLabel("block_name", name)
 	if !pass {
 		ctx.SetLabel("handler", "visit")
 		httpCtx.Response().SetStatus(403, "")
 		errInfo := "not allowed"
 		httpCtx.Response().SetBody([]byte(errInfo))
 		ctx.WithValue("is_block", true)
-		ctx.SetLabel("block_name", name)
+
 		return errors.New(errInfo)
 	}
 	if next != nil {
