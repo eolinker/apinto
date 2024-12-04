@@ -34,6 +34,7 @@ import (
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
 	"github.com/eolinker/apinto/drivers/discovery/static"
+	"github.com/eolinker/apinto/drivers/output/loki"
 	auth_interceptor "github.com/eolinker/apinto/drivers/plugins/auth-interceptor"
 	data_mask_strategy "github.com/eolinker/apinto/drivers/strategy/data-mask-strategy"
 
@@ -98,6 +99,7 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	prometheus.Register(extenderRegister)
 	redis.Register(extenderRegister)
 	influxdbv2.Register(extenderRegister)
+	loki.Register(extenderRegister)
 
 	// 服务治理-策略
 	limiting_strategy.Register(extenderRegister)

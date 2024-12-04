@@ -25,7 +25,7 @@ MAX_RETRIES=10  # 最大重试次数
 SLEEP_INTERVAL=5  # 每次重试间隔秒数
 
 for ((i=1; i<=MAX_RETRIES; i++)); do
-    if nc -zv 127.0.0.1 9400; then  # 替换为 Apinto 的监听端口
+    if curl --max-time 5 --silent --fail http://127.0.0.1:9400; then  # 替换为 Apinto 的监听端口
         echo "Apinto started successfully."
         break
     else

@@ -251,6 +251,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "prometheus输出",
 					Desc:  "prometheus输出",
 				},
+				{
+					Id:    "eolinker.com:apinto:loki_output",
+					Name:  "loki",
+					Label: "loki输出",
+					Desc:  "loki输出",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
