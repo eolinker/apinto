@@ -19,6 +19,10 @@ func NewFactory() eosc.IExtenderDriverFactory {
 }
 
 func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+	cfg, err := check(conf)
+	if err != nil {
+		return nil, err
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	w := &Output{
 		WorkerBase: drivers.Worker(id, name),
@@ -26,7 +30,7 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 		ctx:        ctx,
 		cancel:     cancel,
 	}
-	err := w.reset(conf)
+	err = w.reset(cfg)
 	if err != nil {
 		return nil, err
 	}

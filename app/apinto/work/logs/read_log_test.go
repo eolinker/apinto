@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type LokiRequest struct {
@@ -95,8 +97,8 @@ func parseLog() ([]*LokiRequest, error) {
 				Values: make([][]interface{}, 0),
 			}
 		}
-
-		reqMap[key].Values = append(reqMap[key].Values, []interface{}{strconv.FormatInt(time.UnixMilli(int64(tmp["msec"].(float64))).UnixNano(), 10), l})
+		requestId := uuid.NewString()
+		reqMap[key].Values = append(reqMap[key].Values, []interface{}{strconv.FormatInt(time.UnixMilli(int64(tmp["msec"].(float64))).Add(5*time.Hour).UnixNano(), 10), l, map[string]interface{}{"request_id": requestId}})
 	}
 	reqs := make([]*LokiRequest, len(reqMap)/10+1)
 	num := 0

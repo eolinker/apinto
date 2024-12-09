@@ -93,6 +93,7 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 		if err != nil {
 			return err
 		}
+		ctx.SetLabel("block_name", h.name)
 		//execHandler = h
 		// 匹配中后，跳出循环
 		break
