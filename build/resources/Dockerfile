@@ -6,7 +6,7 @@ RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine|https://mirrors.aliyun.com/a
     && apk update \
     && apk add --no-cache bash tzdata
 
-RUN apk add --no-cache netcat-openbsd
+RUN apk add --no-cache netcat-openbsd curl
 
 ENV TZ=Asia/Shanghai
 
