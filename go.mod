@@ -112,7 +112,7 @@ require (
 
 require (
 	dubbo.apache.org/dubbo-go/v3 v3.0.2-0.20220519062747-f6405fa79d5c
-	github.com/andybalholm/brotli v1.0.5 // indirect
+	github.com/andybalholm/brotli v1.0.5
 	github.com/apache/dubbo-go-hessian2 v1.11.6
 	github.com/armon/go-metrics v0.3.9 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

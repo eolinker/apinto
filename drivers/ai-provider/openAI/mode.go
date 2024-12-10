@@ -81,6 +81,13 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		return nil
 	}
 	body := httpContext.Response().GetBody()
+	encoding := httpContext.Response().Headers().Get("content-encoding")
+	if encoding != "utf-8" && encoding != "" {
+		body, err = encoderManger.ToUTF8(encoding, body)
+		if err != nil {
+			return err
+		}
+	}
 	data := eosc.NewBase[Response]()
 	err = json.Unmarshal(body, data)
 	if err != nil {
@@ -102,6 +109,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
+	httpContext.Response().SetHeader("content-encoding", "utf-8")
 	httpContext.Response().SetBody(body)
 	return nil
 }
