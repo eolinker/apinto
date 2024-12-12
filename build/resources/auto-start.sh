@@ -15,6 +15,10 @@ if [[ "${HOSTNAME}" != "" && ${SERVICE} != "" && ${NAMESPACE} != "" ]];then
   echo "Replaced {IP} with ${IP} in $CONFIG_FILE."
 fi
 
+./apinto stop
+
+sleep 5s
+
 # 启动 Apinto
 echo "Starting Apinto..."
 ./apinto start

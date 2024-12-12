@@ -150,7 +150,11 @@ func (r *roundRobin) tryReset() {
 
 		weight, _ := n.GetAttrByName("weight")
 		w, _ := strconv.ParseInt(weight, 10, 64)
-		if w == 0 {
+
+		if w <= 0 {
+			if weight == "0" {
+				continue
+			}
 			w = 1
 		}
 		nd := &node{
