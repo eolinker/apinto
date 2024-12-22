@@ -30,11 +30,14 @@ func newMatcher(statusCode int, headerMatches []*HeaderMatchRule, bodyMatch *Mat
 		header[rule.HeaderKey] = newContentMatcher(rule.Content, rule.MatchType, false)
 	}
 
-	return &matcher{
+	m := &matcher{
 		statusCode: statusCode,
 		header:     header,
-		body:       newContentMatcher(bodyMatch.Content, bodyMatch.MatchType, needParseVariable),
 	}
+	if bodyMatch != nil {
+		m.body = newContentMatcher(bodyMatch.Content, bodyMatch.MatchType, needParseVariable)
+	}
+	return m
 }
 
 func (m *matcher) Match(ctx http_service.IHttpContext) (map[string]string, bool) {
