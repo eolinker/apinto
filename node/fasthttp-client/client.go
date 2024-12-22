@@ -1,6 +1,7 @@
 package fasthttp_client
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -22,7 +23,7 @@ func ProxyTimeout(scheme string, host string, node eocontext.INode, req *fasthtt
 	return err
 }
 
-var defaultClient Client
+var defaultClient = NewClient()
 
 const (
 	DefaultMaxConns           = 10240
@@ -38,9 +39,21 @@ const (
 //
 // The fields of a Client should not be changed while it is in use.
 type Client struct {
-	mLock sync.Mutex
-	m     map[string]*fasthttp.HostClient
-	ms    map[string]*fasthttp.HostClient
+	mLock  sync.RWMutex
+	m      map[string]*fasthttp.HostClient
+	ms     map[string]*fasthttp.HostClient
+	ctx    context.Context
+	cancel context.CancelFunc
+}
+
+func NewClient() *Client {
+	ctx, cancel := context.WithCancel(context.Background())
+	return &Client{
+		m:      make(map[string]*fasthttp.HostClient),
+		ms:     make(map[string]*fasthttp.HostClient),
+		ctx:    ctx,
+		cancel: cancel,
+	}
 }
 
 func readAddress(addr string) (scheme, host string) {
@@ -54,31 +67,31 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 
 	scheme, nodeAddr := readAddress(addr)
 	host := nodeAddr
-	isTLS := false
-	if strings.EqualFold(scheme, "https") {
-		isTLS = true
-		host = fmt.Sprintf("%s-%s", rewriteHost, nodeAddr)
+	isTLS := strings.EqualFold(scheme, "https")
 
-	} else if !strings.EqualFold(scheme, "http") {
+	if !strings.EqualFold(scheme, "http") && !isTLS {
 		return nil, "", fmt.Errorf("unsupported protocol %q. http and https are supported", scheme)
 	}
 
-	startCleaner := false
-
-	c.mLock.Lock()
+	c.mLock.RLock()
 	m := c.m
 	if isTLS {
 		m = c.ms
 	}
-	if m == nil {
-		m = make(map[string]*fasthttp.HostClient)
-		if isTLS {
-			c.ms = m
-		} else {
-			c.m = m
-		}
-	}
+
 	hc := m[host]
+	c.mLock.RUnlock()
+	if hc != nil {
+		return hc, scheme, nil
+	}
+	c.mLock.Lock()
+	defer c.mLock.Unlock()
+
+	if isTLS {
+		m = c.ms
+	} else {
+		m = c.m
+	}
 	if hc == nil {
 		dial := Dial
 		dialAddr := addMissingPort(nodeAddr, isTLS)
@@ -109,14 +122,10 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 		}
 		m[host] = hc
 		if len(m) == 1 {
-			startCleaner = true
+			go c.startCleaner(m)
 		}
 	}
-	c.mLock.Unlock()
 
-	if startCleaner {
-		go c.mCleaner(m)
-	}
 	return hc, scheme, nil
 }
 
@@ -159,39 +168,42 @@ func (c *Client) ProxyTimeout(addr string, host string, req *fasthttp.Request, r
 			resp.SetConnectionClose()
 		}
 	}()
-	//var deadline time.Time
-	//var requestURI string
-	//redirectCount := 0
-	//for {
+
 	client, scheme, err := c.getHostClient(addr, host)
 	if err != nil {
 		return err
 	}
 
 	request.URI().SetScheme(scheme)
-
-	//if redirectCount == 0 {
-	//	deadline = time.Now().Add(timeout)
-	//} else {
-	//	request.SetRequestURI(requestURI)
-	//}
-	//log.Info("requestURI:", request.URI().String()+", host:", request.Host(), " body:", string(request.Body()))
 	return client.DoTimeout(req, resp, timeout)
-	//if err != nil {
-	//	return err
-	//}
-	//if !fasthttp.StatusCodeIsRedirect(resp.StatusCode()) || redirectCount >= DefaultMaxRedirectCount {
-	//	break
-	//}
-	//redirectCount++
-	//location := resp.Header.Peek("Location")
-	//if len(location) == 0 {
-	//	return fasthttp.ErrMissingLocation
-	//}
-	//addr, requestURI = getRedirectURL(req.URI().String(), location)
-	//}
 
-	//return nil
+}
+
+func (c *Client) startCleaner(m map[string]*fasthttp.HostClient) {
+	sleep := time.Second * 10
+	mustStop := false
+	for {
+		select {
+		case <-c.ctx.Done():
+			return
+		case <-time.After(sleep):
+			c.mLock.Lock()
+			for k, v := range m {
+				if v.ConnsCount() == 0 {
+					v.CloseIdleConnections()
+					delete(m, k)
+				}
+			}
+
+			if len(m) == 0 {
+				mustStop = true
+			}
+			c.mLock.Unlock()
+			if mustStop {
+				return
+			}
+		}
+	}
 }
 
 func (c *Client) mCleaner(m map[string]*fasthttp.HostClient) {

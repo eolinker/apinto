@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"crypto/tls"
 	"net/http"
 	"net/url"
 	"time"
@@ -14,6 +15,9 @@ import (
 var dialer = &websocket.Dialer{
 	Proxy:            http.ProxyFromEnvironment,
 	HandshakeTimeout: 45 * time.Second,
+	TLSClientConfig: &tls.Config{
+		InsecureSkipVerify: true,
+	},
 }
 
 var skipHeaders = []string{
