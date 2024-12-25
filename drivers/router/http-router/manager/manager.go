@@ -88,7 +88,7 @@ func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 		}
 		return
 	}
-	log.Debug("port is ", port, " request: ", httpContext.Request())
+	//log.Debug("port is ", port, " request: ", httpContext.Request())
 	r, has := m.matcher.Match(port, httpContext.Request())
 	if !has {
 		httpContext.SetFinish(notFound)

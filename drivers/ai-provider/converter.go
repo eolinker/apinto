@@ -24,7 +24,7 @@ const (
 	FinishRecitation            = "RECITATION"
 	FinishLanguage              = "LANGUAGE"
 	FinishOther                 = "OTHER"
-	FinishBlocklist             = "BLOCKLIST"
+	FinishBlockList             = "BLOCKLIST"
 	FinishProhibitedContent     = "PROHIBITED_CONTENT"
 	FinishSPII                  = "SPII"
 	FinishMalformedFunctionCall = "MALFORMED_FUNCTION_CALL"

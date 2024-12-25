@@ -20,6 +20,7 @@ require (
 	github.com/hashicorp/consul/api v1.9.1
 	github.com/influxdata/influxdb-client-go/v2 v2.12.1
 	github.com/jhump/protoreflect v1.16.0
+	github.com/joho/godotenv v1.3.0
 	github.com/lestrrat-go/jwx v1.2.28
 	github.com/nacos-group/nacos-sdk-go/v2 v2.2.3
 	github.com/nsqio/go-nsq v1.1.0

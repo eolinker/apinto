@@ -3,6 +3,8 @@ package ai_formatter
 import (
 	"errors"
 
+	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
+
 	"github.com/eolinker/apinto/convert"
 
 	"github.com/eolinker/apinto/drivers"
@@ -23,6 +25,8 @@ func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err
 }
 
 func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IChain) error {
+	ai_provider.SetAIProvider(ctx, e.provider)
+	ai_provider.SetAIModel(ctx, e.model)
 	v, has := convert.Get(e.provider)
 	if !has {
 		return errors.New("provider not implement IConverterDriver")

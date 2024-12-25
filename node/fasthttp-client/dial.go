@@ -1,6 +1,8 @@
 package fasthttp_client
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"net"
 	"net/http"
@@ -79,6 +81,34 @@ func Dial(addr string) (net.Conn, error) {
 	}
 	//return conn, nil
 	return &debugConn{Conn: conn}, nil
+}
+
+func proxyDial(proxyAddr string) func(addr string) (net.Conn, error) {
+	return func(addr string) (net.Conn, error) {
+		// 连接到 HTTP 代理服务器
+		conn, err := tcpDial.Dial(proxyAddr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect to proxy: %v", err)
+		}
+
+		// 构造 HTTP CONNECT 请求（隧道代理）
+		req := fmt.Sprintf("CONNECT %s HTTP/1.1\r\nHost: %s\r\n\r\n", addr, addr)
+		if _, err := conn.Write([]byte(req)); err != nil {
+			conn.Close()
+			return nil, fmt.Errorf("failed to send CONNECT request to proxy: %v", err)
+		}
+
+		// 读取代理服务器的响应
+		respReader := bufio.NewReader(conn)
+		resp, err := respReader.ReadBytes('\n')
+		if err != nil || !bytes.HasPrefix(resp, []byte("HTTP/1.1 200")) {
+			conn.Close()
+			return nil, fmt.Errorf("failed to establish a connection through proxy: %s", resp)
+		}
+
+		return &debugConn{conn}, nil
+	}
+
 }
 
 type debugConn struct {
