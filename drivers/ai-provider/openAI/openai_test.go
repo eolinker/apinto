@@ -32,9 +32,9 @@ var (
 )
 
 func validNormalFunc(ctx eocontext.EoContext) bool {
-	fmt.Printf("input token: %d", ai_provider.GetAIModelInputToken(ctx))
-	fmt.Printf("output token: %d", ai_provider.GetAIModelOutputToken(ctx))
-	fmt.Printf("total token: %d", ai_provider.GetAIModelTotalToken(ctx))
+	fmt.Printf("input token: %d\n", ai_provider.GetAIModelInputToken(ctx))
+	fmt.Printf("output token: %d\n", ai_provider.GetAIModelOutputToken(ctx))
+	fmt.Printf("total token: %d\n", ai_provider.GetAIModelTotalToken(ctx))
 	if ai_provider.GetAIModelInputToken(ctx) <= 0 {
 		return false
 	}
