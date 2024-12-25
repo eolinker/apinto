@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -63,6 +65,21 @@ func readAddress(addr string) (scheme, host string) {
 	return "http", addr
 }
 
+func GenDialFunc(isTls bool) (fasthttp.DialFunc, error) {
+	proxy := os.Getenv("http_proxy")
+	if isTls {
+		proxy = os.Getenv("https_proxy")
+	}
+	if proxy != "" {
+		uri, err := url.Parse(proxy)
+		if err != nil {
+			return nil, err
+		}
+		return proxyDial(fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port())), nil
+	}
+	return Dial, nil
+}
+
 func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostClient, string, error) {
 
 	scheme, nodeAddr := readAddress(addr)
@@ -93,15 +110,25 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 		m = c.m
 	}
 	if hc == nil {
-		dial := Dial
+		dial, err := GenDialFunc(isTLS)
+		if err != nil {
+			return nil, "", err
+		}
 		dialAddr := addMissingPort(nodeAddr, isTLS)
+
 		httpAddr := dialAddr
 		if isTLS {
 			if rewriteHost != "" && rewriteHost != nodeAddr {
-
 				httpAddr = rewriteHost
-
 				dial = func(addr string) (net.Conn, error) {
+					proxy := os.Getenv("https_proxy")
+					if proxy != "" {
+						uri, err := url.Parse(proxy)
+						if err != nil {
+							return nil, err
+						}
+						return proxyDial(fmt.Sprintf("%s:%s", uri.Hostname(), uri.Port()))(addr)
+					}
 					return Dial(dialAddr)
 				}
 			}
@@ -161,7 +188,6 @@ func (c *Client) ProxyTimeout(addr string, host string, req *fasthttp.Request, r
 	request := req
 	request.Header.ResetConnectionClose()
 	request.Header.Set("Connection", "keep-alive")
-
 	connectionClose := resp.ConnectionClose()
 	defer func() {
 		if connectionClose {

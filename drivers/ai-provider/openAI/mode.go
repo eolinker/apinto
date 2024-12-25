@@ -84,7 +84,6 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	for k, v := range extender {
 		baseCfg.SetAppend(k, v)
 	}
-
 	// Marshal the updated configuration back into JSON.
 	body, err = json.Marshal(baseCfg)
 	if err != nil {

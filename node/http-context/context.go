@@ -151,6 +151,9 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 			request.URI().SetHost(targetHost)
 			//ctx.proxyRequest.Header().SetHost(targetHost)
 		}
+	} else {
+		rewriteHost = host
+		request.URI().SetHost(host)
 	}
 
 	beginTime := time.Now()
