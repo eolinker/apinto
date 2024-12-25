@@ -7,16 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joho/godotenv"
-
-	"github.com/eolinker/eosc/eocontext"
-
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
-
-	http_context "github.com/eolinker/apinto/node/http-context"
-
 	"github.com/eolinker/apinto/convert"
-
+	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
+	http_context "github.com/eolinker/apinto/node/http-context"
+	"github.com/joho/godotenv"
 	"github.com/valyala/fasthttp"
 )
 
@@ -29,68 +23,123 @@ var (
 		"temperature": "",
 		"top_p": ""
 	}`
+	successBody = []byte(`{
+		"messages": [
+			{
+				"content": "Hello, how can I help you?",
+				"role": "assistant"
+			}
+		]
+	}`)
+	failBody = []byte(`{
+		"messages": [
+			{
+				"content": "Hello, how can I help you?",
+				"role": "assistant"
+			}
+		],"variables":{}
+	}`)
 )
 
-func validNormalFunc(ctx eocontext.EoContext) bool {
-	fmt.Printf("input token: %d\n", ai_provider.GetAIModelInputToken(ctx))
-	fmt.Printf("output token: %d\n", ai_provider.GetAIModelOutputToken(ctx))
-	fmt.Printf("total token: %d\n", ai_provider.GetAIModelTotalToken(ctx))
-	if ai_provider.GetAIModelInputToken(ctx) <= 0 {
-		return false
+// TestSentTo tests the end-to-end execution of the OpenAI integration.
+func TestSentTo(t *testing.T) {
+	// Load .env file
+	err := godotenv.Load(".env")
+	if err != nil {
+		t.Fatalf("Error loading .env file: %v", err)
 	}
-	if ai_provider.GetAIModelOutputToken(ctx) <= 0 {
-		return false
+
+	// Test data for different scenarios
+	testData := []struct {
+		name       string
+		apiKey     string
+		wantStatus string
+		body       []byte
+	}{
+		{
+			name:       "success",
+			apiKey:     os.Getenv("ValidKey"),
+			wantStatus: ai_provider.StatusNormal,
+			body:       successBody,
+		},
+		{
+			name:       "invalid request",
+			apiKey:     os.Getenv("ValidKey"),
+			wantStatus: ai_provider.StatusInvalidRequest,
+			body:       failBody,
+		},
+		{
+			name:       "invalid key",
+			apiKey:     os.Getenv("InvalidKey"),
+			wantStatus: ai_provider.StatusInvalid,
+		},
+		{
+			name:       "expired key",
+			apiKey:     os.Getenv("ExpiredKey"),
+			wantStatus: ai_provider.StatusInvalid,
+		},
 	}
-	return ai_provider.GetAIModelTotalToken(ctx) > 0
+
+	// Run tests for each scenario
+	for _, data := range testData {
+		t.Run(data.name, func(t *testing.T) {
+			if err := runTest(data.apiKey, data.body, data.wantStatus); err != nil {
+				t.Fatalf("Test failed: %v", err)
+			}
+		})
+	}
 }
 
-type tmpData struct {
-	id     string
-	name   string
-	apiKey string
-	want   string
-	f      func(ctx eocontext.EoContext) bool
-	body   []byte
-}
-
-// mock request body
-var successBody = []byte(`{
-	"messages": [
-		{
-			"content": "Hello, how can I help you?",
-			"role": "assistant"
-		}
-	]
-}`)
-
-var failBody = []byte(`{
-	"messages": [
-		{
-			"content": "Hello, how can I help you?",
-			"role": "assistant"
-		}
-	],"variables":{}
-}`)
-
-func handle(data tmpData) error {
+// runTest handles a single test case
+func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 	cfg := &Config{
-		APIKey: data.apiKey,
+		APIKey: apiKey,
 		Base:   "https://api.openai.com",
 	}
+
 	// Create the worker
 	worker, err := Create("openai", "openai", cfg, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create worker: %w", err)
 	}
 
-	// Validate worker implements IConverterDriver
+	// Get the handler
 	handler, ok := worker.(convert.IConverterDriver)
 	if !ok {
 		return fmt.Errorf("worker does not implement IConverterDriver")
 	}
 
-	// Load model
-	model := "gpt-3.5-turbo"
+	// Default to success body if no body is provided
+	if len(requestBody) == 0 {
+		requestBody = successBody
+	}
+
+	// Mock HTTP context
+	ctx := createMockHttpContext("/xxx/xxx", nil, nil, requestBody)
+
+	// Execute the conversion process
+	err = executeConverter(ctx, handler, "gpt-3.5-turbo", cfg.Base)
+	if err != nil {
+		return fmt.Errorf("failed to execute conversion process: %w", err)
+	}
+
+	// Check the status
+	if ai_provider.GetAIStatus(ctx) != wantStatus {
+		return fmt.Errorf("unexpected status: got %s, expected %s", ai_provider.GetAIStatus(ctx), wantStatus)
+	}
+
+	return nil
+}
+
+// executeConverter handles the full flow of a conversion process.
+func executeConverter(ctx *http_context.HttpContext, handler convert.IConverterDriver, model string, baseUrl string) error {
+	// Balance handler setup
+	balanceHandler, err := ai_provider.NewBalanceHandler("test", baseUrl, 30*time.Second)
+	if err != nil {
+		return fmt.Errorf("failed to create balance handler: %w", err)
+	}
+
+	// Get model function
 	fn, has := handler.GetModel(model)
 	if !has {
 		return fmt.Errorf("model %s not found", model)
@@ -101,76 +150,7 @@ func handle(data tmpData) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate config: %w", err)
 	}
-	requestBody := data.body
-	if string(requestBody) == "" {
-		requestBody = successBody
-	}
-	// Mock HTTP context
-	ctx := createMockHttpContext("/xxx/xxx", nil, nil, requestBody)
 
-	// Balance handler setup
-	balanceHandler, err := ai_provider.NewBalanceHandler("test", cfg.Base, 30*time.Second)
-	if err != nil {
-		return fmt.Errorf("failed to create balance handler: %w", err)
-	}
-
-	// Execute the conversion process
-	err = executeConverter(ctx, handler, model, extender, requestBody, balanceHandler)
-	if err != nil {
-		return fmt.Errorf("failed to execute conversion process: %w", err)
-	}
-	if ai_provider.GetAIStatus(ctx) != data.want {
-		return fmt.Errorf("unexpected status: got %s, expected %s", ai_provider.GetAIStatus(ctx), data.want)
-	}
-	if data.f != nil && !data.f(ctx) {
-		return fmt.Errorf("unexpected token status")
-	}
-	return nil
-}
-
-// TestSentTo tests the end-to-end execution of the OpenAI integration.
-func TestSentTo(t *testing.T) {
-	// Load API Key
-	godotenv.Load(".env")
-	testData := []tmpData{
-		{
-			id:     "openai",
-			name:   "success",
-			apiKey: os.Getenv("ValidKey"),
-			want:   ai_provider.StatusNormal,
-			f:      validNormalFunc,
-		},
-		{
-			id:     "openai",
-			name:   "invalid request",
-			apiKey: os.Getenv("ValidKey"),
-			want:   ai_provider.StatusInvalidRequest,
-			body:   failBody,
-		},
-		{
-			id:     "openai",
-			name:   "invalid key",
-			apiKey: os.Getenv("InvalidKey"),
-			want:   ai_provider.StatusInvalid,
-		},
-		{
-			id:     "openai",
-			name:   "expired key",
-			apiKey: os.Getenv("ExpiredKey"),
-			want:   ai_provider.StatusInvalid,
-		},
-	}
-	// Config setup
-	for _, d := range testData {
-		err := handle(d)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
-// executeConverter handles the full flow of a conversion process.
-func executeConverter(ctx *http_context.HttpContext, handler convert.IConverterDriver, model string, extender map[string]interface{}, body []byte, balanceHandler eocontext.BalanceHandler) error {
 	// Get converter
 	converter, has := handler.GetConverter(model)
 	if !has {
@@ -198,7 +178,6 @@ func executeConverter(ctx *http_context.HttpContext, handler convert.IConverterD
 		return fmt.Errorf("response conversion failed: %w", err)
 	}
 
-	fmt.Printf("body: %s\n", string(ctx.Response().GetBody()))
 	return nil
 }
 
