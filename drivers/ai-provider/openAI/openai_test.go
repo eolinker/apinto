@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/eolinker/eosc/eocontext"
+
 	"github.com/eolinker/apinto/convert"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	http_context "github.com/eolinker/apinto/node/http-context"
@@ -41,6 +43,19 @@ var (
 	}`)
 )
 
+func validNormalFunc(ctx eocontext.EoContext) bool {
+	fmt.Printf("input token: %d\n", ai_provider.GetAIModelInputToken(ctx))
+	fmt.Printf("output token: %d\n", ai_provider.GetAIModelOutputToken(ctx))
+	fmt.Printf("total token: %d\n", ai_provider.GetAIModelTotalToken(ctx))
+	if ai_provider.GetAIModelInputToken(ctx) <= 0 {
+		return false
+	}
+	if ai_provider.GetAIModelOutputToken(ctx) <= 0 {
+		return false
+	}
+	return ai_provider.GetAIModelTotalToken(ctx) > 0
+}
+
 // TestSentTo tests the end-to-end execution of the OpenAI integration.
 func TestSentTo(t *testing.T) {
 	// Load .env file
@@ -55,12 +70,14 @@ func TestSentTo(t *testing.T) {
 		apiKey     string
 		wantStatus string
 		body       []byte
+		validFunc  func(ctx eocontext.EoContext) bool
 	}{
 		{
 			name:       "success",
 			apiKey:     os.Getenv("ValidKey"),
 			wantStatus: ai_provider.StatusNormal,
 			body:       successBody,
+			validFunc:  validNormalFunc,
 		},
 		{
 			name:       "invalid request",
@@ -83,7 +100,7 @@ func TestSentTo(t *testing.T) {
 	// Run tests for each scenario
 	for _, data := range testData {
 		t.Run(data.name, func(t *testing.T) {
-			if err := runTest(data.apiKey, data.body, data.wantStatus); err != nil {
+			if err := runTest(data.apiKey, data.body, data.wantStatus, data.validFunc); err != nil {
 				t.Fatalf("Test failed: %v", err)
 			}
 		})
@@ -91,7 +108,7 @@ func TestSentTo(t *testing.T) {
 }
 
 // runTest handles a single test case
-func runTest(apiKey string, requestBody []byte, wantStatus string) error {
+func runTest(apiKey string, requestBody []byte, wantStatus string, validFunc func(ctx eocontext.EoContext) bool) error {
 	cfg := &Config{
 		APIKey: apiKey,
 		Base:   "https://api.openai.com",
@@ -126,6 +143,12 @@ func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 	// Check the status
 	if ai_provider.GetAIStatus(ctx) != wantStatus {
 		return fmt.Errorf("unexpected status: got %s, expected %s", ai_provider.GetAIStatus(ctx), wantStatus)
+	}
+	if validFunc != nil {
+		if validFunc(ctx) {
+			return nil
+		}
+		return fmt.Errorf("execute validFunc failed")
 	}
 
 	return nil
