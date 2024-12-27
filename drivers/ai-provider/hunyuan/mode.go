@@ -86,6 +86,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	body, err = json.Marshal(baseCfg)
 	if err != nil {
 		// handle error
+		return err
 	}
 
 	// Unmarshal body to map
@@ -93,6 +94,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	err = json.Unmarshal(body, &bodyMap)
 	if err != nil {
 		// handle error
+		return err
 	}
 
 	// Delete the "messages" field
@@ -102,6 +104,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	body, err = json.Marshal(bodyMap)
 	if err != nil {
 		// handle error
+		return err
 	}
 
 	httpContext.Proxy().Body().SetRaw("application/json", body)
