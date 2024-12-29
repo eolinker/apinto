@@ -4,9 +4,10 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"github.com/eolinker/eosc/log"
 	"reflect"
 	"strconv"
+
+	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/drivers"
 
@@ -104,7 +105,7 @@ func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
 
 			result["presence_penalty"] = modelCfg.PresencePenalty
 			result["temperature"] = modelCfg.Temperature
-			result["top_p"] = modelCfg.TopP
+			// result["top_p"] = modelCfg.TopP
 			if modelCfg.ResponseFormat == "" {
 				modelCfg.ResponseFormat = "text"
 			}
