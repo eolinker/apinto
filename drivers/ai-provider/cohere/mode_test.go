@@ -1,17 +1,12 @@
-package groq
+package cohere
 
 import (
-	"bytes"
 	_ "embed"
 	"fmt"
 	"github.com/eolinker/apinto/convert"
 	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/joho/godotenv"
 	"github.com/valyala/fasthttp"
-	"io/ioutil"
-	"log"
-	"net"
-	"net/http"
 	"net/url"
 	"os"
 	"testing"
@@ -57,24 +52,24 @@ func TestSentTo(t *testing.T) {
 	}{
 		{
 			name:       "success",
-			apiKey:     os.Getenv("GROQ_VALID_API_KEY"),
+			apiKey:     os.Getenv("COHERE_VALID_API_KEY"),
 			wantStatus: ai_provider.StatusNormal,
 			body:       successBody,
 		},
 		{
 			name:       "invalid request",
-			apiKey:     os.Getenv("GROQ_VALID_API_KEY"),
+			apiKey:     os.Getenv("COHERE_VALID_API_KEY"),
 			wantStatus: ai_provider.StatusInvalidRequest,
 			body:       failBody,
 		},
 		{
 			name:       "invalid key",
-			apiKey:     os.Getenv("GROQ_INVALID_API_KEY"),
+			apiKey:     os.Getenv("COHERE_INVALID_API_KEY"),
 			wantStatus: ai_provider.StatusInvalid,
 		},
 		{
 			name:       "expired key",
-			apiKey:     os.Getenv("GROQ_EXPIRE_API_KEY"),
+			apiKey:     os.Getenv("COHERE_EXPIRE_API_KEY"),
 			wantStatus: ai_provider.StatusInvalid,
 		},
 	}
@@ -94,9 +89,9 @@ func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 	cfg := &Config{
 		APIKey: apiKey,
 	}
-	baseDomain := "https://api.groq.com"
+	baseDomain := "https://api.cohere.com"
 	// Create the worker
-	worker, err := Create("groq", "groq", cfg, nil)
+	worker, err := Create("cohere", "cohere", cfg, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create worker: %w", err)
 	}
@@ -113,10 +108,10 @@ func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 	}
 
 	// Mock HTTP context
-	ctx := createMockHttpContext("/openai/v1/chat/completions", nil, nil, requestBody)
+	ctx := createMockHttpContext("/v2/chat", nil, nil, requestBody)
 
 	// Execute the conversion process
-	err = executeConverter(ctx, handler, "llama3-8b-8192", baseDomain)
+	err = executeConverter(ctx, handler, "command-r", baseDomain)
 	if err != nil {
 		return fmt.Errorf("failed to execute conversion process: %w", err)
 	}
@@ -199,12 +194,9 @@ func createMockHttpContext(rawURL string, headers map[string]string, query url.V
 	}
 	req.SetBody(body)
 
-	ctx := &fasthttp.RequestCtx{
+	// Create HttpContext
+	return http_context.NewContext(&fasthttp.RequestCtx{
 		Request:  *req,
 		Response: fasthttp.Response{},
-	}
-	ip := net.ParseIP("127.0.0.1")
-
-	ctx.SetRemoteAddr(&net.TCPAddr{IP: ip, Port: 8099})
-	return http_context.NewContext(ctx, 8099)
+	}, 8099)
 }

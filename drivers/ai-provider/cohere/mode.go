@@ -2,6 +2,7 @@ package cohere
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/eolinker/apinto/convert"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc"
@@ -74,25 +75,54 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	if httpContext.Response().StatusCode() != 200 {
-		return nil
-	}
 	body := httpContext.Response().GetBody()
 	data := eosc.NewBase[Response]()
 	err = json.Unmarshal(body, data)
 	if err != nil {
 		return err
 	}
+	// 针对不同响应做出处理
+	switch httpContext.Response().StatusCode() {
+	case 200:
+		// Calculate the token consumption for a successful request.
+		usage := data.Config.Usage
+		ai_provider.SetAIStatusNormal(ctx)
+		ai_provider.SetAIModelInputToken(ctx, usage.Tokens.InputTokens)
+		ai_provider.SetAIModelOutputToken(ctx, usage.Tokens.OutputTokens)
+		// 待定
+		ai_provider.SetAIModelTotalToken(ctx, usage.BilledUnits.InputTokens+usage.Tokens.OutputTokens)
+	case 400:
+	case 422:
+		// Handle the bad request error.
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	case 402:
+		// Handle the balance is insufficient.
+		ai_provider.SetAIStatusQuotaExhausted(ctx)
+	case 429:
+		// Handle exceed
+		ai_provider.SetAIStatusExceeded(ctx)
+	case 401:
+		// Handle authentication failure
+		ai_provider.SetAIStatusInvalid(ctx)
+	}
 	responseBody := &ai_provider.ClientResponse{}
 	if data.Config.Id != "" {
-		responseBody.Message = ai_provider.Message{
-			Role:    data.Config.Message.Role,
-			Content: data.Config.Message.Content[0].Text,
+		switch tmp := data.Config.Message.(type) {
+		case map[string]interface{}:
+			{
+				responseMessage := ai_provider.MapToStruct[ResponseMessage](tmp)
+				responseBody.Message = ai_provider.Message{
+					Role:    responseMessage.Role,
+					Content: responseMessage.Content[0].Text,
+				}
+				responseBody.FinishReason = data.Config.FinishReason
+			}
+		default:
+			return fmt.Errorf("failed to convert response message")
 		}
-		responseBody.FinishReason = data.Config.FinishReason
 	} else {
 		responseBody.Code = -1
-		responseBody.Error = "no response"
+		responseBody.Error = data.Config.Message.(string)
 	}
 	body, err = json.Marshal(responseBody)
 	if err != nil {
