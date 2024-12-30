@@ -78,6 +78,8 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		return nil
 	}
 	body := httpContext.Response().GetBody()
+	log.Println(string(body))
+	log.Println(httpContext.Response().StatusCode())
 	data := eosc.NewBase[Response]()
 	err = json.Unmarshal(body, data)
 	if err != nil {
