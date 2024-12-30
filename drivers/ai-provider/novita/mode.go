@@ -74,17 +74,43 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	if httpContext.Response().StatusCode() != 200 {
-		return nil
-	}
+
 	body := httpContext.Response().GetBody()
-	log.Println(string(body))
-	log.Println(httpContext.Response().StatusCode())
 	data := eosc.NewBase[Response]()
 	err = json.Unmarshal(body, data)
 	if err != nil {
 		return err
 	}
+
+	// 401	INVALID_API_KEY	The API key is invalid. You can check your API key here: Manage API Key
+	// 403	NOT_ENOUGH_BALANCE	Your credit is not enough. You can top up more credit here: Top Up Credit
+	// 404	MODEL_NOT_FOUND	The requested model is not found. You can find all the models we support here: https://novita.ai/llm-api or request the Models API to get all available models.
+	// 429	RATE_LIMIT_EXCEEDED	You have exceeded the rate limit. Please refer to Rate Limits for more information.
+	// 500	MODEL_NOT_AVAILABLE	The requested model is not available now. This is usually due to the model being under maintenance. You can contact us on Discord for more information.
+	switch httpContext.Response().StatusCode() {
+	case 200:
+		// Calculate the token consumption for a successful request.
+		usage := data.Config.Usage
+		ai_provider.SetAIStatusNormal(ctx)
+		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
+		ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+	case 400:
+		// Handle the bad request error.
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	case 401:
+		// Handle the key error.
+		ai_provider.SetAIStatusInvalid(ctx)
+	case 403:
+		// handle credit is exhausted
+		ai_provider.SetAIStatusQuotaExhausted(ctx)
+	case 429:
+		// Handle the rate limit error.
+		ai_provider.SetAIStatusExceeded(ctx)
+	default:
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	}
+
 	responseBody := &ai_provider.ClientResponse{}
 	if len(data.Config.Choices) > 0 {
 		msg := data.Config.Choices[0]
