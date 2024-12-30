@@ -16,6 +16,7 @@ type Response struct {
 	Model   string           `json:"model"`
 	Choices []ResponseChoice `json:"choices"`
 	Usage   Usage            `json:"usage"`
+	Error   Error            `json:"error"`
 }
 
 type ResponseChoice struct {
@@ -32,4 +33,11 @@ type Usage struct {
 
 type CompletionTokensDetails struct {
 	ReasoningTokens int `json:"reasoning_tokens"`
+}
+
+// Error represents the error response from the API.
+// {"error":{"message":"Invalid Authentication","type":"invalid_authentication_error"}}
+type Error struct {
+	Message string `json:"message"`
+	Type    string `json:"type"`
 }
