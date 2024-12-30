@@ -16,6 +16,7 @@ type Response struct {
 	Model   string           `json:"model"`
 	Choices []ResponseChoice `json:"choices"`
 	Usage   Usage            `json:"usage"`
+	Error   *Error           `json:"error"`
 }
 
 type ResponseChoice struct {
@@ -32,4 +33,15 @@ type Usage struct {
 
 type CompletionTokensDetails struct {
 	ReasoningTokens int `json:"reasoning_tokens"`
+}
+
+// Error represents the error response from the provider.
+// {"error":{"message":"Provider returned error","code":400,"metadata":{"raw":"{\n  \"error\": {\n    \"message\": \"Invalid value: 'yyy'. Supported values are: 'system', 'assistant', 'user', 'function', 'tool', and 'developer'.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"messages[0].role\",\n    \"code\": \"invalid_value\"\n  }\n}","provider_name":"OpenAI"}},"user_id":"user_2nQFDPHnNOxsrry6JpmcPXFzfnC"}
+type Error struct {
+	Message  string `json:"message"`
+	Code     int    `json:"code"`
+	Metadata struct {
+		Raw          string `json:"raw"`
+		ProviderName string `json:"provider_name"`
+	} `json:"metadata"`
 }

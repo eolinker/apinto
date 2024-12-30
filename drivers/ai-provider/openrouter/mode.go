@@ -74,15 +74,61 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	if httpContext.Response().StatusCode() != 200 {
-		return nil
-	}
+
 	body := httpContext.Response().GetBody()
 	data := eosc.NewBase[Response]()
 	err = json.Unmarshal(body, data)
 	if err != nil {
 		return err
 	}
+
+	// 400: Bad Request (invalid or missing params, CORS)
+	// 401: Invalid credentials (OAuth session expired, disabled/invalid API key)
+	// 402: Your account or API key has insufficient credits. Add more credits and retry the request.
+	// 403: Your chosen model requires moderation and your input was flagged
+	// 408: Your request timed out
+	// 429: You are being rate limited
+	// 502: Your chosen model is down or we received an invalid response from it
+	// 503: There is no available model provider that meets your routing requirements
+	switch httpContext.Response().StatusCode() {
+	case 200:
+		if data.Config.Error != nil {
+			// Handle the error response.
+			switch data.Config.Error.Code {
+			case 400:
+				ai_provider.SetAIStatusInvalidRequest(ctx)
+			case 401:
+				ai_provider.SetAIStatusInvalid(ctx)
+			case 402:
+				ai_provider.SetAIStatusQuotaExhausted(ctx)
+			case 429:
+				ai_provider.SetAIStatusExceeded(ctx)
+			default:
+				ai_provider.SetAIStatusInvalidRequest(ctx)
+			}
+		} else {
+			// Calculate the token consumption for a successful request.
+			usage := data.Config.Usage
+			ai_provider.SetAIStatusNormal(ctx)
+			ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
+			ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+			ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+		}
+	case 400:
+		// Handle the bad request error.
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	case 401:
+		// Handle the invalid key error.
+		ai_provider.SetAIStatusInvalid(ctx)
+	case 402:
+		// Handle the expired key error.
+		ai_provider.SetAIStatusQuotaExhausted(ctx)
+	case 429:
+		ai_provider.SetAIStatusExceeded(ctx)
+	default:
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	}
+
 	responseBody := &ai_provider.ClientResponse{}
 	if len(data.Config.Choices) > 0 {
 		msg := data.Config.Choices[0]
