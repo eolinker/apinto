@@ -2,6 +2,7 @@ package baichuan
 
 import (
 	"encoding/json"
+
 	"github.com/eolinker/apinto/convert"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc"
@@ -11,7 +12,7 @@ import (
 
 var (
 	modelModes = map[string]IModelMode{
-		ai_provider.ModeChat.String(): NewChat(),
+		convert.ModeChat.String(): NewChat(),
 	}
 )
 

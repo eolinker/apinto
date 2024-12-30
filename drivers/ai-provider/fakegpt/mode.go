@@ -14,7 +14,7 @@ import (
 
 var (
 	modelModes = map[string]IModelMode{
-		ai_provider.ModeChat.String(): NewChat(),
+		convert.ModeChat.String(): NewChat(),
 	}
 )
 

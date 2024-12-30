@@ -16,7 +16,7 @@ type FNewModelMode func(string) IModelMode
 
 var (
 	modelModes = map[string]FNewModelMode{
-		ai_provider.ModeChat.String(): NewChat,
+		convert.ModeChat.String(): NewChat,
 	}
 )
 
@@ -104,19 +104,19 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	case 200:
 		// Calculate the token consumption for a successful request.
 		usage := data.Config.UsageMetadata
-		ai_provider.SetAIStatusNormal(ctx)
-		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokenCount)
-		ai_provider.SetAIModelOutputToken(ctx, usage.CandidatesTokenCount)
-		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokenCount)
+		convert.SetAIStatusNormal(ctx)
+		convert.SetAIModelInputToken(ctx, usage.PromptTokenCount)
+		convert.SetAIModelOutputToken(ctx, usage.CandidatesTokenCount)
+		convert.SetAIModelTotalToken(ctx, usage.TotalTokenCount)
 	case 400:
 		// Handle the bad request error.
-		ai_provider.SetAIStatusInvalidRequest(ctx)
+		convert.SetAIStatusInvalidRequest(ctx)
 	case 429:
 		// Handle exceed
-		ai_provider.SetAIStatusExceeded(ctx)
+		convert.SetAIStatusExceeded(ctx)
 	case 401:
 		// Handle authentication failure
-		ai_provider.SetAIStatusInvalid(ctx)
+		convert.SetAIStatusInvalid(ctx)
 	}
 	responseBody := &ai_provider.ClientResponse{}
 	if len(data.Config.Candidates) > 0 {

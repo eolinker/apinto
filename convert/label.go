@@ -1,4 +1,4 @@
-package ai_provider
+package convert
 
 import "github.com/eolinker/eosc/eocontext"
 

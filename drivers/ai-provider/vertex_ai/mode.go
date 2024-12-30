@@ -15,7 +15,7 @@ type FNewModelMode func(string) convert.IChildConverter
 
 var (
 	modelModes = map[string]FNewModelMode{
-		ai_provider.ModeChat.String(): NewChat,
+		convert.ModeChat.String(): NewChat,
 	}
 )
 

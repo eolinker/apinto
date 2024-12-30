@@ -2,20 +2,12 @@ package anthropic
 
 import (
 	"embed"
-	"encoding/json"
 	"fmt"
-
-	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/drivers"
 
-	http_context "github.com/eolinker/eosc/eocontext/http-context"
-
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
-
 	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/eocontext"
 )
 
 var (
@@ -29,7 +21,7 @@ var (
 )
 
 func init() {
-	models, err := ai_provider.LoadModels(providerContent, providerDir)
+	models, err := convert.LoadModels(providerContent, providerDir)
 	if err != nil {
 		panic(err)
 	}
@@ -42,78 +34,9 @@ func init() {
 	}
 }
 
-type Converter struct {
-	apikey         string
-	version        string
-	balanceHandler eocontext.BalanceHandler
-	converter      convert.IConverter
-}
-
-func (c *Converter) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
-	if c.balanceHandler != nil {
-		ctx.SetBalance(c.balanceHandler)
-	}
-	httpContext, err := http_context.Assert(ctx)
-	if err != nil {
-		return err
-	}
-	httpContext.Proxy().Header().SetHeader("x-api-key", c.apikey)
-	httpContext.Proxy().Header().SetHeader("anthropic-version", c.version)
-
-	return c.converter.RequestConvert(httpContext, extender)
-}
-
-func (c *Converter) ResponseConvert(ctx eocontext.EoContext) error {
-	return c.converter.ResponseConvert(ctx)
-}
-
 type executor struct {
 	drivers.WorkerBase
-	apikey  string
-	version string
-	eocontext.BalanceHandler
-}
-
-func (e *executor) GetConverter(model string) (convert.IConverter, bool) {
-	converter, ok := modelConvert[model]
-	if !ok {
-		return nil, false
-	}
-
-	return &Converter{balanceHandler: e.BalanceHandler, converter: converter, apikey: e.apikey, version: e.version}, true
-}
-
-func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
-	if _, ok := modelConvert[model]; !ok {
-		return nil, false
-	}
-	return func(cfg string) (map[string]interface{}, error) {
-
-		result := map[string]interface{}{
-			"model": model,
-		}
-		if cfg != "" {
-			tmp := make(map[string]interface{})
-			if err := json.Unmarshal([]byte(cfg), &tmp); err != nil {
-				log.Errorf("unmarshal config error: %v, cfg: %s", err, cfg)
-				return result, nil
-			}
-			modelCfg := ai_provider.MapToStruct[ModelConfig](tmp)
-			if modelCfg.MaxTokens >= 1 {
-				result["max_tokens"] = modelCfg.MaxTokens
-			}
-
-			result["temperature"] = modelCfg.Temperature
-			result["top_p"] = modelCfg.TopP
-			if modelCfg.ResponseFormat == "" {
-				modelCfg.ResponseFormat = "text"
-			}
-			result["response_format"] = map[string]interface{}{
-				"type": modelCfg.ResponseFormat,
-			}
-		}
-		return result, nil
-	}, true
+	convert.IConverterDriver
 }
 
 func (e *executor) Start() error {
@@ -130,25 +53,16 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
-	if conf.Base != "" {
-		balanceHandler, err := ai_provider.NewBalanceHandler(e.Id(), conf.Base, 0)
-		if err != nil {
-			return err
-		}
-		e.BalanceHandler = balanceHandler
-	} else {
-		e.BalanceHandler = nil
+	d, err := newConverterDriver(conf)
+	if err != nil {
+		return err
 	}
-	e.version = conf.Version
-	e.apikey = conf.APIKey
-	convert.Set(e.Id(), e)
-
+	e.IConverterDriver = d
 	return nil
 }
 
 func (e *executor) Stop() error {
-	e.BalanceHandler = nil
-	convert.Del(e.Id())
+	e.IConverterDriver = nil
 	return nil
 }
 

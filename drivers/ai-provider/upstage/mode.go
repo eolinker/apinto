@@ -12,7 +12,7 @@ import (
 
 var (
 	modelModes = map[string]IModelMode{
-		ai_provider.ModeChat.String(): NewChat(),
+		convert.ModeChat.String(): NewChat(),
 	}
 )
 
@@ -87,25 +87,25 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	case 200:
 		// Calculate the token consumption for a successful request.
 		usage := data.Config.Usage
-		ai_provider.SetAIStatusNormal(ctx)
-		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
-		ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
-		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+		convert.SetAIStatusNormal(ctx)
+		convert.SetAIModelInputToken(ctx, usage.PromptTokens)
+		convert.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		convert.SetAIModelTotalToken(ctx, usage.TotalTokens)
 	case 400:
 		// Handle the bad request error.
-		ai_provider.SetAIStatusInvalidRequest(ctx)
+		convert.SetAIStatusInvalidRequest(ctx)
 	case 403:
 		// Handle the quota exhausted error.
-		ai_provider.SetAIStatusQuotaExhausted(ctx)
+		convert.SetAIStatusQuotaExhausted(ctx)
 	case 401:
 		// Handle the invalid key error.
-		ai_provider.SetAIStatusInvalid(ctx)
+		convert.SetAIStatusInvalid(ctx)
 	case 429:
 		// Handle the rate limit exceeded error.
-		ai_provider.SetAIStatusExceeded(ctx)
+		convert.SetAIStatusExceeded(ctx)
 	default:
 		// Handle the unknown error.
-		ai_provider.SetAIStatusInvalidRequest(ctx)
+		convert.SetAIStatusInvalidRequest(ctx)
 
 	}
 

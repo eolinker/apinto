@@ -1,11 +1,19 @@
 package yi
 
 import (
+	"sync"
+
+	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 )
 
 var name = "yi"
+
+var (
+	converterManager convert.IManager
+	once             sync.Once
+)
 
 // Register 注册驱动
 func Register(register eosc.IExtenderDriverRegister) {

@@ -12,8 +12,6 @@ import (
 
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
-
 	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
@@ -30,7 +28,7 @@ var (
 )
 
 func init() {
-	models, err := ai_provider.LoadModels(providerContent, providerDir)
+	models, err := convert.LoadModels(providerContent, providerDir)
 	if err != nil {
 		panic(err)
 	}

@@ -11,8 +11,6 @@ import (
 
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
-
 	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
@@ -29,7 +27,7 @@ var (
 )
 
 func init() {
-	models, err := ai_provider.LoadModels(providerContent, providerDir)
+	models, err := convert.LoadModels(providerContent, providerDir)
 	if err != nil {
 		panic(err)
 	}
@@ -95,7 +93,7 @@ func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
 				log.Errorf("unmarshal config error: %v, cfg: %s", err, cfg)
 				return result, nil
 			}
-			modelCfg := ai_provider.MapToStruct[ModelConfig](tmp)
+			modelCfg := convert.MapToStruct[ModelConfig](tmp)
 			result["frequency_penalty"] = modelCfg.FrequencyPenalty
 			if modelCfg.MaxTokens >= 1 {
 				result["max_tokens"] = modelCfg.MaxTokens
@@ -130,7 +128,7 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 
 func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 	if conf.Base != "" {
-		balanceHandler, err := ai_provider.NewBalanceHandler(e.Id(), conf.Base, 0)
+		balanceHandler, err := convert.NewBalanceHandler(e.Id(), conf.Base, 0)
 		if err != nil {
 			return err
 		}
@@ -139,14 +137,14 @@ func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) 
 		e.BalanceHandler = nil
 	}
 	e.apikey = conf.APIKey
-	convert.Set(e.Id(), e)
+	//convert.Set(e.Id(), e)
 
 	return nil
 }
 
 func (e *executor) Stop() error {
 	e.BalanceHandler = nil
-	convert.Del(e.Id())
+	//convert.Del(e.Id())
 	return nil
 }
 

@@ -4,15 +4,14 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"github.com/eolinker/eosc/log"
 	"reflect"
 	"strconv"
+
+	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/drivers"
 
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
-
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 
 	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc"
@@ -30,7 +29,7 @@ var (
 )
 
 func init() {
-	models, err := ai_provider.LoadModels(providerContent, providerDir)
+	models, err := convert.LoadModels(providerContent, providerDir)
 	if err != nil {
 		panic(err)
 	}

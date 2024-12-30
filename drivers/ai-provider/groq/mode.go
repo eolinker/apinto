@@ -3,6 +3,7 @@ package groq
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/eolinker/apinto/convert"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc"
@@ -12,7 +13,7 @@ import (
 
 var (
 	modelModes = map[string]IModelMode{
-		ai_provider.ModeChat.String(): NewChat(),
+		convert.ModeChat.String(): NewChat(),
 	}
 )
 
@@ -87,20 +88,20 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	case 200:
 		// Calculate the token consumption for a successful request.
 		usage := data.Config.Usage
-		ai_provider.SetAIStatusNormal(ctx)
-		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
-		ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
-		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+		convert.SetAIStatusNormal(ctx)
+		convert.SetAIModelInputToken(ctx, usage.PromptTokens)
+		convert.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		convert.SetAIModelTotalToken(ctx, usage.TotalTokens)
 	case 400:
 	case 422:
 		// Handle the bad request error.
-		ai_provider.SetAIStatusInvalidRequest(ctx)
+		convert.SetAIStatusInvalidRequest(ctx)
 	case 429:
 		// Handle exceed
-		ai_provider.SetAIStatusExceeded(ctx)
+		convert.SetAIStatusExceeded(ctx)
 	case 401:
 		// Handle authentication failure
-		ai_provider.SetAIStatusInvalid(ctx)
+		convert.SetAIStatusInvalid(ctx)
 	}
 	responseBody := &ai_provider.ClientResponse{}
 	if len(data.Config.Choices) > 0 {

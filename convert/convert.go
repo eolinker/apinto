@@ -2,6 +2,10 @@ package convert
 
 import "github.com/eolinker/eosc/eocontext"
 
+type IConverterFactory interface {
+	Create(cfg string) (IConverterDriver, error)
+}
+
 type IConverterDriver interface {
 	GetModel(model string) (FGenerateConfig, bool)
 	GetConverter(model string) (IConverter, bool)

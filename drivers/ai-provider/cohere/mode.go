@@ -3,6 +3,7 @@ package cohere
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/eolinker/apinto/convert"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc"
@@ -12,7 +13,7 @@ import (
 
 var (
 	modelModes = map[string]IModelMode{
-		ai_provider.ModeChat.String(): NewChat(),
+		convert.ModeChat.String(): NewChat(),
 	}
 )
 
@@ -86,31 +87,31 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	case 200:
 		// Calculate the token consumption for a successful request.
 		usage := data.Config.Usage
-		ai_provider.SetAIStatusNormal(ctx)
-		ai_provider.SetAIModelInputToken(ctx, usage.Tokens.InputTokens)
-		ai_provider.SetAIModelOutputToken(ctx, usage.Tokens.OutputTokens)
+		convert.SetAIStatusNormal(ctx)
+		convert.SetAIModelInputToken(ctx, usage.Tokens.InputTokens)
+		convert.SetAIModelOutputToken(ctx, usage.Tokens.OutputTokens)
 		// 待定
-		ai_provider.SetAIModelTotalToken(ctx, usage.BilledUnits.InputTokens+usage.Tokens.OutputTokens)
+		convert.SetAIModelTotalToken(ctx, usage.BilledUnits.InputTokens+usage.Tokens.OutputTokens)
 	case 400:
 	case 422:
 		// Handle the bad request error.
-		ai_provider.SetAIStatusInvalidRequest(ctx)
+		convert.SetAIStatusInvalidRequest(ctx)
 	case 402:
 		// Handle the balance is insufficient.
-		ai_provider.SetAIStatusQuotaExhausted(ctx)
+		convert.SetAIStatusQuotaExhausted(ctx)
 	case 429:
 		// Handle exceed
-		ai_provider.SetAIStatusExceeded(ctx)
+		convert.SetAIStatusExceeded(ctx)
 	case 401:
 		// Handle authentication failure
-		ai_provider.SetAIStatusInvalid(ctx)
+		convert.SetAIStatusInvalid(ctx)
 	}
 	responseBody := &ai_provider.ClientResponse{}
 	if data.Config.Id != "" {
 		switch tmp := data.Config.Message.(type) {
 		case map[string]interface{}:
 			{
-				responseMessage := ai_provider.MapToStruct[ResponseMessage](tmp)
+				responseMessage := convert.MapToStruct[ResponseMessage](tmp)
 				responseBody.Message = ai_provider.Message{
 					Role:    responseMessage.Role,
 					Content: responseMessage.Content[0].Text,

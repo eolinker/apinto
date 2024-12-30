@@ -12,7 +12,7 @@ import (
 
 var (
 	modelModes = map[string]IModelMode{
-		ai_provider.ModeChat.String(): NewChat(),
+		convert.ModeChat.String(): NewChat(),
 	}
 )
 
@@ -97,27 +97,27 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	case 200:
 		// Calculate the token consumption for a successful request.
 		usage := data.Config.Usage
-		ai_provider.SetAIStatusNormal(ctx)
-		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
-		ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
-		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+		convert.SetAIStatusNormal(ctx)
+		convert.SetAIModelInputToken(ctx, usage.PromptTokens)
+		convert.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		convert.SetAIModelTotalToken(ctx, usage.TotalTokens)
 	case 400:
 		// Handle the bad request error.
-		ai_provider.SetAIStatusInvalidRequest(ctx)
+		convert.SetAIStatusInvalidRequest(ctx)
 	case 401:
 		// 过期和无效的API密钥
-		ai_provider.SetAIStatusInvalid(ctx)
+		convert.SetAIStatusInvalid(ctx)
 	case 429:
 		switch data.Config.Error.Type {
 		case "exceeded_current_quota_error":
 			// Handle the insufficient quota error.
-			ai_provider.SetAIStatusQuotaExhausted(ctx)
+			convert.SetAIStatusQuotaExhausted(ctx)
 		case "engine_overloaded_error", "rate_limit_reached_error":
 			// Handle the rate limit error.
-			ai_provider.SetAIStatusExceeded(ctx)
+			convert.SetAIStatusExceeded(ctx)
 		}
 	default:
-		ai_provider.SetAIStatusInvalidRequest(ctx)
+		convert.SetAIStatusInvalidRequest(ctx)
 	}
 
 	responseBody := &ai_provider.ClientResponse{}

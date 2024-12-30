@@ -1,47 +1,42 @@
 package convert
 
-import "github.com/eolinker/eosc"
+import (
+	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/common/bean"
+)
 
 var _ IManager = (*Manager)(nil)
 
 var (
-	manager = NewManager()
+	manager = newManager()
 )
 
+func init() {
+	bean.Injection(&manager)
+}
+
 type IManager interface {
-	Get(id string) (IConverterDriver, bool)
-	Set(id string, driver IConverterDriver)
+	Get(id string) (IConverterFactory, bool)
+	Set(id string, driver IConverterFactory)
 	Del(id string)
 }
 
 type Manager struct {
-	drivers eosc.Untyped[string, IConverterDriver]
+	factories eosc.Untyped[string, IConverterFactory]
 }
 
 func (m *Manager) Del(id string) {
-	m.drivers.Del(id)
+	m.factories.Del(id)
 }
 
-func (m *Manager) Get(id string) (IConverterDriver, bool) {
-	return m.drivers.Get(id)
+func (m *Manager) Get(id string) (IConverterFactory, bool) {
+	return m.factories.Get(id)
 }
 
-func (m *Manager) Set(id string, driver IConverterDriver) {
-	m.drivers.Set(id, driver)
+func (m *Manager) Set(id string, driver IConverterFactory) {
+	m.factories.Set(id, driver)
 }
 
-func NewManager() *Manager {
-	return &Manager{drivers: eosc.BuildUntyped[string, IConverterDriver]()}
-}
-
-func Set(id string, driver IConverterDriver) {
-	manager.Set(id, driver)
-}
-
-func Get(id string) (IConverterDriver, bool) {
-	return manager.Get(id)
-}
-
-func Del(id string) {
-	manager.Del(id)
+func newManager() *Manager {
+	return &Manager{factories: eosc.BuildUntyped[string, IConverterFactory]()}
 }
