@@ -2,18 +2,12 @@ package spark
 
 import (
 	"embed"
-	"encoding/json"
 	"fmt"
-
-	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/drivers"
 
-	http_context "github.com/eolinker/eosc/eocontext/http-context"
-
 	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/eocontext"
 )
 
 var (
@@ -40,77 +34,9 @@ func init() {
 	}
 }
 
-type Converter struct {
-	apiPassword string
-	converter   convert.IConverter
-}
-
-func (c *Converter) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
-	httpContext, err := http_context.Assert(ctx)
-	if err != nil {
-		return err
-	}
-	httpContext.Proxy().Header().SetHeader("Authorization", "Bearer "+c.apiPassword)
-
-	return c.converter.RequestConvert(httpContext, extender)
-}
-
-func (c *Converter) ResponseConvert(ctx eocontext.EoContext) error {
-	return c.converter.ResponseConvert(ctx)
-}
-
 type executor struct {
 	drivers.WorkerBase
-	apiPassword string
-}
-
-func (e *executor) GetConverter(model string) (convert.IConverter, bool) {
-	converter, ok := modelConvert[model]
-	if !ok {
-		return nil, false
-	}
-
-	return &Converter{converter: converter, apiPassword: e.apiPassword}, true
-}
-
-func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
-	if _, ok := modelConvert[model]; !ok {
-		return nil, false
-	}
-	return func(cfg string) (map[string]interface{}, error) {
-
-		result := map[string]interface{}{
-			"model": model,
-		}
-		if cfg != "" {
-			tmp := make(map[string]interface{})
-			if err := json.Unmarshal([]byte(cfg), &tmp); err != nil {
-				log.Errorf("unmarshal config error: %v, cfg: %s", err, cfg)
-				return result, nil
-			}
-			modelCfg := convert.MapToStruct[ModelConfig](tmp)
-			result["frequency_penalty"] = modelCfg.FrequencyPenalty
-			if modelCfg.MaxTokens >= 1 {
-				result["max_tokens"] = modelCfg.MaxTokens
-			}
-
-			result["presence_penalty"] = modelCfg.PresencePenalty
-			result["temperature"] = modelCfg.Temperature
-			if modelCfg.TopP > 0 && modelCfg.TopP <= 1 {
-				result["top_p"] = modelCfg.TopP
-			}
-			if modelCfg.TopK >= 1 && modelCfg.TopK <= 6 {
-				result["top_k"] = modelCfg.TopK
-			}
-			if modelCfg.ResponseFormat == "" {
-				modelCfg.ResponseFormat = "text"
-			}
-			result["response_format"] = map[string]interface{}{
-				"type": modelCfg.ResponseFormat,
-			}
-		}
-		return result, nil
-	}, true
+	convert.IConverterDriver
 }
 
 func (e *executor) Start() error {
@@ -127,15 +53,16 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
-
-	e.apiPassword = conf.APIPassword
-	convert.Set(e.Id(), e)
-
+	d, err := newConverterDriver(conf)
+	if err != nil {
+		return err
+	}
+	e.IConverterDriver = d
 	return nil
 }
 
 func (e *executor) Stop() error {
-	convert.Del(e.Id())
+	e.IConverterDriver = nil
 	return nil
 }
 

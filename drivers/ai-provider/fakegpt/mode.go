@@ -7,7 +7,6 @@ import (
 	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/convert"
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -63,10 +62,10 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	responseBody := &ai_provider.ClientResponse{}
+	responseBody := &convert.ClientResponse{}
 	if len(data.Config.Choices) > 0 {
 		msg := data.Config.Choices[0]
-		responseBody.Message = ai_provider.Message{
+		responseBody.Message = convert.Message{
 			Role:    msg.Message.Role,
 			Content: msg.Message.Content,
 		}

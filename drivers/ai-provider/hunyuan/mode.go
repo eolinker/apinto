@@ -7,7 +7,6 @@ import (
 	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/convert"
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -50,7 +49,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	}
 	// 设置转发地址
 	httpContext.Proxy().URI().SetPath(c.endPoint)
-	baseCfg := eosc.NewBase[ai_provider.ClientRequest]()
+	baseCfg := eosc.NewBase[convert.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
@@ -218,11 +217,11 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		}
 	}
 
-	responseBody := &ai_provider.ClientResponse{}
+	responseBody := &convert.ClientResponse{}
 	if len(data.Config.Response.Choices) > 0 {
 		//if data.Config.Object == "chat.completion" {
 		msg := data.Config.Response.Choices[0]
-		responseBody.Message = ai_provider.Message{
+		responseBody.Message = convert.Message{
 			Role:    msg.Message.Role,
 			Content: msg.Message.Content,
 		}

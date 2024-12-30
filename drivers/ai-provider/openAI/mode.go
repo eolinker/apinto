@@ -8,7 +8,6 @@ import (
 	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/convert"
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -63,7 +62,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	httpContext.Proxy().URI().SetPath(c.endPoint)
 
 	// Parse the request body into a base configuration.
-	baseCfg := eosc.NewBase[ai_provider.ClientRequest]()
+	baseCfg := eosc.NewBase[convert.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
@@ -148,10 +147,10 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	}
 
 	// Prepare the response body for the client.
-	responseBody := &ai_provider.ClientResponse{}
+	responseBody := &convert.ClientResponse{}
 	if len(data.Config.Choices) > 0 {
 		msg := data.Config.Choices[0]
-		responseBody.Message = ai_provider.Message{
+		responseBody.Message = convert.Message{
 			Role:    msg.Message.Role,
 			Content: msg.Message.Content,
 		}

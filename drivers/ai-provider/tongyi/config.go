@@ -2,12 +2,12 @@ package tongyi
 
 import (
 	"fmt"
+
 	"github.com/eolinker/eosc"
 )
 
 type Config struct {
-	APIKey       string `json:"dashscope_api_key"`
-	Organization string `json:"dashscope_organization"`
+	APIKey string `json:"dashscope_api_key"`
 }
 
 func checkConfig(v interface{}) (*Config, error) {

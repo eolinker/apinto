@@ -31,8 +31,17 @@ type converterDriver struct {
 }
 
 func newConverterDriver(cfg *Config) (convert.IConverterDriver, error) {
+	var balanceHandler eocontext.BalanceHandler
+	var err error
+	if cfg.Base != "" {
+		balanceHandler, err = convert.NewBalanceHandler("", cfg.Base, 0)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &converterDriver{
-		apikey: cfg.APIKey,
+		apikey:         cfg.APIKey,
+		BalanceHandler: balanceHandler,
 	}, nil
 }
 

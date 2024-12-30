@@ -8,7 +8,6 @@ import (
 	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/convert"
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -56,13 +55,13 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	}
 	// 设置转发地址
 	httpContext.Proxy().URI().SetPath(c.endPoint)
-	baseCfg := eosc.NewBase[ai_provider.ClientRequest]()
+	baseCfg := eosc.NewBase[convert.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
 	}
 	messages := make([]Message, 0, len(baseCfg.Config.Messages)+1)
-	var tmpMsg []*ai_provider.Message
+	var tmpMsg []*convert.Message
 	msgLen := len(baseCfg.Config.Messages)
 	if msgLen != 0 && msgLen%2 == 0 {
 		// 合并第一第二条信息
@@ -146,11 +145,11 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		convert.SetAIStatusInvalidRequest(ctx)
 	}
 
-	responseBody := &ai_provider.ClientResponse{}
+	responseBody := &convert.ClientResponse{}
 	if data.Config.ErrorCode == 0 {
 		//if data.Config.Object == "chat.completion" {
 		msg := data.Config
-		responseBody.Message = ai_provider.Message{
+		responseBody.Message = convert.Message{
 			Role:    "assistant",
 			Content: msg.Result,
 		}

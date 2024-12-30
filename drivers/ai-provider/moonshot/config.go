@@ -2,12 +2,12 @@ package moonshot
 
 import (
 	"fmt"
+
 	"github.com/eolinker/eosc"
 )
 
 type Config struct {
-	APIKey       string `json:"moonshot_api_key"`
-	Organization string `json:"moonshot_organization"`
+	APIKey string `json:"moonshot_api_key"`
 }
 
 func checkConfig(v interface{}) (*Config, error) {

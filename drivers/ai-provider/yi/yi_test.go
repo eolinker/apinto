@@ -110,8 +110,7 @@ func TestSentTo(t *testing.T) {
 // runTest handles a single test case
 func runTest(apiKey string, requestBody []byte, wantStatus string, validFunc func(ctx eocontext.EoContext) bool) error {
 	cfg := &Config{
-		APIKey:       apiKey,
-		Organization: "",
+		APIKey: apiKey,
 	}
 
 	// Create the worker
