@@ -16,14 +16,8 @@ import (
 )
 
 var (
-	defaultConfig = `{
-		"frequency_penalty": "",
-		"presence_penalty": "",
-		"response_format": "",
-		"temperature": "",
-		"top_p": 1
-	}`
-	successBody = []byte(`{
+	defaultConfig = ""
+	successBody   = []byte(`{
 		"messages": [
 			{
 				"content": "Hello, how can I help you?",
@@ -35,9 +29,9 @@ var (
 		"messages": [
 			{
 				"content": "Hello, how can I help you?",
-				"role": "assistant"
+				"role": "not-assistant"
 			}
-		],"variables":{}
+		]
 	}`)
 )
 
@@ -75,7 +69,7 @@ func TestSentTo(t *testing.T) {
 		},
 		{
 			name:       "expired key",
-			apiKey:     os.Getenv("STEP_FUN_INVALID_API_KEY"),
+			apiKey:     os.Getenv("STEP_FUN_EXPIRE_API_KEY"),
 			wantStatus: ai_provider.StatusInvalid,
 		},
 	}

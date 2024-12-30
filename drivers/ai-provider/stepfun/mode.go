@@ -76,9 +76,6 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	if httpContext.Response().StatusCode() != 200 {
-		return nil
-	}
 	body := httpContext.Response().GetBody()
 	data := eosc.NewBase[Response]()
 	err = json.Unmarshal(body, data)

@@ -1,5 +1,40 @@
 package stepfun
 
+/*
+*
+成功响应示例
+
+	{
+			"id": "5fd3d838464f358e4c33962e15092196.27dfabef4e49b8f8edd60e4074f8fe01",
+			"object": "chat.completion",
+			"created": 1735523297,
+			"model": "step-1-8k",
+			"choices": [
+					{
+							"index": 0,
+							"message": {
+									"role": "assistant",
+									"content": ""
+							},
+							"finish_reason": "stop"
+					}
+			],
+			"usage": {
+					"prompt_tokens": 12,
+					"completion_tokens": 745,
+					"total_tokens": 757
+			}
+	}
+
+响应失败示例
+
+	{
+	    "error": {
+	        "message": "invalid msg role: assistant1",
+	        "type": "request_params_invalid"
+	    }
+	}
+*/
 type ClientRequest struct {
 	Messages []*Message `json:"messages"`
 }
