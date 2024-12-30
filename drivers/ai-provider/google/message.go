@@ -1,5 +1,32 @@
 package google
 
+/*
+*
+返回示例
+
+	{
+	    "candidates": [
+	        {
+	            "content": {
+	                "parts": [
+	                    {
+	                        "text": "Hello there! How can I help you today?\n"
+	                    }
+	                ],
+	                "role": "model"
+	            },
+	            "finishReason": "STOP",
+	            "avgLogprobs": -0.0011556809768080711
+	        }
+	    ],
+	    "usageMetadata": {
+	        "promptTokenCount": 2,
+	        "candidatesTokenCount": 11,
+	        "totalTokenCount": 13
+	    },
+	    "modelVersion": "gemini-1.5-flash-latest"
+	}
+*/
 type ClientRequest struct {
 	Contents []*Content `json:"contents"`
 }
@@ -9,8 +36,22 @@ type Content struct {
 	Role  string                   `json:"role"`
 }
 
+type UsageMetadata struct {
+	PromptTokenCount     int `json:"promptTokenCount"`
+	CandidatesTokenCount int `json:"candidatesTokenCount"`
+	TotalTokenCount      int `json:"totalTokenCount"`
+}
+
+type Error struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Status  string `json:"status"`
+}
+
 type Response struct {
-	Candidates []Candidate `json:"candidates"`
+	Candidates    []Candidate   `json:"candidates"`
+	UsageMetadata UsageMetadata `json:"usageMetadata"`
+	Error         Error         `json:"error"`
 }
 
 type Candidate struct {
