@@ -17,6 +17,7 @@ type Response struct {
 	SystemFingerprint string           `json:"system_fingerprint"`
 	Choices           []ResponseChoice `json:"choices"`
 	Usage             Usage            `json:"usage"`
+	Error             Error            `json:"error"`
 }
 
 type ResponseChoice struct {
@@ -26,6 +27,8 @@ type ResponseChoice struct {
 	FinishReason string      `json:"finish_reason"`
 }
 
+// Usage provides information about the token counts for the request and response.
+// {"completion_tokens":217,"prompt_tokens":31,"total_tokens":248}
 type Usage struct {
 	PromptTokens            int                     `json:"prompt_tokens"`
 	CompletionTokens        int                     `json:"completion_tokens"`
@@ -35,4 +38,11 @@ type Usage struct {
 
 type CompletionTokensDetails struct {
 	ReasoningTokens int `json:"reasoning_tokens"`
+}
+
+// Error represents an error response from the API.
+// {"error":{"code":"1002","message":"Authorization Token非法，请确认Authorization Token正确传递。"}}
+type Error struct {
+	Message string `json:"message"`
+	Code    string `json:"code"`
 }
