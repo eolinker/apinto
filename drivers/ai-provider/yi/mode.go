@@ -2,6 +2,7 @@ package yi
 
 import (
 	"encoding/json"
+
 	"github.com/eolinker/apinto/convert"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc"
@@ -74,14 +75,40 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	if httpContext.Response().StatusCode() != 200 {
-		return nil
-	}
 	body := httpContext.Response().GetBody()
 	data := eosc.NewBase[Response]()
 	err = json.Unmarshal(body, data)
 	if err != nil {
 		return err
+	}
+	/*
+		错误码对照表
+		| HTTP 返回码 | 错误代码     | 原因                                   | 解决方案                             |
+		|------------|------------|----------------------------------------|--------------------------------------|
+		| 400        | Bad request | 模型的输入+输出（max_tokens）超过了模型的最大上下文。 | 减少模型的输入，或将 max_tokens 参数值设置更小。 |
+		|            |            | 输入格式错误。                           | 检查输入格式，确保正确。例如，模型名必须全小写，yi-lightning。 |
+		| 401        | Authentication Error | API Key缺失或无效。             | 请确保你的 API Key 有效。               |
+		| 404        | Not found   | 无效的 Endpoint URL 或模型名。           | 确保使用正确的 Endpoint URL 或模型名。   |
+		| 429        | Too Many Requests | 在短时间内发出的请求太多。         | 控制请求速率。                       |
+		| 500        | Internal Server Error | 服务端内部错误。           | 请稍后重试。                         |
+		| 529        | System busy | 系统繁忙，请重试。                     | 请 1 分钟后重试。                     |
+	*/
+	switch httpContext.Response().StatusCode() {
+	case 200:
+		// Calculate the token consumption for a successful request.
+		usage := data.Config.Usage
+		ai_provider.SetAIStatusNormal(ctx)
+		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
+		ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+	case 400:
+		// Handle the bad request error.
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	case 429:
+		ai_provider.SetAIStatusExceeded(ctx)
+	case 401:
+		// Handle the authentication error.
+		ai_provider.SetAIStatusInvalid(ctx)
 	}
 	responseBody := &ai_provider.ClientResponse{}
 	if len(data.Config.Choices) > 0 {

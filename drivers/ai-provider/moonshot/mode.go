@@ -2,6 +2,7 @@ package moonshot
 
 import (
 	"encoding/json"
+
 	"github.com/eolinker/apinto/convert"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc"
@@ -74,15 +75,51 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	if httpContext.Response().StatusCode() != 200 {
-		return nil
-	}
 	body := httpContext.Response().GetBody()
 	data := eosc.NewBase[Response]()
 	err = json.Unmarshal(body, data)
 	if err != nil {
 		return err
 	}
+
+	// HTTP Status Codes for Moonshot API
+	// Status Code | Type                | Error Message
+	// ------------|---------------------|-------------------------------------
+	// 200         | Success             | Request was successful.
+	// 400         | Client Error        | Invalid request parameters (invalid_request_error).
+	// 401         | Authentication Error | Invalid API key (invalid_key).
+	// 403         | Forbidden           | Access denied (forbidden_error).
+	// 404         | Not Found           | Resource not found (not_found_error).
+	// 429         | Rate Limit Exceeded | Too many requests (rate_limit_error).
+	// 500         | Server Error        | Internal server error (server_error).
+	// 503         | Service Unavailable  | Service is temporarily unavailable (service_unavailable).
+	switch httpContext.Response().StatusCode() {
+	case 200:
+		// Calculate the token consumption for a successful request.
+		usage := data.Config.Usage
+		ai_provider.SetAIStatusNormal(ctx)
+		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
+		ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+	case 400:
+		// Handle the bad request error.
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	case 401:
+		// 过期和无效的API密钥
+		ai_provider.SetAIStatusInvalid(ctx)
+	case 429:
+		switch data.Config.Error.Type {
+		case "exceeded_current_quota_error":
+			// Handle the insufficient quota error.
+			ai_provider.SetAIStatusQuotaExhausted(ctx)
+		case "engine_overloaded_error", "rate_limit_reached_error":
+			// Handle the rate limit error.
+			ai_provider.SetAIStatusExceeded(ctx)
+		}
+	default:
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	}
+
 	responseBody := &ai_provider.ClientResponse{}
 	if len(data.Config.Choices) > 0 {
 		msg := data.Config.Choices[0]
@@ -93,7 +130,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		responseBody.FinishReason = msg.FinishReason
 	} else {
 		responseBody.Code = -1
-		responseBody.Error = "no response"
+		responseBody.Error = data.Config.Error.Message
 	}
 	body, err = json.Marshal(responseBody)
 	if err != nil {

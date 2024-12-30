@@ -17,4 +17,13 @@ type Response struct {
 	FinishReason string `json:"finish_reason"`
 	ErrorCode    int    `json:"error_code"`
 	ErrorMsg     string `json:"error_msg"`
+	Usage        Usage  `json:"usage"`
+}
+
+// Usage provides information about the token counts for the request and response.
+// {"prompt_tokens":19,"completion_tokens":21,"total_tokens":40}
+type Usage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
 }

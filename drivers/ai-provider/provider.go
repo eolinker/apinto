@@ -79,6 +79,7 @@ func LoadModels(providerContent []byte, dirFs embed.FS) (map[string]*Model, erro
 	return models, nil
 }
 
+// MapToStruct 将 map 转换为结构体实例
 func MapToStruct[T any](tmp map[string]interface{}) *T {
 	// 创建目标结构体的实例
 	var result T
@@ -92,8 +93,10 @@ func MapToStruct[T any](tmp map[string]interface{}) *T {
 		// 查找结构体中与键名匹配的字段
 		for i := 0; i < t.NumField(); i++ {
 			field := t.Field(i)
+
+			// 匹配字段的 json 标签或字段名
 			jsonTag := field.Tag.Get("json")
-			if jsonTag == k {
+			if jsonTag == k || field.Name == k {
 				// 获取字段的值
 				fieldVal := val.Field(i)
 
@@ -103,38 +106,113 @@ func MapToStruct[T any](tmp map[string]interface{}) *T {
 				}
 
 				// 根据字段的类型，进行类型转换
-				switch fieldVal.Kind() {
-				case reflect.Float64:
-					if strVal, ok := v.(string); ok && strVal != "" {
-						// 如果是 string 类型且非空，转换为 float64
-						if floatVal, err := strconv.ParseFloat(strVal, 64); err == nil {
-							fieldVal.SetFloat(floatVal)
-						}
-					} else if floatVal, ok := v.(float64); ok {
-						fieldVal.SetFloat(floatVal)
-					}
-
-				case reflect.Int:
-					if intVal, ok := v.(int); ok {
-						fieldVal.SetInt(int64(intVal))
-					} else if strVal, ok := v.(string); ok && strVal != "" {
-						if intVal, err := strconv.Atoi(strVal); err == nil {
-							fieldVal.SetInt(int64(intVal))
-						}
-					} else if floatVal, ok := v.(float64); ok {
-						fieldVal.SetInt(int64(floatVal))
-					}
-				case reflect.String:
-					if strVal, ok := v.(string); ok {
-						fieldVal.SetString(strVal)
-					}
-
-				default:
-					// 其他类型不进行转换
-				}
+				setValue(fieldVal, v)
 			}
 		}
 	}
 
 	return &result
+}
+
+// setValue 根据字段类型设置字段的值
+func setValue(fieldVal reflect.Value, v interface{}) {
+	switch fieldVal.Kind() {
+	case reflect.Float64, reflect.Float32:
+		setFloat(fieldVal, v)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		setInt(fieldVal, v)
+	case reflect.String:
+		if strVal, ok := v.(string); ok {
+			fieldVal.SetString(strVal)
+		}
+	case reflect.Bool:
+		setBool(fieldVal, v)
+	case reflect.Slice:
+		setSlice(fieldVal, v)
+	case reflect.Struct:
+		setStruct(fieldVal, v)
+	default:
+		// 其他类型不处理
+	}
+}
+
+// setFloat 设置浮点数类型的字段值
+func setFloat(fieldVal reflect.Value, v interface{}) {
+	switch val := v.(type) {
+	case float64:
+		fieldVal.SetFloat(val)
+	case float32:
+		fieldVal.SetFloat(float64(val))
+	case string:
+		if floatVal, err := strconv.ParseFloat(val, 64); err == nil {
+			fieldVal.SetFloat(floatVal)
+		}
+	}
+}
+
+// setInt 设置整数类型的字段值
+func setInt(fieldVal reflect.Value, v interface{}) {
+	switch val := v.(type) {
+	case int:
+		fieldVal.SetInt(int64(val))
+	case int8, int16, int32, int64:
+		fieldVal.SetInt(reflect.ValueOf(val).Int())
+	case float64:
+		fieldVal.SetInt(int64(val))
+	case string:
+		if intVal, err := strconv.Atoi(val); err == nil {
+			fieldVal.SetInt(int64(intVal))
+		}
+	}
+}
+
+// setBool 设置布尔类型的字段值
+func setBool(fieldVal reflect.Value, v interface{}) {
+	switch val := v.(type) {
+	case bool:
+		fieldVal.SetBool(val)
+	case string:
+		if val == "true" {
+			fieldVal.SetBool(true)
+		} else if val == "false" {
+			fieldVal.SetBool(false)
+		}
+	}
+}
+
+// setSlice 设置切片类型的字段值
+func setSlice(fieldVal reflect.Value, v interface{}) {
+	if reflect.TypeOf(v).Kind() == reflect.Slice {
+		sliceVal := reflect.ValueOf(v)
+
+		// 创建与目标字段类型匹配的切片
+		sliceType := fieldVal.Type().Elem()
+		newSlice := reflect.MakeSlice(reflect.SliceOf(sliceType), sliceVal.Len(), sliceVal.Len())
+
+		// 遍历并设置切片元素
+		for i := 0; i < sliceVal.Len(); i++ {
+			elemVal := sliceVal.Index(i)
+			newElem := reflect.New(sliceType).Elem()
+			setValue(newElem, elemVal.Interface())
+			newSlice.Index(i).Set(newElem)
+		}
+
+		fieldVal.Set(newSlice)
+	}
+}
+
+// setStruct 设置结构体类型的字段值
+func setStruct(fieldVal reflect.Value, v interface{}) {
+	if nestedMap, ok := v.(map[string]interface{}); ok {
+		// 创建嵌套结构体并递归映射
+		nestedStruct := reflect.New(fieldVal.Type()).Elem()
+		for i := 0; i < fieldVal.NumField(); i++ {
+			field := fieldVal.Type().Field(i)
+			jsonTag := field.Tag.Get("json")
+			if val, exists := nestedMap[jsonTag]; exists {
+				setValue(nestedStruct.Field(i), val)
+			}
+		}
+		fieldVal.Set(nestedStruct)
+	}
 }

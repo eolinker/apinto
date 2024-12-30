@@ -2,6 +2,7 @@ package upstage
 
 import (
 	"encoding/json"
+
 	"github.com/eolinker/apinto/convert"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc"
@@ -74,15 +75,40 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	if httpContext.Response().StatusCode() != 200 {
-		return nil
-	}
+
 	body := httpContext.Response().GetBody()
 	data := eosc.NewBase[Response]()
 	err = json.Unmarshal(body, data)
 	if err != nil {
 		return err
 	}
+
+	switch httpContext.Response().StatusCode() {
+	case 200:
+		// Calculate the token consumption for a successful request.
+		usage := data.Config.Usage
+		ai_provider.SetAIStatusNormal(ctx)
+		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
+		ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+	case 400:
+		// Handle the bad request error.
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	case 403:
+		// Handle the quota exhausted error.
+		ai_provider.SetAIStatusQuotaExhausted(ctx)
+	case 401:
+		// Handle the invalid key error.
+		ai_provider.SetAIStatusInvalid(ctx)
+	case 429:
+		// Handle the rate limit exceeded error.
+		ai_provider.SetAIStatusExceeded(ctx)
+	default:
+		// Handle the unknown error.
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+
+	}
+
 	responseBody := &ai_provider.ClientResponse{}
 	if len(data.Config.Choices) > 0 {
 		msg := data.Config.Choices[0]
