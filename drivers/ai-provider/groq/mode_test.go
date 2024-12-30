@@ -1,12 +1,16 @@
-package minimax
+package groq
 
 import (
+	"bytes"
 	_ "embed"
 	"fmt"
 	"github.com/eolinker/apinto/convert"
 	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/joho/godotenv"
 	"github.com/valyala/fasthttp"
+	"io/ioutil"
+	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"testing"
@@ -35,6 +39,58 @@ var (
 	}`)
 )
 
+func TestProxy(t *testing.T) {
+	// 设置高匿名代理
+	//proxyURL, err := url.Parse("http://10.8.0.23:10809")
+	//if err != nil {
+	//	log.Fatalf("代理地址解析失败: %v", err)
+	//}
+
+	// 创建自定义的 HTTP 客户端
+	client := &http.Client{
+		//Transport: &http.Transport{
+		//	Proxy: http.ProxyURL(proxyURL),
+		//},
+	}
+
+	// 发起请求
+	reqBody := []byte(`{
+			"model": "llama3-8b-8192",
+			"messages": [
+					{
+							"content": "Hello, how can I help you?",
+							"role": "assistant"
+					}
+			]
+	}`)
+
+	// 创建请求
+	req, err := http.NewRequest("POST", "https://api.groq.com/openai/v1/chat/completions", bytes.NewBuffer(reqBody))
+	if err != nil {
+		log.Fatalf("创建请求失败: %v", err)
+	}
+
+	// 设置请求头部
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer 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")
+
+	// 发起请求
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalf("请求失败: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// 读取响应
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("读取响应失败: %v", err)
+	}
+
+	// 输出响应内容
+	log.Println(string(body))
+}
+
 // TestSentTo tests the end-to-end execution of the OpenAI integration.
 func TestSentTo(t *testing.T) {
 	// Load .env file
@@ -42,6 +98,9 @@ func TestSentTo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error loading .env file: %v", err)
 	}
+
+	log.Println(os.Getenv("http_proxy"))
+	log.Println(os.Getenv("https_proxy"))
 
 	// Test data for different scenarios
 	testData := []struct {
@@ -52,24 +111,24 @@ func TestSentTo(t *testing.T) {
 	}{
 		{
 			name:       "success",
-			apiKey:     os.Getenv("MINIMAX_VALID_API_KEY"),
+			apiKey:     os.Getenv("GROQ_VALID_API_KEY"),
 			wantStatus: ai_provider.StatusNormal,
 			body:       successBody,
 		},
 		{
 			name:       "invalid request",
-			apiKey:     os.Getenv("MINIMAX_VALID_API_KEY"),
+			apiKey:     os.Getenv("GROQ_VALID_API_KEY"),
 			wantStatus: ai_provider.StatusInvalidRequest,
 			body:       failBody,
 		},
 		{
 			name:       "invalid key",
-			apiKey:     os.Getenv("MINIMAX_INVALID_API_KEY"),
+			apiKey:     os.Getenv("GROQ_INVALID_API_KEY"),
 			wantStatus: ai_provider.StatusInvalid,
 		},
 		{
 			name:       "expired key",
-			apiKey:     os.Getenv("MINIMAX_EXPIRE_API_KEY"),
+			apiKey:     os.Getenv("GROQ_EXPIRE_API_KEY"),
 			wantStatus: ai_provider.StatusInvalid,
 		},
 	}
@@ -89,9 +148,9 @@ func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 	cfg := &Config{
 		APIKey: apiKey,
 	}
-	baseDomain := "https://api.minimax.chat"
+	baseDomain := "https://api.groq.com"
 	// Create the worker
-	worker, err := Create("minimax", "minimax", cfg, nil)
+	worker, err := Create("groq", "groq", cfg, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create worker: %w", err)
 	}
@@ -108,10 +167,10 @@ func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 	}
 
 	// Mock HTTP context
-	ctx := createMockHttpContext("/v1/text/chatcompletion_v2", nil, nil, requestBody)
+	ctx := createMockHttpContext("/openai/v1/chat/completions", nil, nil, requestBody)
 
 	// Execute the conversion process
-	err = executeConverter(ctx, handler, "abab6.5s-chat", baseDomain)
+	err = executeConverter(ctx, handler, "llama3-8b-8192", baseDomain)
 	if err != nil {
 		return fmt.Errorf("failed to execute conversion process: %w", err)
 	}
