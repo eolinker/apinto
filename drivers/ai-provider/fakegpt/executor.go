@@ -6,11 +6,8 @@ import (
 
 	"github.com/eolinker/apinto/drivers"
 
-	http_context "github.com/eolinker/eosc/eocontext/http-context"
-
 	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/eocontext"
 )
 
 var (
@@ -37,51 +34,9 @@ func init() {
 	}
 }
 
-type Converter struct {
-	apikey    string
-	converter convert.IConverter
-}
-
-func (c *Converter) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
-	httpContext, err := http_context.Assert(ctx)
-	if err != nil {
-		return err
-	}
-	httpContext.Proxy().Header().SetHeader("Authorization", "Bearer "+c.apikey)
-
-	return c.converter.RequestConvert(httpContext, extender)
-}
-
-func (c *Converter) ResponseConvert(ctx eocontext.EoContext) error {
-	return c.converter.ResponseConvert(ctx)
-}
-
 type executor struct {
 	drivers.WorkerBase
-	apikey string
-}
-
-func (e *executor) GetConverter(model string) (convert.IConverter, bool) {
-	converter, ok := modelConvert[model]
-	if !ok {
-		return nil, false
-	}
-
-	return &Converter{converter: converter, apikey: e.apikey}, true
-}
-
-func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
-	if _, ok := modelConvert[model]; !ok {
-		return nil, false
-	}
-	return func(cfg string) (map[string]interface{}, error) {
-
-		result := map[string]interface{}{
-			"model": model,
-		}
-
-		return result, nil
-	}, true
+	convert.IConverterDriver
 }
 
 func (e *executor) Start() error {
@@ -98,15 +53,15 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
-
-	e.apikey = conf.APIKey
-	convert.Set(e.Id(), e)
-
+	d, err := newConverterDriver(conf)
+	if err != nil {
+		return err
+	}
+	e.IConverterDriver = d
 	return nil
 }
 
 func (e *executor) Stop() error {
-	convert.Del(e.Id())
 	return nil
 }
 
