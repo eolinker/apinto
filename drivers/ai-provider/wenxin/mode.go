@@ -105,15 +105,47 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	if httpContext.Response().StatusCode() != 200 {
-		return nil
-	}
 	body := httpContext.Response().GetBody()
 	data := eosc.NewBase[Response]()
 	err = json.Unmarshal(body, data)
 	if err != nil {
 		return err
 	}
+
+	switch httpContext.Response().StatusCode() {
+	case 200:
+		// Calculate the token consumption for a successful request.
+		if data.Config.ErrorCode != 0 {
+			switch data.Config.ErrorCode {
+			case 17, 19:
+				// Handle the insufficient quota error.
+				ai_provider.SetAIStatusQuotaExhausted(ctx)
+			case 4, 18, 336501, 336502, 336503, 336504, 336505, 336507:
+				// Handle the rate limit error.
+				ai_provider.SetAIStatusExceeded(ctx)
+			case 13, 14, 100, 110, 111:
+				// Handle the invalid token error.
+				ai_provider.SetAIStatusInvalid(ctx)
+			default:
+				ai_provider.SetAIStatusInvalidRequest(ctx)
+			}
+		} else {
+			usage := data.Config.Usage
+			ai_provider.SetAIStatusNormal(ctx)
+			ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
+			ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+			ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+		}
+	case 400:
+		// Handle the bad request error.
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	case 403:
+		// Handle the invalid token error.
+		ai_provider.SetAIStatusInvalid(ctx)
+	default:
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	}
+
 	responseBody := &ai_provider.ClientResponse{}
 	if data.Config.ErrorCode == 0 {
 		//if data.Config.Object == "chat.completion" {
