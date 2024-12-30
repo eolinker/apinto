@@ -10,10 +10,10 @@ type RequestMessage struct {
 }
 
 type Response struct {
-	Id           string          `json:"id"`
-	Message      ResponseMessage `json:"message"`
-	Usage        Usage           `json:"usage"`
-	FinishReason string          `json:"finish_reason"`
+	Id           string      `json:"id"`
+	Message      interface{} `json:"message"` // string or ResponseMessage
+	Usage        Usage       `json:"usage"`
+	FinishReason string      `json:"finish_reason"`
 }
 
 type ResponseContent struct {
