@@ -115,7 +115,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		responseBody.FinishReason = msg.FinishReason
 	} else {
 		responseBody.Code = -1
-		responseBody.Error = "no response"
+		responseBody.Error = data.Config.Error.Message
 	}
 	body, err = json.Marshal(responseBody)
 	if err != nil {

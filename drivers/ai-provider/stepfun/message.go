@@ -44,6 +44,11 @@ type Message struct {
 	Content string `json:"content"`
 }
 
+type Error struct {
+	Message string `json:"message"`
+	Type    string `json:"type"`
+}
+
 type Response struct {
 	Id      string           `json:"id"`
 	Object  string           `json:"object"`
@@ -51,6 +56,7 @@ type Response struct {
 	Model   string           `json:"model"`
 	Choices []ResponseChoice `json:"choices"`
 	Usage   Usage            `json:"usage"`
+	Error   Error            `json:"error"`
 }
 
 type ResponseChoice struct {
