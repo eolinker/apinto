@@ -103,9 +103,6 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	case 400, 422, 403:
 		// Handle the bad request error.
 		ai_provider.SetAIStatusInvalidRequest(ctx)
-	case 402:
-		// Handle the balance is insufficient.
-		ai_provider.SetAIStatusQuotaExhausted(ctx)
 	case 429:
 		// Handle exceed
 		ai_provider.SetAIStatusExceeded(ctx)
