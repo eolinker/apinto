@@ -2,6 +2,7 @@ package nvidia
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/eolinker/eosc"
 
@@ -77,17 +78,43 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	if httpContext.Response().StatusCode() != 200 {
-		return nil
-	}
 	body := httpContext.Response().GetBody()
-	data := eosc.NewBase[Response]()
-	err = json.Unmarshal(body, data)
+	var data *eosc.Base[Response]
+	var errData *eosc.Base[ErrorResponse] = nil
+	if httpContext.Response().StatusCode() == 200 {
+		data = eosc.NewBase[Response]()
+		err = json.Unmarshal(body, data)
+	} else {
+		errData = eosc.NewBase[ErrorResponse]()
+		err = json.Unmarshal(body, errData)
+	}
 	if err != nil {
 		return err
 	}
+	// 针对不同响应做出处理
+	switch httpContext.Response().StatusCode() {
+	case 200:
+		// Calculate the token consumption for a successful request.
+		usage := data.Config.Usage
+		ai_provider.SetAIStatusNormal(ctx)
+		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
+		ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+	case 400, 422, 403:
+		// Handle the bad request error.
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	case 402:
+		// Handle the balance is insufficient.
+		ai_provider.SetAIStatusQuotaExhausted(ctx)
+	case 429:
+		// Handle exceed
+		ai_provider.SetAIStatusExceeded(ctx)
+	case 401:
+		// Handle authentication failure
+		ai_provider.SetAIStatusInvalid(ctx)
+	}
 	responseBody := &ai_provider.ClientResponse{}
-	if len(data.Config.Choices) > 0 {
+	if data != nil && len(data.Config.Choices) > 0 {
 		msg := data.Config.Choices[0]
 		responseBody.Message = ai_provider.Message{
 			Role:    msg.Message.Role,
@@ -96,7 +123,11 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		responseBody.FinishReason = msg.FinishReason
 	} else {
 		responseBody.Code = -1
-		responseBody.Error = "no response"
+		if errData != nil {
+			responseBody.Error = fmt.Sprintf("%s: %s", errData.Config.Title, errData.Config.Detail)
+		} else {
+			responseBody.Error = "no response"
+		}
 	}
 	body, err = json.Marshal(responseBody)
 	if err != nil {

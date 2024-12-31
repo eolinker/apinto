@@ -95,8 +95,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	case 1008:
 		// Handle the balance is insufficient.
 		ai_provider.SetAIStatusQuotaExhausted(ctx)
-	case 1002: // 触发RPM限流
-	case 1039: // 触发TPM限流
+	case 1002, 1039: // 触发RPM限流 || 触发TPM限流
 		// Handle exceed
 		ai_provider.SetAIStatusExceeded(ctx)
 	case 1004:
