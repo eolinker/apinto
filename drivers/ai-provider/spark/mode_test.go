@@ -1,4 +1,4 @@
-package baichuan
+package spark
 
 import (
 	_ "embed"
@@ -20,7 +20,7 @@ var (
 	successBody   = []byte(`{
 		"messages": [
 			{
-				"content": "Hello",
+				"content": "Hello?",
 				"role": "user"
 			}
 		]
@@ -52,24 +52,24 @@ func TestSentTo(t *testing.T) {
 	}{
 		{
 			name:       "success",
-			apiKey:     os.Getenv("BAICHUAN_VALID_API_KEY"),
+			apiKey:     os.Getenv("SPARK_VALID_API_KEY"),
 			wantStatus: ai_provider.StatusNormal,
 			body:       successBody,
 		},
 		{
 			name:       "invalid request",
-			apiKey:     os.Getenv("BAICHUAN_VALID_API_KEY"),
+			apiKey:     os.Getenv("SPARK_VALID_API_KEY"),
 			wantStatus: ai_provider.StatusInvalidRequest,
 			body:       failBody,
 		},
 		{
 			name:       "invalid key",
-			apiKey:     os.Getenv("BAICHUAN_INVALID_API_KEY"),
+			apiKey:     os.Getenv("SPARK_INVALID_API_KEY"),
 			wantStatus: ai_provider.StatusInvalid,
 		},
 		{
 			name:       "expired key",
-			apiKey:     os.Getenv("BAICHUAN_EXPIRE_API_KEY"),
+			apiKey:     os.Getenv("SPARK_EXPIRE_API_KEY"),
 			wantStatus: ai_provider.StatusInvalid,
 		},
 	}
@@ -87,11 +87,11 @@ func TestSentTo(t *testing.T) {
 // runTest handles a single test case
 func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 	cfg := &Config{
-		APIKey: apiKey,
+		APIPassword: apiKey,
 	}
-	baseDomain := "https://api.baichuan-ai.com"
+	baseDomain := "https://spark-api-open.xf-yun.com"
 	// Create the worker
-	worker, err := Create("baichuan", "baichuan", cfg, nil)
+	worker, err := Create("spark", "spark", cfg, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create worker: %w", err)
 	}
@@ -111,7 +111,7 @@ func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 	ctx := createMockHttpContext("/v1/chat/completions", nil, nil, requestBody)
 
 	// Execute the conversion process
-	err = executeConverter(ctx, handler, "baichuan4", baseDomain)
+	err = executeConverter(ctx, handler, "4.0Ultra", baseDomain)
 	if err != nil {
 		return fmt.Errorf("failed to execute conversion process: %w", err)
 	}
