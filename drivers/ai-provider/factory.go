@@ -28,7 +28,7 @@ func Register(register eosc.IExtenderDriverRegister) {
 // NewFactory 创建service_http驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
 	ones.Do(func() {
-		bean.Injection(&providerManager)
+		bean.Autowired(&providerManager)
 	})
 	return drivers.NewFactory[Config](Create)
 }

@@ -37,6 +37,6 @@ func (m *Manager) Set(id string, driver IConverterFactory) {
 	m.factories.Set(id, driver)
 }
 
-func newManager() *Manager {
+func newManager() IManager {
 	return &Manager{factories: eosc.BuildUntyped[string, IConverterFactory]()}
 }

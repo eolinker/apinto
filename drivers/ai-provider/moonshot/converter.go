@@ -31,8 +31,17 @@ type converterDriver struct {
 }
 
 func newConverterDriver(cfg *Config) (convert.IConverterDriver, error) {
+	var balanceHandler eocontext.BalanceHandler
+	var err error
+	if cfg.Base != "" {
+		balanceHandler, err = convert.NewBalanceHandler("", cfg.Base, 0)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &converterDriver{
-		apikey: cfg.APIKey,
+		apikey:         cfg.APIKey,
+		BalanceHandler: balanceHandler,
 	}, nil
 }
 
@@ -42,7 +51,7 @@ func (e *converterDriver) GetConverter(model string) (convert.IConverter, bool) 
 		return nil, false
 	}
 
-	return &Converter{converter: converter, apikey: e.apikey}, true
+	return &Converter{converter: converter, apikey: e.apikey, balanceHandler: e.BalanceHandler}, true
 }
 
 func (e *converterDriver) GetModel(model string) (convert.FGenerateConfig, bool) {
@@ -81,11 +90,15 @@ func (e *converterDriver) GetModel(model string) (convert.FGenerateConfig, bool)
 }
 
 type Converter struct {
-	apikey    string
-	converter convert.IConverter
+	balanceHandler eocontext.BalanceHandler
+	apikey         string
+	converter      convert.IConverter
 }
 
 func (c *Converter) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
+	if c.balanceHandler != nil {
+		ctx.SetBalance(c.balanceHandler)
+	}
 	httpContext, err := http_context.Assert(ctx)
 	if err != nil {
 		return err

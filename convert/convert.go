@@ -23,5 +23,5 @@ type IChildConverter interface {
 type FGenerateConfig func(cfg string) (map[string]interface{}, error)
 
 func CheckSkill(skill string) bool {
-	return skill == "github.com/eolinker/apinto/convert.convert.IConverterDriver"
+	return skill == "github.com/eolinker/apinto/convert.key.IKeyPool"
 }

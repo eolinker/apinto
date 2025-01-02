@@ -3,29 +3,18 @@ package ai_provider
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/eolinker/apinto/convert"
 )
 
-var _ convert.IKeyPool = (*keyPool)(nil)
-
 type keyPool struct {
-	provider  string
-	model     string
-	priority  int
 	closeChan chan struct{}
+	disable   bool
 	keys      []convert.IKeyResource
 	locker    sync.RWMutex
-}
-
-func (k *keyPool) Provider() string {
-	return k.provider
-}
-
-func (k *keyPool) Model() string {
-	return k.model
 }
 
 func (k *keyPool) Close() {
@@ -35,36 +24,47 @@ func (k *keyPool) Close() {
 	}
 }
 
-func newKeyPool(ctx context.Context, cfg *Config) (*keyPool, error) {
+func (k *keyPool) Health() bool {
+	return !k.disable
+}
+
+func (k *keyPool) Down() {
+	k.disable = true
+}
+
+func newKeyPool(ctx context.Context, cfg *Config) (*keyPool, map[string]interface{}, error) {
 	factory, has := providerManager.Get(cfg.Provider)
 	if !has {
-		return nil, errors.New("provider not found")
+		return nil, nil, errors.New("provider not found")
 	}
 	keys := make([]convert.IKeyResource, 0, len(cfg.Keys))
+	var extender map[string]interface{}
 	for _, v := range cfg.Keys {
 		if v.Disabled {
 			continue
 		}
 		cv, err := factory.Create(v.Config)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+		if extender == nil {
+			fn, has := cv.GetModel(cfg.Model)
+			if !has {
+				return nil, nil, fmt.Errorf("default model not found")
+			}
+			extender, err = fn(cfg.ModelConfig)
+			if err != nil {
+				return nil, nil, err
+			}
 		}
 
-		keys = append(keys, &key{
-			id:            v.ID,
-			name:          v.Name,
-			convertDriver: cv,
-			locker:        sync.RWMutex{},
-		})
+		keys = append(keys, newKey(v.ID, v.Name, v.Expired, cv))
 	}
 	k := &keyPool{
-		provider: cfg.Provider,
-		model:    cfg.Model,
-		priority: cfg.Priority,
-		keys:     keys,
+		keys: keys,
 	}
 	go k.doLoop(ctx)
-	return k, nil
+	return k, extender, nil
 }
 
 func (k *keyPool) Selector() convert.IKeySelector {
@@ -128,10 +128,10 @@ func (k *keySelector) Priority() int {
 }
 
 func (k *keySelector) Next() (convert.IKeyResource, bool) {
-	for ; k.index < k.size; k.index++ {
-		if k.keys[k.index].Health() {
-			return k.keys[k.index], true
-		}
+	index := k.index
+	k.index++
+	if index < k.size {
+		return k.keys[index], true
 	}
 	return nil, false
 }
@@ -141,17 +141,23 @@ type key struct {
 	name          string
 	disabled      bool
 	breaker       bool
+	expired       int64
 	convertDriver convert.IConverterDriver
 	locker        sync.RWMutex
 }
 
-func newKey(id string, name string, convertDriver convert.IConverterDriver) convert.IKeyResource {
-	return &key{id: id, name: name, convertDriver: convertDriver}
+func newKey(id string, name string, expired int64, convertDriver convert.IConverterDriver) convert.IKeyResource {
+	return &key{id: id, name: name, expired: expired, convertDriver: convertDriver}
 }
 
 func (k *key) Health() bool {
 	k.locker.RLock()
 	defer k.locker.RUnlock()
+	if k.expired != 0 {
+		if time.Now().Unix() > k.expired {
+			k.disabled = true
+		}
+	}
 	return !k.disabled
 }
 

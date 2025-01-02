@@ -196,3 +196,7 @@ require (
 )
 
 replace github.com/soheilhy/cmux v0.1.5 => github.com/hmzzrcs/cmux v0.1.6
+
+replace (
+	github.com/eolinker/eosc => ../eosc
+)

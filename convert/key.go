@@ -3,8 +3,11 @@ package convert
 type IKeyPool interface {
 	Provider() string
 	Model() string
+	ModelConfig() map[string]interface{}
+	Priority() int
+	Health() bool
 	Selector() IKeySelector
-	Close()
+	Down()
 }
 
 type IKeySelector interface {

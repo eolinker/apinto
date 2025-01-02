@@ -5,7 +5,7 @@ import (
 )
 
 type Config struct {
-	Provider eosc.RequireId `json:"provider" skill:"github.com/eolinker/apinto/convert.convert.IConverterDriver"`
+	Provider eosc.RequireId `json:"provider" skill:"github.com/eolinker/apinto/convert.key.IKeyPool"`
 	Model    string         `json:"model"`
 	Config   string         `json:"config"`
 }
