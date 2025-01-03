@@ -14,9 +14,8 @@ func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker)
 		WorkerBase: drivers.Worker(id, name),
 		model:      v.Model,
 		modelCfg:   v.Config,
-		provider:   string(v.Provider),
+		provider:   v.Provider,
 	}
-	err = w.reset()
 	if err != nil {
 		return nil, err
 	}

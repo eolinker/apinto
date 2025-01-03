@@ -6,8 +6,20 @@ import (
 	"strconv"
 	"strings"
 
+	eoscContext "github.com/eolinker/eosc/eocontext"
+
 	yaml "gopkg.in/yaml.v3"
 )
+
+type IProvider interface {
+	Provider() string
+	Model() string
+	ModelConfig() map[string]interface{}
+	Priority() int
+	Health() bool
+	Down()
+	BalanceHandler() eoscContext.BalanceHandler
+}
 
 type ModelType string
 

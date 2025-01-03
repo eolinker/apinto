@@ -24,16 +24,16 @@ func Register(register eosc.IExtenderDriverRegister) {
 
 // NewFactory 创建service_http驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
-
+	once.Do(func() {
+		bean.Autowired(&converterManager)
+		converterManager.Set(name, &convertFactory{})
+	})
 	return drivers.NewFactory[Config](Create)
 }
 
 // Create 创建驱动实例
 func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	once.Do(func() {
-		bean.Autowired(&converterManager)
-		converterManager.Set(name, &convertFactory{})
-	})
+
 	_, err := checkConfig(v)
 	if err != nil {
 		return nil, err

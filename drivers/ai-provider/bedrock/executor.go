@@ -73,7 +73,7 @@ func (e *executor) Stop() error {
 }
 
 func (e *executor) CheckSkill(skill string) bool {
-	return convert.CheckSkill(skill)
+	return convert.CheckKeySourceSkill(skill)
 }
 
 type ModelConfig struct {

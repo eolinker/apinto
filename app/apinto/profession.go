@@ -294,6 +294,21 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Mod: eosc.ProfessionConfig_Worker,
 		},
 		{
+			Name:         "ai-resource",
+			Label:        "AI资源",
+			Desc:         "AI资源",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:apinto:ai-key",
+					Name:  "ai-key",
+					Label: "ai-key",
+					Desc:  "ai-key",
+				},
+			},
+		},
+		{
 			Name:         "ai-provider",
 			Label:        "AI服务提供者",
 			Desc:         "AI服务提供者",

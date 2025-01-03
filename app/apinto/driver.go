@@ -1,6 +1,7 @@
 package main
 
 import (
+	ai_key "github.com/eolinker/apinto/drivers/ai-key"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	anthropic "github.com/eolinker/apinto/drivers/ai-provider/authropic"
 	"github.com/eolinker/apinto/drivers/ai-provider/baichuan"
@@ -150,4 +151,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	zhinao.Register(extenderRegister)
 
 	ai_provider.Register(extenderRegister)
+	ai_key.Register(extenderRegister)
 }
