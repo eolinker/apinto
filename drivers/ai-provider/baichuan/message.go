@@ -9,6 +9,12 @@ type Message struct {
 	Content string `json:"content"`
 }
 
+type Error struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Type    string `json:"type"`
+}
+
 type Response struct {
 	Id                string           `json:"id"`
 	Object            string           `json:"object"`
@@ -17,6 +23,7 @@ type Response struct {
 	SystemFingerprint string           `json:"system_fingerprint"`
 	Choices           []ResponseChoice `json:"choices"`
 	Usage             Usage            `json:"usage"`
+	Error             Error            `json:"error"`
 }
 
 type ResponseChoice struct {

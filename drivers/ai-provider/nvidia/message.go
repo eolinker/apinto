@@ -19,6 +19,14 @@ type Response struct {
 	Usage             Usage            `json:"usage"`
 }
 
+// ErrorResponse represents an error response from the OpenAI API.
+type ErrorResponse struct {
+	Status int    `json:"status"`
+	Type   string `json:"type"`
+	Detail string `json:"detail"`
+	Title  string `json:"title"`
+}
+
 type ResponseChoice struct {
 	Index        int     `json:"index"`
 	Message      Message `json:"message"`

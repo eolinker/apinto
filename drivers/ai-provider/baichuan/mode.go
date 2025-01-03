@@ -74,14 +74,35 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	if httpContext.Response().StatusCode() != 200 {
-		return nil
-	}
 	body := httpContext.Response().GetBody()
 	data := eosc.NewBase[Response]()
 	err = json.Unmarshal(body, data)
 	if err != nil {
 		return err
+	}
+	// 针对不同响应做出处理
+	switch httpContext.Response().StatusCode() {
+	case 200:
+		// Calculate the token consumption for a successful request.
+		usage := data.Config.Usage
+		ai_provider.SetAIStatusNormal(ctx)
+		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
+		ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+	case 400:
+		// Handle the bad request error.
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	case 429:
+		if data.Config.Error.Code == "insufficient_quota" {
+			// Handle the balance is insufficient.
+			ai_provider.SetAIStatusQuotaExhausted(ctx)
+		} else {
+			// Handle exceed
+			ai_provider.SetAIStatusExceeded(ctx)
+		}
+	case 401:
+		// Handle authentication failure
+		ai_provider.SetAIStatusInvalid(ctx)
 	}
 	responseBody := &ai_provider.ClientResponse{}
 	if len(data.Config.Choices) > 0 {
@@ -93,7 +114,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		responseBody.FinishReason = msg.FinishReason
 	} else {
 		responseBody.Code = -1
-		responseBody.Error = "no response"
+		responseBody.Error = data.Config.Error.Message
 	}
 	body, err = json.Marshal(responseBody)
 	if err != nil {

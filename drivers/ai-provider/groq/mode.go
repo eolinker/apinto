@@ -91,8 +91,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
 		ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
 		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
-	case 400:
-	case 422:
+	case 400, 422:
 		// Handle the bad request error.
 		ai_provider.SetAIStatusInvalidRequest(ctx)
 	case 429:
