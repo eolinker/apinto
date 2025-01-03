@@ -6,13 +6,14 @@ import (
 	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/convert"
+	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 var (
 	modelModes = map[string]IModelMode{
-		convert.ModeChat.String(): NewChat(),
+		ai_provider.ModeChat.String(): NewChat(),
 	}
 )
 
@@ -46,7 +47,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	}
 	// 设置转发地址
 	httpContext.Proxy().URI().SetPath(c.endPoint)
-	baseCfg := eosc.NewBase[convert.ClientRequest]()
+	baseCfg := eosc.NewBase[ai_provider.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
@@ -76,26 +77,42 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	if httpContext.Response().StatusCode() != 200 {
-		return nil
-	}
 	body := httpContext.Response().GetBody()
 	data := eosc.NewBase[Response]()
 	err = json.Unmarshal(body, data)
 	if err != nil {
 		return err
 	}
-	responseBody := &convert.ClientResponse{}
+	// 针对不同响应做出处理
+	switch httpContext.Response().StatusCode() {
+	case 200:
+		// Calculate the token consumption for a successful request.
+		usage := data.Config.Usage
+		ai_provider.SetAIStatusNormal(ctx)
+		ai_provider.SetAIModelInputToken(ctx, usage.InputTokens)
+		ai_provider.SetAIModelOutputToken(ctx, usage.OutputTokens)
+		ai_provider.SetAIModelTotalToken(ctx, usage.InputTokens+usage.OutputTokens)
+	case 400:
+		// Handle the bad request error.
+		ai_provider.SetAIStatusInvalidRequest(ctx)
+	case 429:
+		// Handle exceed
+		ai_provider.SetAIStatusExceeded(ctx)
+	case 401:
+		// Handle authentication failure
+		ai_provider.SetAIStatusInvalid(ctx)
+	}
+	responseBody := &ai_provider.ClientResponse{}
 	if len(data.Config.Contents) > 0 {
 		msg := data.Config.Contents[0]
-		responseBody.Message = convert.Message{
+		responseBody.Message = ai_provider.Message{
 			Role:    data.Config.Role,
 			Content: msg.Text,
 		}
 		responseBody.FinishReason = data.Config.StopReason
 	} else {
 		responseBody.Code = -1
-		responseBody.Error = "no response"
+		responseBody.Error = data.Config.Error.Message
 	}
 	body, err = json.Marshal(responseBody)
 	if err != nil {

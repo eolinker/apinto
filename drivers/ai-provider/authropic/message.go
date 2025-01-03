@@ -14,10 +14,22 @@ type Content struct {
 	Text string `json:"text"`
 }
 
+type Error struct {
+	Message string `json:"message"`
+	Type    string `json:"type"`
+}
+
+type Usage struct {
+	InputTokens  int `json:"input_tokens"`
+	OutputTokens int `json:"output_tokens"`
+}
+
 type Response struct {
 	Id         string    `json:"id"`
 	Model      string    `json:"model"`
 	Role       string    `json:"role"`
 	Contents   []Content `json:"content"`
 	StopReason string    `json:"stop_reason"`
+	Usage      Usage     `json:"usage"`
+	Error      Error     `json:"error"`
 }

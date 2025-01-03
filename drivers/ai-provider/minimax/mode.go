@@ -2,8 +2,8 @@ package minimax
 
 import (
 	"encoding/json"
-
 	"github.com/eolinker/apinto/convert"
+	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
@@ -11,7 +11,7 @@ import (
 
 var (
 	modelModes = map[string]IModelMode{
-		convert.ModeChat.String(): NewChat(),
+		ai_provider.ModeChat.String(): NewChat(),
 	}
 )
 
@@ -45,7 +45,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	}
 	// 设置转发地址
 	httpContext.Proxy().URI().SetPath(c.endPoint)
-	baseCfg := eosc.NewBase[convert.ClientRequest]()
+	baseCfg := eosc.NewBase[ai_provider.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
@@ -85,28 +85,27 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	case 0:
 		// Calculate the token consumption for a successful request.
 		usage := data.Config.Usage
-		convert.SetAIStatusNormal(ctx)
-		convert.SetAIModelInputToken(ctx, usage.PromptTokens)
-		convert.SetAIModelOutputToken(ctx, usage.CompletionTokens)
-		convert.SetAIModelTotalToken(ctx, usage.TotalTokens)
+		ai_provider.SetAIStatusNormal(ctx)
+		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
+		ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
 	case 2013: // 输入格式信息不正常
 		// Handle the bad request error.
-		convert.SetAIStatusInvalidRequest(ctx)
+		ai_provider.SetAIStatusInvalidRequest(ctx)
 	case 1008:
 		// Handle the balance is insufficient.
-		convert.SetAIStatusQuotaExhausted(ctx)
-	case 1002: // 触发RPM限流
-	case 1039: // 触发TPM限流
+		ai_provider.SetAIStatusQuotaExhausted(ctx)
+	case 1002, 1039: // 触发RPM限流 || 触发TPM限流
 		// Handle exceed
-		convert.SetAIStatusExceeded(ctx)
+		ai_provider.SetAIStatusExceeded(ctx)
 	case 1004:
 		// Handle authentication failure
-		convert.SetAIStatusInvalid(ctx)
+		ai_provider.SetAIStatusInvalid(ctx)
 	}
-	responseBody := &convert.ClientResponse{}
+	responseBody := &ai_provider.ClientResponse{}
 	if len(data.Config.Choices) > 0 {
 		msg := data.Config.Choices[0]
-		responseBody.Message = convert.Message{
+		responseBody.Message = ai_provider.Message{
 			Role:    msg.Message.Role,
 			Content: msg.Message.Content,
 		}

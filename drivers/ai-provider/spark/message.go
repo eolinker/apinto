@@ -9,10 +9,17 @@ type Message struct {
 	Content string `json:"content"`
 }
 
+type Usage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+}
+
 type Response struct {
 	Code    int              `json:"code"`
 	Message string           `json:"message"`
 	Choices []ResponseChoice `json:"choices"`
+	Usage   Usage            `json:"usage"`
 	Error   *Error           `json:"error"`
 }
 
