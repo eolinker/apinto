@@ -2,12 +2,12 @@ package upstage
 
 import (
 	"fmt"
+
 	"github.com/eolinker/eosc"
 )
 
 type Config struct {
-	APIKey       string `json:"upstage_api_key"`
-	Organization string `json:"organization"`
+	APIKey string `json:"upstage_api_key"`
 }
 
 func checkConfig(v interface{}) (*Config, error) {

@@ -140,6 +140,7 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 			TLSConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
+
 			Dial:               dial,
 			MaxConns:           DefaultMaxConns,
 			MaxConnWaitTimeout: DefaultMaxConnWaitTimeout,

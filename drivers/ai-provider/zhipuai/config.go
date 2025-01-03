@@ -2,12 +2,12 @@ package zhipuai
 
 import (
 	"fmt"
+
 	"github.com/eolinker/eosc"
 )
 
 type Config struct {
-	APIKey       string `json:"zhipuai_api_key"`
-	Organization string `json:"zhipuai_organization"`
+	APIKey string `json:"zhipuai_api_key"`
 }
 
 func checkConfig(v interface{}) (*Config, error) {

@@ -5,9 +5,9 @@ import (
 )
 
 type Config struct {
-	Provider eosc.RequireId `json:"provider" skill:"github.com/eolinker/apinto/convert.convert.IConverterDriver"`
-	Model    string         `json:"model"`
-	Config   string         `json:"config"`
+	Provider string `json:"provider"`
+	Model    string `json:"model"`
+	Config   string `json:"config"`
 }
 
 func checkConfig(v interface{}) (*Config, error) {

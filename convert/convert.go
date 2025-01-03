@@ -2,6 +2,10 @@ package convert
 
 import "github.com/eolinker/eosc/eocontext"
 
+type IConverterFactory interface {
+	Create(cfg string) (IConverterDriver, error)
+}
+
 type IConverterDriver interface {
 	GetModel(model string) (FGenerateConfig, bool)
 	GetConverter(model string) (IConverter, bool)
@@ -18,6 +22,10 @@ type IChildConverter interface {
 }
 type FGenerateConfig func(cfg string) (map[string]interface{}, error)
 
-func CheckSkill(skill string) bool {
-	return skill == "github.com/eolinker/apinto/convert.convert.IConverterDriver"
+func CheckKeySourceSkill(skill string) bool {
+	return skill == "github.com/eolinker/apinto/convert.key.IKeyResource"
+}
+
+func CheckProviderSkill(skill string) bool {
+	return skill == "github.com/eolinker/apinto/convert.provider.IProvider"
 }

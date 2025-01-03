@@ -3,16 +3,15 @@ package google
 import (
 	_ "embed"
 	"fmt"
-	"github.com/eolinker/apinto/convert"
-	http_context "github.com/eolinker/apinto/node/http-context"
-	"github.com/joho/godotenv"
-	"github.com/valyala/fasthttp"
 	"net/url"
 	"os"
 	"testing"
 	"time"
 
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
+	"github.com/eolinker/apinto/convert"
+	http_context "github.com/eolinker/apinto/node/http-context"
+	"github.com/joho/godotenv"
+	"github.com/valyala/fasthttp"
 )
 
 var (
@@ -53,24 +52,24 @@ func TestSentTo(t *testing.T) {
 		{
 			name:       "success",
 			apiKey:     os.Getenv("GEMINI_VALID_API_KEY"),
-			wantStatus: ai_provider.StatusNormal,
+			wantStatus: convert.StatusNormal,
 			body:       successBody,
 		},
 		{
 			name:       "invalid request",
 			apiKey:     os.Getenv("GEMINI_VALID_API_KEY"),
-			wantStatus: ai_provider.StatusInvalidRequest,
+			wantStatus: convert.StatusInvalidRequest,
 			body:       failBody,
 		},
 		{
 			name:       "invalid key",
 			apiKey:     os.Getenv("GEMINI_INVALID_API_KEY"),
-			wantStatus: ai_provider.StatusInvalidRequest,
+			wantStatus: convert.StatusInvalidRequest,
 		},
 		{
 			name:       "expired key",
 			apiKey:     os.Getenv("GEMINI_EXPIRE_API_KEY"),
-			wantStatus: ai_provider.StatusInvalidRequest,
+			wantStatus: convert.StatusInvalidRequest,
 		},
 	}
 
@@ -117,8 +116,8 @@ func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 	}
 
 	// Check the status
-	if ai_provider.GetAIStatus(ctx) != wantStatus {
-		return fmt.Errorf("unexpected status: got %s, expected %s", ai_provider.GetAIStatus(ctx), wantStatus)
+	if convert.GetAIStatus(ctx) != wantStatus {
+		return fmt.Errorf("unexpected status: got %s, expected %s", convert.GetAIStatus(ctx), wantStatus)
 	}
 
 	return nil
@@ -127,7 +126,7 @@ func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 // executeConverter handles the full flow of a conversion process.
 func executeConverter(ctx *http_context.HttpContext, handler convert.IConverterDriver, model string, baseUrl string) error {
 	// Balance handler setup
-	balanceHandler, err := ai_provider.NewBalanceHandler("test", baseUrl, 30*time.Second)
+	balanceHandler, err := convert.NewBalanceHandler("test", baseUrl, 30*time.Second)
 	if err != nil {
 		return fmt.Errorf("failed to create balance handler: %w", err)
 	}

@@ -6,8 +6,7 @@ import (
 )
 
 type Config struct {
-	APIKey       string `json:"api_key"`
-	Organization string `json:"organization"`
+	APIKey string `json:"api_key"`
 }
 
 func checkConfig(v interface{}) (*Config, error) {

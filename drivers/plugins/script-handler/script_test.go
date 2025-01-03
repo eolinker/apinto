@@ -42,7 +42,6 @@ func TestScript(t *testing.T) {
 		t.Fatal(err)
 	}
 	var script = Script{
-		Config:     config,
 		WorkerBase: drivers.Worker("test", "test"),
 		fn:         fn,
 	}

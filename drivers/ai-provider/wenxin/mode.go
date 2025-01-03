@@ -8,7 +8,6 @@ import (
 	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/convert"
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -17,7 +16,7 @@ type FNewModelMode func(string) IModelMode
 
 var (
 	modelModes = map[string]FNewModelMode{
-		ai_provider.ModeChat.String(): NewChat,
+		convert.ModeChat.String(): NewChat,
 	}
 )
 
@@ -56,13 +55,13 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	}
 	// 设置转发地址
 	httpContext.Proxy().URI().SetPath(c.endPoint)
-	baseCfg := eosc.NewBase[ai_provider.ClientRequest]()
+	baseCfg := eosc.NewBase[convert.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
 	}
 	messages := make([]Message, 0, len(baseCfg.Config.Messages)+1)
-	var tmpMsg []*ai_provider.Message
+	var tmpMsg []*convert.Message
 	msgLen := len(baseCfg.Config.Messages)
 	if msgLen != 0 && msgLen%2 == 0 {
 		// 合并第一第二条信息
@@ -119,38 +118,38 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 			switch data.Config.ErrorCode {
 			case 17, 19:
 				// Handle the insufficient quota error.
-				ai_provider.SetAIStatusQuotaExhausted(ctx)
+				convert.SetAIStatusQuotaExhausted(ctx)
 			case 4, 18, 336501, 336502, 336503, 336504, 336505, 336507:
 				// Handle the rate limit error.
-				ai_provider.SetAIStatusExceeded(ctx)
+				convert.SetAIStatusExceeded(ctx)
 			case 13, 14, 100, 110, 111:
 				// Handle the invalid token error.
-				ai_provider.SetAIStatusInvalid(ctx)
+				convert.SetAIStatusInvalid(ctx)
 			default:
-				ai_provider.SetAIStatusInvalidRequest(ctx)
+				convert.SetAIStatusInvalidRequest(ctx)
 			}
 		} else {
 			usage := data.Config.Usage
-			ai_provider.SetAIStatusNormal(ctx)
-			ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
-			ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
-			ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+			convert.SetAIStatusNormal(ctx)
+			convert.SetAIModelInputToken(ctx, usage.PromptTokens)
+			convert.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+			convert.SetAIModelTotalToken(ctx, usage.TotalTokens)
 		}
 	case 400:
 		// Handle the bad request error.
-		ai_provider.SetAIStatusInvalidRequest(ctx)
+		convert.SetAIStatusInvalidRequest(ctx)
 	case 403:
 		// Handle the invalid token error.
-		ai_provider.SetAIStatusInvalid(ctx)
+		convert.SetAIStatusInvalid(ctx)
 	default:
-		ai_provider.SetAIStatusInvalidRequest(ctx)
+		convert.SetAIStatusInvalidRequest(ctx)
 	}
 
-	responseBody := &ai_provider.ClientResponse{}
+	responseBody := &convert.ClientResponse{}
 	if data.Config.ErrorCode == 0 {
 		//if data.Config.Object == "chat.completion" {
 		msg := data.Config
-		responseBody.Message = ai_provider.Message{
+		responseBody.Message = convert.Message{
 			Role:    "assistant",
 			Content: msg.Result,
 		}
