@@ -2,12 +2,12 @@ package fireworks
 
 import (
 	"fmt"
+
 	"github.com/eolinker/eosc"
 )
 
 type Config struct {
-	APIKey       string `json:"fireworks_api_key"`
-	Organization string `json:"fireworks_organization"`
+	APIKey string `json:"fireworks_api_key"`
 }
 
 func checkConfig(v interface{}) (*Config, error) {

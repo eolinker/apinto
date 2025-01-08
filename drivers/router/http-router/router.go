@@ -87,7 +87,8 @@ func (h *HttpRouter) reset(cfg *Config, workers map[eosc.RequireId]eosc.IWorker)
 
 		if cfg.Service == "" {
 			// 当service未指定，使用默认返回
-			handler.completeHandler = http_complete.NewNoServiceCompleteHandler(cfg.Status, cfg.Header, cfg.Body)
+			//handler.completeHandler = http_complete.NewNoServiceCompleteHandler(cfg.Status, cfg.Header, cfg.Body)
+			handler.completeHandler = http_complete.NewHttpComplete()
 		} else {
 			s, err := url.PathUnescape(string(cfg.Service))
 			if err != nil {

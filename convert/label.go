@@ -1,4 +1,4 @@
-package ai_provider
+package convert
 
 import "github.com/eolinker/eosc/eocontext"
 
@@ -9,6 +9,7 @@ var (
 	AIModelModeLabel        = "ai_model_mode"
 	AIModelLabel            = "ai_model"
 	AIProviderLabel         = "ai_provider"
+	AIProviderStatusesLabel = "ai_provider_statuses"
 	AIModelStatusLabel      = "ai_model_status"
 )
 
@@ -70,6 +71,38 @@ func GetAIModel(ctx eocontext.EoContext) string {
 
 func SetAIProvider(ctx eocontext.EoContext, provider string) {
 	ctx.WithValue(AIProviderLabel, provider)
+}
+
+func GetAIProviderStatuses(ctx eocontext.EoContext) []AIProviderStatus {
+	tmp := ctx.Value(AIProviderStatusesLabel)
+	statuses := make([]AIProviderStatus, 0)
+	if tmp != nil {
+		result, ok := tmp.([]AIProviderStatus)
+		if ok {
+			statuses = result
+		}
+	}
+	return statuses
+}
+
+func SetAIProviderStatuses(ctx eocontext.EoContext, status AIProviderStatus) {
+	tmp := ctx.Value(AIProviderStatusesLabel)
+	statuses := make([]AIProviderStatus, 0)
+	if tmp != nil {
+		result, ok := tmp.([]AIProviderStatus)
+		if ok {
+			statuses = result
+		}
+	}
+	statuses = append(statuses, status)
+	ctx.WithValue(AIProviderStatusesLabel, statuses)
+}
+
+type AIProviderStatus struct {
+	Provider string `json:"provider"`
+	Model    string `json:"model"`
+	Key      string `json:"key"`
+	Status   string `json:"status"`
 }
 
 func GetAIProvider(ctx eocontext.EoContext) string {

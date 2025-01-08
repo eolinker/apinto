@@ -8,7 +8,6 @@ import (
 	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/convert"
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -16,7 +15,7 @@ import (
 // modelModes defines the available model modes and their corresponding implementations.
 var (
 	modelModes = map[string]IModelMode{
-		ai_provider.ModeChat.String(): NewChat(),
+		convert.ModeChat.String(): NewChat(),
 	}
 )
 
@@ -53,7 +52,6 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	if err != nil {
 		return err
 	}
-
 	// Retrieve the raw request body.
 	body, err := httpContext.Proxy().Body().RawBody()
 	if err != nil {
@@ -64,7 +62,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	httpContext.Proxy().URI().SetPath(c.endPoint)
 
 	// Parse the request body into a base configuration.
-	baseCfg := eosc.NewBase[ai_provider.ClientRequest]()
+	baseCfg := eosc.NewBase[convert.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
@@ -127,32 +125,32 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	case 200:
 		// Calculate the token consumption for a successful request.
 		usage := data.Config.Usage
-		ai_provider.SetAIStatusNormal(ctx)
-		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
-		ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
-		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+		convert.SetAIStatusNormal(ctx)
+		convert.SetAIModelInputToken(ctx, usage.PromptTokens)
+		convert.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		convert.SetAIModelTotalToken(ctx, usage.TotalTokens)
 	case 400:
 		// Handle the bad request error.
-		ai_provider.SetAIStatusInvalidRequest(ctx)
+		convert.SetAIStatusInvalidRequest(ctx)
 	case 429:
 		switch data.Config.Error.Type {
 		case "insufficient_quota":
 			// Handle the insufficient quota error.
-			ai_provider.SetAIStatusQuotaExhausted(ctx)
+			convert.SetAIStatusQuotaExhausted(ctx)
 		case "rate_limit_error":
 			// Handle the rate limit error.
-			ai_provider.SetAIStatusExceeded(ctx)
+			convert.SetAIStatusExceeded(ctx)
 		}
 	case 401:
 		// 过期和无效的API密钥
-		ai_provider.SetAIStatusInvalid(ctx)
+		convert.SetAIStatusInvalid(ctx)
 	}
 
 	// Prepare the response body for the client.
-	responseBody := &ai_provider.ClientResponse{}
+	responseBody := &convert.ClientResponse{}
 	if len(data.Config.Choices) > 0 {
 		msg := data.Config.Choices[0]
-		responseBody.Message = ai_provider.Message{
+		responseBody.Message = convert.Message{
 			Role:    msg.Message.Role,
 			Content: msg.Message.Content,
 		}

@@ -2,27 +2,17 @@ package bedrock
 
 import (
 	"embed"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/credentials"
-
 	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
-
-	"github.com/eolinker/eosc/log"
 
 	"github.com/eolinker/apinto/drivers"
 
-	http_context "github.com/eolinker/eosc/eocontext/http-context"
-
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
-
 	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/eocontext"
 )
 
 var (
@@ -36,7 +26,7 @@ var (
 )
 
 func init() {
-	models, err := ai_provider.LoadModels(providerContent, providerDir)
+	models, err := convert.LoadModels(providerContent, providerDir)
 	if err != nil {
 		panic(err)
 	}
@@ -49,88 +39,9 @@ func init() {
 	}
 }
 
-type Converter struct {
-	converter convert.IConverter
-	model     string
-	*basicConfig
-}
-
-func (c *Converter) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
-	if c.BalanceHandler != nil {
-		ctx.SetBalance(c.BalanceHandler)
-	}
-	httpContext, err := http_context.Assert(ctx)
-	if err != nil {
-		return err
-	}
-
-	err = c.converter.RequestConvert(httpContext, extender)
-	if err != nil {
-		return err
-	}
-	body, _ := httpContext.Proxy().Body().RawBody()
-	headers, err := signRequest(c.signer, c.region, c.model, http.Header{}, string(body))
-	if err != nil {
-		return err
-	}
-	for k, v := range headers {
-
-		httpContext.Proxy().Header().SetHeader(k, strings.Join(v, ";"))
-	}
-	//httpContext.Proxy().Header().SetHeader("Authorization", authorization)
-	//httpContext.Proxy().Header().SetHeader("X-Amz-Date", date)
-	return nil
-}
-
-func (c *Converter) ResponseConvert(ctx eocontext.EoContext) error {
-	return c.converter.ResponseConvert(ctx)
-}
-
 type executor struct {
 	drivers.WorkerBase
-	cfg *basicConfig
-}
-
-type basicConfig struct {
-	signer *v4.Signer
-	region string
-	eocontext.BalanceHandler
-}
-
-func (e *executor) GetConverter(model string) (convert.IConverter, bool) {
-	converter, ok := modelConvert[model]
-	if !ok {
-		return nil, false
-	}
-
-	return &Converter{
-		converter:   converter,
-		model:       model,
-		basicConfig: e.cfg,
-	}, true
-}
-
-func (e *executor) GetModel(model string) (convert.FGenerateConfig, bool) {
-	if _, ok := modelConvert[model]; !ok {
-		return nil, false
-	}
-	return func(cfg string) (map[string]interface{}, error) {
-		result := map[string]interface{}{}
-		if cfg != "" {
-			tmp := make(map[string]interface{})
-			if err := json.Unmarshal([]byte(cfg), &tmp); err != nil {
-				log.Errorf("unmarshal config error: %v, cfg: %s", err, cfg)
-				return result, nil
-			}
-			modelCfg := ai_provider.MapToStruct[ModelConfig](tmp)
-			if modelCfg.MaxTokens >= 1 {
-				result["maxTokens"] = modelCfg.MaxTokens
-			}
-			result["temperature"] = modelCfg.Temperature
-			result["topP"] = modelCfg.TopP
-		}
-		return result, nil
-	}, true
+	convert.IConverterDriver
 }
 
 func (e *executor) Start() error {
@@ -147,29 +58,22 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (e *executor) reset(conf *Config, workers map[eosc.RequireId]eosc.IWorker) error {
-	base := fmt.Sprintf("https://bedrock-runtime.%s.amazonaws.com", conf.Region)
-	balanceHandler, err := ai_provider.NewBalanceHandler(e.Id(), base, 0)
+	d, err := newConverterDriver(conf)
 	if err != nil {
 		return err
 	}
-	e.cfg = &basicConfig{
-		signer:         v4.NewSigner(credentials.NewStaticCredentials(conf.AccessKey, conf.SecretKey, "")),
-		region:         conf.Region,
-		BalanceHandler: balanceHandler,
-	}
-	convert.Set(e.Id(), e)
+	e.IConverterDriver = d
 
 	return nil
 }
 
 func (e *executor) Stop() error {
-	e.cfg = nil
-	convert.Del(e.Id())
+	e.IConverterDriver = nil
 	return nil
 }
 
 func (e *executor) CheckSkill(skill string) bool {
-	return convert.CheckSkill(skill)
+	return convert.CheckKeySourceSkill(skill)
 }
 
 type ModelConfig struct {

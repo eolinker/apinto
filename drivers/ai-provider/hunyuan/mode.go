@@ -7,7 +7,6 @@ import (
 	"github.com/eolinker/eosc"
 
 	"github.com/eolinker/apinto/convert"
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -16,7 +15,7 @@ type FNewModelMode func(string) IModelMode
 
 var (
 	modelModes = map[string]FNewModelMode{
-		ai_provider.ModeChat.String(): NewChat,
+		convert.ModeChat.String(): NewChat,
 	}
 )
 
@@ -50,7 +49,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	}
 	// 设置转发地址
 	httpContext.Proxy().URI().SetPath(c.endPoint)
-	baseCfg := eosc.NewBase[ai_provider.ClientRequest]()
+	baseCfg := eosc.NewBase[convert.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
@@ -201,28 +200,28 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	*/
 	if data.Config.Response.Error.Code == "" {
 		usage := data.Config.Response.Usage
-		ai_provider.SetAIStatusNormal(ctx)
-		ai_provider.SetAIModelInputToken(ctx, usage.PromptTokens)
-		ai_provider.SetAIModelOutputToken(ctx, usage.CompletionTokens)
-		ai_provider.SetAIModelTotalToken(ctx, usage.TotalTokens)
+		convert.SetAIStatusNormal(ctx)
+		convert.SetAIModelInputToken(ctx, usage.PromptTokens)
+		convert.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		convert.SetAIModelTotalToken(ctx, usage.TotalTokens)
 	} else {
 		switch data.Config.Response.Error.Code {
 		case "AuthFailure.InvalidAuthorization", "AuthFailure.InvalidSecretId", "AuthFailure.SecretIdNotFound", "AuthFailure.SignatureFailure", "AuthFailure.TokenFailure", "AuthFailure.UnauthorizedOperation", "AuthFailure.SignatureExpire", "AuthFailure.MFAFailure":
-			ai_provider.SetAIStatusInvalid(ctx)
+			convert.SetAIStatusInvalid(ctx)
 		case "RequestLimitExceeded", "RequestLimitExceeded.GlobalRegionUinLimitExceeded", "RequestLimitExceeded.IPLimitExceeded", "RequestLimitExceeded.UinLimitExceeded", "RequestSizeLimitExceeded", "ResponseSizeLimitExceeded", "ResourceInUse", "ResourceInsufficient", "ResourceNotFound", "ResourceUnavailable":
-			ai_provider.SetAIStatusExceeded(ctx)
+			convert.SetAIStatusExceeded(ctx)
 		case "LimitExceeded", "FailedOperation.ServiceStop", "FailedOperation.ServiceStopArrears", "FailedOperation.SetPayModeExceed", "ResourceInsufficient.ChargeResourceExhaust", "ResourceUnavailable.InArrears", "ResourceUnavailable.LowBalance", "ResourceUnavailable.NotExist", "ResourceUnavailable.StopUsing", "FailedOperation.FreeResourcePackExhausted":
-			ai_provider.SetAIStatusQuotaExhausted(ctx)
+			convert.SetAIStatusQuotaExhausted(ctx)
 		default:
-			ai_provider.SetAIStatusInvalidRequest(ctx)
+			convert.SetAIStatusInvalidRequest(ctx)
 		}
 	}
 
-	responseBody := &ai_provider.ClientResponse{}
+	responseBody := &convert.ClientResponse{}
 	if len(data.Config.Response.Choices) > 0 {
 		//if data.Config.Object == "chat.completion" {
 		msg := data.Config.Response.Choices[0]
-		responseBody.Message = ai_provider.Message{
+		responseBody.Message = convert.Message{
 			Role:    msg.Message.Role,
 			Content: msg.Message.Content,
 		}

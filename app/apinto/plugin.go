@@ -119,6 +119,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	// ai相关插件
 	ai_prompt.Register(extenderRegister)
 	ai_formatter.Register(extenderRegister)
+	//ai_balance.Register(extenderRegister)
 
 	script_handler.Register(extenderRegister)
 }

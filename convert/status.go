@@ -1,4 +1,4 @@
-package ai_provider
+package convert
 
 import "github.com/eolinker/eosc/eocontext"
 
@@ -9,7 +9,16 @@ var (
 	StatusExpired        = "expired"
 	StatusExceeded       = "exceeded"
 	StatusInvalid        = "invalid"
+	StatusTimeout        = "timeout"
 )
+
+func SetAIStatusTimeout(ctx eocontext.EoContext) {
+	ctx.WithValue(AIModelStatusLabel, StatusTimeout)
+}
+
+func GetAIStatusTimeout(ctx eocontext.EoContext) string {
+	return valueString(ctx, AIModelStatusLabel)
+}
 
 func SetAIStatusExpired(ctx eocontext.EoContext) {
 	ctx.WithValue(AIModelStatusLabel, StatusExpired)

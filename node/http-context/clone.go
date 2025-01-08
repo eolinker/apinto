@@ -12,6 +12,7 @@ import (
 
 	"github.com/valyala/fasthttp"
 
+	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
 
 	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
@@ -37,6 +38,30 @@ type cloneContext struct {
 	labels              map[string]string
 	entry               eosc.IEntry
 	responseError       error
+}
+
+func (ctx *cloneContext) ProxyClone() http_service.IRequest {
+	// 创建一个新的 ProxyRequest 实例
+	req := fasthttp.AcquireRequest()
+	// 将原始请求内容拷贝到新请求
+	ctx.proxyRequest.Request().CopyTo(req)
+
+	// 使用 ProxyRequest.reset 初始化克隆的 ProxyRequest
+	cloneProxy := &ProxyRequest{}
+	cloneProxy.reset(req, ctx.proxyRequest.remoteAddr)
+
+	return cloneProxy
+}
+
+func (ctx *cloneContext) SetProxy(proxy http_service.IRequest) {
+	if p, ok := proxy.(*ProxyRequest); ok {
+		// 替换当前的 proxyRequest
+		ctx.proxyRequest = *p
+		//记录到 proxyRequests 数组中
+		//ctx.proxyRequests = append(ctx.proxyRequests, p)
+	} else {
+		log.Warn("SetProxy failed: incompatible type")
+	}
 }
 
 func (ctx *cloneContext) GetEntry() eosc.IEntry {

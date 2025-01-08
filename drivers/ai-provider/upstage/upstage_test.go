@@ -10,7 +10,6 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 
 	"github.com/eolinker/apinto/convert"
-	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/joho/godotenv"
 	"github.com/valyala/fasthttp"
@@ -44,16 +43,16 @@ var (
 )
 
 func validNormalFunc(ctx eocontext.EoContext) bool {
-	fmt.Printf("input token: %d\n", ai_provider.GetAIModelInputToken(ctx))
-	fmt.Printf("output token: %d\n", ai_provider.GetAIModelOutputToken(ctx))
-	fmt.Printf("total token: %d\n", ai_provider.GetAIModelTotalToken(ctx))
-	if ai_provider.GetAIModelInputToken(ctx) <= 0 {
+	fmt.Printf("input token: %d\n", convert.GetAIModelInputToken(ctx))
+	fmt.Printf("output token: %d\n", convert.GetAIModelOutputToken(ctx))
+	fmt.Printf("total token: %d\n", convert.GetAIModelTotalToken(ctx))
+	if convert.GetAIModelInputToken(ctx) <= 0 {
 		return false
 	}
-	if ai_provider.GetAIModelOutputToken(ctx) <= 0 {
+	if convert.GetAIModelOutputToken(ctx) <= 0 {
 		return false
 	}
-	return ai_provider.GetAIModelTotalToken(ctx) > 0
+	return convert.GetAIModelTotalToken(ctx) > 0
 }
 
 // TestSentTo tests the end-to-end execution of the upstage integration.
@@ -75,25 +74,25 @@ func TestSentTo(t *testing.T) {
 		{
 			name:       "success",
 			apiKey:     os.Getenv("ValidKey"),
-			wantStatus: ai_provider.StatusNormal,
+			wantStatus: convert.StatusNormal,
 			body:       successBody,
 			validFunc:  validNormalFunc,
 		},
 		{
 			name:       "invalid request",
 			apiKey:     os.Getenv("ValidKey"),
-			wantStatus: ai_provider.StatusInvalidRequest,
+			wantStatus: convert.StatusInvalidRequest,
 			body:       failBody,
 		},
 		{
 			name:       "invalid key",
 			apiKey:     os.Getenv("InvalidKey"),
-			wantStatus: ai_provider.StatusInvalid,
+			wantStatus: convert.StatusInvalid,
 		},
 		{
 			name:       "expired key",
 			apiKey:     os.Getenv("ExpiredKey"),
-			wantStatus: ai_provider.StatusInvalid,
+			wantStatus: convert.StatusInvalid,
 		},
 	}
 
@@ -110,8 +109,7 @@ func TestSentTo(t *testing.T) {
 // runTest handles a single test case
 func runTest(apiKey string, requestBody []byte, wantStatus string, validFunc func(ctx eocontext.EoContext) bool) error {
 	cfg := &Config{
-		APIKey:       apiKey,
-		Organization: "",
+		APIKey: apiKey,
 	}
 
 	// Create the worker
@@ -141,8 +139,8 @@ func runTest(apiKey string, requestBody []byte, wantStatus string, validFunc fun
 	}
 
 	// Check the status
-	if ai_provider.GetAIStatus(ctx) != wantStatus {
-		return fmt.Errorf("unexpected status: got %s, expected %s", ai_provider.GetAIStatus(ctx), wantStatus)
+	if convert.GetAIStatus(ctx) != wantStatus {
+		return fmt.Errorf("unexpected status: got %s, expected %s", convert.GetAIStatus(ctx), wantStatus)
 	}
 	if validFunc != nil {
 		if validFunc(ctx) {
@@ -157,7 +155,7 @@ func runTest(apiKey string, requestBody []byte, wantStatus string, validFunc fun
 // executeConverter handles the full flow of a conversion process.
 func executeConverter(ctx *http_context.HttpContext, handler convert.IConverterDriver, model string, baseUrl string) error {
 	// Balance handler setup
-	balanceHandler, err := ai_provider.NewBalanceHandler("test", baseUrl, 30*time.Second)
+	balanceHandler, err := convert.NewBalanceHandler("test", baseUrl, 30*time.Second)
 	if err != nil {
 		return fmt.Errorf("failed to create balance handler: %w", err)
 	}
