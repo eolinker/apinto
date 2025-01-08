@@ -21,8 +21,7 @@ type executor struct {
 }
 
 func (e *executor) Start() error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
@@ -47,6 +46,7 @@ func (e *executor) reset(conf *Config) error {
 	k := newKey(e.Id(), e.Name(), conf.Expired, conf.Priority, cv)
 
 	e.key = k
+	e.provider = conf.Provider
 	convert.SetKeyResource(e.provider, e.key)
 	return nil
 }

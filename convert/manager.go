@@ -70,11 +70,12 @@ func (m *KeyPoolManager) Set(id string, resource IKeyResource) {
 	keyPools, has := m.keys.Get(id)
 	if !has {
 		keyPools = eosc.BuildUntyped[string, IKeyResource]()
+		m.keys.Set(id, keyPools)
 	}
 	keyPools.Set(resource.ID(), resource)
 	keys := keyPools.List()
 	sort.Slice(keys, func(i, j int) bool {
-		return keys[i].Priority() > keys[j].Priority()
+		return keys[i].Priority() < keys[j].Priority()
 	})
 	m.keySorts.Set(id, keys)
 }
@@ -158,7 +159,7 @@ func (m *ProviderManager) Get(provider string) (IProvider, bool) {
 func (m *ProviderManager) sortProviders() {
 	providers := m.providers.List()
 	sort.Slice(providers, func(i, j int) bool {
-		return providers[i].Priority() > providers[j].Priority()
+		return providers[i].Priority() < providers[j].Priority()
 	})
 	m.providerSorts = providers
 }

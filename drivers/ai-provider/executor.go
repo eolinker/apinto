@@ -92,10 +92,13 @@ func (e *executor) reset(cfg *Config) error {
 		}
 		e.balanceHandler = balanceHandler
 	}
+
 	e.priority = cfg.Priority
 	e.model = cfg.Model
 	e.provider = cfg.Provider
 	e.modelConfig = extender
+	e.disable = false
+	convert.SetProvider(cfg.Provider, e)
 	return nil
 }
 

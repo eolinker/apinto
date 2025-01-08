@@ -306,6 +306,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "ai-key",
 					Desc:  "ai-key",
 				},
+				{
+					Id:    "eolinker.com:apinto:ai-provider",
+					Name:  "ai-provider",
+					Label: "ai-provider",
+					Desc:  "ai-provider",
+				},
 			},
 		},
 		{
@@ -315,12 +321,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 			Dependencies: nil,
 			AppendLabels: nil,
 			Drivers: []*eosc.DriverConfig{
-				{
-					Id:    "eolinker.com:apinto:ai-provider",
-					Name:  "ai-provider",
-					Label: "ai-provider",
-					Desc:  "ai-provider",
-				},
+				//{
+				//	Id:    "eolinker.com:apinto:ai-provider",
+				//	Name:  "ai-provider",
+				//	Label: "ai-provider",
+				//	Desc:  "ai-provider",
+				//},
 				{
 					Id:    "eolinker.com:apinto:openai",
 					Name:  "openai",
