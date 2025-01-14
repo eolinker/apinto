@@ -14,6 +14,10 @@ if [[ "${HOSTNAME}" != "" && ${SERVICE} != "" && ${NAMESPACE} != "" ]];then
 	sed -i "s/{IP}/${IP}/g" "$CONFIG_FILE"
   echo "Replaced {IP} with ${IP} in $CONFIG_FILE."
 fi
+# 停止 Apinto
+./apinto stop
+
+sleep 5s
 
 # 启动 Apinto
 echo "Starting Apinto..."
