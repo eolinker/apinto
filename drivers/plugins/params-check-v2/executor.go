@@ -23,7 +23,7 @@ var _ eosc.IWorker = (*executor)(nil)
 type executor struct {
 	drivers.WorkerBase
 	logic string
-	ck    IParamChecker
+	cks   []IParamChecker
 }
 
 func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
@@ -33,7 +33,8 @@ func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err
 var errParamCheck = "Can not find the %s param \"%s\" or the \"%s\" is illegal"
 
 func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
-	if e.ck != nil {
+	if e.cks != nil {
+		cks := e.cks
 		headerReader := ctx.Request().Header()
 		queryReader := ctx.Request().URI()
 		var body interface{}
@@ -54,8 +55,25 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 			fn = jsonChecker
 
 		}
-		ok := e.ck.Check(e.logic, headerReader, queryReader, body, fn)
-		if !ok {
+		success := true
+		for _, ck := range cks {
+			ok := ck.Check(headerReader, queryReader, body, fn)
+			if !ok {
+				if e.logic == logicAnd {
+					ctx.Response().SetStatus(401, "401")
+					ctx.Response().SetBody([]byte("param check failed"))
+					return err
+				}
+				success = false
+				continue
+			} else {
+				success = true
+				if e.logic == logicOr {
+					break
+				}
+			}
+		}
+		if !success {
 			ctx.Response().SetStatus(401, "401")
 			ctx.Response().SetBody([]byte("param check failed"))
 			return err
@@ -69,7 +87,7 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 }
 
 func (e *executor) Destroy() {
-	e.ck = nil
+	e.cks = nil
 	return
 }
 

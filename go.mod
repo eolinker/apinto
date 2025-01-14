@@ -24,7 +24,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.28
 	github.com/nacos-group/nacos-sdk-go/v2 v2.2.3
 	github.com/nsqio/go-nsq v1.1.0
-	github.com/ohler55/ojg v1.12.9
+	github.com/ohler55/ojg v1.25.1
 	github.com/pkg/sftp v1.13.4
 	github.com/polarismesh/polaris-go v1.1.0
 	github.com/redis/go-redis/v9 v9.7.0

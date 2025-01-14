@@ -19,7 +19,7 @@ var (
 )
 
 type IParamChecker interface {
-	Check(logic string, header http_service.IHeaderReader, query http_service.IQueryReader, body interface{}, fn bodyCheckerFunc) bool
+	Check(header http_service.IHeaderReader, query http_service.IQueryReader, body interface{}, fn bodyCheckerFunc) bool
 }
 
 type headerChecker struct {
@@ -27,7 +27,7 @@ type headerChecker struct {
 	checker checker.Checker
 }
 
-func (h *headerChecker) Check(logic string, header http_service.IHeaderReader, query http_service.IQueryReader, body interface{}, fn bodyCheckerFunc) bool {
+func (h *headerChecker) Check(header http_service.IHeaderReader, query http_service.IQueryReader, body interface{}, fn bodyCheckerFunc) bool {
 	v := header.GetHeader(h.name)
 	match := h.checker.Check(v, true)
 	if !match {
@@ -49,7 +49,7 @@ type queryChecker struct {
 	checker checker.Checker
 }
 
-func (q *queryChecker) Check(logic string, header http_service.IHeaderReader, query http_service.IQueryReader, body interface{}, fn bodyCheckerFunc) bool {
+func (q *queryChecker) Check(header http_service.IHeaderReader, query http_service.IQueryReader, body interface{}, fn bodyCheckerFunc) bool {
 	v := query.GetQuery(q.name)
 	match := q.checker.Check(v, true)
 	if !match {
@@ -91,7 +91,7 @@ func newBodyChecker(name string, matchText string, matchMode string) (*bodyCheck
 	}, nil
 }
 
-func (b *bodyChecker) Check(logic string, header http_service.IHeaderReader, query http_service.IQueryReader, body interface{}, fn bodyCheckerFunc) bool {
+func (b *bodyChecker) Check(header http_service.IHeaderReader, query http_service.IQueryReader, body interface{}, fn bodyCheckerFunc) bool {
 	return fn(body, b) == nil
 }
 
@@ -103,7 +103,10 @@ type paramChecker struct {
 	checker  IParamChecker
 }
 
-func genParamChecker(param *Param) (IParamChecker, error) {
+func genParamChecker(param *SubParam) (IParamChecker, error) {
+	if param == nil {
+		return nil, nil
+	}
 	if param.Position == "" {
 		return nil, nil
 	}
@@ -130,17 +133,22 @@ func genParamChecker(param *Param) (IParamChecker, error) {
 }
 
 func newParamChecker(param *Param) (*paramChecker, error) {
-	ck, err := genParamChecker(param)
+	ck, err := genParamChecker(&SubParam{
+		Name:      param.Name,
+		Position:  param.Position,
+		MatchText: param.MatchText,
+		MatchMode: param.MatchMode,
+	})
 	if err != nil {
 		return nil, err
 	}
 	cks := make([]IParamChecker, 0, len(param.Params))
 	for _, p := range param.Params {
-		ck, err := genParamChecker(p)
+		c, err := genParamChecker(p)
 		if err != nil {
 			return nil, err
 		}
-		cks = append(cks, ck)
+		cks = append(cks, c)
 	}
 
 	return &paramChecker{
@@ -150,21 +158,22 @@ func newParamChecker(param *Param) (*paramChecker, error) {
 	}, nil
 }
 
-func (c *paramChecker) Check(logic string, header http_service.IHeaderReader, query http_service.IQueryReader, body interface{}, fn bodyCheckerFunc) bool {
-	success := false
+func (c *paramChecker) Check(header http_service.IHeaderReader, query http_service.IQueryReader, body interface{}, fn bodyCheckerFunc) bool {
+	success := true
 	for _, ck := range c.checkers {
 		if ck == nil {
 			continue
 		}
-		ok := ck.Check(c.logic, header, query, body, fn)
+		ok := ck.Check(header, query, body, fn)
 		if !ok {
-			if logic == logicAnd {
+			if c.logic == logicAnd {
 				return false
 			}
+			success = false
 			continue
 		} else {
 			success = true
-			if logic == logicOr {
+			if c.logic == logicOr {
 				break
 			}
 		}
@@ -175,7 +184,7 @@ func (c *paramChecker) Check(logic string, header http_service.IHeaderReader, qu
 	if c.checker == nil {
 		return true
 	}
-	return c.checker.Check(c.logic, header, query, body, fn)
+	return c.checker.Check(header, query, body, fn)
 }
 
 func formChecker(body interface{}, ck *bodyChecker) error {

@@ -177,7 +177,7 @@ func (as AppendMatchers) Len() int {
 }
 
 func (as AppendMatchers) Less(i, j int) bool {
-	return as[i].checkers.Weight() < as[j].checkers.Weight()
+	return as[i].checkers.Weight() > as[j].checkers.Weight()
 }
 
 func (as AppendMatchers) Swap(i, j int) {

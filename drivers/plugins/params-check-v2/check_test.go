@@ -59,7 +59,7 @@ func TestParamCheckLogic(t *testing.T) {
 			name: "And logic",
 			param: &Param{
 				Logic: logicAnd,
-				Params: []*Param{
+				Params: []*SubParam{
 					{
 						Position:  positionHeader,
 						Name:      "X-Test-Header",
@@ -85,7 +85,7 @@ func TestParamCheckLogic(t *testing.T) {
 			name: "Or logic",
 			param: &Param{
 				Logic: logicOr,
-				Params: []*Param{
+				Params: []*SubParam{
 					{
 						Position:  positionHeader,
 						Name:      "X-Test-Header",
@@ -111,7 +111,7 @@ func TestParamCheckLogic(t *testing.T) {
 			name: "And logic (fail case)",
 			param: &Param{
 				Logic: logicAnd,
-				Params: []*Param{
+				Params: []*SubParam{
 					{
 						Position:  positionHeader,
 						Name:      "X-Test-Header",
@@ -137,7 +137,7 @@ func TestParamCheckLogic(t *testing.T) {
 			name: "Or logic (fail case)",
 			param: &Param{
 				Logic: logicOr,
-				Params: []*Param{
+				Params: []*SubParam{
 					{
 						Position:  positionHeader,
 						Name:      "X-Test-Header",
@@ -164,7 +164,7 @@ func TestParamCheckLogic(t *testing.T) {
 			ck, err := newParamChecker(tt.param)
 			assert.NoError(t, err)
 			assert.NotNil(t, ck)
-			assert.Equal(t, tt.expected, ck.Check(tt.param.Logic, &MockHeaderReader{headers: tt.header}, &MockQueryReader{queries: tt.query}, nil, nil))
+			assert.Equal(t, tt.expected, ck.Check(&MockHeaderReader{headers: tt.header}, &MockQueryReader{queries: tt.query}, nil, nil))
 		})
 	}
 }
@@ -206,7 +206,7 @@ func TestParamCheck(t *testing.T) {
 		{
 			name: "Body array match any",
 			param: &Param{
-				Params: []*Param{
+				Params: []*SubParam{
 					{
 						Position:  positionBody,
 						Name:      "search[*].val",
@@ -228,7 +228,7 @@ func TestParamCheck(t *testing.T) {
 		{
 			name: "Header match",
 			param: &Param{
-				Params: []*Param{
+				Params: []*SubParam{
 					{
 						Position:  positionHeader,
 						Name:      "X-Test-Header",
@@ -246,7 +246,7 @@ func TestParamCheck(t *testing.T) {
 		{
 			name: "Query match",
 			param: &Param{
-				Params: []*Param{
+				Params: []*SubParam{
 					{
 						Position:  positionQuery,
 						Name:      "query-param",
@@ -264,7 +264,7 @@ func TestParamCheck(t *testing.T) {
 		{
 			name: "Body array match all (fail case)",
 			param: &Param{
-				Params: []*Param{
+				Params: []*SubParam{
 					{
 						Position:  positionBody,
 						Name:      "search[*].val",
@@ -301,7 +301,7 @@ func TestParamCheck(t *testing.T) {
 			queryReader := &MockQueryReader{queries: test.query}
 
 			// 执行校验
-			ok := ck.Check(test.param.Logic, headerReader, queryReader, body, jsonChecker)
+			ok := ck.Check(headerReader, queryReader, body, jsonChecker)
 
 			// 检查结果
 			if ok != test.expected {

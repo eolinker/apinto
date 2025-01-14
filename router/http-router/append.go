@@ -161,5 +161,5 @@ func (b *BodyChecker) MatchCheck(req interface{}) bool {
 }
 
 func (b *BodyChecker) Weight() int {
-	return int(checker.CheckTypeAll-b.Checker.CheckType()) * len(b.Checker.Value())
+	return int(checker.CheckTypeAll-b.Checker.CheckType()) * 50 * len(b.Checker.Value())
 }
