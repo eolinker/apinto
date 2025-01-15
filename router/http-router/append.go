@@ -4,6 +4,12 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ohler55/ojg/oj"
+
+	"github.com/ohler55/ojg/jp"
+
+	"github.com/eolinker/eosc/log"
+
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/router"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -15,6 +21,7 @@ const (
 	HttpHeader RuleType = "header"
 	HttpQuery  RuleType = "query"
 	HttpCookie RuleType = "cookie"
+	HttpBody   RuleType = "body"
 )
 
 func Parse(rules []router.AppendRule) router.MatcherChecker {
@@ -40,6 +47,21 @@ func Parse(rules []router.AppendRule) router.MatcherChecker {
 		case HttpCookie:
 			rls = append(rls, &CookieChecker{
 				name:    r.Name,
+				Checker: ck,
+			})
+		case HttpBody:
+			name := r.Name
+			if !strings.HasPrefix(r.Name, "$.") {
+				name = "$." + r.Name
+			}
+			expr, err := jp.ParseString(name)
+			if err != nil {
+				log.Errorf("json path parse error: %v,key is %s", err, r.Name)
+				continue
+			}
+			rls = append(rls, &BodyChecker{
+				name:    r.Name,
+				expr:    expr,
 				Checker: ck,
 			})
 		}
@@ -103,4 +125,41 @@ func (q *QueryChecker) MatchCheck(req interface{}) bool {
 	v := request.URI().GetQuery(q.name)
 	has := len(v) > 0
 	return q.Checker.Check(v, has)
+}
+
+type BodyChecker struct {
+	name string
+	expr jp.Expr
+	checker.Checker
+}
+
+func (b *BodyChecker) MatchCheck(req interface{}) bool {
+	request, ok := req.(http_service.IRequestReader)
+	if !ok {
+		return false
+	}
+	switch request.Body().ContentType() {
+	case "application/json":
+		body, err := request.Body().RawBody()
+		if err != nil {
+			log.Errorf("get body error: %v", err)
+			return false
+		}
+		result, err := oj.Parse(body)
+		if err != nil {
+			log.Errorf("parse body error: %v,body is %s", err, body)
+			return false
+		}
+		return checker.CheckJson(result, checker.JsonArrayMatchAll, b.expr, b.Checker)
+	case "application/x-www-form-urlencoded", "multipart/form-data":
+		v := request.Body().GetForm(b.name)
+		return b.Check(v, len(v) > 0)
+	default:
+		log.Errorf("unsupported content type: %s", request.Body().ContentType())
+		return false
+	}
+}
+
+func (b *BodyChecker) Weight() int {
+	return int(checker.CheckTypeAll-b.Checker.CheckType()) * 50 * len(b.Checker.Value())
 }

@@ -16,6 +16,7 @@ import (
 	js_inject "github.com/eolinker/apinto/drivers/plugins/js-inject"
 	"github.com/eolinker/apinto/drivers/plugins/oauth2"
 	params_check "github.com/eolinker/apinto/drivers/plugins/params-check"
+	params_check_v2 "github.com/eolinker/apinto/drivers/plugins/params-check-v2"
 	"github.com/eolinker/apinto/drivers/plugins/prometheus"
 	request_file_parse "github.com/eolinker/apinto/drivers/plugins/request-file-parse"
 	request_interception "github.com/eolinker/apinto/drivers/plugins/request-interception"
@@ -82,6 +83,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	proxy_rewrite_v2.Register(extenderRegister)
 	http_mocking.Register(extenderRegister)
 	params_check.Register(extenderRegister)
+	params_check_v2.Register(extenderRegister)
 	data_transform.Register(extenderRegister)
 	request_interception.Register(extenderRegister)
 	request_file_parse.Register(extenderRegister)
