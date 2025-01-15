@@ -92,7 +92,11 @@ func (a *Script) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.ICha
 
 	err := next.DoChain(ctx)
 	if err != nil {
-		err := a.fn(ctx)
+		return err
+	}
+
+	if a.stage == "response" {
+		err = a.fn(ctx)
 		if err != nil {
 			log.Errorf("exec response script error: %s", err.Error())
 			return err
