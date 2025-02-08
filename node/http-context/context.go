@@ -182,33 +182,40 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	}
 
 	beginTime := time.Now()
-	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, &ctx.fastHttpRequestCtx.Response, timeout)
-	var responseHeader fasthttp.ResponseHeader
-	if ctx.response.Response != nil {
-		responseHeader = ctx.response.Response.Header
-	}
+	response := fasthttp.AcquireResponse()
+	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, response, timeout)
 
-	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, responseHeader, beginTime, time.Now())
+	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, response.Header, beginTime, time.Now())
 
 	if ctx.response.responseError != nil {
 		agent.setStatusCode(504)
 	} else {
 		ctx.response.ResponseHeader.refresh()
 
-		agent.setStatusCode(ctx.fastHttpRequestCtx.Response.StatusCode())
+		agent.setStatusCode(response.StatusCode())
 	}
 
-	if ctx.fastHttpRequestCtx.Response.RemoteAddr() != nil {
-		ip, port := parseAddr(ctx.fastHttpRequestCtx.Response.RemoteAddr().String())
+	if response.RemoteAddr() != nil {
+		ip, port := parseAddr(response.RemoteAddr().String())
 		agent.setRemoteIP(ip)
 		agent.setRemotePort(port)
 		ctx.response.remoteIP = ip
 		ctx.response.remotePort = port
 	}
-	agent.responseBody = string(ctx.response.Response.Body())
 
-	agent.setResponseLength(ctx.fastHttpRequestCtx.Response.Header.ContentLength())
+	if response.IsBodyStream() {
+		response.Header.CopyTo(&ctx.response.Response.Header)
+		ctx.response.Response.SetStatusCode(response.StatusCode())
+		reader := &Reader{requestId: ctx.requestID, reader: response.BodyStream(), agent: agent, resp: &ctx.response}
+		ctx.response.Response.SetBodyStream(reader, -1)
+		agent.setResponseLength(ctx.response.Response.Header.ContentLength())
+		ctx.proxyRequests = append(ctx.proxyRequests, agent)
+		return nil
+	}
 
+	response.CopyTo(ctx.response.Response)
+	agent.responseBody.Write(ctx.response.Response.Body())
+	agent.setResponseLength(ctx.response.Response.Header.ContentLength())
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)
 	return ctx.response.responseError
 

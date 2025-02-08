@@ -140,7 +140,7 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 			TLSConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
-
+			StreamResponseBody: true,
 			Dial:               dial,
 			MaxConns:           DefaultMaxConns,
 			MaxConnWaitTimeout: DefaultMaxConnWaitTimeout,
@@ -200,7 +200,6 @@ func (c *Client) ProxyTimeout(addr string, host string, req *fasthttp.Request, r
 	if err != nil {
 		return err
 	}
-
 	request.URI().SetScheme(scheme)
 	return client.DoTimeout(req, resp, timeout)
 

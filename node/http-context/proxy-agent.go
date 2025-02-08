@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/valyala/fasthttp"
@@ -20,7 +21,7 @@ type requestAgent struct {
 	statusCode     int
 	status         string
 	responseLength int
-	responseBody   string
+	responseBody   strings.Builder
 	beginTime      time.Time
 	endTime        time.Time
 	hostAgent      *UrlAgent
@@ -31,7 +32,7 @@ type requestAgent struct {
 }
 
 func (a *requestAgent) ResponseBody() string {
-	return a.responseBody
+	return a.responseBody.String()
 }
 
 func (a *requestAgent) ResponseHeaders() http.Header {

@@ -130,7 +130,12 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	convert.SetAIModel(ctx, e.model)
 
 	if err := e.processKeyPool(ctx, cloneProxy, next); err != nil {
-		return e.doBalance(ctx, cloneProxy, next) // Fallback to balance logic
+		err = e.doBalance(ctx, cloneProxy, next) // Fallback to balance logic
+		if err != nil {
+			ctx.Response().SetBody([]byte(err.Error()))
+			ctx.Response().SetStatus(400, "Bad Request")
+			return err
+		}
 	}
 	return nil
 }

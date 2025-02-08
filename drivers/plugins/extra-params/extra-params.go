@@ -115,6 +115,20 @@ func (e *ExtraParams) access(ctx http_service.IHttpContext) (int, error) {
 					err = encodeErr(e.errorType, err.Error(), clientErrStatusCode)
 					return clientErrStatusCode, err
 				}
+				// 区分Cookie和普通Header
+				if strings.ToLower(param.Name) == "cookie" {
+					cookies := strings.Split(v, ";")
+					for _, cookie := range cookies {
+						cookie = strings.TrimSpace(cookie)
+						if cookie == "" {
+							continue
+						}
+						cookieParam := strings.Split(cookie, "=")
+						ctx.Proxy().Header().SetCookie(cookieParam[0], cookieParam[1], 0)
+					}
+					continue
+				}
+
 				ctx.Proxy().Header().SetHeader(param.Name, value)
 			}
 		case "body":

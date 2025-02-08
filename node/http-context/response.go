@@ -1,6 +1,7 @@
 package http_context
 
 import (
+	"bytes"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +22,11 @@ type Response struct {
 	responseError   error
 	remoteIP        string
 	remotePort      int
+	bodyStream      bytes.Buffer
+}
+
+func (r *Response) AppendBody(body []byte) {
+	r.bodyStream.Write(body)
 }
 
 func (r *Response) ContentLength() int {
@@ -57,7 +63,6 @@ func (r *Response) reset(resp *fasthttp.Response) {
 	r.ResponseHeader.reset(&resp.Header)
 	r.responseError = nil
 	r.proxyStatusCode = 0
-
 }
 
 func (r *Response) BodyLen() int {
@@ -71,11 +76,18 @@ func (r *Response) GetBody() []byte {
 		r.SetHeader("Content-Length", strconv.Itoa(len(body)))
 		r.Response.SetBody(body)
 	}
-
+	if r.Response.IsBodyStream() {
+		return r.bodyStream.Bytes()
+	}
 	return r.Response.Body()
 }
 
 func (r *Response) SetBody(bytes []byte) {
+	if r.Response.IsBodyStream() {
+		// 不能设置body
+
+		return
+	}
 	if strings.Contains(r.GetHeader("Content-Encoding"), "gzip") {
 		r.DelHeader("Content-Encoding")
 	}

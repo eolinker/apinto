@@ -2,6 +2,7 @@ package http_context
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -198,4 +199,12 @@ func (r *ResponseHeader) DelHeader(key string) {
 
 func (h *RequestHeader) GetCookie(key string) string {
 	return string(h.header.Cookie(key))
+}
+
+func (h *RequestHeader) SetCookie(key, value string, maxAge int) {
+	h.header.SetCookie(key, value)
+
+	if maxAge > 0 {
+		h.header.SetCookie(key, fmt.Sprintf("%s; Max-Age=%d", value, maxAge))
+	}
 }

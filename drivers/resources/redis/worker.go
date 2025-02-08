@@ -7,7 +7,7 @@ import (
 	"github.com/eolinker/apinto/resources"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
-	"github.com/go-redis/redis/v8"
+	redis "github.com/go-redis/redis/v8"
 )
 
 var (
@@ -24,7 +24,7 @@ type Worker struct {
 	resources.ICache
 	resources.IVectors
 	config *Config
-	client *redis.ClusterClient
+	client redis.UniversalClient
 
 	isRunning bool
 }

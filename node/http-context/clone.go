@@ -183,7 +183,7 @@ func (ctx *cloneContext) SendTo(scheme string, node eoscContext.INode, timeout t
 		ctx.response.remoteIP = ip
 		ctx.response.remotePort = port
 	}
-	agent.responseBody = string(ctx.response.Response.Body())
+	agent.responseBody.Write(ctx.response.Response.Body())
 
 	agent.setResponseLength(ctx.response.Response.Header.ContentLength())
 

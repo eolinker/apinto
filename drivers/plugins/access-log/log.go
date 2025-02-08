@@ -29,9 +29,8 @@ func (l *accessLog) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.I
 	if err != nil {
 		log.Error(err)
 	}
-	entry := http_entry.NewEntry(ctx)
-
 	outputs := l.proxy.List()
+	entry := http_entry.NewEntry(ctx)
 	for _, v := range outputs {
 
 		err = v.Output(entry)
