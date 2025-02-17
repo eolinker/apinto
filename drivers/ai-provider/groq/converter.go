@@ -75,6 +75,7 @@ func (e *converterDriver) GetModel(model string) (convert.FGenerateConfig, bool)
 			result["response_format"] = map[string]interface{}{
 				"type": modelCfg.ResponseFormat,
 			}
+			result["stream"] = false
 		}
 		return result, nil
 	}, true

@@ -50,7 +50,7 @@ func (d *dubboHandler) Serve(ctx eocontext.EoContext) {
 	ctx.WithValue(ctx_key.CtxKeyRetry, d.retry)
 	ctx.WithValue(ctx_key.CtxKeyTimeout, d.timeout)
 
-	//Set Label
+	//SetProvider Label
 	ctx.SetLabel("api", d.routerName)
 	ctx.SetLabel("api_id", d.routerId)
 	ctx.SetLabel("service", d.serviceName)

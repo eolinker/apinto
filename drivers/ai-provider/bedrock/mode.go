@@ -15,7 +15,8 @@ type FNewModelMode func(string) IModelMode
 
 var (
 	modelModes = map[string]FNewModelMode{
-		convert.ModeChat.String(): NewChat,
+		convert.ModeChat.String():       NewChat,
+		convert.ModeCompletion.String(): NewChat,
 	}
 )
 

@@ -49,7 +49,7 @@ func (h *grpcRouter) Serve(ctx eocontext.EoContext) {
 	ctx.WithValue(ctx_key.CtxKeyRetry, h.retry)
 	ctx.WithValue(ctx_key.CtxKeyTimeout, h.timeout)
 
-	//Set Label
+	//SetProvider Label
 	ctx.SetLabel("api", h.routerName)
 	ctx.SetLabel("api_id", h.routerId)
 	ctx.SetLabel("service", h.serviceName)

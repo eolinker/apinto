@@ -19,6 +19,7 @@ import (
 	"github.com/eolinker/apinto/drivers/ai-provider/moonshot"
 	"github.com/eolinker/apinto/drivers/ai-provider/novita"
 	"github.com/eolinker/apinto/drivers/ai-provider/nvidia"
+	"github.com/eolinker/apinto/drivers/ai-provider/ollama"
 	"github.com/eolinker/apinto/drivers/ai-provider/openAI"
 	"github.com/eolinker/apinto/drivers/ai-provider/openrouter"
 	"github.com/eolinker/apinto/drivers/ai-provider/perfxcloud"
@@ -149,6 +150,7 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	vertex_ai.Register(extenderRegister)
 	fakegpt.Register(extenderRegister)
 	zhinao.Register(extenderRegister)
+	ollama.Register(extenderRegister)
 
 	ai_provider.Register(extenderRegister)
 	ai_key.Register(extenderRegister)

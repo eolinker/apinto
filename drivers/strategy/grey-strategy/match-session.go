@@ -39,7 +39,7 @@ func (k *keepSessionGreyFlow) Match(ctx eocontext.EoContext) bool {
 		session = ctx.RequestId()
 		cookieSession := http.Cookie{Name: SessionName, Value: session}
 		cookieKey = fmt.Sprintf(cookieName, session)
-		httpCtx.Response().AddHeader("Set-Cookie", cookieSession.String())
+		httpCtx.Response().AddHeader("SetProvider-Cookie", cookieSession.String())
 	}
 
 	ok := k.GreyMatch.Match(ctx)
@@ -47,7 +47,7 @@ func (k *keepSessionGreyFlow) Match(ctx eocontext.EoContext) bool {
 	if ok {
 		cookie = grey
 	}
-	httpCtx.Response().AddHeader("Set-Cookie", fmt.Sprintf("%s=%v", cookieKey, cookie))
+	httpCtx.Response().AddHeader("SetProvider-Cookie", fmt.Sprintf("%s=%v", cookieKey, cookie))
 	return ok
 
 }

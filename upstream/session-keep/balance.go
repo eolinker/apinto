@@ -60,10 +60,10 @@ func (s *Session) Select(ctx eocontext.EoContext) (eocontext.INode, int, error) 
 	if session == "" {
 		session = ctx.RequestId()
 		cookieSession := http.Cookie{Name: SessionName, Value: session}
-		httpContext.Response().AddHeader("Set-Cookie", cookieSession.String())
+		httpContext.Response().AddHeader("SetProvider-Cookie", cookieSession.String())
 	}
 	indexCookie := http.Cookie{Name: fmt.Sprintf("Apinto-Upstream-%s", session), Value: strconv.Itoa(i)}
 
-	httpContext.Response().AddHeader("Set-Cookie", indexCookie.String())
+	httpContext.Response().AddHeader("SetProvider-Cookie", indexCookie.String())
 	return node, i, nil
 }

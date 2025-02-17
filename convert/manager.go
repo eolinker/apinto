@@ -127,60 +127,95 @@ func DelKeyResource(provider string, resourceId string) {
 	keyPoolManager.DelKeySource(provider, resourceId)
 }
 
-func DelProvider(provider string) {
-	providerManager.Del(provider)
-	keyPoolManager.Del(provider)
+func DelProvider(id string) {
+	provider := balanceManager.Del(id)
+	if provider != "" {
+		keyPoolManager.Del(provider)
+	}
+
 }
 
 var (
-	providerManager = NewProviderManager()
+	balanceManager = NewBalanceManager()
 )
 
-type ProviderManager struct {
-	providers     eosc.Untyped[string, IProvider]
-	providerSorts []IProvider
+type BalanceManager struct {
+	providers   eosc.Untyped[string, IProvider]
+	ids         eosc.Untyped[string, eosc.Untyped[string, IProvider]]
+	balances    eosc.Untyped[string, IProvider]
+	balanceSort []IProvider
 }
 
-func NewProviderManager() *ProviderManager {
-	return &ProviderManager{
+func NewBalanceManager() *BalanceManager {
+	return &BalanceManager{
 		providers: eosc.BuildUntyped[string, IProvider](),
+		balances:  eosc.BuildUntyped[string, IProvider](),
+		ids:       eosc.BuildUntyped[string, eosc.Untyped[string, IProvider]](),
 	}
 }
 
-func (m *ProviderManager) Set(provider string, p IProvider) {
-	m.providers.Set(provider, p)
-	m.sortProviders()
+func (m *BalanceManager) SetProvider(id string, p IProvider) {
+	m.providers.Set(p.Provider(), p)
+	m.balances.Set(id, p)
+	tmp, has := m.ids.Get(p.Provider())
+	if !has {
+		tmp = eosc.BuildUntyped[string, IProvider]()
+	}
+	tmp.Set(id, p)
+	m.ids.Set(p.Provider(), tmp)
+	m.sortBalances()
 }
 
-func (m *ProviderManager) Get(provider string) (IProvider, bool) {
+func (m *BalanceManager) Get(provider string) (IProvider, bool) {
 	return m.providers.Get(provider)
 }
 
-func (m *ProviderManager) sortProviders() {
-	providers := m.providers.List()
-	sort.Slice(providers, func(i, j int) bool {
-		return providers[i].Priority() < providers[j].Priority()
+func (m *BalanceManager) sortBalances() {
+	balances := m.balances.List()
+	tmpBalances := make([]IProvider, 0, len(balances))
+	for _, b := range balances {
+		if b.Priority() == 0 {
+			continue
+		}
+		tmpBalances = append(tmpBalances, b)
+	}
+	sort.Slice(tmpBalances, func(i, j int) bool {
+		return tmpBalances[i].Priority() < tmpBalances[j].Priority()
 	})
-	m.providerSorts = providers
+	m.balanceSort = tmpBalances
 }
 
-func (m *ProviderManager) Del(provider string) {
-	m.providers.Del(provider)
-	m.sortProviders()
+func (m *BalanceManager) Del(id string) string {
+	p, ok := m.balances.Del(id)
+	if !ok {
+		return ""
+	}
+	tmp, has := m.ids.Get(p.Provider())
+	if !has {
+		return ""
+	}
+	tmp.Del(id)
+	if tmp.Count() < 1 {
+		m.providers.Del(p.Provider())
+		return p.Provider()
+	}
+
+	m.sortBalances()
+	return ""
 }
 
-func (m *ProviderManager) Providers() []IProvider {
-	return m.providerSorts
+func (m *BalanceManager) Balances() []IProvider {
+	return m.balanceSort
 }
 
-func Providers() []IProvider {
-	return providerManager.Providers()
+func Balances() []IProvider {
+	return balanceManager.Balances()
 }
 
-func SetProvider(provider string, p IProvider) {
-	providerManager.Set(provider, p)
+func SetProvider(id string, p IProvider) {
+	balanceManager.SetProvider(id, p)
 }
 
 func GetProvider(provider string) (IProvider, bool) {
-	return providerManager.Get(provider)
+	return balanceManager.Get(provider)
 }

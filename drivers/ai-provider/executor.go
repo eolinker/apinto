@@ -98,12 +98,12 @@ func (e *executor) reset(cfg *Config) error {
 	e.provider = cfg.Provider
 	e.modelConfig = extender
 	e.disable = false
-	convert.SetProvider(cfg.Provider, e)
+	convert.SetProvider(e.Id(), e)
 	return nil
 }
 
 func (e *executor) Stop() error {
-	convert.DelProvider(e.provider)
+	convert.DelProvider(e.Id())
 	return nil
 }
 

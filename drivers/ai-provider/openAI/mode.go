@@ -58,7 +58,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 		return err
 	}
 
-	// Set the forwarding URI to the chat endpoint.
+	// SetProvider the forwarding URI to the chat endpoint.
 	httpContext.Proxy().URI().SetPath(c.endPoint)
 
 	// Parse the request body into a base configuration.
@@ -88,7 +88,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 		return err
 	}
 
-	// Set the modified body in the HTTP context.
+	// SetProvider the modified body in the HTTP context.
 	httpContext.Proxy().Body().SetRaw("application/json", body)
 
 	return nil
@@ -166,7 +166,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		return err
 	}
 
-	// Set the updated body and encoding in the HTTP context.
+	// SetProvider the updated body and encoding in the HTTP context.
 	httpContext.Response().SetHeader("content-encoding", "utf-8")
 	httpContext.Response().SetBody(body)
 

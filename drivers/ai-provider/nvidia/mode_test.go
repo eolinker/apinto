@@ -3,14 +3,15 @@ package nvidia
 import (
 	_ "embed"
 	"fmt"
-	"github.com/eolinker/apinto/convert"
-	http_context "github.com/eolinker/apinto/node/http-context"
-	"github.com/joho/godotenv"
-	"github.com/valyala/fasthttp"
 	"net/url"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/eolinker/apinto/convert"
+	http_context "github.com/eolinker/apinto/node/http-context"
+	"github.com/joho/godotenv"
+	"github.com/valyala/fasthttp"
 
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 )
@@ -179,7 +180,7 @@ func createMockHttpContext(rawURL string, headers map[string]string, query url.V
 	req := fasthttp.AcquireRequest()
 	u := fasthttp.AcquireURI()
 
-	// Set request URI and path
+	// SetProvider request URI and path
 	uri, _ := url.Parse(rawURL)
 	u.SetPath(uri.Path)
 	u.SetScheme(uri.Scheme)
@@ -188,7 +189,7 @@ func createMockHttpContext(rawURL string, headers map[string]string, query url.V
 	req.SetURI(u)
 	req.Header.SetMethod("POST")
 
-	// Set headers
+	// SetProvider headers
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}

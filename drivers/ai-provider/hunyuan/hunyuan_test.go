@@ -213,7 +213,7 @@ func createMockHttpContext(rawURL string, headers map[string]string, query url.V
 	req := fasthttp.AcquireRequest()
 	u := fasthttp.AcquireURI()
 
-	// Set request URI and path
+	// SetProvider request URI and path
 	uri, _ := url.Parse(rawURL)
 	u.SetPath(uri.Path)
 	u.SetScheme(uri.Scheme)
@@ -222,7 +222,7 @@ func createMockHttpContext(rawURL string, headers map[string]string, query url.V
 	req.SetURI(u)
 	req.Header.SetMethod("POST")
 
-	// Set headers
+	// SetProvider headers
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}

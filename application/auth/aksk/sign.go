@@ -39,7 +39,7 @@ func buildHexCanonicalRequest(ctx http_service.IHttpContext, signedHeaders []str
 	for i := 0; i < len(queryArgs); i++ {
 		params := strings.Split(queryArgs[i], "=")
 		if len(params) != 2 {
-			//query.Set(params[0], "")
+			//query.SetProvider(params[0], "")
 			continue
 		}
 		query.Set(params[0], params[1])

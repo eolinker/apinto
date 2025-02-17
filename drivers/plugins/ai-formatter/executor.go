@@ -31,23 +31,23 @@ func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) erro
 
 // doBalance handles fallback logic for switching providers when keys are invalid or exhausted.
 func (e *executor) doBalance(ctx http_context.IHttpContext, originProxy http_context.IRequest, next eocontext.IChain) error {
-	providers := convert.Providers()
-	for _, provider := range providers {
-		if !provider.Health() {
+	balances := convert.Balances()
+	for _, balance := range balances {
+		if !balance.Health() {
 			continue
 		}
-		balanceHandler := provider.BalanceHandler()
+		balanceHandler := balance.BalanceHandler()
 		if balanceHandler != nil {
 			ctx.SetBalance(balanceHandler)
 		}
-		err := e.tryProvider(ctx, originProxy, next, provider)
+		err := e.tryProvider(ctx, originProxy, next, balance)
 		if err == nil {
 			return nil
 		}
-		provider.Down() // Mark the provider as unhealthy
+		balance.Down() // Mark the balance as unhealthy
 	}
 
-	return errors.New("all providers exhausted or unavailable")
+	return errors.New("all balances exhausted or unavailable")
 }
 
 func (e *executor) doConverter(ctx http_context.IHttpContext, next eocontext.IChain, resource convert.IKeyResource, provider convert.IProvider, extender map[string]interface{}) error {
@@ -137,6 +137,9 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			return err
 		}
 	}
+	// If the request is successful, set the AI provider and model in the response headers
+	ctx.Response().SetHeader("X-AI-Provider", convert.GetAIProvider(ctx))
+	ctx.Response().SetHeader("X-AI-Model", convert.GetAIModel(ctx))
 	return nil
 }
 

@@ -301,11 +301,11 @@ var (
 			}),
 		},
 		"set_cookies": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
-			cookies := ctx.Response().GetHeader("Set-Cookie")
+			cookies := ctx.Response().GetHeader("SetProvider-Cookie")
 			if strings.TrimSpace(cookies) == "" {
 				return nil, true
 			}
-			return strings.Split(ctx.Response().GetHeader("Set-Cookie"), "; "), true
+			return strings.Split(ctx.Response().GetHeader("SetProvider-Cookie"), "; "), true
 		}),
 		"dst_ip": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return ctx.Response().RemoteIP(), true

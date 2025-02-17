@@ -32,8 +32,8 @@ const (
 )
 
 const (
-	ModeChat     Mode = "chat"
-	ModeComplete Mode = "complete"
+	ModeChat       Mode = "chat"
+	ModeCompletion Mode = "completion"
 )
 
 type Mode string
