@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -16,9 +17,9 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func ProxyTimeout(scheme string, host string, node eocontext.INode, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) error {
+func ProxyTimeout(scheme string, host string, node eocontext.INode, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration, stream bool) error {
 	addr := fmt.Sprintf("%s://%s", scheme, node.Addr())
-	err := defaultClient.ProxyTimeout(addr, host, req, resp, timeout)
+	err := defaultClient.ProxyTimeout(addr, host, req, resp, timeout, stream)
 	if err != nil {
 		node.Down()
 	}
@@ -80,7 +81,7 @@ func GenDialFunc(isTls bool) (fasthttp.DialFunc, error) {
 	return Dial, nil
 }
 
-func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostClient, string, error) {
+func (c *Client) getHostClient(addr string, rewriteHost string, stream bool) (*fasthttp.HostClient, string, error) {
 
 	scheme, nodeAddr := readAddress(addr)
 	host := nodeAddr
@@ -95,8 +96,8 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 	if isTLS {
 		m = c.ms
 	}
-
-	hc := m[host]
+	key := fmt.Sprintf("%s-%s", host, strconv.FormatBool(stream))
+	hc := m[key]
 	c.mLock.RUnlock()
 	if hc != nil {
 		return hc, scheme, nil
@@ -140,15 +141,15 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 			TLSConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
-			StreamResponseBody: true,
 			Dial:               dial,
+			StreamResponseBody: stream,
 			MaxConns:           DefaultMaxConns,
 			MaxConnWaitTimeout: DefaultMaxConnWaitTimeout,
 			RetryIf: func(request *fasthttp.Request) bool {
 				return false
 			},
 		}
-		m[host] = hc
+		m[key] = hc
 		if len(m) == 1 {
 			go c.startCleaner(m)
 		}
@@ -185,7 +186,7 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 // continue in the background and the response will be discarded.
 // If requests take too long and the connection pool gets filled up please
 // try setting a ReadTimeout.
-func (c *Client) ProxyTimeout(addr string, host string, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration) error {
+func (c *Client) ProxyTimeout(addr string, host string, req *fasthttp.Request, resp *fasthttp.Response, timeout time.Duration, stream bool) error {
 	request := req
 	request.Header.ResetConnectionClose()
 	request.Header.Set("Connection", "keep-alive")
@@ -196,7 +197,7 @@ func (c *Client) ProxyTimeout(addr string, host string, req *fasthttp.Request, r
 		}
 	}()
 
-	client, scheme, err := c.getHostClient(addr, host)
+	client, scheme, err := c.getHostClient(addr, host, stream)
 	if err != nil {
 		return err
 	}

@@ -150,7 +150,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	responseBody := &convert.ClientResponse{}
 	if len(data.Config.Choices) > 0 {
 		msg := data.Config.Choices[0]
-		responseBody.Message = convert.Message{
+		responseBody.Message = &convert.Message{
 			Role:    msg.Message.Role,
 			Content: msg.Message.Content,
 		}

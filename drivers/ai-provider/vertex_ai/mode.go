@@ -107,7 +107,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 			}
 		}
 
-		responseBody.Message = convert.Message{
+		responseBody.Message = &convert.Message{
 			Role:    role,
 			Content: text,
 		}

@@ -155,7 +155,10 @@ func NewBalanceManager() *BalanceManager {
 }
 
 func (m *BalanceManager) SetProvider(id string, p IProvider) {
-	m.providers.Set(p.Provider(), p)
+	if p.Priority() < 1 {
+		m.providers.Set(p.Provider(), p)
+	}
+
 	m.balances.Set(id, p)
 	tmp, has := m.ids.Get(p.Provider())
 	if !has {
@@ -190,17 +193,24 @@ func (m *BalanceManager) Del(id string) string {
 	if !ok {
 		return ""
 	}
+	if p.Priority() == 0 {
+		// 供应商本身
+		m.providers.Del(p.Provider())
+		m.ids.Del(p.Provider())
+		m.sortBalances()
+		return p.Provider()
+	}
 	tmp, has := m.ids.Get(p.Provider())
 	if !has {
 		return ""
 	}
 	tmp.Del(id)
+	m.sortBalances()
 	if tmp.Count() < 1 {
 		m.providers.Del(p.Provider())
 		return p.Provider()
 	}
 
-	m.sortBalances()
 	return ""
 }
 

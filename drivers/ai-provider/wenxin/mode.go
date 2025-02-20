@@ -149,7 +149,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if data.Config.ErrorCode == 0 {
 		//if data.Config.Object == "chat.completion" {
 		msg := data.Config
-		responseBody.Message = convert.Message{
+		responseBody.Message = &convert.Message{
 			Role:    "assistant",
 			Content: msg.Result,
 		}

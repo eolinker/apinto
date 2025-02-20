@@ -10,6 +10,8 @@ var (
 	StatusExceeded       = "exceeded"
 	StatusInvalid        = "invalid"
 	StatusTimeout        = "timeout"
+
+	ParamAIModel = "param_ai_model"
 )
 
 func SetAIStatusTimeout(ctx eocontext.EoContext) {
