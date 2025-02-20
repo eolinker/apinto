@@ -32,7 +32,11 @@ func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) erro
 // doBalance handles fallback logic for switching providers when keys are invalid or exhausted.
 func (e *executor) doBalance(ctx http_context.IHttpContext, originProxy http_context.IRequest, next eocontext.IChain) error {
 	balances := convert.Balances()
+	if len(balances) == 0 {
+		return nil
+	}
 	for _, balance := range balances {
+		log.DebugF("trying balance %s,model:%s,health:%s", balance.Provider(), balance.Model(), balance.Health())
 		if !balance.Health() {
 			continue
 		}

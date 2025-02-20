@@ -14,6 +14,7 @@ import (
 
 type RequestMessage struct {
 	Messages  []Message         `json:"messages"`
+	Stream    bool              `json:"stream"`
 	Variables map[string]string `json:"variables"`
 }
 
@@ -85,6 +86,7 @@ func genRequestMessage(body []byte, prompt string, variables map[string]bool, re
 		messages = baseMsg.Config.Messages
 	}
 	return json.Marshal(map[string]interface{}{
+		"stream":   baseMsg.Config.Stream,
 		"messages": messages,
 	})
 }

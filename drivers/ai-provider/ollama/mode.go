@@ -73,10 +73,16 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	for k, v := range extender {
 		baseCfg.SetAppend(k, v)
 	}
+	//if paramModel := ctx.GetLabel(convert.ParamAIModel); paramModel != "" {
+	//	baseCfg.SetAppend("model", paramModel)
+	//}
 	// Marshal the updated configuration back into JSON.
 	body, err = json.Marshal(baseCfg)
 	if err != nil {
 		return err
+	}
+	if baseCfg.Config.Stream {
+		httpContext.SetLabel("stream", "true")
 	}
 
 	// SetProvider the modified body in the HTTP context.
@@ -93,9 +99,64 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
+	status := httpContext.Response().StatusCode()
+	switch status {
+	case 200:
+		convert.SetAIStatusNormal(ctx)
+	}
+	if httpContext.Response().IsBodyStream() {
+		bodyStream := httpContext.Response().GetBodyStream()
+		if bodyStream != nil {
+			bodyStream.AppendWriterFunc(func(p []byte) ([]byte, error) {
+				// Parse the response body into a base configuration.
+				data := eosc.NewBase[Response]()
+				err = json.Unmarshal(p, data)
+				if err != nil {
+					return nil, err
+				}
+				switch status {
+				case 200:
+					// Calculate the token consumption for a successful request.
+					usage := data.Config
+					if usage.Done {
+						convert.SetAIStatusNormal(ctx)
+						convert.SetAIModelInputToken(ctx, usage.PromptEvalCount)
+						convert.SetAIModelOutputToken(ctx, usage.EvalCount)
+						convert.SetAIModelTotalToken(ctx, usage.PromptEvalCount+usage.EvalCount)
+					}
+				}
 
+				// Prepare the response body for the client.
+				responseBody := &convert.ClientResponse{}
+				resp := data.Config
+				if resp.Message != nil {
+					responseBody.Message = &convert.Message{
+						Role:    resp.Message.Role,
+						Content: resp.Message.Content,
+					}
+					if resp.Done {
+						responseBody.FinishReason = convert.FinishStop
+					}
+				} else {
+					responseBody.Code = -1
+					responseBody.Error = "response message is nil"
+				}
+
+				// Marshal the modified response body back into JSON.
+				body, err := json.Marshal(responseBody)
+				if err != nil {
+					return nil, err
+				}
+				return body, nil
+			})
+		}
+		return nil
+	}
 	// Retrieve the response body.
 	body := httpContext.Response().GetBody()
+	if body == nil {
+		return nil
+	}
 
 	// Parse the response body into a base configuration.
 	data := eosc.NewBase[Response]()
@@ -111,21 +172,20 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		convert.SetAIModelInputToken(ctx, usage.PromptEvalCount)
 		convert.SetAIModelOutputToken(ctx, usage.EvalCount)
 		convert.SetAIModelTotalToken(ctx, usage.PromptEvalCount+usage.EvalCount)
-
 	}
 
 	// Prepare the response body for the client.
 	responseBody := &convert.ClientResponse{}
 	resp := data.Config
 	if resp.Message != nil {
-		responseBody.Message = convert.Message{
+		responseBody.Message = &convert.Message{
 			Role:    resp.Message.Role,
 			Content: resp.Message.Content,
 		}
 		responseBody.FinishReason = convert.FinishStop
 	} else {
 		responseBody.Code = -1
-		responseBody.Error = "response message is nil"
+		responseBody.Error = resp.Error
 	}
 
 	// Marshal the modified response body back into JSON.
@@ -136,5 +196,6 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 
 	httpContext.Response().SetBody(body)
 
+	// SetProvider the modified response in the HTTP context.
 	return nil
 }

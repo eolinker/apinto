@@ -27,4 +27,5 @@ type Response struct {
 	PromptEvalDuration int       `json:"prompt_eval_duration"`
 	EvalCount          int       `json:"eval_count"`
 	EvalDuration       int64     `json:"eval_duration"`
+	Error              string    `json:"error"`
 }

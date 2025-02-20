@@ -16,13 +16,14 @@ const (
 
 type ClientRequest struct {
 	Messages []*Message `json:"messages"`
+	Stream   bool       `json:"stream"`
 }
 
 type ClientResponse struct {
-	Message      Message `json:"message,omitempty"`
-	FinishReason string  `json:"finish_reason,omitempty"`
-	Code         int     `json:"code"`
-	Error        string  `json:"error"`
+	Message      *Message `json:"message,omitempty"`
+	FinishReason string   `json:"finish_reason"`
+	Code         int      `json:"code"`
+	Error        string   `json:"error"`
 }
 
 type Message struct {

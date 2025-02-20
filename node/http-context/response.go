@@ -1,9 +1,10 @@
 package http_context
 
 import (
-	"bytes"
+	"io"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -22,11 +23,66 @@ type Response struct {
 	responseError   error
 	remoteIP        string
 	remotePort      int
-	bodyStream      bytes.Buffer
+	bodyStream      *BodyStream
 }
 
-func (r *Response) AppendBody(body []byte) {
-	r.bodyStream.Write(body)
+type BodyStream struct {
+	reader             io.Reader
+	streamReadHandler  []func(p []byte) error
+	streamWriteHandler []func(p []byte) ([]byte, error)
+}
+
+func NewBodyStream(reader io.Reader) *BodyStream {
+	return &BodyStream{reader: reader}
+}
+
+func (b *BodyStream) AppendReaderFunc(f func(p []byte) error) {
+	if b.streamReadHandler == nil {
+		b.streamReadHandler = make([]func(p []byte) error, 0)
+	}
+	b.streamReadHandler = append(b.streamReadHandler, f)
+}
+
+func (b *BodyStream) AppendWriterFunc(f func(p []byte) ([]byte, error)) {
+	if b.streamWriteHandler == nil {
+		b.streamWriteHandler = make([]func(p []byte) ([]byte, error), 0)
+	}
+	b.streamWriteHandler = append(b.streamWriteHandler, f)
+}
+
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return make([]byte, 32*1024) // 默认 32KB 缓冲区
+	},
+}
+
+func (b *BodyStream) Read(p []byte) (n int, err error) {
+	tmp := bufferPool.Get().([]byte)
+	defer bufferPool.Put(tmp)
+	n, err = b.reader.Read(tmp)
+	if err != nil {
+		return 0, err
+	}
+	org := tmp[:n]
+	for _, fn := range b.streamWriteHandler {
+		result, err := fn(org)
+		if err != nil {
+			return 0, err
+		}
+		org = result
+	}
+	org = append(org, []byte("\n")...)
+	copy(p, org)
+	return len(org), nil
+}
+
+func (b *BodyStream) Write(p []byte) (n int, err error) {
+
+	return 0, nil
+}
+
+func (r *Response) GetBodyStream() http_service.IResponseStream {
+	return r.bodyStream
 }
 
 func (r *Response) ContentLength() int {
@@ -76,16 +132,18 @@ func (r *Response) GetBody() []byte {
 		r.SetHeader("Content-Length", strconv.Itoa(len(body)))
 		r.Response.SetBody(body)
 	}
-	if r.Response.IsBodyStream() {
-		return r.bodyStream.Bytes()
+	if r.IsBodyStream() {
+		return nil
 	}
 	return r.Response.Body()
 }
 
-func (r *Response) SetBody(bytes []byte) {
-	if r.Response.IsBodyStream() {
-		// 不能设置body
+func (r *Response) IsBodyStream() bool {
+	return r.Response.IsBodyStream() && r.Response.Header.ContentLength() < 0
+}
 
+func (r *Response) SetBody(bytes []byte) {
+	if r.IsBodyStream() {
 		return
 	}
 	if strings.Contains(r.GetHeader("Content-Encoding"), "gzip") {

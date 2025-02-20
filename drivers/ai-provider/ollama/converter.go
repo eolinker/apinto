@@ -45,11 +45,6 @@ func newConverterDriver(cfg *Config) (convert.IConverterDriver, error) {
 }
 
 func (e *converterDriver) GetConverter(model string) (convert.IConverter, bool) {
-	//converter, ok := modelConvert[model]
-	//if !ok {
-	//	return nil, false
-	//}
-
 	return &Converter{balanceHandler: e.BalanceHandler, converter: NewChat()}, true
 }
 
@@ -57,8 +52,7 @@ func (e *converterDriver) GetModel(model string) (convert.FGenerateConfig, bool)
 	return func(cfg string) (map[string]interface{}, error) {
 
 		result := map[string]interface{}{
-			"model":  model,
-			"stream": false,
+			"model": model,
 		}
 		if cfg != "" {
 			tmp := make(map[string]interface{})

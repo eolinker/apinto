@@ -62,9 +62,7 @@ func (ctx *HttpContext) ProxyClone() http_service.IRequest {
 func (ctx *HttpContext) SetProxy(proxy http_service.IRequest) {
 	if p, ok := proxy.(*ProxyRequest); ok {
 		// 替换当前的 proxyRequest
-		ctx.proxyRequest = *p
-		//记录到 proxyRequests 数组中
-		//ctx.proxyRequests = append(ctx.proxyRequests, p)
+		p.Request().CopyTo(ctx.proxyRequest.Request())
 	} else {
 		log.Warn("SetProxy failed: incompatible type")
 	}
@@ -183,15 +181,13 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 
 	beginTime := time.Now()
 	response := fasthttp.AcquireResponse()
-	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, response, timeout)
+	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, response, timeout, ctx.GetLabel("stream") == "true")
 
 	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, response.Header, beginTime, time.Now())
 
 	if ctx.response.responseError != nil {
 		agent.setStatusCode(504)
 	} else {
-		ctx.response.ResponseHeader.refresh()
-
 		agent.setStatusCode(response.StatusCode())
 	}
 
@@ -202,18 +198,20 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 		ctx.response.remoteIP = ip
 		ctx.response.remotePort = port
 	}
-
-	if response.IsBodyStream() {
-		response.Header.CopyTo(&ctx.response.Response.Header)
+	response.Header.CopyTo(&ctx.response.Response.Header)
+	ctx.response.ResponseHeader.refresh()
+	if response.IsBodyStream() && response.Header.ContentLength() < 0 {
 		ctx.response.Response.SetStatusCode(response.StatusCode())
-		reader := &Reader{requestId: ctx.requestID, reader: response.BodyStream(), agent: agent, resp: &ctx.response}
-		ctx.response.Response.SetBodyStream(reader, -1)
+		bodyStream := NewBodyStream(response.BodyStream())
+		ctx.response.bodyStream = bodyStream
+		ctx.response.Response.SetBodyStream(bodyStream, -1)
 		agent.setResponseLength(ctx.response.Response.Header.ContentLength())
 		ctx.proxyRequests = append(ctx.proxyRequests, agent)
 		return nil
 	}
 
 	response.CopyTo(ctx.response.Response)
+
 	agent.responseBody.Write(ctx.response.Response.Body())
 	agent.setResponseLength(ctx.response.Response.Header.ContentLength())
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)

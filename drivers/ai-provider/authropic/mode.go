@@ -104,7 +104,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	responseBody := &convert.ClientResponse{}
 	if len(data.Config.Contents) > 0 {
 		msg := data.Config.Contents[0]
-		responseBody.Message = convert.Message{
+		responseBody.Message = &convert.Message{
 			Role:    data.Config.Role,
 			Content: msg.Text,
 		}

@@ -167,7 +167,7 @@ func (ctx *cloneContext) SendTo(scheme string, node eoscContext.INode, timeout t
 		request.URI().SetHost(targetHost)
 	}
 	beginTime := time.Now()
-	ctx.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, ctx.response.Response, timeout)
+	ctx.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, ctx.response.Response, timeout, false)
 	var responseHeader fasthttp.ResponseHeader
 	if ctx.response.Response != nil {
 		responseHeader = ctx.response.Response.Header
