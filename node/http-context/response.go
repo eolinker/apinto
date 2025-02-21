@@ -1,6 +1,7 @@
 package http_context
 
 import (
+	"bytes"
 	"io"
 	"strconv"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"go.uber.org/zap/buffer"
 
 	"github.com/valyala/fasthttp"
 )
@@ -23,7 +25,7 @@ type Response struct {
 	responseError   error
 	remoteIP        string
 	remotePort      int
-	bodyStream      *BodyStream
+	buf             *buffer.Buffer
 }
 
 type BodyStream struct {
@@ -33,6 +35,9 @@ type BodyStream struct {
 }
 
 func NewBodyStream(reader io.Reader) *BodyStream {
+	buf := &bytes.Buffer{}
+
+	buf.Bytes()
 	return &BodyStream{reader: reader}
 }
 

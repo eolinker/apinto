@@ -3,6 +3,7 @@ package http_context
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -201,17 +202,29 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	response.Header.CopyTo(&ctx.response.Response.Header)
 	ctx.response.ResponseHeader.refresh()
 	if response.IsBodyStream() && response.Header.ContentLength() < 0 {
+		reader := response.BodyStream()
 		ctx.response.Response.SetStatusCode(response.StatusCode())
-		bodyStream := NewBodyStream(response.BodyStream())
-		ctx.response.bodyStream = bodyStream
-		ctx.response.Response.SetBodyStream(bodyStream, -1)
-		agent.setResponseLength(ctx.response.Response.Header.ContentLength())
+		buf := make([]byte, 4096)
+		for {
+			n, err := reader.Read(buf)
+			if err == io.EOF {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			agent.responseBody.Write(response.Body()[:n])
+			_, err = ctx.response.Response.BodyWriter().Write(buf[:n])
+			if err != nil {
+				return err
+			}
+		}
+		agent.setResponseLength(-1)
 		ctx.proxyRequests = append(ctx.proxyRequests, agent)
 		return nil
 	}
 
 	response.CopyTo(ctx.response.Response)
-
 	agent.responseBody.Write(ctx.response.Response.Body())
 	agent.setResponseLength(ctx.response.Response.Header.ContentLength())
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)
