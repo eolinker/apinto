@@ -2,14 +2,11 @@ package http_context
 
 import (
 	"bytes"
-	"io"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"go.uber.org/zap/buffer"
 
 	"github.com/valyala/fasthttp"
 )
@@ -19,75 +16,39 @@ var _ http_service.IResponse = (*Response)(nil)
 type Response struct {
 	ResponseHeader
 	*fasthttp.Response
+	statusCode      int
 	length          int
 	responseTime    time.Duration
 	proxyStatusCode int
 	responseError   error
 	remoteIP        string
 	remotePort      int
-	buf             *buffer.Buffer
+	streamBody      *bytes.Buffer
+	streamFuncArray []http_service.StreamFunc
 }
 
-type BodyStream struct {
-	reader             io.Reader
-	streamReadHandler  []func(p []byte) error
-	streamWriteHandler []func(p []byte) ([]byte, error)
+func (r *Response) StreamFunc() []http_service.StreamFunc {
+	return r.streamFuncArray
 }
 
-func NewBodyStream(reader io.Reader) *BodyStream {
-	buf := &bytes.Buffer{}
-
-	buf.Bytes()
-	return &BodyStream{reader: reader}
-}
-
-func (b *BodyStream) AppendReaderFunc(f func(p []byte) error) {
-	if b.streamReadHandler == nil {
-		b.streamReadHandler = make([]func(p []byte) error, 0)
+func (r *Response) AppendStreamFunc(streamFunc http_service.StreamFunc) {
+	if r.streamFuncArray == nil {
+		r.streamFuncArray = make([]http_service.StreamFunc, 0, 10)
 	}
-	b.streamReadHandler = append(b.streamReadHandler, f)
+	r.streamFuncArray = append(r.streamFuncArray, streamFunc)
 }
 
-func (b *BodyStream) AppendWriterFunc(f func(p []byte) ([]byte, error)) {
-	if b.streamWriteHandler == nil {
-		b.streamWriteHandler = make([]func(p []byte) ([]byte, error), 0)
-	}
-	b.streamWriteHandler = append(b.streamWriteHandler, f)
-}
-
-var bufferPool = sync.Pool{
-	New: func() interface{} {
-		return make([]byte, 32*1024) // 默认 32KB 缓冲区
-	},
-}
-
-func (b *BodyStream) Read(p []byte) (n int, err error) {
-	tmp := bufferPool.Get().([]byte)
-	defer bufferPool.Put(tmp)
-	n, err = b.reader.Read(tmp)
-	if err != nil {
-		return 0, err
-	}
-	org := tmp[:n]
-	for _, fn := range b.streamWriteHandler {
-		result, err := fn(org)
+func (r *Response) StreamFuncHandle(ctx http_service.IHttpContext, org []byte) ([]byte, error) {
+	result := make([]byte, len(org))
+	copy(result, org)
+	var err error
+	for _, streamFunc := range r.streamFuncArray {
+		result, err = streamFunc(ctx, result)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
-		org = result
 	}
-	org = append(org, []byte("\n")...)
-	copy(p, org)
-	return len(org), nil
-}
-
-func (b *BodyStream) Write(p []byte) (n int, err error) {
-
-	return 0, nil
-}
-
-func (r *Response) GetBodyStream() http_service.IResponseStream {
-	return r.bodyStream
+	return result, nil
 }
 
 func (r *Response) ContentLength() int {
@@ -117,6 +78,7 @@ func (r *Response) Finish() error {
 	r.Response = nil
 	r.responseError = nil
 	r.proxyStatusCode = 0
+	r.streamBody = nil
 	return nil
 }
 func (r *Response) reset(resp *fasthttp.Response) {
@@ -124,6 +86,7 @@ func (r *Response) reset(resp *fasthttp.Response) {
 	r.ResponseHeader.reset(&resp.Header)
 	r.responseError = nil
 	r.proxyStatusCode = 0
+	r.streamBody = &bytes.Buffer{}
 }
 
 func (r *Response) BodyLen() int {
@@ -138,7 +101,7 @@ func (r *Response) GetBody() []byte {
 		r.Response.SetBody(body)
 	}
 	if r.IsBodyStream() {
-		return nil
+		return r.streamBody.Bytes()
 	}
 	return r.Response.Body()
 }
@@ -149,6 +112,8 @@ func (r *Response) IsBodyStream() bool {
 
 func (r *Response) SetBody(bytes []byte) {
 	if r.IsBodyStream() {
+		r.streamBody.Write(bytes)
+		// 不处理
 		return
 	}
 	if strings.Contains(r.GetHeader("Content-Encoding"), "gzip") {
@@ -164,15 +129,21 @@ func (r *Response) StatusCode() int {
 	if r.responseError != nil {
 		return 504
 	}
-	return r.Response.StatusCode()
+
+	return r.statusCode
 }
 
 func (r *Response) Status() string {
-	return strconv.Itoa(r.StatusCode())
+	if r.statusCode == 0 {
+		r.statusCode = r.Response.StatusCode()
+	}
+
+	return strconv.Itoa(r.statusCode)
 }
 
 func (r *Response) SetStatus(code int, status string) {
 	r.Response.SetStatusCode(code)
+	r.statusCode = code
 	r.responseError = nil
 }
 
