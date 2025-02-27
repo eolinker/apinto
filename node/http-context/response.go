@@ -16,7 +16,6 @@ var _ http_service.IResponse = (*Response)(nil)
 type Response struct {
 	ResponseHeader
 	*fasthttp.Response
-	statusCode      int
 	length          int
 	responseTime    time.Duration
 	proxyStatusCode int
@@ -130,20 +129,15 @@ func (r *Response) StatusCode() int {
 		return 504
 	}
 
-	return r.statusCode
+	return r.Response.StatusCode()
 }
 
 func (r *Response) Status() string {
-	if r.statusCode == 0 {
-		r.statusCode = r.Response.StatusCode()
-	}
-
-	return strconv.Itoa(r.statusCode)
+	return strconv.Itoa(r.Response.StatusCode())
 }
 
 func (r *Response) SetStatus(code int, status string) {
 	r.Response.SetStatusCode(code)
-	r.statusCode = code
 	r.responseError = nil
 }
 

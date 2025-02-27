@@ -236,7 +236,6 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 							log.Errorf("exec stream func error: %v", err)
 							break
 						}
-						chunk = append(chunk, []byte("\r\n")...)
 					}
 
 					n, err = w.Write(chunk)
