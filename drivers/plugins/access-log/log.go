@@ -24,22 +24,31 @@ func (l *accessLog) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (er
 	return http_service.DoHttpFilter(l, ctx, next)
 }
 
-func (l *accessLog) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
-	err = next.DoChain(ctx)
-	if err != nil {
-		log.Error(err)
-	}
+func (l *accessLog) bodyFinish(ctx http_service.IHttpContext) {
 	outputs := l.proxy.List()
 	entry := http_entry.NewEntry(ctx)
 	for _, v := range outputs {
-
-		err = v.Output(entry)
+		err := v.Output(entry)
 		if err != nil {
 			log.Error("access log http-entry error:", err)
 			continue
 		}
 	}
+	return
+}
 
+func (l *accessLog) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
+	ctx.AppendBodyFinishFunc(l.bodyFinish)
+	err = next.DoChain(ctx)
+	if err != nil {
+		log.Error(err)
+	}
+
+	if ctx.Response().IsBodyStream() {
+		return nil
+	}
+
+	l.bodyFinish(ctx)
 	return nil
 }
 

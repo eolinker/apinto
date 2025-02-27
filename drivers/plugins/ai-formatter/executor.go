@@ -213,7 +213,9 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, cloneProxy http
 				return err
 			}
 		}
-
+		if ctx.Response().IsBodyStream() {
+			return nil
+		}
 		if err = converter.ResponseConvert(ctx); err != nil {
 			convert.SetAIProviderStatuses(ctx, convert.AIProviderStatus{
 				Provider: e.provider,
@@ -235,9 +237,10 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, cloneProxy http
 			return nil
 		default:
 			continue
+
 		}
 	}
-	return fmt.Errorf("")
+	return fmt.Errorf("all key resources for provider %s is invalid", e.provider)
 }
 
 // handleNoKeyResource handles the case when no key resources are available.

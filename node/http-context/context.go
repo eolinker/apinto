@@ -1,18 +1,19 @@
 package http_context
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/eolinker/apinto/entries/ctx_key"
 	http_entry "github.com/eolinker/apinto/entries/http-entry"
 
 	"github.com/eolinker/eosc"
-
-	"github.com/eolinker/apinto/entries/ctx_key"
 
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
@@ -44,6 +45,20 @@ type HttpContext struct {
 	labels              map[string]string
 	port                int
 	entry               eosc.IEntry
+	bodyFinishes        []http_service.BodyFinishFunc
+}
+
+func (ctx *HttpContext) BodyFinish() {
+	for _, finishFunc := range ctx.bodyFinishes {
+		finishFunc(ctx)
+	}
+}
+
+func (ctx *HttpContext) AppendBodyFinishFunc(finishFunc http_service.BodyFinishFunc) {
+	if ctx.bodyFinishes == nil {
+		ctx.bodyFinishes = make([]http_service.BodyFinishFunc, 0, 10)
+	}
+	ctx.bodyFinishes = append(ctx.bodyFinishes, finishFunc)
 }
 
 func (ctx *HttpContext) ProxyClone() http_service.IRequest {
@@ -181,7 +196,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 
 	beginTime := time.Now()
 	response := fasthttp.AcquireResponse()
-	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, response, timeout, ctx.GetLabel("stream") == "true")
+	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, response, timeout)
 
 	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, response.Header, beginTime, time.Now())
 
@@ -201,17 +216,54 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	response.Header.CopyTo(&ctx.response.Response.Header)
 	ctx.response.ResponseHeader.refresh()
 	if response.IsBodyStream() && response.Header.ContentLength() < 0 {
+		// 流式传输
 		ctx.response.Response.SetStatusCode(response.StatusCode())
-		bodyStream := NewBodyStream(response.BodyStream())
-		ctx.response.bodyStream = bodyStream
-		ctx.response.Response.SetBodyStream(bodyStream, -1)
-		agent.setResponseLength(ctx.response.Response.Header.ContentLength())
+		ctx.SetLabel("stream_running", "true")
+		ctx.response.Response.SetBodyStreamWriter(func(w *bufio.Writer) {
+			defer func() {
+				ctx.SetLabel("stream_running", "false")
+				ctx.FastFinish()
+			}()
+			reader := response.BodyStream()
+			buffer := make([]byte, 4096) // 4KB 缓冲区
+			for {
+				n, err := reader.Read(buffer)
+				if n > 0 {
+					chunk := buffer[:n]
+					for _, streamFunc := range ctx.Response().StreamFunc() {
+						chunk, err = streamFunc(ctx, chunk)
+						if err != nil {
+							log.Errorf("exec stream func error: %v", err)
+							break
+						}
+					}
+
+					n, err = w.Write(chunk)
+					if err != nil {
+						log.Errorf("stream write error: %v", err)
+						break
+					}
+					ctx.Response().SetBody(chunk)
+
+					w.Flush() // 实时发送数据
+				}
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+					log.Errorf("stream read error: %v", err)
+					break
+				}
+			}
+			ctx.BodyFinish()
+		})
+
+		agent.setResponseLength(-1)
 		ctx.proxyRequests = append(ctx.proxyRequests, agent)
 		return nil
 	}
 
 	response.CopyTo(ctx.response.Response)
-
 	agent.responseBody.Write(ctx.response.Response.Body())
 	agent.setResponseLength(ctx.response.Response.Header.ContentLength())
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)
@@ -267,19 +319,27 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 
 	copyContext.proxyRequest.reset(req, ctx.requestReader.remoteAddr)
 	copyContext.response.reset(resp)
-
+	resp.Header.CopyTo(copyContext.response.header)
+	copyContext.response.refresh()
 	copyContext.completeHandler = ctx.completeHandler
 	copyContext.finishHandler = ctx.finishHandler
-
+	copyContext.response.Response.SetStatusCode(ctx.response.Response.StatusCode())
 	cloneLabels := make(map[string]string, len(ctx.labels))
 	for k, v := range ctx.labels {
 		cloneLabels[k] = v
 	}
 	copyContext.labels = cloneLabels
+	for _, finishFunc := range ctx.bodyFinishes {
+		copyContext.AppendBodyFinishFunc(finishFunc)
+	}
+	for _, streamFunc := range ctx.response.streamFuncArray {
+		copyContext.Response().AppendStreamFunc(streamFunc)
+	}
 
 	//记录请求时间
 	copyContext.ctx = context.WithValue(ctx.Context(), http_service.KeyCloneCtx, true)
 	copyContext.WithValue(ctx_key.CtxKeyRetry, 0)
+
 	return copyContext, nil
 }
 
@@ -321,8 +381,13 @@ func (ctx *HttpContext) RequestId() string {
 	return ctx.requestID
 }
 
-// Finish finish
+// FastFinish finish
 func (ctx *HttpContext) FastFinish() {
+	streamRunning := ctx.GetLabel("stream_running")
+	if streamRunning == "true" {
+		// 暂时不释放
+		return
+	}
 	if ctx.response.responseError != nil {
 		ctx.fastHttpRequestCtx.SetStatusCode(504)
 		ctx.fastHttpRequestCtx.SetBodyString(ctx.response.responseError.Error())

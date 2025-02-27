@@ -37,7 +37,22 @@ type cloneContext struct {
 	upstreamHostHandler eoscContext.UpstreamHostHandler
 	labels              map[string]string
 	entry               eosc.IEntry
+	bodyFinishes        []http_service.BodyFinishFunc
 	responseError       error
+}
+
+func (ctx *cloneContext) BodyFinish() {
+	for _, finishFunc := range ctx.bodyFinishes {
+		finishFunc(ctx)
+	}
+	return
+}
+
+func (ctx *cloneContext) AppendBodyFinishFunc(finishFunc http_service.BodyFinishFunc) {
+	if ctx.bodyFinishes == nil {
+		ctx.bodyFinishes = make([]http_service.BodyFinishFunc, 0, 10)
+	}
+	ctx.bodyFinishes = append(ctx.bodyFinishes, finishFunc)
 }
 
 func (ctx *cloneContext) ProxyClone() http_service.IRequest {
@@ -167,7 +182,7 @@ func (ctx *cloneContext) SendTo(scheme string, node eoscContext.INode, timeout t
 		request.URI().SetHost(targetHost)
 	}
 	beginTime := time.Now()
-	ctx.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, ctx.response.Response, timeout, false)
+	ctx.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, ctx.response.Response, timeout)
 	var responseHeader fasthttp.ResponseHeader
 	if ctx.response.Response != nil {
 		responseHeader = ctx.response.Response.Header

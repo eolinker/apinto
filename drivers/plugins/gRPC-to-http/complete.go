@@ -131,7 +131,7 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 		}
 		response := fasthttp.AcquireResponse()
 
-		lastErr = fasthttp_client.ProxyTimeout(scheme, host, node, request, response, timeOut, false)
+		lastErr = fasthttp_client.ProxyTimeout(scheme, host, node, request, response, timeOut)
 		if lastErr == nil {
 			return newGRPCResponse(ctx, response, methodDesc)
 		}
