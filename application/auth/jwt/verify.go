@@ -509,6 +509,7 @@ func typeOfData(data interface{}) reflect.Kind {
 
 // doJWTAuthentication 进行JWT鉴权
 func (j *jwt) doJWTAuthentication(tokenStr string) (string, error) {
+	tokenStr = strings.TrimPrefix(tokenStr, "Bearer ")
 	token, err := decodeToken(tokenStr)
 	if err != nil {
 		return "", errors.New("Bad token; " + err.Error())
