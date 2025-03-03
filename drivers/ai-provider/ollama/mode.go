@@ -26,7 +26,7 @@ type Chat struct {
 // NewChat initializes and returns a new Chat instance.
 func NewChat() *Chat {
 	return &Chat{
-		endPoint: "/api/chat",
+		endPoint: "/v1/chat/completions",
 	}
 }
 
@@ -85,58 +85,58 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 
 	// SetProvider the modified body in the HTTP context.
 	httpContext.Proxy().Body().SetRaw("application/json", body)
-	httpContext.Response().AppendStreamFunc(c.streamFunc())
+	//httpContext.Response().AppendStreamFunc(c.streamFunc())
 	return nil
 }
 
-func (c *Chat) streamFunc() http_context.StreamFunc {
-	return func(ctx http_context.IHttpContext, p []byte) ([]byte, error) {
-		data := eosc.NewBase[Response]()
-		err := json.Unmarshal(p, data)
-		if err != nil {
-			return nil, err
-		}
-		status := ctx.Response().StatusCode()
-		switch status {
-		case 200:
-			// Calculate the token consumption for a successful request.
-			usage := data.Config
-			if usage.Done {
-				convert.SetAIStatusNormal(ctx)
-				convert.SetAIModelInputToken(ctx, usage.PromptEvalCount)
-				convert.SetAIModelOutputToken(ctx, usage.EvalCount)
-				convert.SetAIModelTotalToken(ctx, usage.PromptEvalCount+usage.EvalCount)
-			}
-		case 404:
-			convert.SetAIStatusInvalid(ctx)
-		case 429:
-			convert.SetAIStatusExceeded(ctx)
-		}
-
-		// Prepare the response body for the client.
-		responseBody := &convert.ClientResponse{}
-		resp := data.Config
-		if resp.Message != nil {
-			responseBody.Message = &convert.Message{
-				Role:    resp.Message.Role,
-				Content: resp.Message.Content,
-			}
-			if resp.Done {
-				responseBody.FinishReason = convert.FinishStop
-			}
-		} else {
-			responseBody.Code = -1
-			responseBody.Error = "response message is nil"
-		}
-
-		// Marshal the modified response body back into JSON.
-		body, err := json.Marshal(responseBody)
-		if err != nil {
-			return nil, err
-		}
-		return body, nil
-	}
-}
+//func (c *Chat) streamFunc() http_context.StreamFunc {
+//	return func(ctx http_context.IHttpContext, p []byte) ([]byte, error) {
+//		data := eosc.NewBase[Response]()
+//		err := json.Unmarshal(p, data)
+//		if err != nil {
+//			return nil, err
+//		}
+//		status := ctx.Response().StatusCode()
+//		switch status {
+//		case 200:
+//			// Calculate the token consumption for a successful request.
+//			usage := data.Config
+//			if usage.Done {
+//				convert.SetAIStatusNormal(ctx)
+//				convert.SetAIModelInputToken(ctx, usage.PromptEvalCount)
+//				convert.SetAIModelOutputToken(ctx, usage.EvalCount)
+//				convert.SetAIModelTotalToken(ctx, usage.PromptEvalCount+usage.EvalCount)
+//			}
+//		case 404:
+//			convert.SetAIStatusInvalid(ctx)
+//		case 429:
+//			convert.SetAIStatusExceeded(ctx)
+//		}
+//
+//		// Prepare the response body for the client.
+//		responseBody := &convert.ClientResponse{}
+//		resp := data.Config
+//		if resp.Message != nil {
+//			responseBody.Message = &convert.Message{
+//				Role:    resp.Message.Role,
+//				Content: resp.Message.Content,
+//			}
+//			if resp.Done {
+//				responseBody.FinishReason = convert.FinishStop
+//			}
+//		} else {
+//			responseBody.Code = -1
+//			responseBody.Error = "response message is nil"
+//		}
+//
+//		// Marshal the modified response body back into JSON.
+//		body, err := json.Marshal(responseBody)
+//		if err != nil {
+//			return nil, err
+//		}
+//		return body, nil
+//	}
+//}
 
 // ResponseConvert converts the response body for the Chat mode.
 // It processes the response to ensure it conforms to the expected format and encoding.
@@ -147,15 +147,6 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		return err
 	}
 
-	status := httpContext.Response().StatusCode()
-	switch status {
-	case 200:
-		convert.SetAIStatusNormal(ctx)
-	}
-	if httpContext.Response().IsBodyStream() {
-
-		return nil
-	}
 	// Retrieve the response body.
 	body := httpContext.Response().GetBody()
 	if body == nil {
@@ -163,7 +154,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	}
 
 	// Parse the response body into a base configuration.
-	data := eosc.NewBase[Response]()
+	data := eosc.NewBase[convert.Response]()
 	err = json.Unmarshal(body, data)
 	if err != nil {
 		return err
@@ -171,34 +162,34 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	switch httpContext.Response().StatusCode() {
 	case 200:
 		// Calculate the token consumption for a successful request.
-		usage := data.Config
+		usage := data.Config.Usage
 		convert.SetAIStatusNormal(ctx)
-		convert.SetAIModelInputToken(ctx, usage.PromptEvalCount)
-		convert.SetAIModelOutputToken(ctx, usage.EvalCount)
-		convert.SetAIModelTotalToken(ctx, usage.PromptEvalCount+usage.EvalCount)
+		convert.SetAIModelInputToken(ctx, usage.PromptTokens)
+		convert.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		convert.SetAIModelTotalToken(ctx, usage.TotalTokens)
 	}
-
-	// Prepare the response body for the client.
-	responseBody := &convert.ClientResponse{}
-	resp := data.Config
-	if resp.Message != nil {
-		responseBody.Message = &convert.Message{
-			Role:    resp.Message.Role,
-			Content: resp.Message.Content,
-		}
-		responseBody.FinishReason = convert.FinishStop
-	} else {
-		responseBody.Code = -1
-		responseBody.Error = resp.Error
-	}
-
-	// Marshal the modified response body back into JSON.
-	body, err = json.Marshal(responseBody)
-	if err != nil {
-		return err
-	}
-
-	httpContext.Response().SetBody(body)
+	//
+	//// Prepare the response body for the client.
+	//responseBody := &convert.ClientResponse{}
+	//resp := data.Config
+	//if resp.Choices != nil {
+	//	responseBody.Message = &convert.Message{
+	//		Role:    resp.Message.Role,
+	//		Content: resp.Message.Content,
+	//	}
+	//	responseBody.FinishReason = convert.FinishStop
+	//} else {
+	//	responseBody.Code = -1
+	//	responseBody.Error = resp.Error
+	//}
+	//
+	//// Marshal the modified response body back into JSON.
+	//body, err = json.Marshal(responseBody)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//httpContext.Response().SetBody(body)
 
 	// SetProvider the modified response in the HTTP context.
 	return nil

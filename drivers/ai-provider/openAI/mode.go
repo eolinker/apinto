@@ -146,22 +146,22 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		convert.SetAIStatusInvalid(ctx)
 	}
 
-	// Prepare the response body for the client.
-	responseBody := &convert.ClientResponse{}
-	if len(data.Config.Choices) > 0 {
-		msg := data.Config.Choices[0]
-		responseBody.Message = &convert.Message{
-			Role:    msg.Message.Role,
-			Content: msg.Message.Content,
-		}
-		responseBody.FinishReason = msg.FinishReason
-	} else {
-		responseBody.Code = -1
-		responseBody.Error = data.Config.Error.Message
-	}
+	//// Prepare the response body for the client.
+	//responseBody := &convert.ClientResponse{}
+	//if len(data.Config.Choices) > 0 {
+	//	msg := data.Config.Choices[0]
+	//	responseBody.Message = &convert.Message{
+	//		Role:    msg.Message.Role,
+	//		Content: msg.Message.Content,
+	//	}
+	//	responseBody.FinishReason = msg.FinishReason
+	//} else {
+	//	responseBody.Code = -1
+	//	responseBody.Error = data.Config.Error.Message
+	//}
 
 	// Marshal the modified response body back into JSON.
-	body, err = json.Marshal(responseBody)
+	body, err = json.Marshal(data)
 	if err != nil {
 		return err
 	}
