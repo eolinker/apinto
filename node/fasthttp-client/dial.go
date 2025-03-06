@@ -71,9 +71,11 @@ func DebugHandleFun(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+const DefaultDialTimeout = time.Second * 10
+
 func Dial(addr string) (net.Conn, error) {
 	atomic.AddInt64(&dialCount, 1)
-	conn, err := tcpDial.Dial(addr)
+	conn, err := tcpDial.DialTimeout(addr, DefaultDialTimeout)
 	if err != nil {
 		return nil, err
 	}

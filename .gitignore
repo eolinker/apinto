@@ -21,3 +21,4 @@
 /dist/
 .gitlab-ci.yml
 /outer/
+*.env
