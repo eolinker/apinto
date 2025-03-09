@@ -3,7 +3,6 @@ package ollama
 import (
 	"sync"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
@@ -12,7 +11,7 @@ import (
 var name = "ollama"
 
 var (
-	converterManager convert.IManager
+	converterManager ai_convert.IManager
 	once             sync.Once
 )
 
@@ -27,7 +26,7 @@ func NewFactory() eosc.IExtenderDriverFactory {
 		bean.Autowired(&converterManager)
 		converterManager.Set(name, &convertFactory{})
 		d, _ := newConverterDriver(&Config{})
-		convert.SetKeyResource(name, newKey(name, d))
+		ai_convert.SetKeyResource(name, newKey(name, d))
 	})
 	return drivers.NewFactory[Config](Create)
 }

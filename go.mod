@@ -26,9 +26,11 @@ require (
 	github.com/nsqio/go-nsq v1.1.0
 	github.com/ohler55/ojg v1.25.1
 	github.com/pkg/sftp v1.13.4
+	github.com/pkoukk/tiktoken-go v0.1.7
 	github.com/polarismesh/polaris-go v1.1.0
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
+	github.com/sashabaranov/go-openai v1.38.0
 	github.com/soheilhy/cmux v0.1.5
 	github.com/stretchr/testify v1.9.0
 	github.com/traefik/yaegi v0.16.1
@@ -56,6 +58,7 @@ require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/creasty/defaults v1.5.2 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
+	github.com/dlclark/regexp2 v1.10.0 // indirect
 	github.com/dubbogo/triple v1.1.8 // indirect
 	github.com/go-kit/log v0.1.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
@@ -197,4 +200,4 @@ require (
 
 replace github.com/soheilhy/cmux v0.1.5 => github.com/hmzzrcs/cmux v0.1.6
 
-//replace github.com/eolinker/eosc => ../eosc
+replace github.com/eolinker/eosc => ../eosc

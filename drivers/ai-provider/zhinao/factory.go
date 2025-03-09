@@ -5,7 +5,6 @@ import (
 
 	"github.com/eolinker/eosc/common/bean"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 )
@@ -13,7 +12,7 @@ import (
 var name = "zhinao"
 
 var (
-	converterManager convert.IManager
+	converterManager ai_convert.IManager
 	once             sync.Once
 )
 

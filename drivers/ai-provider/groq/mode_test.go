@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eolinker/apinto/convert"
 	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/joho/godotenv"
 	"github.com/valyala/fasthttp"
@@ -53,24 +52,24 @@ func TestSentTo(t *testing.T) {
 		{
 			name:       "success",
 			apiKey:     os.Getenv("GROQ_VALID_API_KEY"),
-			wantStatus: convert.StatusNormal,
+			wantStatus: ai_convert.StatusNormal,
 			body:       successBody,
 		},
 		{
 			name:       "invalid request",
 			apiKey:     os.Getenv("GROQ_VALID_API_KEY"),
-			wantStatus: convert.StatusInvalidRequest,
+			wantStatus: ai_convert.StatusInvalidRequest,
 			body:       failBody,
 		},
 		{
 			name:       "invalid key",
 			apiKey:     os.Getenv("GROQ_INVALID_API_KEY"),
-			wantStatus: convert.StatusInvalid,
+			wantStatus: ai_convert.StatusInvalid,
 		},
 		{
 			name:       "expired key",
 			apiKey:     os.Getenv("GROQ_EXPIRE_API_KEY"),
-			wantStatus: convert.StatusInvalid,
+			wantStatus: ai_convert.StatusInvalid,
 		},
 	}
 
@@ -97,7 +96,7 @@ func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 	}
 
 	// Get the handler
-	handler, ok := worker.(convert.IConverterDriver)
+	handler, ok := worker.(ai_convert.IConverterDriver)
 	if !ok {
 		return fmt.Errorf("worker does not implement IConverterDriver")
 	}
@@ -117,17 +116,17 @@ func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 	}
 
 	// Check the status
-	if convert.GetAIStatus(ctx) != wantStatus {
-		return fmt.Errorf("unexpected status: got %s, expected %s", convert.GetAIStatus(ctx), wantStatus)
+	if ai_convert.GetAIStatus(ctx) != wantStatus {
+		return fmt.Errorf("unexpected status: got %s, expected %s", ai_convert.GetAIStatus(ctx), wantStatus)
 	}
 
 	return nil
 }
 
 // executeConverter handles the full flow of a conversion process.
-func executeConverter(ctx *http_context.HttpContext, handler convert.IConverterDriver, model string, baseUrl string) error {
+func executeConverter(ctx *http_context.HttpContext, handler ai_convert.IConverterDriver, model string, baseUrl string) error {
 	// Balance handler setup
-	balanceHandler, err := convert.NewBalanceHandler("test", baseUrl, 30*time.Second)
+	balanceHandler, err := ai_convert.NewBalanceHandler("test", baseUrl, 30*time.Second)
 	if err != nil {
 		return fmt.Errorf("failed to create balance handler: %w", err)
 	}

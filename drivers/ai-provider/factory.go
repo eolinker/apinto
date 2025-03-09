@@ -3,9 +3,10 @@ package ai_provider
 import (
 	"sync"
 
+	ai_convert "github.com/eolinker/apinto/ai-convert"
+
 	"github.com/eolinker/eosc/common/bean"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 )
@@ -16,7 +17,7 @@ type Factory struct {
 }
 
 var (
-	providerManager convert.IManager
+	providerManager ai_convert.IManager
 	ones            sync.Once
 )
 

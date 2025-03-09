@@ -5,17 +5,16 @@ import (
 
 	"github.com/eolinker/apinto/drivers"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc"
 )
 
 var (
-	_ convert.IConverterDriver = (*executor)(nil)
+	_ ai_convert.IConverterDriver = (*executor)(nil)
 )
 
 type executor struct {
 	drivers.WorkerBase
-	convert.IConverterDriver
+	ai_convert.IConverterDriver
 }
 
 func (e *executor) Start() error {
@@ -48,7 +47,7 @@ func (e *executor) Stop() error {
 }
 
 func (e *executor) CheckSkill(skill string) bool {
-	return convert.CheckKeySourceSkill(skill)
+	return ai_convert.CheckKeySourceSkill(skill)
 }
 
 type ModelConfig struct {

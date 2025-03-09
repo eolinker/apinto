@@ -3,9 +3,10 @@ package ollama
 import (
 	"encoding/json"
 
+	ai_convert "github.com/eolinker/apinto/ai-convert"
+
 	"github.com/eolinker/eosc"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -14,7 +15,7 @@ import (
 // It includes methods for retrieving the endpoint and performing data conversion.
 type IModelMode interface {
 	Endpoint() string
-	convert.IConverter
+	ai_convert.IConverter
 }
 
 // Chat represents the chat mode implementation.
@@ -53,7 +54,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	httpContext.Proxy().URI().SetPath(c.endPoint)
 
 	// Parse the request body into a base configuration.
-	baseCfg := eosc.NewBase[convert.ClientRequest]()
+	baseCfg := eosc.NewBase[ai_convert.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
@@ -154,7 +155,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	}
 
 	// Parse the response body into a base configuration.
-	data := eosc.NewBase[convert.Response]()
+	data := eosc.NewBase[ai_convert.Response]()
 	err = json.Unmarshal(body, data)
 	if err != nil {
 		return err
@@ -163,10 +164,10 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	case 200:
 		// Calculate the token consumption for a successful request.
 		usage := data.Config.Usage
-		convert.SetAIStatusNormal(ctx)
-		convert.SetAIModelInputToken(ctx, usage.PromptTokens)
-		convert.SetAIModelOutputToken(ctx, usage.CompletionTokens)
-		convert.SetAIModelTotalToken(ctx, usage.TotalTokens)
+		ai_convert.SetAIStatusNormal(ctx)
+		ai_convert.SetAIModelInputToken(ctx, usage.PromptTokens)
+		ai_convert.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+		ai_convert.SetAIModelTotalToken(ctx, usage.TotalTokens)
 	}
 	//
 	//// Prepare the response body for the client.

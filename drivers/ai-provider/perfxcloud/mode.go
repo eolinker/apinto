@@ -3,7 +3,6 @@ package perfxcloud
 import (
 	"encoding/json"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
@@ -11,13 +10,13 @@ import (
 
 var (
 	modelModes = map[string]IModelMode{
-		convert.ModeChat.String(): NewChat(),
+		ai_convert.ModeChat.String(): NewChat(),
 	}
 )
 
 type IModelMode interface {
 	Endpoint() string
-	convert.IConverter
+	ai_convert.IConverter
 }
 
 type Chat struct {
@@ -45,7 +44,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	}
 	// 设置转发地址
 	httpContext.Proxy().URI().SetPath(c.endPoint)
-	baseCfg := eosc.NewBase[convert.ClientRequest]()
+	baseCfg := eosc.NewBase[ai_convert.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
@@ -83,10 +82,10 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	responseBody := &convert.ClientResponse{}
+	responseBody := &ai_convert.ClientResponse{}
 	if len(data.Config.Choices) > 0 {
 		msg := data.Config.Choices[0]
-		responseBody.Message = &convert.Message{
+		responseBody.Message = &ai_convert.Message{
 			Role:    msg.Message.Role,
 			Content: msg.Message.Content,
 		}

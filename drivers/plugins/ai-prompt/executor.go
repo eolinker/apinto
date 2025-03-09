@@ -14,8 +14,7 @@ import (
 
 type RequestMessage struct {
 	Messages  []Message         `json:"messages"`
-	Stream    bool              `json:"stream"`
-	Variables map[string]string `json:"variables"`
+	Variables map[string]string `json:"variables,omitempty"`
 }
 
 type Message struct {
@@ -58,7 +57,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 }
 
 func genRequestMessage(body []byte, prompt string, variables map[string]bool, required bool) ([]byte, error) {
-	baseMsg := eosc.NewBase[RequestMessage]()
+	baseMsg := eosc.NewBase[RequestMessage](nil)
 	err := json.Unmarshal(body, baseMsg)
 	if err != nil {
 		return nil, err
@@ -85,10 +84,10 @@ func genRequestMessage(body []byte, prompt string, variables map[string]bool, re
 	} else {
 		messages = baseMsg.Config.Messages
 	}
-	return json.Marshal(map[string]interface{}{
-		"stream":   baseMsg.Config.Stream,
-		"messages": messages,
-	})
+	// 重制为空
+	baseMsg.Config.Variables = nil
+	delete(baseMsg.Append, "variables")
+	return json.Marshal(baseMsg)
 }
 
 func (e *executor) Destroy() {

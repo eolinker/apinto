@@ -9,7 +9,6 @@ import (
 
 	"github.com/eolinker/eosc/eocontext"
 
-	"github.com/eolinker/apinto/convert"
 	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/joho/godotenv"
 	"github.com/valyala/fasthttp"
@@ -44,16 +43,16 @@ var (
 )
 
 func validNormalFunc(ctx eocontext.EoContext) bool {
-	fmt.Printf("input token: %d\n", convert.GetAIModelInputToken(ctx))
-	fmt.Printf("output token: %d\n", convert.GetAIModelOutputToken(ctx))
-	fmt.Printf("total token: %d\n", convert.GetAIModelTotalToken(ctx))
-	if convert.GetAIModelInputToken(ctx) <= 0 {
+	fmt.Printf("input token: %d\n", ai_convert.GetAIModelInputToken(ctx))
+	fmt.Printf("output token: %d\n", ai_convert.GetAIModelOutputToken(ctx))
+	fmt.Printf("total token: %d\n", ai_convert.GetAIModelTotalToken(ctx))
+	if ai_convert.GetAIModelInputToken(ctx) <= 0 {
 		return false
 	}
-	if convert.GetAIModelOutputToken(ctx) <= 0 {
+	if ai_convert.GetAIModelOutputToken(ctx) <= 0 {
 		return false
 	}
-	return convert.GetAIModelTotalToken(ctx) > 0
+	return ai_convert.GetAIModelTotalToken(ctx) > 0
 }
 
 // TestSentTo tests the end-to-end execution of the wenxin integration.
@@ -77,7 +76,7 @@ func TestSentTo(t *testing.T) {
 			name:       "success",
 			apiKey:     os.Getenv("ValidKey"),
 			secretKey:  os.Getenv("SecretKey"),
-			wantStatus: convert.StatusNormal,
+			wantStatus: ai_convert.StatusNormal,
 			body:       successBody,
 			validFunc:  validNormalFunc,
 		},
@@ -85,20 +84,20 @@ func TestSentTo(t *testing.T) {
 			name:       "invalid request",
 			apiKey:     os.Getenv("ValidKey"),
 			secretKey:  os.Getenv("SecretKey"),
-			wantStatus: convert.StatusInvalidRequest,
+			wantStatus: ai_convert.StatusInvalidRequest,
 			body:       failBody,
 		},
 		{
 			name:       "invalid key",
 			apiKey:     os.Getenv("InvalidKey"),
 			secretKey:  os.Getenv("SecretKey"),
-			wantStatus: convert.StatusInvalid,
+			wantStatus: ai_convert.StatusInvalid,
 		},
 		{
 			name:       "expired key",
 			apiKey:     os.Getenv("ExpiredKey"),
 			secretKey:  os.Getenv("SecretKey"),
-			wantStatus: convert.StatusInvalid,
+			wantStatus: ai_convert.StatusInvalid,
 		},
 	}
 
@@ -126,7 +125,7 @@ func runTest(apiKey string, secretKey string, requestBody []byte, wantStatus str
 	}
 
 	// Get the handler
-	handler, ok := worker.(convert.IConverterDriver)
+	handler, ok := worker.(ai_convert.IConverterDriver)
 	if !ok {
 		return fmt.Errorf("worker does not implement IConverterDriver")
 	}
@@ -146,8 +145,8 @@ func runTest(apiKey string, secretKey string, requestBody []byte, wantStatus str
 	}
 
 	// Check the status
-	if convert.GetAIStatus(ctx) != wantStatus {
-		return fmt.Errorf("unexpected status: got %s, expected %s", convert.GetAIStatus(ctx), wantStatus)
+	if ai_convert.GetAIStatus(ctx) != wantStatus {
+		return fmt.Errorf("unexpected status: got %s, expected %s", ai_convert.GetAIStatus(ctx), wantStatus)
 	}
 	if validFunc != nil {
 		if validFunc(ctx) {
@@ -160,9 +159,9 @@ func runTest(apiKey string, secretKey string, requestBody []byte, wantStatus str
 }
 
 // executeConverter handles the full flow of a conversion process.
-func executeConverter(ctx *http_context.HttpContext, handler convert.IConverterDriver, model string, baseUrl string) error {
+func executeConverter(ctx *http_context.HttpContext, handler ai_convert.IConverterDriver, model string, baseUrl string) error {
 	// Balance handler setup
-	balanceHandler, err := convert.NewBalanceHandler("test", baseUrl, 30*time.Second)
+	balanceHandler, err := ai_convert.NewBalanceHandler("test", baseUrl, 30*time.Second)
 	if err != nil {
 		return fmt.Errorf("failed to create balance handler: %w", err)
 	}

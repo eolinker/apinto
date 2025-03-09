@@ -6,7 +6,6 @@ import (
 
 	"github.com/eolinker/eosc"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -15,7 +14,7 @@ type FNewModelMode func(string) IModelMode
 
 var (
 	modelModes = map[string]FNewModelMode{
-		convert.ModeChat.String(): NewChat,
+		ai_convert.ModeChat.String(): NewChat,
 	}
 )
 
@@ -24,7 +23,7 @@ type ModelFactory struct {
 
 type IModelMode interface {
 	Endpoint() string
-	convert.IConverter
+	ai_convert.IConverter
 }
 
 type Chat struct {
@@ -52,7 +51,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	}
 	// 设置转发地址
 	httpContext.Proxy().URI().SetPath(c.endPoint)
-	baseCfg := eosc.NewBase[convert.ClientRequest]()
+	baseCfg := eosc.NewBase[ai_convert.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
@@ -103,21 +102,21 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	case 200:
 		// Calculate the token consumption for a successful request.
 		usage := data.Config.UsageMetadata
-		convert.SetAIStatusNormal(ctx)
-		convert.SetAIModelInputToken(ctx, usage.PromptTokenCount)
-		convert.SetAIModelOutputToken(ctx, usage.CandidatesTokenCount)
-		convert.SetAIModelTotalToken(ctx, usage.TotalTokenCount)
+		ai_convert.SetAIStatusNormal(ctx)
+		ai_convert.SetAIModelInputToken(ctx, usage.PromptTokenCount)
+		ai_convert.SetAIModelOutputToken(ctx, usage.CandidatesTokenCount)
+		ai_convert.SetAIModelTotalToken(ctx, usage.TotalTokenCount)
 	case 400:
 		// Handle the bad request error.
-		convert.SetAIStatusInvalidRequest(ctx)
+		ai_convert.SetAIStatusInvalidRequest(ctx)
 	case 429:
 		// Handle exceed
-		convert.SetAIStatusExceeded(ctx)
+		ai_convert.SetAIStatusExceeded(ctx)
 	case 401:
 		// Handle authentication failure
-		convert.SetAIStatusInvalid(ctx)
+		ai_convert.SetAIStatusInvalid(ctx)
 	}
-	responseBody := &convert.ClientResponse{}
+	responseBody := &ai_convert.ClientResponse{}
 	if len(data.Config.Candidates) > 0 {
 		msg := data.Config.Candidates[0]
 		role := "user"
@@ -131,7 +130,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 			}
 		}
 
-		responseBody.Message = &convert.Message{
+		responseBody.Message = &ai_convert.Message{
 			Role:    role,
 			Content: text,
 		}

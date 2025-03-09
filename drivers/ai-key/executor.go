@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/eolinker/apinto/convert"
+	ai_convert "github.com/eolinker/apinto/ai-convert"
 
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
@@ -17,7 +17,7 @@ type executor struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
 	provider string
-	key      convert.IKeyResource
+	key      ai_convert.IKeyResource
 }
 
 func (e *executor) Start() error {
@@ -34,12 +34,12 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (e *executor) reset(conf *Config) error {
-	factory, has := providerManager.Get(conf.Provider)
+	createFunc, has := ai_convert.GetConverterCreateFunc(conf.Provider)
 	if !has {
 		return errors.New("provider not found")
 	}
 
-	cv, err := factory.Create(conf.Config)
+	cv, err := createFunc(conf.Config)
 	if err != nil {
 		return err
 	}
@@ -47,15 +47,15 @@ func (e *executor) reset(conf *Config) error {
 
 	e.key = k
 	e.provider = conf.Provider
-	convert.SetKeyResource(e.provider, e.key)
+	ai_convert.SetKeyResource(e.provider, e.key)
 	return nil
 }
 
 func (e *executor) Stop() error {
-	convert.DelKeyResource(e.provider, e.Id())
+	ai_convert.DelKeyResource(e.provider, e.Id())
 	return nil
 }
 
 func (e *executor) CheckSkill(skill string) bool {
-	return convert.CheckKeySourceSkill(skill)
+	return ai_convert.CheckKeySourceSkill(skill)
 }

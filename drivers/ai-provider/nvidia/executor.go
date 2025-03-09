@@ -6,7 +6,6 @@ import (
 
 	"github.com/eolinker/apinto/drivers"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc"
 )
 
@@ -15,13 +14,13 @@ var (
 	providerContent []byte
 	//go:embed *
 	providerDir  embed.FS
-	modelConvert = make(map[string]convert.IConverter)
+	modelConvert = make(map[string]ai_convert.IConverter)
 
-	_ convert.IConverterDriver = (*executor)(nil)
+	_ ai_convert.IConverterDriver = (*executor)(nil)
 )
 
 func init() {
-	models, err := convert.LoadModels(providerContent, providerDir)
+	models, err := ai_convert.LoadModels(providerContent, providerDir)
 	if err != nil {
 		panic(err)
 	}
@@ -36,7 +35,7 @@ func init() {
 
 type executor struct {
 	drivers.WorkerBase
-	convert.IConverterDriver
+	ai_convert.IConverterDriver
 }
 
 func (e *executor) Start() error {
@@ -68,7 +67,7 @@ func (e *executor) Stop() error {
 }
 
 func (e *executor) CheckSkill(skill string) bool {
-	return convert.CheckKeySourceSkill(skill)
+	return ai_convert.CheckKeySourceSkill(skill)
 }
 
 type ModelConfig struct {

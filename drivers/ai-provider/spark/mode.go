@@ -5,20 +5,19 @@ import (
 
 	"github.com/eolinker/eosc"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 var (
 	modelModes = map[string]IModelMode{
-		convert.ModeChat.String(): NewChat(),
+		ai_convert.ModeChat.String(): NewChat(),
 	}
 )
 
 type IModelMode interface {
 	Endpoint() string
-	convert.IConverter
+	ai_convert.IConverter
 }
 
 type Chat struct {
@@ -46,7 +45,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	}
 	// 设置转发地址
 	httpContext.Proxy().URI().SetPath(c.endPoint)
-	baseCfg := eosc.NewBase[convert.ClientRequest]()
+	baseCfg := eosc.NewBase[ai_convert.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
@@ -88,25 +87,25 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 		if data.Config.Code == 0 {
 			// Calculate the token consumption for a successful request.
 			usage := data.Config.Usage
-			convert.SetAIStatusNormal(ctx)
-			convert.SetAIModelInputToken(ctx, usage.PromptTokens)
-			convert.SetAIModelOutputToken(ctx, usage.CompletionTokens)
-			convert.SetAIModelTotalToken(ctx, usage.TotalTokens)
+			ai_convert.SetAIStatusNormal(ctx)
+			ai_convert.SetAIModelInputToken(ctx, usage.PromptTokens)
+			ai_convert.SetAIModelOutputToken(ctx, usage.CompletionTokens)
+			ai_convert.SetAIModelTotalToken(ctx, usage.TotalTokens)
 		}
 	case 400:
 		// Handle the bad request error.
-		convert.SetAIStatusInvalidRequest(ctx)
+		ai_convert.SetAIStatusInvalidRequest(ctx)
 	case 401:
 		// Handle authentication failure
-		convert.SetAIStatusInvalid(ctx)
+		ai_convert.SetAIStatusInvalid(ctx)
 	}
 	if data.Config.Error != nil {
 		handleErrorCode(ctx, data.Config.Error.Code)
 	}
-	responseBody := &convert.ClientResponse{}
+	responseBody := &ai_convert.ClientResponse{}
 	if len(data.Config.Choices) > 0 {
 		msg := data.Config.Choices[0]
-		responseBody.Message = &convert.Message{
+		responseBody.Message = &ai_convert.Message{
 			Role:    msg.Message.Role,
 			Content: msg.Message.Content,
 		}
@@ -134,11 +133,11 @@ func handleErrorCode(ctx eocontext.EoContext, errorCode interface{}) {
 	switch errorCode {
 	case "11200":
 		// Handle the insufficient quota error.
-		convert.SetAIStatusQuotaExhausted(ctx)
+		ai_convert.SetAIStatusQuotaExhausted(ctx)
 	case "10007", "11201", "11202", "11203":
 		// Handle the rate limit error.
-		convert.SetAIStatusExceeded(ctx)
+		ai_convert.SetAIStatusExceeded(ctx)
 	default:
-		convert.SetAIStatusInvalidRequest(ctx)
+		ai_convert.SetAIStatusInvalidRequest(ctx)
 	}
 }

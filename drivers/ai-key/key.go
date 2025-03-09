@@ -4,27 +4,29 @@ import (
 	"sync"
 	"time"
 
-	"github.com/eolinker/apinto/convert"
+	"github.com/eolinker/eosc/eocontext"
+
+	ai_convert "github.com/eolinker/apinto/ai-convert"
 )
 
 type key struct {
-	id            string
-	name          string
-	priority      int
-	disabled      bool
-	breaker       bool
-	expired       int64
-	convertDriver convert.IConverterDriver
-	locker        sync.RWMutex
+	id        string
+	name      string
+	priority  int
+	disabled  bool
+	breaker   bool
+	expired   int64
+	converter ai_convert.IConverter
+	locker    sync.RWMutex
 }
 
-func newKey(id string, name string, expired int64, priority int, convertDriver convert.IConverterDriver) convert.IKeyResource {
+func newKey(id string, name string, expired int64, priority int, converter ai_convert.IConverter) ai_convert.IKeyResource {
 	return &key{
-		id:            id,
-		name:          name,
-		expired:       expired,
-		priority:      priority,
-		convertDriver: convertDriver,
+		id:        id,
+		name:      name,
+		expired:   expired,
+		priority:  priority,
+		converter: converter,
 	}
 }
 
@@ -71,6 +73,10 @@ func (k *key) Breaker() {
 	k.disabled = true
 }
 
-func (k *key) ConverterDriver() convert.IConverterDriver {
-	return k.convertDriver
+func (k *key) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
+	return k.converter.RequestConvert(ctx, extender)
+}
+
+func (k *key) ResponseConvert(ctx eocontext.EoContext) error {
+	return k.converter.ResponseConvert(ctx)
 }

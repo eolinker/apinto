@@ -1,47 +1,22 @@
 package bedrock
 
 import (
-	"embed"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
+	ai_convert "github.com/eolinker/apinto/ai-convert"
+
 	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
 
 	"github.com/eolinker/apinto/drivers"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc"
 )
 
-var (
-	//go:embed bedrock.yaml
-	providerContent []byte
-	//go:embed *
-	providerDir  embed.FS
-	modelConvert = make(map[string]convert.IConverter)
-
-	_ convert.IConverterDriver = (*executor)(nil)
-)
-
-func init() {
-	models, err := convert.LoadModels(providerContent, providerDir)
-	if err != nil {
-		panic(err)
-	}
-	for key, value := range models {
-		if value.ModelProperties != nil {
-			if v, ok := modelModes[value.ModelProperties.Mode]; ok {
-				modelConvert[key] = v(value.Model)
-			}
-		}
-	}
-}
-
 type executor struct {
 	drivers.WorkerBase
-	convert.IConverterDriver
 }
 
 func (e *executor) Start() error {
@@ -73,7 +48,7 @@ func (e *executor) Stop() error {
 }
 
 func (e *executor) CheckSkill(skill string) bool {
-	return convert.CheckKeySourceSkill(skill)
+	return ai_convert.CheckKeySourceSkill(skill)
 }
 
 type ModelConfig struct {

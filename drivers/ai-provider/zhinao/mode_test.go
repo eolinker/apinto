@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eolinker/apinto/convert"
 	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/joho/godotenv"
 	"github.com/valyala/fasthttp"
@@ -98,7 +97,7 @@ func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 	}
 
 	// Get the handler
-	handler, ok := worker.(convert.IConverterDriver)
+	handler, ok := worker.(ai_convert.IConverterDriver)
 	if !ok {
 		return fmt.Errorf("worker does not implement IConverterDriver")
 	}
@@ -126,7 +125,7 @@ func runTest(apiKey string, requestBody []byte, wantStatus string) error {
 }
 
 // executeConverter handles the full flow of a conversion process.
-func executeConverter(ctx *http_context.HttpContext, handler convert.IConverterDriver, model string, baseUrl string) error {
+func executeConverter(ctx *http_context.HttpContext, handler ai_convert.IConverterDriver, model string, baseUrl string) error {
 	// Balance handler setup
 	balanceHandler, err := ai_provider.NewBalanceHandler("test", baseUrl, 30*time.Second)
 	if err != nil {

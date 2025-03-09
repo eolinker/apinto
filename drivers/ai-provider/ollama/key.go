@@ -1,15 +1,11 @@
 package ollama
 
-import (
-	"github.com/eolinker/apinto/convert"
-)
-
 type key struct {
 	id            string
-	convertDriver convert.IConverterDriver
+	convertDriver ai_convert.IConverterDriver
 }
 
-func newKey(id string, convertDriver convert.IConverterDriver) convert.IKeyResource {
+func newKey(id string, convertDriver ai_convert.IConverterDriver) ai_convert.IKeyResource {
 	return &key{
 		id:            id,
 		convertDriver: convertDriver,
@@ -44,6 +40,6 @@ func (k *key) Breaker() {
 	return
 }
 
-func (k *key) ConverterDriver() convert.IConverterDriver {
+func (k *key) ConverterDriver() ai_convert.IConverterDriver {
 	return k.convertDriver
 }

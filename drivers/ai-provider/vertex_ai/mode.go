@@ -5,16 +5,15 @@ import (
 
 	"github.com/eolinker/eosc"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
-type FNewModelMode func(string) convert.IChildConverter
+type FNewModelMode func(string) ai_convert.IChildConverter
 
 var (
 	modelModes = map[string]FNewModelMode{
-		convert.ModeChat.String(): NewChat,
+		ai_convert.ModeChat.String(): NewChat,
 	}
 )
 
@@ -23,7 +22,7 @@ type Chat struct {
 	endPoint string
 }
 
-func NewChat(model string) convert.IChildConverter {
+func NewChat(model string) ai_convert.IChildConverter {
 	return &Chat{
 		endPoint: "/v1/projects/%s/locations/%s/publishers/google/models/%s:generateContent",
 		model:    model,
@@ -44,7 +43,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 		return err
 	}
 	// 设置转发地址
-	baseCfg := eosc.NewBase[convert.ClientRequest]()
+	baseCfg := eosc.NewBase[ai_convert.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
@@ -93,7 +92,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	responseBody := &convert.ClientResponse{}
+	responseBody := &ai_convert.ClientResponse{}
 	if len(data.Config.Candidates) > 0 {
 		msg := data.Config.Candidates[0]
 		role := "user"
@@ -107,7 +106,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 			}
 		}
 
-		responseBody.Message = &convert.Message{
+		responseBody.Message = &ai_convert.Message{
 			Role:    role,
 			Content: text,
 		}

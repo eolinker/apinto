@@ -3,18 +3,17 @@ package google
 import (
 	"encoding/json"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
 )
 
-var _ convert.IConverterFactory = &convertFactory{}
+var _ ai_convert.IConverterFactory = &convertFactory{}
 
 type convertFactory struct {
 }
 
-func (c *convertFactory) Create(cfg string) (convert.IConverterDriver, error) {
+func (c *convertFactory) Create(cfg string) (ai_convert.IConverterDriver, error) {
 	var tmp Config
 	err := json.Unmarshal([]byte(cfg), &tmp)
 	if err != nil {
@@ -23,18 +22,18 @@ func (c *convertFactory) Create(cfg string) (convert.IConverterDriver, error) {
 	return newConverterDriver(&tmp)
 }
 
-var _ convert.IConverterDriver = &converterDriver{}
+var _ ai_convert.IConverterDriver = &converterDriver{}
 
 type converterDriver struct {
 	eocontext.BalanceHandler
 	apikey string
 }
 
-func newConverterDriver(cfg *Config) (convert.IConverterDriver, error) {
+func newConverterDriver(cfg *Config) (ai_convert.IConverterDriver, error) {
 	var balanceHandler eocontext.BalanceHandler
 	var err error
 	if cfg.Base != "" {
-		balanceHandler, err = convert.NewBalanceHandler("", cfg.Base, 0)
+		balanceHandler, err = ai_convert.NewBalanceHandler("", cfg.Base, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -45,7 +44,7 @@ func newConverterDriver(cfg *Config) (convert.IConverterDriver, error) {
 	}, nil
 }
 
-func (e *converterDriver) GetConverter(model string) (convert.IConverter, bool) {
+func (e *converterDriver) GetConverter(model string) (ai_convert.IConverter, bool) {
 	converter, ok := modelConvert[model]
 	if !ok {
 		return nil, false
@@ -54,7 +53,7 @@ func (e *converterDriver) GetConverter(model string) (convert.IConverter, bool) 
 	return &Converter{balanceHandler: e.BalanceHandler, converter: converter, apikey: e.apikey}, true
 }
 
-func (e *converterDriver) GetModel(model string) (convert.FGenerateConfig, bool) {
+func (e *converterDriver) GetModel(model string) (ai_convert.FGenerateConfig, bool) {
 	if _, ok := modelConvert[model]; !ok {
 		return nil, false
 	}
@@ -66,7 +65,7 @@ func (e *converterDriver) GetModel(model string) (convert.FGenerateConfig, bool)
 				log.Errorf("unmarshal config error: %v, cfg: %s", err, cfg)
 				return result, nil
 			}
-			modelCfg := convert.MapToStruct[ModelConfig](tmp)
+			modelCfg := ai_convert.MapToStruct[ModelConfig](tmp)
 			generationConfig := make(map[string]interface{})
 			generationConfig["maxOutputTokens"] = modelCfg.MaxOutputTokens
 			generationConfig["temperature"] = modelCfg.Temperature
@@ -81,7 +80,7 @@ func (e *converterDriver) GetModel(model string) (convert.FGenerateConfig, bool)
 type Converter struct {
 	apikey         string
 	balanceHandler eocontext.BalanceHandler
-	converter      convert.IConverter
+	converter      ai_convert.IConverter
 }
 
 func (c *Converter) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
