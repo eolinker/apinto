@@ -114,7 +114,10 @@ func (o *OpenAIConvert) RequestConvert(ctx eoscContext.EoContext, extender map[s
 	}
 	SetAIModelInputToken(httpContext, promptToken)
 	httpContext.Response().AppendStreamFunc(o.streamHandler)
-	httpContext.Proxy().Header().SetHeader("Authorization", "Bearer "+o.apikey)
+	if o.apikey != "" {
+		httpContext.Proxy().Header().SetHeader("Authorization", "Bearer "+o.apikey)
+	}
+
 	httpContext.Proxy().URI().SetPath(o.path)
 	body, _ = json.Marshal(chatRequest)
 	httpContext.Proxy().Body().SetRaw("application/json", body)
@@ -164,17 +167,15 @@ func (o *OpenAIConvert) ResponseConvert(ctx eoscContext.EoContext) error {
 }
 
 func (o *OpenAIConvert) streamHandler(ctx http_service.IHttpContext, p []byte) ([]byte, error) {
-	// 非200状态码不会启用流式传输，因此不考虑
-
 	// 对响应数据进行划分
 	inputToken := GetAIModelInputToken(ctx)
 	outputToken := 0
 	totalToken := inputToken
 	scanner := bufio.NewScanner(bytes.NewReader(p))
+	// Check the content encoding and convert to UTF-8 if necessary.
+	encoding := ctx.Response().Headers().Get("content-encoding")
 	for scanner.Scan() {
 		line := scanner.Text()
-		// Check the content encoding and convert to UTF-8 if necessary.
-		encoding := ctx.Response().Headers().Get("content-encoding")
 		if encoding != "utf-8" && encoding != "" {
 			tmp, err := encoder.ToUTF8(encoding, []byte(line))
 			if err != nil {
