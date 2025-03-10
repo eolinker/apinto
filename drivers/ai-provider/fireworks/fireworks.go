@@ -2,85 +2,65 @@ package fireworks
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/url"
 
-	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/eocontext"
-	http_context "github.com/eolinker/eosc/eocontext/http-context"
+	ai_convert "github.com/eolinker/apinto/ai-convert"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
-var (
-	modelModes = map[string]IModelMode{
-		ai_convert.ModeChat.String(): NewChat(),
-	}
-)
-
-type IModelMode interface {
-	Endpoint() string
-	ai_convert.IConverter
+func init() {
+	ai_convert.RegisterConverterCreateFunc("fireworks", Create)
 }
 
-type Chat struct {
-	endPoint string
+type Config struct {
+	APIKey  string `json:"fireworks_api_key"`
+	BaseUrl string `json:"base_url"`
 }
 
-func NewChat() *Chat {
-	return &Chat{
-		endPoint: "/inference/v1/chat/completions",
+// checkConfig validates the provided configuration.
+// It ensures the required fields are set and checks the validity of the Base URL if provided.
+//
+// Parameters:
+//   - v: An interface{} expected to be a pointer to a Config struct.
+//
+// Returns:
+//   - *Config: The validated configuration cast to *Config.
+//   - error: An error if the validation fails, or nil if it succeeds.
+func checkConfig(conf *Config) error {
+	// Check if the APIKey is provided. It is a required field.
+	if conf.APIKey == "" {
+		return fmt.Errorf("api_key is required")
 	}
-}
-
-func (c *Chat) Endpoint() string {
-	return c.endPoint
-}
-
-func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
-	httpContext, err := http_context.Assert(ctx)
-	if err != nil {
-		return err
+	if conf.BaseUrl != "" {
+		u, err := url.Parse(conf.BaseUrl)
+		if err != nil {
+			// Return an error if the Base URL cannot be parsed.
+			return fmt.Errorf("base url is invalid")
+		}
+		// Ensure the parsed URL contains both a scheme and a host.
+		if u.Scheme == "" || u.Host == "" {
+			return fmt.Errorf("base url is invalid")
+		}
 	}
-	body, err := httpContext.Proxy().Body().RawBody()
-	if err != nil {
-		return err
-	}
-	// 设置转发地址
-	httpContext.Proxy().URI().SetPath(c.endPoint)
-	baseCfg := eosc.NewBase[ai_convert.ClientRequest]()
-	err = json.Unmarshal(body, baseCfg)
-	if err != nil {
-		return err
-	}
-	messages := make([]Message, 0, len(baseCfg.Config.Messages)+1)
-	for _, m := range baseCfg.Config.Messages {
-		messages = append(messages, Message{
-			Role:    m.Role,
-			Content: m.Content,
-		})
-	}
-	baseCfg.SetAppend("messages", messages)
-	for k, v := range extender {
-		baseCfg.SetAppend(k, v)
-	}
-	body, err = json.Marshal(baseCfg)
-	if err != nil {
-		return err
-	}
-	httpContext.Proxy().Body().SetRaw("application/json", body)
 	return nil
 }
 
-func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
-	httpContext, err := http_context.Assert(ctx)
+func Create(cfg string) (ai_convert.IConverter, error) {
+	var conf Config
+	err := json.Unmarshal([]byte(cfg), &conf)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	err = checkConfig(&conf)
+	if err != nil {
+		return nil, err
 	}
 
-	body := httpContext.Response().GetBody()
-	data := eosc.NewBase[Response]()
-	err = json.Unmarshal(body, data)
-	if err != nil {
-		return err
-	}
+	return ai_convert.NewOpenAIConvert(conf.APIKey, conf.BaseUrl, 0, errorCallback)
+}
 
+func errorCallback(ctx http_service.IHttpContext, body []byte) {
 	// 400	Bad Request	Invalid input or malformed request.	Review the request parameters and ensure they match the expected format.
 	// 401	Unauthorized	Invalid API key or insufficient permissions.	Verify your API key and ensure it has the correct permissions.
 	// 402	Payment Required	User’s account is not on a paid plan or has exceeded usage limits.	Check your billing status and ensure your payment method is up to date. Upgrade your plan if necessary.
@@ -96,14 +76,7 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	// 503	Service Unavailable	The service is down for maintenance or experiencing issues.	Retry the request after some time. Check for any maintenance announcements.
 	// 504	Gateway Timeout	The server did not receive a response in time from an upstream server.	Wait briefly and retry the request. Consider using a shorter input prompt if applicable.
 	// 520	Unknown Error	An unexpected error occurred with no clear explanation.	Retry the request. If the issue persists, contact support for further assistance.
-	switch httpContext.Response().StatusCode() {
-	case 200:
-		// Calculate the token consumption for a successful request.
-		usage := data.Config.Usage
-		ai_convert.SetAIStatusNormal(ctx)
-		ai_convert.SetAIModelInputToken(ctx, usage.PromptTokens)
-		ai_convert.SetAIModelOutputToken(ctx, usage.CompletionTokens)
-		ai_convert.SetAIModelTotalToken(ctx, usage.TotalTokens)
+	switch ctx.Response().StatusCode() {
 	case 400:
 		// Handle the bad request error.
 		ai_convert.SetAIStatusInvalidRequest(ctx)
@@ -119,23 +92,4 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	default:
 		ai_convert.SetAIStatusInvalidRequest(ctx)
 	}
-
-	responseBody := &ai_convert.ClientResponse{}
-	if len(data.Config.Choices) > 0 {
-		msg := data.Config.Choices[0]
-		responseBody.Message = &ai_convert.Message{
-			Role:    msg.Message.Role,
-			Content: msg.Message.Content,
-		}
-		responseBody.FinishReason = msg.FinishReason
-	} else {
-		responseBody.Code = -1
-		responseBody.Error = "no response"
-	}
-	body, err = json.Marshal(responseBody)
-	if err != nil {
-		return err
-	}
-	httpContext.Response().SetBody(body)
-	return nil
 }

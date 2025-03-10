@@ -1,4 +1,4 @@
-package ollama
+package customize_openai
 
 import (
 	"encoding/json"
@@ -10,11 +10,12 @@ import (
 )
 
 func init() {
-	ai_convert.RegisterConverterCreateFunc("ollama", Create)
+	ai_convert.RegisterConverterCreateFunc("customize-openai", Create)
 }
 
 type Config struct {
-	BaseUrl string `json:"base"`
+	APIKey  string `json:"api_key"`
+	BaseUrl string `json:"base_url"`
 }
 
 // checkConfig validates the provided configuration.
@@ -27,6 +28,10 @@ type Config struct {
 //   - *Config: The validated configuration cast to *Config.
 //   - error: An error if the validation fails, or nil if it succeeds.
 func checkConfig(conf *Config) error {
+	// Check if the APIKey is provided. It is a required field.
+	if conf.APIKey == "" {
+		return fmt.Errorf("api_key is required")
+	}
 	if conf.BaseUrl == "" {
 		return fmt.Errorf("base url is required")
 	}
@@ -41,7 +46,6 @@ func checkConfig(conf *Config) error {
 	}
 	return nil
 }
-
 func Create(cfg string) (ai_convert.IConverter, error) {
 	var conf Config
 	err := json.Unmarshal([]byte(cfg), &conf)
