@@ -3,16 +3,17 @@ package bedrock
 import (
 	"sync"
 
+	ai_convert "github.com/eolinker/apinto/ai-convert"
+
 	"github.com/eolinker/eosc/common/bean"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 )
 
 var name = "bedrock"
 var (
-	converterManager convert.IManager
+	converterManager ai_convert.IManager
 	once             sync.Once
 )
 

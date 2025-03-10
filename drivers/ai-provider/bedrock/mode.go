@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	ai_convert "github.com/eolinker/apinto/ai-convert"
+
 	"github.com/eolinker/eosc"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -15,14 +16,14 @@ type FNewModelMode func(string) IModelMode
 
 var (
 	modelModes = map[string]FNewModelMode{
-		convert.ModeChat.String():       NewChat,
-		convert.ModeCompletion.String(): NewChat,
+		ai_convert.ModeChat.String():       NewChat,
+		ai_convert.ModeCompletion.String(): NewChat,
 	}
 )
 
 type IModelMode interface {
 	Endpoint() string
-	convert.IConverter
+	ai_convert.IConverter
 }
 
 type Chat struct {
@@ -50,7 +51,7 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	}
 	// 设置转发地址
 	httpContext.Proxy().URI().SetPath(c.endPoint)
-	baseCfg := eosc.NewBase[convert.ClientRequest]()
+	baseCfg := eosc.NewBase[ai_convert.ClientRequest]()
 	err = json.Unmarshal(body, baseCfg)
 	if err != nil {
 		return err
@@ -97,10 +98,10 @@ func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-	responseBody := &convert.ClientResponse{}
+	responseBody := &ai_convert.ClientResponse{}
 	if data.Config.Output.Message != nil && len(data.Config.Output.Message.Content) > 0 {
 		msg := data.Config.Output.Message
-		responseBody.Message = &convert.Message{
+		responseBody.Message = &ai_convert.Message{
 			Role:    msg.Role,
 			Content: msg.Content[0].Text,
 		}

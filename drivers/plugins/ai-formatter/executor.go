@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 
+	ai_convert "github.com/eolinker/apinto/ai-convert"
+
 	"github.com/eolinker/eosc/log"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
@@ -31,7 +32,7 @@ func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) erro
 
 // doBalance handles fallback logic for switching providers when keys are invalid or exhausted.
 func (e *executor) doBalance(ctx http_context.IHttpContext, originProxy http_context.IRequest, next eocontext.IChain) error {
-	balances := convert.Balances()
+	balances := ai_convert.Balances()
 	if len(balances) == 0 {
 		return nil
 	}
@@ -54,22 +55,18 @@ func (e *executor) doBalance(ctx http_context.IHttpContext, originProxy http_con
 	return errors.New("all balances exhausted or unavailable")
 }
 
-func (e *executor) doConverter(ctx http_context.IHttpContext, next eocontext.IChain, resource convert.IKeyResource, provider convert.IProvider, extender map[string]interface{}) error {
-	status := convert.StatusInvalid
+func (e *executor) doConverter(ctx http_context.IHttpContext, next eocontext.IChain, resource ai_convert.IKeyResource, provider ai_convert.IProvider, extender map[string]interface{}) error {
+	status := ai_convert.StatusInvalid
 	defer func() {
-		convert.SetAIProviderStatuses(ctx, convert.AIProviderStatus{
+		ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
 			Provider: provider.Provider(),
 			Model:    provider.Model(),
 			Key:      resource.ID(),
 			Status:   status,
 		})
 	}()
-	converter, has := resource.ConverterDriver().GetConverter(provider.Model())
-	if !has {
-		return errors.New("invalid model")
-	}
 
-	if err := converter.RequestConvert(ctx, extender); err != nil {
+	if err := resource.RequestConvert(ctx, extender); err != nil {
 		return err
 	}
 
@@ -79,14 +76,14 @@ func (e *executor) doConverter(ctx http_context.IHttpContext, next eocontext.ICh
 		}
 	}
 
-	if err := converter.ResponseConvert(ctx); err != nil {
+	if err := resource.ResponseConvert(ctx); err != nil {
 		return err
 	}
-	status = convert.GetAIStatus(ctx)
+	status = ai_convert.GetAIStatus(ctx)
 	switch status {
-	case convert.StatusInvalid, convert.StatusExpired, convert.StatusQuotaExhausted:
+	case ai_convert.StatusInvalid, ai_convert.StatusExpired, ai_convert.StatusQuotaExhausted:
 		resource.Down()
-	case convert.StatusExceeded:
+	case ai_convert.StatusExceeded:
 		resource.Breaker()
 	}
 
@@ -94,11 +91,11 @@ func (e *executor) doConverter(ctx http_context.IHttpContext, next eocontext.ICh
 }
 
 // tryProvider attempts to use a single provider and its resources for processing.
-func (e *executor) tryProvider(ctx http_context.IHttpContext, originProxy http_context.IRequest, next eocontext.IChain, provider convert.IProvider) error {
-	convert.SetAIProvider(ctx, provider.Provider())
-	convert.SetAIModel(ctx, provider.Model())
+func (e *executor) tryProvider(ctx http_context.IHttpContext, originProxy http_context.IRequest, next eocontext.IChain, provider ai_convert.IProvider) error {
+	ai_convert.SetAIProvider(ctx, provider.Provider())
+	ai_convert.SetAIModel(ctx, provider.Model())
 	extender := provider.ModelConfig()
-	resources, has := convert.KeyResources(provider.Provider())
+	resources, has := ai_convert.KeyResources(provider.Provider())
 	if !has {
 		return errKeyNotFound
 	}
@@ -116,10 +113,10 @@ func (e *executor) tryProvider(ctx http_context.IHttpContext, originProxy http_c
 }
 
 // processNext processes the next chain in the filter, handling 504 errors.
-func (e *executor) processNext(ctx http_context.IHttpContext, next eocontext.IChain, provider convert.IProvider) error {
+func (e *executor) processNext(ctx http_context.IHttpContext, next eocontext.IChain, provider ai_convert.IProvider) error {
 	if err := next.DoChain(ctx); err != nil {
 		if ctx.Response().StatusCode() == 504 {
-			convert.SetAIStatusTimeout(ctx)
+			ai_convert.SetAIStatusTimeout(ctx)
 			provider.Down() // Mark provider as unhealthy on timeout
 		}
 		return err
@@ -130,8 +127,8 @@ func (e *executor) processNext(ctx http_context.IHttpContext, next eocontext.ICh
 func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IChain) error {
 
 	cloneProxy := ctx.ProxyClone()
-	convert.SetAIProvider(ctx, e.provider)
-	convert.SetAIModel(ctx, e.model)
+	ai_convert.SetAIProvider(ctx, e.provider)
+	ai_convert.SetAIModel(ctx, e.model)
 
 	if err := e.processKeyPool(ctx, cloneProxy, next); err != nil {
 		err = e.doBalance(ctx, cloneProxy, next) // Fallback to balance logic
@@ -142,60 +139,41 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		}
 	}
 	// If the request is successful, set the AI provider and model in the response headers
-	ctx.Response().SetHeader("X-AI-Provider", convert.GetAIProvider(ctx))
-	ctx.Response().SetHeader("X-AI-Model", convert.GetAIModel(ctx))
+	ctx.Response().SetHeader("X-AI-Provider", ai_convert.GetAIProvider(ctx))
+	ctx.Response().SetHeader("X-AI-Model", ai_convert.GetAIModel(ctx))
 	return nil
 }
 
 // processKeyPool handles processing using the key pool resources.
 func (e *executor) processKeyPool(ctx http_context.IHttpContext, cloneProxy http_context.IRequest, next eocontext.IChain) error {
 	ctx.SetProxy(cloneProxy)
-	p, has := convert.GetProvider(e.provider)
+	p, has := ai_convert.GetProvider(e.provider)
 	if !has {
 		return errProviderNotFound
+	}
+	extender, err := p.GenExtender(e.modelCfg)
+	if err != nil {
+		return err
 	}
 	balanceHandler := p.BalanceHandler()
 	if balanceHandler != nil {
 		ctx.SetBalance(balanceHandler)
 	}
-	resources, has := convert.KeyResources(e.provider)
+	resources, has := ai_convert.KeyResources(e.provider)
 	if !has {
 		return errKeyNotFound
 	}
-	var extender map[string]interface{}
-	var err error
-	for _, resource := range resources {
-		if !resource.Health() {
+	for _, r := range resources {
+		if !r.Health() {
 			continue
 		}
-		if extender == nil {
-			if extender, err = e.initializeExtender(resource); err != nil {
-				convert.SetAIProviderStatuses(ctx, convert.AIProviderStatus{
-					Provider: e.provider,
-					Model:    e.model,
-					Key:      resource.ID(),
-					Status:   convert.StatusInvalid,
-				})
-				return err
-			}
-		}
-		converter, has := resource.ConverterDriver().GetConverter(e.model)
-		if !has {
-			convert.SetAIProviderStatuses(ctx, convert.AIProviderStatus{
-				Provider: e.provider,
-				Model:    e.model,
-				Key:      resource.ID(),
-				Status:   convert.StatusInvalid,
-			})
-			return errors.New("invalid model")
-		}
 
-		if err = converter.RequestConvert(ctx, extender); err != nil {
-			convert.SetAIProviderStatuses(ctx, convert.AIProviderStatus{
+		if err = r.RequestConvert(ctx, extender); err != nil {
+			ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
 				Provider: e.provider,
 				Model:    e.model,
-				Key:      resource.ID(),
-				Status:   convert.StatusInvalid,
+				Key:      r.ID(),
+				Status:   ai_convert.StatusInvalid,
 			})
 			continue
 		}
@@ -203,11 +181,11 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, cloneProxy http
 		if next != nil {
 			if err = e.processNext(ctx, next, p); err != nil {
 				if ctx.Response().StatusCode() == 504 {
-					convert.SetAIProviderStatuses(ctx, convert.AIProviderStatus{
+					ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
 						Provider: e.provider,
 						Model:    e.model,
-						Key:      resource.ID(),
-						Status:   convert.StatusTimeout,
+						Key:      r.ID(),
+						Status:   ai_convert.StatusTimeout,
 					})
 				}
 				return err
@@ -216,24 +194,24 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, cloneProxy http
 		if ctx.Response().IsBodyStream() {
 			return nil
 		}
-		if err = converter.ResponseConvert(ctx); err != nil {
-			convert.SetAIProviderStatuses(ctx, convert.AIProviderStatus{
+		if err = r.ResponseConvert(ctx); err != nil {
+			ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
 				Provider: e.provider,
 				Model:    e.model,
-				Key:      resource.ID(),
-				Status:   convert.StatusInvalid,
+				Key:      r.ID(),
+				Status:   ai_convert.StatusInvalid,
 			})
 			return err
 		}
-		aiStatus := convert.GetAIStatus(ctx)
-		convert.SetAIProviderStatuses(ctx, convert.AIProviderStatus{
+		aiStatus := ai_convert.GetAIStatus(ctx)
+		ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
 			Provider: e.provider,
 			Model:    e.model,
-			Key:      resource.ID(),
+			Key:      r.ID(),
 			Status:   aiStatus,
 		})
 		switch aiStatus {
-		case convert.StatusInvalidRequest, convert.StatusNormal:
+		case ai_convert.StatusInvalidRequest, ai_convert.StatusNormal:
 			return nil
 		default:
 			continue
@@ -251,14 +229,14 @@ func (e *executor) handleNoKeyResource(ctx http_context.IHttpContext) error {
 	return err
 }
 
-// initializeExtender initializes the extender for a resource.
-func (e *executor) initializeExtender(resource convert.IKeyResource) (map[string]interface{}, error) {
-	fn, has := resource.ConverterDriver().GetModel(e.model)
-	if !has {
-		return nil, fmt.Errorf("model %s not found", e.model)
-	}
-	return fn(e.modelCfg)
-}
+//// initializeExtender initializes the extender for a resource.
+//func (e *executor) initializeExtender(resource ai_convert.IKeyResource) (map[string]interface{}, error) {
+//	fn, has := resource.ConverterDriver().GetModel(e.model)
+//	if !has {
+//		return nil, fmt.Errorf("model %s not found", e.model)
+//	}
+//	return fn(e.modelCfg)
+//}
 
 func (e *executor) Destroy() {}
 

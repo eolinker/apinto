@@ -7,19 +7,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/eolinker/apinto/convert"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
 	"golang.org/x/oauth2"
 )
 
-var _ convert.IConverterFactory = &convertFactory{}
+var _ ai_convert.IConverterFactory = &convertFactory{}
 
 type convertFactory struct {
 }
 
-func (c *convertFactory) Create(cfg string) (convert.IConverterDriver, error) {
+func (c *convertFactory) Create(cfg string) (ai_convert.IConverterDriver, error) {
 	var tmp Config
 	err := json.Unmarshal([]byte(cfg), &tmp)
 	if err != nil {
@@ -28,7 +27,7 @@ func (c *convertFactory) Create(cfg string) (convert.IConverterDriver, error) {
 	return newConverterDriver(&tmp)
 }
 
-var _ convert.IConverterDriver = &converterDriver{}
+var _ ai_convert.IConverterDriver = &converterDriver{}
 
 type converterDriver struct {
 	eocontext.BalanceHandler
@@ -38,7 +37,7 @@ type converterDriver struct {
 	jwtData   []byte
 }
 
-func newConverterDriver(conf *Config) (convert.IConverterDriver, error) {
+func newConverterDriver(conf *Config) (ai_convert.IConverterDriver, error) {
 	jwtData, err := base64.RawStdEncoding.DecodeString(conf.ServiceAccountKey)
 	token, err := newToken(context.Background(), jwtData)
 	if err != nil {
@@ -48,7 +47,7 @@ func newConverterDriver(conf *Config) (convert.IConverterDriver, error) {
 	if conf.Base != "" {
 		base = conf.Base
 	}
-	balanceHandler, err := convert.NewBalanceHandler("", base, 0)
+	balanceHandler, err := ai_convert.NewBalanceHandler("", base, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +60,7 @@ func newConverterDriver(conf *Config) (convert.IConverterDriver, error) {
 	}, nil
 }
 
-func (e *converterDriver) GetConverter(model string) (convert.IConverter, bool) {
+func (e *converterDriver) GetConverter(model string) (ai_convert.IConverter, bool) {
 	converter, ok := modelConvert[model]
 	if !ok {
 		return nil, false
@@ -70,7 +69,7 @@ func (e *converterDriver) GetConverter(model string) (convert.IConverter, bool) 
 	return &Converter{balanceHandler: e.BalanceHandler, converter: converter, token: e.token, jwtData: e.jwtData, projectId: e.projectId, location: e.location, model: model}, true
 }
 
-func (e *converterDriver) GetModel(model string) (convert.FGenerateConfig, bool) {
+func (e *converterDriver) GetModel(model string) (ai_convert.FGenerateConfig, bool) {
 	if _, ok := modelConvert[model]; !ok {
 		return nil, false
 	}
@@ -82,7 +81,7 @@ func (e *converterDriver) GetModel(model string) (convert.FGenerateConfig, bool)
 				log.Errorf("unmarshal config error: %v, cfg: %s", err, cfg)
 				return result, nil
 			}
-			modelCfg := convert.MapToStruct[ModelConfig](tmp)
+			modelCfg := ai_convert.MapToStruct[ModelConfig](tmp)
 			if modelCfg.MaxOutputTokens > 0 {
 				result["maxOutputTokens"] = modelCfg.MaxOutputTokens
 			}
@@ -113,7 +112,7 @@ type Converter struct {
 	jwtData        []byte
 	projectId      string
 	location       string
-	converter      convert.IChildConverter
+	converter      ai_convert.IChildConverter
 }
 
 func (c *Converter) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {

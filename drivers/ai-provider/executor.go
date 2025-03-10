@@ -1,11 +1,9 @@
 package ai_provider
 
 import (
-	"fmt"
+	ai_convert "github.com/eolinker/apinto/ai-convert"
 
 	eoscContext "github.com/eolinker/eosc/eocontext"
-
-	"github.com/eolinker/apinto/convert"
 
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
@@ -13,7 +11,11 @@ import (
 
 var _ eosc.IWorker = (*executor)(nil)
 
-var _ convert.IProvider = (*executor)(nil)
+var _ ai_convert.IProvider = (*executor)(nil)
+
+var (
+	mappingRule = ai_convert.MappingRule{}
+)
 
 type executor struct {
 	drivers.WorkerBase
@@ -23,6 +25,10 @@ type executor struct {
 	priority       int
 	disable        bool
 	balanceHandler eoscContext.BalanceHandler
+}
+
+func (e *executor) GenExtender(cfg string) (map[string]interface{}, error) {
+	return ai_convert.TransformData(cfg, mappingRule)
 }
 
 func (e *executor) BalanceHandler() eoscContext.BalanceHandler {
@@ -69,24 +75,12 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (e *executor) reset(cfg *Config) error {
-	factory, has := providerManager.Get(cfg.Provider)
-	if !has {
-		return fmt.Errorf("provider not found")
-	}
-	cv, err := factory.Create("{}")
-	if err != nil {
-		return err
-	}
-	fn, has := cv.GetModel(cfg.Model)
-	if !has {
-		return fmt.Errorf("default model not found")
-	}
-	extender, err := fn(cfg.ModelConfig)
+	extender, err := ai_convert.TransformData(cfg.ModelConfig, mappingRule)
 	if err != nil {
 		return err
 	}
 	if cfg.Base != "" {
-		balanceHandler, err := convert.NewBalanceHandler("", cfg.Base, 0)
+		balanceHandler, err := ai_convert.NewBalanceHandler("", cfg.Base, 0)
 		if err != nil {
 			return err
 		}
@@ -98,15 +92,15 @@ func (e *executor) reset(cfg *Config) error {
 	e.provider = cfg.Provider
 	e.modelConfig = extender
 	e.disable = false
-	convert.SetProvider(e.Id(), e)
+	ai_convert.SetProvider(e.Id(), e)
 	return nil
 }
 
 func (e *executor) Stop() error {
-	convert.DelProvider(e.Id())
+	ai_convert.DelProvider(e.Id())
 	return nil
 }
 
 func (e *executor) CheckSkill(skill string) bool {
-	return convert.CheckKeySourceSkill(skill)
+	return ai_convert.CheckKeySourceSkill(skill)
 }
