@@ -24,30 +24,27 @@ func TransformData(inputJSON string, mappingRule MappingRule) (map[string]interf
 
 	// 2. 创建结果map
 	resultMap := make(map[string]interface{})
-
-	// 3. 执行字段映射和类型转换
-	for oldKey, rule := range mappingRule {
-		if value, exists := inputMap[oldKey]; exists {
+	for key, value := range inputMap {
+		if v, exists := mappingRule[key]; exists {
 			// 检查空值
 			if isEmptyValue(value) {
 				continue // 跳过空值
 			}
 
 			// 根据目标类型进行转换
-			convertedValue, err := convertType(value, rule.Type)
+			convertedValue, err := convertType(value, v.Type)
 			if err != nil {
-				return nil, fmt.Errorf("类型转换失败 %s -> %s: %v", oldKey, rule.Value, err)
+				return nil, fmt.Errorf("类型转换失败 %s -> %s: %v", key, v.Value, err)
 			}
 			if value == "response_format" {
-				resultMap[rule.Value] = map[string]interface{}{
+				resultMap[v.Value] = map[string]interface{}{
 					"type": convertedValue,
 				}
 				continue
 			}
-			resultMap[rule.Value] = convertedValue
+			resultMap[v.Value] = convertedValue
 		} else {
-			// 如果源字段不存在，直接复制
-			resultMap[rule.Value] = inputMap[oldKey]
+			resultMap[key] = value
 		}
 	}
 
