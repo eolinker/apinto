@@ -36,12 +36,12 @@ func TransformData(inputJSON string, mappingRule MappingRule) (map[string]interf
 			if err != nil {
 				return nil, fmt.Errorf("类型转换失败 %s -> %s: %v", key, v.Value, err)
 			}
-			if value == "response_format" {
-				resultMap[v.Value] = map[string]interface{}{
-					"type": convertedValue,
-				}
-				continue
-			}
+			//if value == "response_format" {
+			//	resultMap[v.Value] = map[string]interface{}{
+			//		"type": convertedValue,
+			//	}
+			//	continue
+			//}
 			resultMap[v.Value] = convertedValue
 		} else {
 			resultMap[key] = value

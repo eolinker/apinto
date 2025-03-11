@@ -23,16 +23,20 @@ const (
 	OpenAIChatCompletePath = "/chat/completions"
 )
 
+type CheckError func(ctx http_service.IHttpContext, body []byte) bool
+
 type OpenAIConvert struct {
 	apikey         string
 	path           string
+	checkErr       CheckError
 	errorCallback  func(ctx http_service.IHttpContext, body []byte)
 	balanceHandler eoscContext.BalanceHandler
 }
 
-func NewOpenAIConvert(apikey string, baseUrl string, timeout time.Duration, errorCallback func(ctx http_service.IHttpContext, body []byte)) (*OpenAIConvert, error) {
+func NewOpenAIConvert(apikey string, baseUrl string, timeout time.Duration, checkErr CheckError, errorCallback func(ctx http_service.IHttpContext, body []byte)) (*OpenAIConvert, error) {
 	c := &OpenAIConvert{
 		apikey:        apikey,
+		checkErr:      checkErr,
 		errorCallback: errorCallback,
 	}
 	if baseUrl != "" {
@@ -103,9 +107,7 @@ func (o *OpenAIConvert) ResponseConvert(ctx eoscContext.EoContext) error {
 			return err
 		}
 	}
-
-	if httpContext.Response().StatusCode() != 200 {
-		// 当状态码非200时，跳过解析Token次数的操作
+	if (o.checkErr != nil && !o.checkErr(httpContext, body)) || httpContext.Response().StatusCode() != 200 {
 		if o.errorCallback != nil {
 			o.errorCallback(httpContext, body)
 		}
@@ -143,6 +145,12 @@ func (o *OpenAIConvert) streamHandler(ctx http_service.IHttpContext, p []byte) (
 				log.Errorf("convert to utf-8 error: %v, line: %s", err, line)
 				return p, nil
 			}
+			if ctx.Response().StatusCode() != 200 || (o.checkErr != nil && !o.checkErr(ctx, tmp)) {
+				if o.errorCallback != nil {
+					o.errorCallback(ctx, tmp)
+				}
+				return p, nil
+			}
 			line = string(tmp)
 		}
 		line = strings.TrimPrefix(line, "data:")
@@ -158,17 +166,12 @@ func (o *OpenAIConvert) streamHandler(ctx http_service.IHttpContext, p []byte) (
 			outputToken += getTokens(resp.Choices[0].Message.Content)
 			totalToken += outputToken
 		}
-
-		if resp.Usage.PromptTokens != 0 {
-			inputToken = resp.Usage.PromptTokens
-		}
-		if resp.Usage.CompletionTokens != 0 {
-			outputToken = resp.Usage.CompletionTokens
-		}
-		if resp.Usage.TotalTokens != 0 {
-			totalToken = resp.Usage.TotalTokens
-		}
 	}
+	if err := scanner.Err(); err != nil {
+		log.Errorf("scan error: %v", err)
+		return p, nil
+	}
+
 	SetAIModelInputToken(ctx, inputToken)
 	SetAIModelOutputToken(ctx, outputToken)
 	SetAIModelTotalToken(ctx, totalToken)

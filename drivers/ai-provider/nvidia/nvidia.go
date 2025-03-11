@@ -1,22 +1,20 @@
-package minimax
+package nvidia
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/url"
 
-	"github.com/eolinker/eosc/log"
-
 	ai_convert "github.com/eolinker/apinto/ai-convert"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 func init() {
-	ai_convert.RegisterConverterCreateFunc("minimax", Create)
+	ai_convert.RegisterConverterCreateFunc("nvidia", Create)
 }
 
 type Config struct {
-	APIKey  string `json:"minimax_api_key"`
+	APIKey  string `json:"api_key"`
 	BaseUrl string `json:"base_url"`
 }
 
@@ -59,40 +57,18 @@ func Create(cfg string) (ai_convert.IConverter, error) {
 		return nil, err
 	}
 
-	return ai_convert.NewOpenAIConvert(conf.APIKey, conf.BaseUrl, 0, checkError, errorCallback)
-}
-
-func checkError(ctx http_service.IHttpContext, body []byte) bool {
-	if ctx.Response().StatusCode() != 200 {
-		return false
-	}
-	var data Response
-	err := json.Unmarshal(body, &data)
-	if err != nil {
-		log.Errorf("Failed to unmarshal response body: %v", err)
-		return false
-	}
-	return data.BaseResp.StatusCode == 0
+	return ai_convert.NewOpenAIConvert(conf.APIKey, conf.BaseUrl, 0, nil, errorCallback)
 }
 
 func errorCallback(ctx http_service.IHttpContext, body []byte) {
-	var data Response
-	err := json.Unmarshal(body, &data)
-	if err != nil {
-		log.Errorf("Failed to unmarshal response body: %v", err)
-		return
-	}
-	switch data.BaseResp.StatusCode {
-	case 2013: // 输入格式信息不正常
+	switch ctx.Response().StatusCode() {
+	case 400, 422, 403:
 		// Handle the bad request error.
 		ai_convert.SetAIStatusInvalidRequest(ctx)
-	case 1008:
-		// Handle the balance is insufficient.
-		ai_convert.SetAIStatusQuotaExhausted(ctx)
-	case 1002, 1039: // 触发RPM限流 || 触发TPM限流
+	case 429:
 		// Handle exceed
 		ai_convert.SetAIStatusExceeded(ctx)
-	case 1004:
+	case 401:
 		// Handle authentication failure
 		ai_convert.SetAIStatusInvalid(ctx)
 	}

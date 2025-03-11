@@ -53,7 +53,7 @@ func Create(cfg string) (ai_convert.IConverter, error) {
 	if conf.BaseUrl == "" {
 		conf.BaseUrl = "https://ark.cn-beijing.volces.com/api/v3"
 	}
-	return ai_convert.NewOpenAIConvert(conf.APIKey, conf.BaseUrl, 0, errorCallback)
+	return ai_convert.NewOpenAIConvert(conf.APIKey, conf.BaseUrl, 0, nil, errorCallback)
 }
 
 func errorCallback(ctx http_service.IHttpContext, body []byte) {
