@@ -35,7 +35,7 @@ func Create(cfg string) (ai_convert.IConverter, error) {
 		return nil, err
 	}
 
-	return ai_convert.NewOpenAIConvert(conf.APIKey, conf.Base, 0, errorCallback)
+	return ai_convert.NewOpenAIConvert(conf.APIKey, conf.Base, 0, nil, errorCallback)
 }
 
 func checkConfig(conf *Config) error {

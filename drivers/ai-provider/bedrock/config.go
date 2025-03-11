@@ -37,11 +37,11 @@ func checkConfig(v interface{}) (*Config, error) {
 	if conf.SecretKey == "" {
 		return nil, fmt.Errorf("aws_secret_access_key is required")
 	}
-	if conf.Region == "" {
-		return nil, fmt.Errorf("aws_region is required")
-	}
-	if _, ok := availableRegions[conf.Region]; !ok {
-		return nil, fmt.Errorf("aws_region is invalid")
-	}
+	//if conf.Region == "" {
+	//	return nil, fmt.Errorf("aws_region is required")
+	//}
+	//if _, ok := availableRegions[conf.Region]; !ok {
+	//	return nil, fmt.Errorf("aws_region is invalid")
+	//}
 	return conf, nil
 }
