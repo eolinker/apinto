@@ -36,7 +36,10 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 func (e *executor) reset(conf *Config) error {
 	createFunc, has := ai_convert.GetConverterCreateFunc(conf.Provider)
 	if !has {
-		return errors.New("provider not found")
+		createFunc, has = ai_convert.GetConverterCreateFunc("customize-openai")
+		if !has {
+			return errors.New("provider not found")
+		}
 	}
 
 	cv, err := createFunc(conf.Config)

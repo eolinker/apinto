@@ -1,11 +1,12 @@
 package access_relational
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/metrics"
 	"github.com/eolinker/eosc/utils"
-	"strconv"
-	"time"
 )
 
 var (

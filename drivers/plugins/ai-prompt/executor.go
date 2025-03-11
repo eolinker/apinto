@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	ai_convert "github.com/eolinker/apinto/ai-convert"
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
@@ -13,6 +15,7 @@ import (
 )
 
 type RequestMessage struct {
+	Model     string            `json:"model"`
 	Messages  []Message         `json:"messages"`
 	Variables map[string]string `json:"variables,omitempty"`
 }
@@ -39,7 +42,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	if err != nil {
 		return err
 	}
-	body, err = genRequestMessage(body, e.prompt, e.variables, e.required)
+	body, err = genRequestMessage(ctx, body, e.prompt, e.variables, e.required)
 	if err != nil {
 		result := make(map[string]interface{})
 		result["code"] = -1
@@ -56,11 +59,48 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	return nil
 }
 
-func genRequestMessage(body []byte, prompt string, variables map[string]bool, required bool) ([]byte, error) {
+var (
+	hashServiceMapping = "service_mapping"
+)
+
+func genRequestMessage(ctx http_context.IHttpContext, body []byte, prompt string, variables map[string]bool, required bool) ([]byte, error) {
 	baseMsg := eosc.NewBase[RequestMessage](nil)
 	err := json.Unmarshal(body, baseMsg)
 	if err != nil {
 		return nil, err
+	}
+	model := baseMsg.Config.Model
+	provider := ctx.GetLabel("provider")
+	if provider != "" {
+		// 检查是否配置了service_mapping，若无则跳过
+		m, has := customerVar.GetAll(fmt.Sprintf("%s:%s", hashServiceMapping, provider))
+		if has {
+			model = baseMsg.Config.Model
+			if model != "" {
+				v, ok := m[model]
+				if ok {
+					// 若配置了服务映射，则使用映射的值
+					model = v
+				}
+			} else {
+				v, ok := m["default"]
+				if ok {
+					// 若配置了服务映射，model值为空，且有默认值，使用默认值
+					model = v
+				}
+			}
+		}
+	}
+	if model != "" {
+		// 当参数值非空时，划分Model参数，格式为{供应商ID}/{模型ID}
+		ss := strings.SplitN(model, "/", 2)
+		if len(ss) < 2 {
+			return nil, errors.New("service mapping error")
+		}
+		ai_convert.SetAIProvider(ctx, ss[0])
+		ai_convert.SetAIModel(ctx, ss[1])
+		// 重置Model参数，以便后续使用负载
+		baseMsg.Config.Model = ""
 	}
 
 	if len(baseMsg.Config.Variables) == 0 && required {

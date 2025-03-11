@@ -13,10 +13,6 @@ var _ eosc.IWorker = (*executor)(nil)
 
 var _ ai_convert.IProvider = (*executor)(nil)
 
-var (
-	mappingRule = ai_convert.MappingRule{}
-)
-
 type executor struct {
 	drivers.WorkerBase
 	provider       string
@@ -28,7 +24,7 @@ type executor struct {
 }
 
 func (e *executor) GenExtender(cfg string) (map[string]interface{}, error) {
-	return ai_convert.TransformData(cfg, mappingRule)
+	return ai_convert.TransformData(cfg, providerMapValue)
 }
 
 func (e *executor) BalanceHandler() eoscContext.BalanceHandler {
@@ -75,7 +71,7 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (e *executor) reset(cfg *Config) error {
-	extender, err := ai_convert.TransformData(cfg.ModelConfig, mappingRule)
+	extender, err := ai_convert.TransformData(cfg.ModelConfig, providerMapValue)
 	if err != nil {
 		return err
 	}
