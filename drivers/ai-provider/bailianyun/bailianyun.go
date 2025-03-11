@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	ai_convert.RegisterConverterCreateFunc("bailianyun", Create)
+	ai_convert.RegisterConverterCreateFunc("bailian", Create)
 }
 
 type Config struct {
