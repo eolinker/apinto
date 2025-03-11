@@ -28,10 +28,21 @@ func TransformData(inputJSON string, mappingRule MappingRule) (map[string]interf
 	// 3. 执行字段映射和类型转换
 	for oldKey, rule := range mappingRule {
 		if value, exists := inputMap[oldKey]; exists {
+			// 检查空值
+			if isEmptyValue(value) {
+				continue // 跳过空值
+			}
+
 			// 根据目标类型进行转换
 			convertedValue, err := convertType(value, rule.Type)
 			if err != nil {
 				return nil, fmt.Errorf("类型转换失败 %s -> %s: %v", oldKey, rule.Value, err)
+			}
+			if value == "response_format" {
+				resultMap[rule.Value] = map[string]interface{}{
+					"type": convertedValue,
+				}
+				continue
 			}
 			resultMap[rule.Value] = convertedValue
 		} else {
@@ -41,6 +52,30 @@ func TransformData(inputJSON string, mappingRule MappingRule) (map[string]interf
 	}
 
 	return resultMap, nil
+}
+
+// isEmptyValue 检查值是否为空
+func isEmptyValue(value interface{}) bool {
+	if value == nil {
+		return true
+	}
+
+	switch v := value.(type) {
+	case string:
+		return v == ""
+	case int:
+		return v == 0
+	case float64:
+		return v == 0
+	case []interface{}:
+		return len(v) == 0
+	case map[string]interface{}:
+		return len(v) == 0
+	case bool:
+		return !v // 对于布尔值，false 被视为空值
+	default:
+		return false
+	}
 }
 
 // convertType 处理类型转换

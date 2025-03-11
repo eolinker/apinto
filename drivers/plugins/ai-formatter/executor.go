@@ -127,10 +127,16 @@ func (e *executor) processNext(ctx http_context.IHttpContext, next eocontext.ICh
 func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IChain) error {
 
 	cloneProxy := ctx.ProxyClone()
-	ai_convert.SetAIProvider(ctx, e.provider)
-	ai_convert.SetAIModel(ctx, e.model)
+	provider := ai_convert.GetAIProvider(ctx)
+	if provider == "" {
+		provider = e.provider
+		ai_convert.SetAIProvider(ctx, e.provider)
+	}
+	if ai_convert.GetAIModel(ctx) == "" {
+		ai_convert.SetAIModel(ctx, e.model)
+	}
 
-	if err := e.processKeyPool(ctx, cloneProxy, next); err != nil {
+	if err := e.processKeyPool(ctx, provider, cloneProxy, next); err != nil {
 		err = e.doBalance(ctx, cloneProxy, next) // Fallback to balance logic
 		if err != nil {
 			ctx.Response().SetBody([]byte(err.Error()))
@@ -145,9 +151,9 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 }
 
 // processKeyPool handles processing using the key pool resources.
-func (e *executor) processKeyPool(ctx http_context.IHttpContext, cloneProxy http_context.IRequest, next eocontext.IChain) error {
+func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string, cloneProxy http_context.IRequest, next eocontext.IChain) error {
 	ctx.SetProxy(cloneProxy)
-	p, has := ai_convert.GetProvider(e.provider)
+	p, has := ai_convert.GetProvider(provider)
 	if !has {
 		return errProviderNotFound
 	}
@@ -159,7 +165,7 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, cloneProxy http
 	if balanceHandler != nil {
 		ctx.SetBalance(balanceHandler)
 	}
-	resources, has := ai_convert.KeyResources(e.provider)
+	resources, has := ai_convert.KeyResources(provider)
 	if !has {
 		return errKeyNotFound
 	}
