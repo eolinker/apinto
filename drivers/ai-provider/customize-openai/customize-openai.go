@@ -57,7 +57,7 @@ func Create(cfg string) (ai_convert.IConverter, error) {
 		return nil, err
 	}
 
-	return ai_convert.NewOpenAIConvert("", conf.BaseUrl, 0, errorCallback)
+	return ai_convert.NewOpenAIConvert(conf.APIKey, conf.BaseUrl, 0, errorCallback)
 }
 
 func errorCallback(ctx http_service.IHttpContext, body []byte) {
