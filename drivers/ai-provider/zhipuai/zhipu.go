@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	ai_convert.RegisterConverterCreateFunc("zhipu", Create)
+	ai_convert.RegisterConverterCreateFunc("zhipuai", Create)
 }
 
 type Config struct {
