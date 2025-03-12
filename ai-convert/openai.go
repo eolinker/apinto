@@ -93,7 +93,7 @@ func (o *OpenAIConvert) RequestConvert(ctx eoscContext.EoContext, extender map[s
 	return nil
 }
 
-func (o *OpenAIConvert) ResponseConvert(ctx eoscContext.EoContext) error {
+func ResponseConvert(ctx eoscContext.EoContext, checkErr CheckError, errorCallback func(ctx http_service.IHttpContext, body []byte)) error {
 	httpContext, err := http_service.Assert(ctx)
 	if err != nil {
 		return err
@@ -107,9 +107,9 @@ func (o *OpenAIConvert) ResponseConvert(ctx eoscContext.EoContext) error {
 			return err
 		}
 	}
-	if (o.checkErr != nil && !o.checkErr(httpContext, body)) || httpContext.Response().StatusCode() != 200 {
-		if o.errorCallback != nil {
-			o.errorCallback(httpContext, body)
+	if (checkErr != nil && !checkErr(httpContext, body)) || httpContext.Response().StatusCode() != 200 {
+		if errorCallback != nil {
+			errorCallback(httpContext, body)
 		}
 		return nil
 	}
@@ -127,6 +127,10 @@ func (o *OpenAIConvert) ResponseConvert(ctx eoscContext.EoContext) error {
 	httpContext.Response().SetHeader("content-encoding", "utf-8")
 	httpContext.Response().SetBody(body)
 	return nil
+}
+
+func (o *OpenAIConvert) ResponseConvert(ctx eoscContext.EoContext) error {
+	return ResponseConvert(ctx, o.checkErr, o.errorCallback)
 }
 
 func (o *OpenAIConvert) streamHandler(ctx http_service.IHttpContext, p []byte) ([]byte, error) {
