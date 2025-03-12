@@ -26,26 +26,13 @@ var (
 
 func init() {
 	bean.Autowired(&accessConfigManager)
+	ai_convert.RegisterConverterCreateFunc("bedrock", Create)
 }
 
 type Config struct {
 	AccessKey string `json:"aws_access_key_id"`
 	SecretKey string `json:"aws_secret_access_key"`
 	Region    string `json:"aws_region"`
-}
-
-func checkConfig(v interface{}) (*Config, error) {
-	conf, ok := v.(*Config)
-	if !ok {
-		return nil, eosc.ErrorConfigType
-	}
-	if conf.AccessKey == "" {
-		return nil, fmt.Errorf("aws_access_key_id is required")
-	}
-	if conf.SecretKey == "" {
-		return nil, fmt.Errorf("aws_secret_access_key is required")
-	}
-	return conf, nil
 }
 
 func Create(cfg string) (ai_convert.IConverter, error) {
@@ -83,7 +70,7 @@ var (
 func (c *Convert) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
 	provider := ai_convert.GetAIProvider(ctx)
 	model := ai_convert.GetAIModel(ctx)
-	modelCfg, has := accessConfigManager.Get(fmt.Sprintf("%s#%s", provider, model))
+	modelCfg, has := accessConfigManager.Get(fmt.Sprintf("%s$%s", provider, model))
 	region := ""
 	if has {
 		model = modelCfg.Config()["model"]
@@ -147,26 +134,27 @@ func (c *Convert) RequestConvert(ctx eocontext.EoContext, extender map[string]in
 }
 
 func (c *Convert) ResponseConvert(ctx eocontext.EoContext) error {
-	httpContext, err := http_service.Assert(ctx)
-	if err != nil {
-		return err
-	}
-	if httpContext.Response().StatusCode() != 200 {
-		return nil
-	}
-	body := httpContext.Response().GetBody()
-	data := eosc.NewBase[Response](nil)
-	err = json.Unmarshal(body, data)
-	if err != nil {
-		return err
-	}
-	responseBody := &ai_convert.Response{}
-
-	body, err = json.Marshal(responseBody)
-	if err != nil {
-		return err
-	}
-	httpContext.Response().SetBody(body)
+	//httpContext, err := http_service.Assert(ctx)
+	//if err != nil {
+	//	return err
+	//}
+	//if httpContext.Response().StatusCode() != 200 {
+	//	return nil
+	//}
+	//body := httpContext.Response().GetBody()
+	//data := eosc.NewBase[Response](nil)
+	//err = json.Unmarshal(body, data)
+	//if err != nil {
+	//	return err
+	//}
+	//responseBody := &ai_convert.Response{}
+	//
+	//body, err = json.Marshal(responseBody)
+	//if err != nil {
+	//	return err
+	//}
+	//httpContext.Response().AppendStreamFunc(c.streamHandler)
+	//httpContext.Response().SetBody(body)
 	return nil
 }
 

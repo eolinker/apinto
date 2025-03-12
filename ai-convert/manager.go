@@ -16,6 +16,7 @@ var (
 
 func init() {
 	bean.Injection(&manager)
+	bean.Injection(&modelAcManager)
 }
 
 type IManager interface {
@@ -266,16 +267,10 @@ func (m *modelAccessConfigManager) Del(id string) {
 	m.configs.Del(id)
 }
 
-func NewModelAccessConfigManager() *modelAccessConfigManager {
+func NewModelAccessConfigManager() IModelAccessConfigManager {
 	return &modelAccessConfigManager{
 		configs: eosc.BuildUntyped[string, IModelAccessConfig](),
 	}
 }
 
-var _ IModelAccessConfigManager = (*modelAccessConfigManager)(nil)
-
 var modelAcManager = NewModelAccessConfigManager()
-
-func init() {
-	bean.Injection(&modelAcManager)
-}

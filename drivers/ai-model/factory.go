@@ -3,11 +3,10 @@ package ai_model
 import (
 	"sync"
 
-	"github.com/eolinker/eosc/common/bean"
-
 	ai_convert "github.com/eolinker/apinto/ai-convert"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/common/bean"
 )
 
 var name = "ai-model"
@@ -16,12 +15,6 @@ var (
 	once                sync.Once
 	accessConfigManager ai_convert.IModelAccessConfigManager
 )
-
-func init() {
-	once.Do(func() {
-		bean.Autowired(&accessConfigManager)
-	})
-}
 
 type Factory struct {
 }
@@ -33,5 +26,8 @@ func Register(register eosc.IExtenderDriverRegister) {
 
 // NewFactory 创建service_http驱动工厂
 func NewFactory() eosc.IExtenderDriverFactory {
+	once.Do(func() {
+		bean.Autowired(&accessConfigManager)
+	})
 	return drivers.NewFactory[Config](Create)
 }
