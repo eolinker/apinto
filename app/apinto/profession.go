@@ -291,6 +291,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "ai-provider",
 					Desc:  "ai-provider",
 				},
+				{
+					Id:    "eolinker.com:apinto:ai-model",
+					Name:  "ai-model",
+					Label: "ai-model",
+					Desc:  "ai-model",
+				},
 			},
 		},
 		//{

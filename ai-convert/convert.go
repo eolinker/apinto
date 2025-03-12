@@ -8,11 +8,6 @@ type IConverterFactory interface {
 
 type IConverterCreateFunc func(cfg string) (IConverter, error)
 
-//type IConverterDriver interface {
-//	GetModel(model string) (FGenerateConfig, bool)
-//	GetConverter(model string) (IConverter, bool)
-//}
-
 type IConverter interface {
 	RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error
 	ResponseConvert(ctx eocontext.EoContext) error

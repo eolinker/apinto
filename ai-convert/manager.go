@@ -237,3 +237,45 @@ func SetProvider(id string, p IProvider) {
 func GetProvider(provider string) (IProvider, bool) {
 	return balanceManager.Get(provider)
 }
+
+type IModelAccessConfigManager interface {
+	Get(id string) (IModelAccessConfig, bool)
+	Set(id string, config IModelAccessConfig)
+	Del(id string)
+}
+
+type IModelAccessConfig interface {
+	Provider() string
+	Model() string
+	Config() map[string]string
+}
+
+type modelAccessConfigManager struct {
+	configs eosc.Untyped[string, IModelAccessConfig]
+}
+
+func (m *modelAccessConfigManager) Get(id string) (IModelAccessConfig, bool) {
+	return m.configs.Get(id)
+}
+
+func (m *modelAccessConfigManager) Set(id string, config IModelAccessConfig) {
+	m.configs.Set(id, config)
+}
+
+func (m *modelAccessConfigManager) Del(id string) {
+	m.configs.Del(id)
+}
+
+func NewModelAccessConfigManager() *modelAccessConfigManager {
+	return &modelAccessConfigManager{
+		configs: eosc.BuildUntyped[string, IModelAccessConfig](),
+	}
+}
+
+var _ IModelAccessConfigManager = (*modelAccessConfigManager)(nil)
+
+var modelAcManager = NewModelAccessConfigManager()
+
+func init() {
+	bean.Injection(&modelAcManager)
+}
