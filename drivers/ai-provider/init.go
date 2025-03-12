@@ -28,6 +28,7 @@ import (
 	_ "github.com/eolinker/apinto/drivers/ai-provider/stepfun"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/tongyi"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/upstage"
+	_ "github.com/eolinker/apinto/drivers/ai-provider/vertex_ai"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/volcengine_maas"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/wenxin"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/xinference"
