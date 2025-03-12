@@ -75,7 +75,10 @@ func (e *executor) doConverter(ctx http_context.IHttpContext, next eocontext.ICh
 			return err
 		}
 	}
-
+	if ctx.Response().IsBodyStream() {
+		ctx.Response().SetHeader("Content-Type", "text/event-stream")
+		return nil
+	}
 	if err := resource.ResponseConvert(ctx); err != nil {
 		return err
 	}
@@ -198,6 +201,7 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string
 			}
 		}
 		if ctx.Response().IsBodyStream() {
+			ctx.Response().SetHeader("Content-Type", "text/event-stream")
 			return nil
 		}
 		if err = r.ResponseConvert(ctx); err != nil {
