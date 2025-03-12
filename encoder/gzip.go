@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	encoderManger.Set("gzip", &Gzip{})
+	//encoderManger.Set("gzip", &Gzip{})
 }
 
 type Gzip struct {
