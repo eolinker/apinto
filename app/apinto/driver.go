@@ -2,6 +2,7 @@ package main
 
 import (
 	ai_key "github.com/eolinker/apinto/drivers/ai-key"
+	ai_model "github.com/eolinker/apinto/drivers/ai-model"
 	ai_provider "github.com/eolinker/apinto/drivers/ai-provider"
 	"github.com/eolinker/apinto/drivers/certs"
 	"github.com/eolinker/apinto/drivers/discovery/consul"
@@ -125,4 +126,5 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 
 	ai_provider.Register(extenderRegister)
 	ai_key.Register(extenderRegister)
+	ai_model.Register(extenderRegister)
 }
