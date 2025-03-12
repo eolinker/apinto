@@ -16,6 +16,7 @@ type Config struct {
 
 // Create 创建驱动实例
 func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
+
 	cfg, err := checkConfig(v)
 	if err != nil {
 		return nil, err
