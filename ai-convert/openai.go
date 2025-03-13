@@ -1,8 +1,6 @@
 package ai_convert
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -49,6 +47,9 @@ func NewOpenAIConvert(apikey string, baseUrl string, timeout time.Duration, chec
 		if err != nil {
 			return nil, err
 		}
+		if strings.TrimSuffix(u.Path, "/") == "" {
+			u.Path = "/v1"
+		}
 		c.path = fmt.Sprintf("%s%s", strings.TrimSuffix(u.Path, "/"), OpenAIChatCompletePath)
 	} else {
 		c.path = fmt.Sprintf("/v1%s", OpenAIChatCompletePath)
@@ -66,7 +67,7 @@ func (o *OpenAIConvert) RequestConvert(ctx eoscContext.EoContext, extender map[s
 		return err
 	}
 	var promptToken int
-	chatRequest := eosc.NewBase[openai.ChatCompletionRequest](extender)
+	chatRequest := eosc.NewBase[Request](extender)
 	err = json.Unmarshal(body, chatRequest)
 	if err != nil {
 		return fmt.Errorf("unmarshal body error: %v, body: %s", err, string(body))
@@ -89,6 +90,7 @@ func (o *OpenAIConvert) RequestConvert(ctx eoscContext.EoContext, extender map[s
 	if o.balanceHandler != nil {
 		ctx.SetBalance(o.balanceHandler)
 	}
+	httpContext.AppendBodyFinishFunc(o.bodyFinish)
 
 	return nil
 }
@@ -133,36 +135,63 @@ func (o *OpenAIConvert) ResponseConvert(ctx eoscContext.EoContext) error {
 	return ResponseConvert(ctx, o.checkErr, o.errorCallback)
 }
 
+func (o *OpenAIConvert) bodyFinish(ctx http_service.IHttpContext) {
+	body := ctx.Response().GetBody()
+	defer func() {
+		SetAIProviderStatuses(ctx, AIProviderStatus{
+			Provider: GetAIProvider(ctx),
+			Model:    GetAIModel(ctx),
+			Key:      GetAIKey(ctx),
+			Status:   GetAIStatus(ctx),
+		})
+	}()
+	if o.checkErr != nil && !o.checkErr(ctx, body) {
+		o.errorCallback(ctx, body)
+		return
+	}
+	encoding := ctx.Response().Headers().Get("content-encoding")
+	if encoding == "gzip" {
+		tmp, err := encoder.ToUTF8(encoding, body)
+		if err != nil {
+			log.Errorf("convert to utf-8 error: %v, body: %s", err, string(body))
+			return
+		}
+		var resp openai.ChatCompletionResponse
+		err = json.Unmarshal(tmp, &resp)
+		if err != nil {
+			log.Errorf("unmarshal body error: %v, body: %s", err, string(tmp))
+			return
+		}
+		SetAIModelInputToken(ctx, resp.Usage.PromptTokens)
+		SetAIModelOutputToken(ctx, resp.Usage.CompletionTokens)
+		SetAIModelTotalToken(ctx, resp.Usage.TotalTokens)
+	}
+}
+
 func (o *OpenAIConvert) streamHandler(ctx http_service.IHttpContext, p []byte) ([]byte, error) {
+	encoding := ctx.Response().Headers().Get("content-encoding")
+	if encoding == "gzip" {
+		return p, nil
+	}
 	// 对响应数据进行划分
 	inputToken := GetAIModelInputToken(ctx)
 	outputToken := 0
 	totalToken := inputToken
-	scanner := bufio.NewScanner(bytes.NewReader(p))
-	// Check the content encoding and convert to UTF-8 if necessary.
-	encoding := ctx.Response().Headers().Get("content-encoding")
-	for scanner.Scan() {
-		line := scanner.Text()
-		if encoding != "utf-8" && encoding != "" {
-			tmp, err := encoder.ToUTF8(encoding, []byte(line))
-			if err != nil {
-				log.Errorf("convert to utf-8 error: %v, line: %s", err, line)
-				return p, nil
-			}
-			if ctx.Response().StatusCode() != 200 || (o.checkErr != nil && !o.checkErr(ctx, tmp)) {
-				if o.errorCallback != nil {
-					o.errorCallback(ctx, tmp)
-				}
-				return p, nil
-			}
-			line = string(tmp)
+
+	line := string(p)
+	if encoding != "utf-8" && encoding != "" {
+		tmp, err := encoder.ToUTF8(encoding, p)
+		if err != nil {
+			log.Errorf("convert to utf-8 error: %v, line: %s", err, line)
+			return p, nil
 		}
+		line = string(tmp)
 		line = strings.TrimPrefix(line, "data:")
 		if line == "" || strings.Trim(line, " ") == "[DONE]" {
 			return p, nil
 		}
 		var resp openai.ChatCompletionResponse
-		err := json.Unmarshal([]byte(line), &resp)
+		err = json.Unmarshal([]byte(line), &resp)
 		if err != nil {
 			return p, nil
 		}
@@ -170,10 +199,6 @@ func (o *OpenAIConvert) streamHandler(ctx http_service.IHttpContext, p []byte) (
 			outputToken += getTokens(resp.Choices[0].Message.Content)
 			totalToken += outputToken
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		log.Errorf("scan error: %v", err)
-		return p, nil
 	}
 
 	SetAIModelInputToken(ctx, inputToken)

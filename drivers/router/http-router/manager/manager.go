@@ -98,6 +98,7 @@ func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 			(*globalFilters).Chain(httpContext, completeCaller)
 		}
 	} else {
+		httpContext.SetLabel("current_running", "true")
 		log.Debug("match has:", port)
 		r.Serve(httpContext)
 	}

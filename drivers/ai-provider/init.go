@@ -15,6 +15,7 @@ import (
 	_ "github.com/eolinker/apinto/drivers/ai-provider/hugging-face"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/hunyuan"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/lm-studio"
+	_ "github.com/eolinker/apinto/drivers/ai-provider/local-model"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/minimax"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/mistralai"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/moonshot"

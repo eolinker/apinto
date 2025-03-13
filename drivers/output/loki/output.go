@@ -70,7 +70,7 @@ func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 }
 
 func (o *Output) reset(conf *Config) error {
-	if reflect.DeepEqual(conf, o.outputChan) {
+	if reflect.DeepEqual(conf, o.conf) {
 		return nil
 	}
 	//创建formatter
@@ -136,7 +136,7 @@ func (o *Output) Output(entry eosc.IEntry) error {
 			},
 		},
 	}
-	return eosc.ErrorWorkerNotRunning
+	return nil
 }
 
 func (o *Output) genRequest(data []byte) (*http.Request, error) {

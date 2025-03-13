@@ -2,6 +2,7 @@ package http_complete
 
 import (
 	"errors"
+	"fmt"
 
 	"strconv"
 	"strings"
@@ -34,15 +35,16 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 	}
 	//设置响应开始时间
 	proxyTime := time.Now()
-
+	balance := ctx.GetBalance()
+	if balance == nil {
+		return fmt.Errorf("balance not found")
+	}
 	defer func() {
 		//设置原始响应状态码
 		ctx.Response().SetProxyStatus(ctx.Response().StatusCode(), "")
 		ctx.Response().SetResponseTime(time.Since(proxyTime))
 		ctx.SetLabel("handler", "proxy")
 	}()
-
-	balance := ctx.GetBalance()
 
 	scheme := balance.Scheme()
 
