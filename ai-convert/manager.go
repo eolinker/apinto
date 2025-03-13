@@ -86,6 +86,7 @@ func (m *KeyPoolManager) Set(id string, resource IKeyResource) {
 	sort.Slice(keys, func(i, j int) bool {
 		return keys[i].Priority() < keys[j].Priority()
 	})
+
 	m.keySorts.Set(id, keys)
 }
 

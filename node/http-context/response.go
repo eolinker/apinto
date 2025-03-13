@@ -77,7 +77,7 @@ func (r *Response) Finish() error {
 	r.Response = nil
 	r.responseError = nil
 	r.proxyStatusCode = 0
-	r.streamBody = nil
+	r.streamBody.Reset()
 	return nil
 }
 func (r *Response) reset(resp *fasthttp.Response) {
@@ -85,7 +85,10 @@ func (r *Response) reset(resp *fasthttp.Response) {
 	r.ResponseHeader.reset(&resp.Header)
 	r.responseError = nil
 	r.proxyStatusCode = 0
-	r.streamBody = &bytes.Buffer{}
+	if r.streamBody == nil {
+		r.streamBody = &bytes.Buffer{}
+	}
+	r.streamBody.Reset()
 }
 
 func (r *Response) BodyLen() int {
@@ -93,14 +96,14 @@ func (r *Response) BodyLen() int {
 }
 
 func (r *Response) GetBody() []byte {
+	if r.IsBodyStream() {
+		return r.streamBody.Bytes()
+	}
 	if strings.Contains(r.GetHeader("Content-Encoding"), "gzip") {
 		body, _ := r.BodyGunzip()
 		r.DelHeader("Content-Encoding")
 		r.SetHeader("Content-Length", strconv.Itoa(len(body)))
 		r.Response.SetBody(body)
-	}
-	if r.IsBodyStream() {
-		return r.streamBody.Bytes()
 	}
 	return r.Response.Body()
 }
@@ -115,6 +118,7 @@ func (r *Response) SetBody(bytes []byte) {
 		// 不处理
 		return
 	}
+
 	if strings.Contains(r.GetHeader("Content-Encoding"), "gzip") {
 		r.DelHeader("Content-Encoding")
 	}

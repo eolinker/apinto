@@ -15,6 +15,7 @@ func (f *Finisher) Finish(org eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
+	ctx.SetLabel("current_running", "false")
 	ctx.FastFinish()
 
 	return nil

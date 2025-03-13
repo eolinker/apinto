@@ -8,6 +8,7 @@ var (
 	AIModelTotalTokenLabel  = "ai_model_total_token"
 	AIModelModeLabel        = "ai_model_mode"
 	AIModelLabel            = "ai_model"
+	AIKeyLabel              = "ai_key"
 	AIProviderLabel         = "ai_provider"
 	AIProviderStatusesLabel = "ai_provider_statuses"
 	AIModelStatusLabel      = "ai_model_status"
@@ -67,6 +68,14 @@ func SetAIModel(ctx eocontext.EoContext, model string) {
 
 func GetAIModel(ctx eocontext.EoContext) string {
 	return valueString(ctx, AIModelLabel)
+}
+
+func SetAIKey(ctx eocontext.EoContext, key string) {
+	ctx.WithValue(AIKeyLabel, key)
+}
+
+func GetAIKey(ctx eocontext.EoContext) string {
+	return valueString(ctx, AIKeyLabel)
 }
 
 func SetAIProvider(ctx eocontext.EoContext, provider string) {

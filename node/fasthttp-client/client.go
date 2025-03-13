@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/eolinker/eosc/eocontext"
-
 	"github.com/valyala/fasthttp"
 )
 
@@ -148,6 +147,7 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 				return false
 			},
 		}
+		//http2.ConfigureClient(hc, http2.ClientOpts{})
 		m[key] = hc
 		if len(m) == 1 {
 			go c.startCleaner(m)

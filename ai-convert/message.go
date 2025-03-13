@@ -6,7 +6,24 @@ import (
 )
 
 // Request 定义客户端统一输入请求格式
-type Request openai.ChatCompletionRequest
+type Request struct {
+	Model    string                         `json:"model"`
+	Messages []openai.ChatCompletionMessage `json:"messages"`
+	// MaxTokens The maximum number of tokens that can be generated in the chat completion.
+	// This value can be used to control costs for text generated via API.
+	// This value is now deprecated in favor of max_completion_tokens, and is not compatible with o1 series models.
+	// refs: https://platform.openai.com/docs/api-reference/chat/create#chat-create-max_tokens
+	MaxTokens int `json:"max_tokens,omitempty"`
+	// MaxCompletionTokens An upper bound for the number of tokens that can be generated for a completion,
+	// including visible output tokens and reasoning tokens https://platform.openai.com/docs/guides/reasoning
+	MaxCompletionTokens int      `json:"max_completion_tokens,omitempty"`
+	Temperature         float32  `json:"temperature,omitempty"`
+	TopP                float32  `json:"top_p,omitempty"`
+	N                   int      `json:"n,omitempty"`
+	Stream              bool     `json:"stream,omitempty"`
+	Stop                []string `json:"stop,omitempty"`
+	PresencePenalty     float32  `json:"presence_penalty,omitempty"`
+}
 
 // Response 定义客户端统一输出响应格式
 type Response struct {

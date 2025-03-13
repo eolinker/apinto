@@ -49,8 +49,11 @@ type HttpContext struct {
 }
 
 func (ctx *HttpContext) BodyFinish() {
-	for _, finishFunc := range ctx.bodyFinishes {
-		finishFunc(ctx)
+	bodyFinishes := ctx.bodyFinishes
+	size := len(bodyFinishes)
+	// ##倒序执行
+	for i := size - 1; i >= 0; i-- {
+		bodyFinishes[i](ctx)
 	}
 }
 
@@ -219,10 +222,12 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 		// 流式传输
 		ctx.response.Response.SetStatusCode(response.StatusCode())
 		ctx.SetLabel("stream_running", "true")
+
 		ctx.response.Response.SetBodyStreamWriter(func(w *bufio.Writer) {
 			defer func() {
 				ctx.SetLabel("stream_running", "false")
 				ctx.FastFinish()
+				fasthttp.ReleaseResponse(response)
 			}()
 			reader := response.BodyStream()
 			buffer := make([]byte, 4096) // 4KB 缓冲区
@@ -262,11 +267,11 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 		ctx.proxyRequests = append(ctx.proxyRequests, agent)
 		return nil
 	}
-
 	response.CopyTo(ctx.response.Response)
 	agent.responseBody.Write(ctx.response.Response.Body())
 	agent.setResponseLength(ctx.response.Response.Header.ContentLength())
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)
+	fasthttp.ReleaseResponse(response)
 	return ctx.response.responseError
 
 }
@@ -383,15 +388,14 @@ func (ctx *HttpContext) RequestId() string {
 
 // FastFinish finish
 func (ctx *HttpContext) FastFinish() {
-	streamRunning := ctx.GetLabel("stream_running")
-	if streamRunning == "true" {
+	if ctx.GetLabel("stream_running") == "true" || ctx.GetLabel("current_running") == "true" {
 		// 暂时不释放
 		return
 	}
+
 	if ctx.response.responseError != nil {
 		ctx.fastHttpRequestCtx.SetStatusCode(504)
 		ctx.fastHttpRequestCtx.SetBodyString(ctx.response.responseError.Error())
-		return
 	}
 
 	ctx.port = 0

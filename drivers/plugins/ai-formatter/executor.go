@@ -76,7 +76,10 @@ func (e *executor) doConverter(ctx http_context.IHttpContext, next eocontext.ICh
 		}
 	}
 	if ctx.Response().IsBodyStream() {
-		ctx.Response().SetHeader("Content-Type", "text/event-stream")
+		contentType := ctx.GetLabel("response-content-type")
+		if ctx.GetLabel("response-content-type") != "" {
+			ctx.Response().SetHeader("Content-Type", contentType)
+		}
 		return nil
 	}
 	if err := resource.ResponseConvert(ctx); err != nil {
@@ -104,6 +107,7 @@ func (e *executor) tryProvider(ctx http_context.IHttpContext, originProxy http_c
 	}
 	ctx.SetProxy(originProxy)
 	for _, resource := range resources {
+		ai_convert.SetAIKey(ctx, resource.ID())
 		err := e.doConverter(ctx, next, resource, provider, extender)
 		if err != nil {
 			log.Errorf("try provider error: %v", err)
@@ -138,8 +142,21 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	if ai_convert.GetAIModel(ctx) == "" {
 		ai_convert.SetAIModel(ctx, e.model)
 	}
-
+	defer func() {
+		// If the request is successful, set the AI provider and model in the response headers
+		ctx.Response().SetHeader("X-AI-Provider", ai_convert.GetAIProvider(ctx))
+		ctx.Response().SetHeader("X-AI-Model", ai_convert.GetAIModel(ctx))
+	}()
 	if err := e.processKeyPool(ctx, provider, cloneProxy, next); err != nil {
+		balances := ai_convert.Balances()
+		if len(balances) == 0 {
+			body := ctx.Response().GetBody()
+			if len(body) == 0 {
+				ctx.Response().SetBody([]byte(err.Error()))
+				ctx.Response().SetStatus(400, "Bad Request")
+			}
+			return err
+		}
 		err = e.doBalance(ctx, cloneProxy, next) // Fallback to balance logic
 		if err != nil {
 			ctx.Response().SetBody([]byte(err.Error()))
@@ -147,9 +164,6 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			return err
 		}
 	}
-	// If the request is successful, set the AI provider and model in the response headers
-	ctx.Response().SetHeader("X-AI-Provider", ai_convert.GetAIProvider(ctx))
-	ctx.Response().SetHeader("X-AI-Model", ai_convert.GetAIModel(ctx))
 	return nil
 }
 
@@ -176,7 +190,7 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string
 		if !r.Health() {
 			continue
 		}
-
+		ai_convert.SetAIKey(ctx, r.ID())
 		if err = r.RequestConvert(ctx, extender); err != nil {
 			ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
 				Provider: e.provider,
@@ -201,7 +215,10 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string
 			}
 		}
 		if ctx.Response().IsBodyStream() {
-			ctx.Response().SetHeader("Content-Type", "text/event-stream")
+			contentType := ctx.GetLabel("response-content-type")
+			if ctx.GetLabel("response-content-type") != "" {
+				ctx.Response().SetHeader("Content-Type", contentType)
+			}
 			return nil
 		}
 		if err = r.ResponseConvert(ctx); err != nil {

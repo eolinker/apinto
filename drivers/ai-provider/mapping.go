@@ -40,10 +40,10 @@ var (
 			Value: "top_k",
 			Type:  "int",
 		},
-		//{
-		//	Value: "response_format",
-		//	Type:  "string",
-		//},
+		{
+			Value: "response_format",
+			Type:  "string",
+		},
 		{
 			Value: "stream",
 			Type:  "bool",
