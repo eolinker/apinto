@@ -174,15 +174,10 @@ func errorCallback(ctx http_service.IHttpContext, body []byte) {
 	case 400:
 		// Handle the bad request error.
 		ai_convert.SetAIStatusInvalidRequest(ctx)
+	case 403:
+		ai_convert.SetAIStatusInvalid(ctx)
 	case 429:
-		switch resp.Error.Type {
-		case "insufficient_quota":
-			// Handle the insufficient quota error.
-			ai_convert.SetAIStatusQuotaExhausted(ctx)
-		case "rate_limit_error":
-			// Handle the rate limit error.
-			ai_convert.SetAIStatusExceeded(ctx)
-		}
+		ai_convert.SetAIStatusQuotaExhausted(ctx)
 	case 401:
 		// 过期和无效的API密钥
 		ai_convert.SetAIStatusInvalid(ctx)
