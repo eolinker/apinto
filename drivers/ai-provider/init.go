@@ -9,6 +9,7 @@ import (
 	_ "github.com/eolinker/apinto/drivers/ai-provider/cohere"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/customize-openai"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/deepseek"
+	_ "github.com/eolinker/apinto/drivers/ai-provider/fakegpt"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/fireworks"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/google"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/groq"

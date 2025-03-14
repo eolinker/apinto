@@ -45,24 +45,23 @@ type HttpContext struct {
 	labels              map[string]string
 	port                int
 	entry               eosc.IEntry
-	bodyFinishes        []http_service.BodyFinishFunc
 }
 
-func (ctx *HttpContext) BodyFinish() {
-	bodyFinishes := ctx.bodyFinishes
-	size := len(bodyFinishes)
-	// ##倒序执行
-	for i := size - 1; i >= 0; i-- {
-		bodyFinishes[i](ctx)
-	}
-}
+//func (ctx *HttpContext) BodyFinish() {
+//	bodyFinishes := ctx.bodyFinishes
+//	size := len(bodyFinishes)
+//	// ##倒序执行
+//	for i := size - 1; i >= 0; i-- {
+//		bodyFinishes[i](ctx)
+//	}
+//}
 
-func (ctx *HttpContext) AppendBodyFinishFunc(finishFunc http_service.BodyFinishFunc) {
-	if ctx.bodyFinishes == nil {
-		ctx.bodyFinishes = make([]http_service.BodyFinishFunc, 0, 10)
-	}
-	ctx.bodyFinishes = append(ctx.bodyFinishes, finishFunc)
-}
+//func (ctx *HttpContext) AppendBodyFinishFunc(finishFunc http_service.BodyFinishFunc) {
+//	if ctx.bodyFinishes == nil {
+//		ctx.bodyFinishes = make([]http_service.BodyFinishFunc, 0, 10)
+//	}
+//	ctx.bodyFinishes = append(ctx.bodyFinishes, finishFunc)
+//}
 
 func (ctx *HttpContext) ProxyClone() http_service.IRequest {
 	// 创建一个新的 ProxyRequest 实例
@@ -73,7 +72,12 @@ func (ctx *HttpContext) ProxyClone() http_service.IRequest {
 	// 使用 ProxyRequest.reset 初始化克隆的 ProxyRequest
 	cloneProxy := &ProxyRequest{}
 	cloneProxy.reset(req, ctx.proxyRequest.remoteAddr)
-
+	for _, fn := range ctx.proxyRequest.bodyFinishes {
+		cloneProxy.AppendBodyFinish(fn)
+	}
+	for _, fn := range ctx.proxyRequest.streamHandler {
+		cloneProxy.AppendStreamBodyHandle(fn)
+	}
 	return cloneProxy
 }
 
@@ -81,6 +85,8 @@ func (ctx *HttpContext) SetProxy(proxy http_service.IRequest) {
 	if p, ok := proxy.(*ProxyRequest); ok {
 		// 替换当前的 proxyRequest
 		p.Request().CopyTo(ctx.proxyRequest.Request())
+		ctx.proxyRequest.bodyFinishes = p.bodyFinishes
+		ctx.proxyRequest.streamHandler = p.streamHandler
 	} else {
 		log.Warn("SetProxy failed: incompatible type")
 	}
@@ -236,12 +242,16 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 					n, err := reader.Read(buffer)
 					if n > 0 {
 						chunk := buffer[:n]
-						for _, streamFunc := range ctx.Response().StreamFunc() {
-							chunk, err = streamFunc(ctx, chunk)
-							if err != nil {
-								log.Errorf("exec stream func error: %v", err)
-								break
-							}
+						//for _, streamFunc := range c().StreamFunc() {
+						//	chunk, err = streamFunc(ctx, chunk)
+						//	if err != nil {
+						//		log.Errorf("exec stream func error: %v", err)
+						//		break
+						//	}
+						//}
+						chunk, err = ctx.proxyRequest.StreamBodyHandles(ctx, chunk)
+						if err != nil {
+							log.Errorf("exec stream func error: %v", err)
 						}
 
 						n, err = w.Write(chunk)
@@ -261,7 +271,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 						break
 					}
 				}
-				ctx.BodyFinish()
+				ctx.proxyRequest.ProxyBodyFinish(ctx)
 			})
 
 			agent.setResponseLength(-1)
@@ -342,13 +352,6 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 		cloneLabels[k] = v
 	}
 	copyContext.labels = cloneLabels
-	for _, finishFunc := range ctx.bodyFinishes {
-		copyContext.AppendBodyFinishFunc(finishFunc)
-	}
-	for _, streamFunc := range ctx.response.streamFuncArray {
-		copyContext.Response().AppendStreamFunc(streamFunc)
-	}
-
 	//记录请求时间
 	copyContext.ctx = context.WithValue(ctx.Context(), http_service.KeyCloneCtx, true)
 	copyContext.WithValue(ctx_key.CtxKeyRetry, 0)
