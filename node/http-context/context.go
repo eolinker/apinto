@@ -219,53 +219,61 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	response.Header.CopyTo(&ctx.response.Response.Header)
 	ctx.response.ResponseHeader.refresh()
 	if response.IsBodyStream() && response.Header.ContentLength() < 0 {
-		// 流式传输
-		ctx.response.Response.SetStatusCode(response.StatusCode())
-		ctx.SetLabel("stream_running", "true")
+		if response.StatusCode() == 200 {
+			// 流式传输，非200状态码不考虑流式传输
+			ctx.response.Response.SetStatusCode(response.StatusCode())
+			ctx.SetLabel("stream_running", "true")
 
-		ctx.response.Response.SetBodyStreamWriter(func(w *bufio.Writer) {
-			defer func() {
-				ctx.SetLabel("stream_running", "false")
-				ctx.FastFinish()
-				fasthttp.ReleaseResponse(response)
-			}()
-			reader := response.BodyStream()
-			buffer := make([]byte, 4096) // 4KB 缓冲区
-			for {
-				n, err := reader.Read(buffer)
-				if n > 0 {
-					chunk := buffer[:n]
-					for _, streamFunc := range ctx.Response().StreamFunc() {
-						chunk, err = streamFunc(ctx, chunk)
+			ctx.response.Response.SetBodyStreamWriter(func(w *bufio.Writer) {
+				defer func() {
+					ctx.SetLabel("stream_running", "false")
+					ctx.FastFinish()
+					fasthttp.ReleaseResponse(response)
+				}()
+				reader := response.BodyStream()
+				buffer := make([]byte, 4096) // 4KB 缓冲区
+				for {
+					n, err := reader.Read(buffer)
+					if n > 0 {
+						chunk := buffer[:n]
+						for _, streamFunc := range ctx.Response().StreamFunc() {
+							chunk, err = streamFunc(ctx, chunk)
+							if err != nil {
+								log.Errorf("exec stream func error: %v", err)
+								break
+							}
+						}
+
+						n, err = w.Write(chunk)
 						if err != nil {
-							log.Errorf("exec stream func error: %v", err)
+							log.Errorf("stream write error: %v", err)
 							break
 						}
-					}
+						ctx.Response().SetBody(chunk)
 
-					n, err = w.Write(chunk)
+						w.Flush() // 实时发送数据
+					}
 					if err != nil {
-						log.Errorf("stream write error: %v", err)
+						if err == io.EOF {
+							break
+						}
+						log.Errorf("stream read error: %v", err)
 						break
 					}
-					ctx.Response().SetBody(chunk)
-
-					w.Flush() // 实时发送数据
 				}
-				if err != nil {
-					if err == io.EOF {
-						break
-					}
-					log.Errorf("stream read error: %v", err)
-					break
-				}
-			}
-			ctx.BodyFinish()
-		})
+				ctx.BodyFinish()
+			})
 
-		agent.setResponseLength(-1)
+			agent.setResponseLength(-1)
+			ctx.proxyRequests = append(ctx.proxyRequests, agent)
+			return nil
+		}
+		body := response.Body()
+		ctx.response.SetBody(body)
+		agent.setResponseLength(len(body))
 		ctx.proxyRequests = append(ctx.proxyRequests, agent)
-		return nil
+		fasthttp.ReleaseResponse(response)
+		return ctx.response.responseError
 	}
 	response.CopyTo(ctx.response.Response)
 	agent.responseBody.Write(ctx.response.Response.Body())

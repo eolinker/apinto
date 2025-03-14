@@ -21,6 +21,7 @@ import (
 	_ "github.com/eolinker/apinto/drivers/ai-provider/moonshot"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/novita"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/nvidia"
+	_ "github.com/eolinker/apinto/drivers/ai-provider/ollama"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/openAI"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/openrouter"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/perfxcloud"

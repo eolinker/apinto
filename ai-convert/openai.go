@@ -109,16 +109,33 @@ func ResponseConvert(ctx eoscContext.EoContext, checkErr CheckError, errorCallba
 			return err
 		}
 	}
+
 	if (checkErr != nil && !checkErr(httpContext, body)) || httpContext.Response().StatusCode() != 200 {
 		if errorCallback != nil {
 			errorCallback(httpContext, body)
 		}
+		status := GetAIStatus(ctx)
+		if status == "" {
+			status = StatusInvalid
+		}
+		SetAIProviderStatuses(httpContext, AIProviderStatus{
+			Provider: GetAIProvider(ctx),
+			Model:    GetAIModel(ctx),
+			Key:      GetAIKey(ctx),
+			Status:   status,
+		})
 		return nil
 	}
 
 	var resp openai.ChatCompletionResponse
 	err = json.Unmarshal(body, &resp)
 	if err != nil {
+		SetAIProviderStatuses(httpContext, AIProviderStatus{
+			Provider: GetAIProvider(ctx),
+			Model:    GetAIModel(ctx),
+			Key:      GetAIKey(ctx),
+			Status:   StatusInvalid,
+		})
 		log.Errorf("unmarshal body error: %v, body: %s", err, string(body))
 		return err
 	}
@@ -126,6 +143,13 @@ func ResponseConvert(ctx eoscContext.EoContext, checkErr CheckError, errorCallba
 	SetAIModelInputToken(httpContext, resp.Usage.PromptTokens)
 	SetAIModelOutputToken(httpContext, resp.Usage.CompletionTokens)
 	SetAIModelTotalToken(httpContext, resp.Usage.TotalTokens)
+	SetAIStatusNormal(ctx)
+	SetAIProviderStatuses(httpContext, AIProviderStatus{
+		Provider: GetAIProvider(ctx),
+		Model:    GetAIModel(ctx),
+		Key:      GetAIKey(ctx),
+		Status:   GetAIStatus(ctx),
+	})
 	httpContext.Response().SetHeader("content-encoding", "utf-8")
 	httpContext.Response().SetBody(body)
 	return nil
@@ -166,6 +190,7 @@ func (o *OpenAIConvert) bodyFinish(ctx http_service.IHttpContext) {
 		SetAIModelOutputToken(ctx, resp.Usage.CompletionTokens)
 		SetAIModelTotalToken(ctx, resp.Usage.TotalTokens)
 	}
+	SetAIStatusNormal(ctx)
 }
 
 func (o *OpenAIConvert) streamHandler(ctx http_service.IHttpContext, p []byte) ([]byte, error) {

@@ -14,11 +14,11 @@ func init() {
 }
 
 type Config struct {
-	BaseUrl string `json:"base"`
+	BaseUrl string `json:"base_url"`
 }
 
 // checkConfig validates the provided configuration.
-// It ensures the required fields are set and checks the validity of the Base URL if provided.
+// It ensures the required fields are set and checks the validity of the B ase URL if provided.
 //
 // Parameters:
 //   - v: An interface{} expected to be a pointer to a Config struct.

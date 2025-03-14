@@ -222,27 +222,16 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string
 			return nil
 		}
 		if err = r.ResponseConvert(ctx); err != nil {
-			ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
-				Provider: e.provider,
-				Model:    e.model,
-				Key:      r.ID(),
-				Status:   ai_convert.StatusInvalid,
-			})
-			return err
+			//return err
+			log.Errorf("response convert error: %v", err)
+			continue
 		}
 		aiStatus := ai_convert.GetAIStatus(ctx)
-		ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
-			Provider: e.provider,
-			Model:    e.model,
-			Key:      r.ID(),
-			Status:   aiStatus,
-		})
 		switch aiStatus {
 		case ai_convert.StatusInvalidRequest, ai_convert.StatusNormal:
 			return nil
 		default:
 			continue
-
 		}
 	}
 	return fmt.Errorf("all key resources for provider %s is invalid", e.provider)
