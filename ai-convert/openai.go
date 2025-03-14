@@ -1,6 +1,8 @@
 package ai_convert
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -79,7 +81,7 @@ func (o *OpenAIConvert) RequestConvert(ctx eoscContext.EoContext, extender map[s
 		promptToken += getTokens(msg.Content)
 	}
 	SetAIModelInputToken(httpContext, promptToken)
-	httpContext.Response().AppendStreamFunc(o.streamHandler)
+	httpContext.Proxy().AppendStreamBodyHandle(o.streamHandler)
 	if o.apikey != "" {
 		httpContext.Proxy().Header().SetHeader("Authorization", "Bearer "+o.apikey)
 	}
@@ -90,7 +92,7 @@ func (o *OpenAIConvert) RequestConvert(ctx eoscContext.EoContext, extender map[s
 	if o.balanceHandler != nil {
 		ctx.SetBalance(o.balanceHandler)
 	}
-	httpContext.AppendBodyFinishFunc(o.bodyFinish)
+	httpContext.Proxy().AppendBodyFinish(o.bodyFinish)
 
 	return nil
 }
@@ -109,16 +111,33 @@ func ResponseConvert(ctx eoscContext.EoContext, checkErr CheckError, errorCallba
 			return err
 		}
 	}
+
 	if (checkErr != nil && !checkErr(httpContext, body)) || httpContext.Response().StatusCode() != 200 {
 		if errorCallback != nil {
 			errorCallback(httpContext, body)
 		}
+		status := GetAIStatus(ctx)
+		if status == "" {
+			status = StatusInvalid
+		}
+		SetAIProviderStatuses(httpContext, AIProviderStatus{
+			Provider: GetAIProvider(ctx),
+			Model:    GetAIModel(ctx),
+			Key:      GetAIKey(ctx),
+			Status:   status,
+		})
 		return nil
 	}
 
 	var resp openai.ChatCompletionResponse
 	err = json.Unmarshal(body, &resp)
 	if err != nil {
+		SetAIProviderStatuses(httpContext, AIProviderStatus{
+			Provider: GetAIProvider(ctx),
+			Model:    GetAIModel(ctx),
+			Key:      GetAIKey(ctx),
+			Status:   StatusInvalid,
+		})
 		log.Errorf("unmarshal body error: %v, body: %s", err, string(body))
 		return err
 	}
@@ -126,6 +145,13 @@ func ResponseConvert(ctx eoscContext.EoContext, checkErr CheckError, errorCallba
 	SetAIModelInputToken(httpContext, resp.Usage.PromptTokens)
 	SetAIModelOutputToken(httpContext, resp.Usage.CompletionTokens)
 	SetAIModelTotalToken(httpContext, resp.Usage.TotalTokens)
+	SetAIStatusNormal(ctx)
+	SetAIProviderStatuses(httpContext, AIProviderStatus{
+		Provider: GetAIProvider(ctx),
+		Model:    GetAIModel(ctx),
+		Key:      GetAIKey(ctx),
+		Status:   GetAIStatus(ctx),
+	})
 	httpContext.Response().SetHeader("content-encoding", "utf-8")
 	httpContext.Response().SetBody(body)
 	return nil
@@ -166,6 +192,7 @@ func (o *OpenAIConvert) bodyFinish(ctx http_service.IHttpContext) {
 		SetAIModelOutputToken(ctx, resp.Usage.CompletionTokens)
 		SetAIModelTotalToken(ctx, resp.Usage.TotalTokens)
 	}
+	SetAIStatusNormal(ctx)
 }
 
 func (o *OpenAIConvert) streamHandler(ctx http_service.IHttpContext, p []byte) ([]byte, error) {
@@ -173,36 +200,47 @@ func (o *OpenAIConvert) streamHandler(ctx http_service.IHttpContext, p []byte) (
 	if encoding == "gzip" {
 		return p, nil
 	}
+
 	// 对响应数据进行划分
 	inputToken := GetAIModelInputToken(ctx)
-	outputToken := 0
+	outputToken := GetAIModelOutputToken(ctx)
 	totalToken := inputToken
-
-	line := string(p)
-	if encoding != "utf-8" && encoding != "" {
-		tmp, err := encoder.ToUTF8(encoding, p)
-		if err != nil {
-			log.Errorf("convert to utf-8 error: %v, line: %s", err, line)
-			return p, nil
+	defer func() {
+		SetAIModelInputToken(ctx, inputToken)
+		SetAIModelOutputToken(ctx, outputToken)
+		SetAIModelTotalToken(ctx, totalToken)
+	}()
+	scanner := bufio.NewScanner(bytes.NewReader(p))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if encoding != "utf-8" && encoding != "" {
+			tmp, err := encoder.ToUTF8(encoding, []byte(line))
+			if err != nil {
+				log.Errorf("convert to utf-8 error: %v, line: %s", err, line)
+				return p, nil
+			}
+			line = string(tmp)
 		}
-		line = string(tmp)
+
 		line = strings.TrimPrefix(line, "data:")
 		if line == "" || strings.Trim(line, " ") == "[DONE]" {
 			return p, nil
 		}
-		var resp openai.ChatCompletionResponse
-		err = json.Unmarshal([]byte(line), &resp)
+		var resp openai.ChatCompletionStreamResponse
+		err := json.Unmarshal([]byte(line), &resp)
 		if err != nil {
 			return p, nil
 		}
 		if len(resp.Choices) > 0 {
-			outputToken += getTokens(resp.Choices[0].Message.Content)
+			outputToken += getTokens(resp.Choices[0].Delta.Content)
 			totalToken += outputToken
+		}
+		if resp.Usage != nil {
+			inputToken = resp.Usage.PromptTokens
+			outputToken = resp.Usage.CompletionTokens
+			totalToken = resp.Usage.TotalTokens
 		}
 	}
 
-	SetAIModelInputToken(ctx, inputToken)
-	SetAIModelOutputToken(ctx, outputToken)
-	SetAIModelTotalToken(ctx, totalToken)
 	return p, nil
 }

@@ -38,7 +38,7 @@ func (l *accessLog) bodyFinish(ctx http_service.IHttpContext) {
 }
 
 func (l *accessLog) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
-	ctx.AppendBodyFinishFunc(l.bodyFinish)
+	ctx.Proxy().AppendBodyFinish(l.bodyFinish)
 	err = next.DoChain(ctx)
 	if err != nil {
 		log.Error(err)

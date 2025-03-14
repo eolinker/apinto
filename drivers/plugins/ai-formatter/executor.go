@@ -105,8 +105,9 @@ func (e *executor) tryProvider(ctx http_context.IHttpContext, originProxy http_c
 	if !has {
 		return errKeyNotFound
 	}
-	ctx.SetProxy(originProxy)
+
 	for _, resource := range resources {
+		ctx.SetProxy(originProxy)
 		ai_convert.SetAIKey(ctx, resource.ID())
 		err := e.doConverter(ctx, next, resource, provider, extender)
 		if err != nil {
@@ -169,7 +170,6 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 
 // processKeyPool handles processing using the key pool resources.
 func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string, cloneProxy http_context.IRequest, next eocontext.IChain) error {
-	ctx.SetProxy(cloneProxy)
 	p, has := ai_convert.GetProvider(provider)
 	if !has {
 		return errProviderNotFound
@@ -190,6 +190,7 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string
 		if !r.Health() {
 			continue
 		}
+		ctx.SetProxy(cloneProxy)
 		ai_convert.SetAIKey(ctx, r.ID())
 		if err = r.RequestConvert(ctx, extender); err != nil {
 			ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
@@ -222,27 +223,16 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string
 			return nil
 		}
 		if err = r.ResponseConvert(ctx); err != nil {
-			ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
-				Provider: e.provider,
-				Model:    e.model,
-				Key:      r.ID(),
-				Status:   ai_convert.StatusInvalid,
-			})
-			return err
+			//return err
+			log.Errorf("response convert error: %v", err)
+			continue
 		}
 		aiStatus := ai_convert.GetAIStatus(ctx)
-		ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
-			Provider: e.provider,
-			Model:    e.model,
-			Key:      r.ID(),
-			Status:   aiStatus,
-		})
 		switch aiStatus {
 		case ai_convert.StatusInvalidRequest, ai_convert.StatusNormal:
 			return nil
 		default:
 			continue
-
 		}
 	}
 	return fmt.Errorf("all key resources for provider %s is invalid", e.provider)

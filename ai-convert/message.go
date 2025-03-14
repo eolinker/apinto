@@ -27,8 +27,8 @@ type Request struct {
 
 // Response 定义客户端统一输出响应格式
 type Response struct {
-	*openai.ChatCompletionResponse
-	Error *Error `json:"error,omitempty"`
+	*openai.ChatCompletionResponse `json:"response,omitempty"`
+	Error                          *Error `json:"error,omitempty"`
 }
 
 type ModelConfig struct {

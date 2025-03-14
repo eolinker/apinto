@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
@@ -102,8 +103,8 @@ type headerAction struct {
 	Value  string
 }
 type ResponseHeader struct {
-	header *fasthttp.ResponseHeader
-
+	header     *fasthttp.ResponseHeader
+	locker     sync.RWMutex
 	cache      http.Header
 	actions    []*headerAction
 	afterProxy bool
@@ -156,12 +157,14 @@ func (r *ResponseHeader) GetHeader(name string) string {
 }
 
 func (r *ResponseHeader) Headers() http.Header {
-	return r.cache
-
+	r.locker.RLock()
+	defer r.locker.RUnlock()
+	return r.cache.Clone()
 }
 
 func (r *ResponseHeader) SetHeader(key, value string) {
-
+	r.locker.Lock()
+	defer r.locker.Unlock()
 	r.cache.Set(key, value)
 	r.header.Set(key, value)
 	if !r.afterProxy {
@@ -174,6 +177,8 @@ func (r *ResponseHeader) SetHeader(key, value string) {
 }
 
 func (r *ResponseHeader) AddHeader(key, value string) {
+	r.locker.Lock()
+	defer r.locker.Unlock()
 	r.cache.Add(key, value)
 	r.header.Add(key, value)
 	if !r.afterProxy {
@@ -186,6 +191,8 @@ func (r *ResponseHeader) AddHeader(key, value string) {
 }
 
 func (r *ResponseHeader) DelHeader(key string) {
+	r.locker.Lock()
+	defer r.locker.Unlock()
 	r.cache.Del(key)
 	r.header.Del(key)
 	if !r.afterProxy {

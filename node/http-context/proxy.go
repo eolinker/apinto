@@ -13,6 +13,41 @@ var _ http_service.IRequest = (*ProxyRequest)(nil)
 
 type ProxyRequest struct {
 	RequestReader
+	bodyFinishes  []http_service.BodyFinishFunc
+	streamHandler []http_service.StreamFunc
+}
+
+func (r *ProxyRequest) ProxyBodyFinish(ctx http_service.IHttpContext) {
+	for i := len(r.bodyFinishes) - 1; i >= 0; i-- {
+		r.bodyFinishes[i](ctx)
+	}
+}
+
+func (r *ProxyRequest) AppendBodyFinish(fn http_service.BodyFinishFunc) {
+	if r.bodyFinishes == nil {
+		r.bodyFinishes = make([]http_service.BodyFinishFunc, 0)
+	}
+	r.bodyFinishes = append(r.bodyFinishes, fn)
+}
+
+func (r *ProxyRequest) StreamBodyHandles(ctx http_service.IHttpContext, body []byte) ([]byte, error) {
+	tmp := make([]byte, len(body))
+	copy(tmp, body)
+	var err error
+	for _, fn := range r.streamHandler {
+		tmp, err = fn(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return tmp, nil
+}
+
+func (r *ProxyRequest) AppendStreamBodyHandle(fn http_service.StreamFunc) {
+	if r.streamHandler == nil {
+		r.streamHandler = make([]http_service.StreamFunc, 0)
+	}
+	r.streamHandler = append(r.streamHandler, fn)
 }
 
 //func (r *ProxyRequest) clone() *ProxyRequest {
@@ -25,6 +60,8 @@ func (r *ProxyRequest) Finish() error {
 	if err != nil {
 		log.Warn(err)
 	}
+	r.bodyFinishes = nil
+	r.streamHandler = nil
 	return nil
 }
 func (r *ProxyRequest) Header() http_service.IHeaderWriter {

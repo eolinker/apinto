@@ -141,7 +141,7 @@ func (c *Convert) RequestConvert(ctx eocontext.EoContext, extender map[string]in
 		httpContext.Proxy().Header().SetHeader(k, strings.Join(v, ";"))
 	}
 	httpContext.Proxy().Body().SetRaw("application/json", body)
-	httpContext.Response().AppendStreamFunc(c.streamHandler)
+	httpContext.Proxy().AppendStreamBodyHandle(c.streamHandler)
 	ctx.SetLabel("response-content-type", "text/event-stream")
 	return nil
 }
