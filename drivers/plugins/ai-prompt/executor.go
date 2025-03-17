@@ -124,6 +124,7 @@ func genRequestMessage(ctx http_context.IHttpContext, body []byte, prompt string
 	} else {
 		messages = baseMsg.Config.Messages
 	}
+	baseMsg.Config.Messages = messages
 	// 重制为空
 	baseMsg.Config.Variables = nil
 	delete(baseMsg.Append, "variables")
