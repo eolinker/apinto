@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/valyala/bytebufferpool"
+
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 
 	"github.com/valyala/fasthttp"
@@ -120,7 +122,15 @@ func (r *Response) SetBody(bytes []byte) {
 	}
 
 	if strings.Contains(r.GetHeader("Content-Encoding"), "gzip") {
-		r.DelHeader("Content-Encoding")
+		var bb bytebufferpool.ByteBuffer
+		_, err := fasthttp.WriteGunzip(&bb, bytes)
+		if err == nil {
+			r.DelHeader("Content-Encoding")
+			r.SetHeader("Content-Length", strconv.Itoa(len(bb.B)))
+			r.Response.SetBody(bb.B)
+			r.responseError = nil
+			return
+		}
 	}
 	r.Response.SetBody(bytes)
 	r.length = len(bytes)

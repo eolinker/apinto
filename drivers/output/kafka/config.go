@@ -27,6 +27,8 @@ type Config struct {
 	PartitionKey  string               `json:"partition_key" yaml:"partition_key" switch:"partition_type==='hash'"`
 	Type          string               `json:"type" yaml:"type" enum:"json,line" label:"输出格式"`
 	ContentResize []ContentResize      `json:"content_resize" yaml:"content_resize" label:"内容截断配置" switch:"type===json"`
+	EnableSASL    bool                 `json:"enable_sasl" yaml:"enable_sasl" label:"是否启用SASL"`
+	SaslConfig    *SaslConfig          `json:"sasl" yaml:"sasl"`
 	Filters       []*Filter            `json:"filters" yaml:"conditions" label:"过滤条件"`
 	Formatter     eosc.FormatterConfig `json:"formatter" yaml:"formatter" label:"格式化配置"`
 }
@@ -57,6 +59,12 @@ type ProducerConfig struct {
 	ContentResize []ContentResize      `json:"content_resize" yaml:"content_resize"`
 	Formatter     eosc.FormatterConfig `json:"formatter" yaml:"formatter"`
 	Filters       []*Filter            `json:"filters" yaml:"conditions" label:"过滤条件"`
+}
+
+type SaslConfig struct {
+	User      string `json:"user" yaml:"user"`
+	Password  string `json:"password" yaml:"password"`
+	Mechanism string `json:"mechanism" yaml:"mechanism"`
 }
 
 func (c *Config) doCheck() (*ProducerConfig, error) {
@@ -120,6 +128,21 @@ func (c *Config) doCheck() (*ProducerConfig, error) {
 
 	if conf.Type == "" {
 		conf.Type = "line"
+	}
+	if conf.EnableSASL {
+
+		s.Net.SASL.Enable = true
+		s.Net.SASL.User = conf.SaslConfig.User
+		s.Net.SASL.Password = conf.SaslConfig.Password
+		s.Net.SASL.Mechanism = sarama.SASLMechanism(conf.SaslConfig.Mechanism)
+		s.Net.SASL.Handshake = true
+		if s.Net.SASL.Mechanism == sarama.SASLTypeSCRAMSHA256 {
+			s.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient { return &XDGSCRAMClient{HashGeneratorFcn: SHA512} }
+		} else if s.Net.SASL.Mechanism == sarama.SASLTypeSCRAMSHA512 {
+			s.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient { return &XDGSCRAMClient{HashGeneratorFcn: SHA256} }
+			s.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA256
+
+		}
 	}
 	p.Scopes = conf.Scopes
 	p.Type = conf.Type

@@ -25,6 +25,7 @@ func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err
 }
 
 func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
+	ctx.SetLabel("disable_stream", "true")
 	if next != nil {
 		err = next.DoChain(ctx)
 		if err != nil {

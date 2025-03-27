@@ -225,7 +225,8 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	response.Header.CopyTo(&ctx.response.Response.Header)
 	ctx.response.ResponseHeader.refresh()
 	if response.IsBodyStream() && response.Header.ContentLength() < 0 {
-		if response.StatusCode() == 200 {
+		disableStream := ctx.GetLabel("disable_stream")
+		if response.StatusCode() == 200 && disableStream != "true" {
 			// 流式传输，非200状态码不考虑流式传输
 			ctx.response.Response.SetStatusCode(response.StatusCode())
 			ctx.SetLabel("stream_running", "true")
@@ -242,13 +243,6 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 					n, err := reader.Read(buffer)
 					if n > 0 {
 						chunk := buffer[:n]
-						//for _, streamFunc := range c().StreamFunc() {
-						//	chunk, err = streamFunc(ctx, chunk)
-						//	if err != nil {
-						//		log.Errorf("exec stream func error: %v", err)
-						//		break
-						//	}
-						//}
 						chunk, err = ctx.proxyRequest.StreamBodyHandles(ctx, chunk)
 						if err != nil {
 							log.Errorf("exec stream func error: %v", err)

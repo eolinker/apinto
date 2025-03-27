@@ -148,8 +148,10 @@ func (p *PluginManager) createChain(id string, conf map[string]*plugin.Config) *
 		obj = NewPluginObj(chain, id, conf)
 		p.pluginObjs.Set(id, obj)
 	} else {
+		obj.conf = conf
 		obj.fs = chain
 	}
+
 	log.Debug("create chain len: ", len(chain))
 	return obj
 }
