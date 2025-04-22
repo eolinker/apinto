@@ -3,6 +3,7 @@ package main
 import (
 	access_relational "github.com/eolinker/apinto/drivers/plugins/access-relational"
 	"github.com/eolinker/apinto/drivers/plugins/acl"
+	"github.com/eolinker/apinto/drivers/plugins/aes"
 	ai_formatter "github.com/eolinker/apinto/drivers/plugins/ai-formatter"
 	ai_prompt "github.com/eolinker/apinto/drivers/plugins/ai-prompt"
 	"github.com/eolinker/apinto/drivers/plugins/app"
@@ -103,6 +104,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	circuit_breaker.Register(extenderRegister)
 	app.Register(extenderRegister)
 	rsa_filter.Register(extenderRegister)
+	aes.Register(extenderRegister)
 	js_inject.Register(extenderRegister)
 	acl.Register(extenderRegister)
 	access_relational.Register(extenderRegister)

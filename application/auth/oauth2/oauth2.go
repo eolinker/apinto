@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -43,6 +44,7 @@ func (o *oauth2) GetUser(ctx http_service.IHttpContext) (*application.UserInfo, 
 	if len(list) < 1 {
 		return nil, false
 	}
+	token = strings.TrimPrefix(token, "Bearer ")
 	clientID, err := validToken(ctx.Context(), list[0], token)
 	if err != nil {
 		log.Error("valid token error:", err, "token:", token)

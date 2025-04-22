@@ -130,18 +130,18 @@ func (c *Config) doCheck() (*ProducerConfig, error) {
 		conf.Type = "line"
 	}
 	if conf.EnableSASL {
-
+		if conf.SaslConfig == nil {
+			return nil, errors.New("sasl config is nil")
+		}
 		s.Net.SASL.Enable = true
 		s.Net.SASL.User = conf.SaslConfig.User
 		s.Net.SASL.Password = conf.SaslConfig.Password
 		s.Net.SASL.Mechanism = sarama.SASLMechanism(conf.SaslConfig.Mechanism)
 		s.Net.SASL.Handshake = true
 		if s.Net.SASL.Mechanism == sarama.SASLTypeSCRAMSHA256 {
-			s.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient { return &XDGSCRAMClient{HashGeneratorFcn: SHA512} }
-		} else if s.Net.SASL.Mechanism == sarama.SASLTypeSCRAMSHA512 {
 			s.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient { return &XDGSCRAMClient{HashGeneratorFcn: SHA256} }
-			s.Net.SASL.Mechanism = sarama.SASLTypeSCRAMSHA256
-
+		} else if s.Net.SASL.Mechanism == sarama.SASLTypeSCRAMSHA512 {
+			s.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient { return &XDGSCRAMClient{HashGeneratorFcn: SHA512} }
 		}
 	}
 	p.Scopes = conf.Scopes

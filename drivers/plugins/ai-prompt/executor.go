@@ -94,11 +94,10 @@ func genRequestMessage(ctx http_context.IHttpContext, body []byte, prompt string
 	if model != "" {
 		// 当参数值非空时，划分Model参数，格式为{供应商ID}/{模型ID}
 		ss := strings.SplitN(model, "/", 2)
-		if len(ss) < 2 {
-			return nil, errors.New("service mapping error")
+		if len(ss) >= 2 {
+			ai_convert.SetAIProvider(ctx, ss[0])
+			ai_convert.SetAIModel(ctx, ss[1])
 		}
-		ai_convert.SetAIProvider(ctx, ss[0])
-		ai_convert.SetAIModel(ctx, ss[1])
 		// 重置Model参数，以便后续使用负载
 		baseMsg.Config.Model = ""
 	}

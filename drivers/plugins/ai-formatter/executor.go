@@ -136,13 +136,21 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 
 	cloneProxy := ctx.ProxyClone()
 	provider := ai_convert.GetAIProvider(ctx)
+
 	if provider == "" {
 		provider = e.provider
 		ai_convert.SetAIProvider(ctx, e.provider)
 	}
+	_, has := ai_convert.GetProvider(provider)
+	if !has {
+		ai_convert.SetAIProvider(ctx, e.provider)
+		provider = e.provider
+		ai_convert.SetAIModel(ctx, e.model)
+	}
 	if ai_convert.GetAIModel(ctx) == "" {
 		ai_convert.SetAIModel(ctx, e.model)
 	}
+
 	defer func() {
 		// If the request is successful, set the AI provider and model in the response headers
 		ctx.Response().SetHeader("X-AI-Provider", ai_convert.GetAIProvider(ctx))
