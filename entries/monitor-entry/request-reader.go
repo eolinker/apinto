@@ -20,6 +20,9 @@ var requestFields = []string{
 	"retry",
 	"timing",
 	"status",
+	"input_token",
+	"output_token",
+	"total_token",
 }
 
 type RequestReadFunc func(ctx http_context.IHttpContext) (interface{}, bool)
@@ -31,6 +34,10 @@ func ReadRequest(ctx http_context.IHttpContext) []IPoint {
 	}
 
 	for key, label := range labels {
+		if v, ok := readLabel[key]; ok {
+			tags[label] = v(ctx)
+			continue
+		}
 		value := ctx.GetLabel(label)
 		if value == "" {
 			value = "-"
@@ -73,23 +80,39 @@ var request = map[string]RequestReadFunc{
 	"method": func(ctx http_context.IHttpContext) (interface{}, bool) {
 		return ctx.Request().Method(), true
 	},
-	//"path": func(ctx http_context.IHttpContext) (interface{}, bool) {
-	//	return ctx.Request().URI().Path(), true
-	//},
-	//"ip": func(ctx http_context.IHttpContext) (interface{}, bool) {
-	//	return ctx.GetLabel("ip"), true
-	//},
 	"status": func(ctx http_context.IHttpContext) (interface{}, bool) {
 		return ctx.Response().StatusCode(), true
 	},
 	"timing": func(ctx http_context.IHttpContext) (interface{}, bool) {
 		return time.Now().Sub(ctx.AcceptTime()).Milliseconds(), true
 	},
+	"input_token": func(ctx http_context.IHttpContext) (interface{}, bool) {
+		value := ctx.Value("ai_model_input_token")
+		if v, ok := value.(int); ok {
+			return v, true
+		}
+		return 0, true
+	},
+	"output_token": func(ctx http_context.IHttpContext) (interface{}, bool) {
+		value := ctx.Value("ai_model_output_token")
+		if v, ok := value.(int); ok {
+			return v, true
+		}
+		return 0, true
+	},
+	"total_token": func(ctx http_context.IHttpContext) (interface{}, bool) {
+		value := ctx.Value("ai_model_total_token")
+		if v, ok := value.(int); ok {
+			return v, true
+		}
+		return 0, true
+	},
+
 	"request": func(ctx http_context.IHttpContext) (interface{}, bool) {
 		return ctx.Request().ContentLength(), true
 	},
 	"response": func(ctx http_context.IHttpContext) (interface{}, bool) {
-		return ctx.Response().ContentLength(), true
+		return len(ctx.Response().GetBody()), true
 	},
 	"retry": func(ctx http_context.IHttpContext) (interface{}, bool) {
 		length := len(ctx.Proxies())

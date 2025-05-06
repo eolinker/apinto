@@ -52,7 +52,9 @@ func (r *handler) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.ICh
 		err := next.DoChain(ctx)
 		if err != nil {
 			log.Error(err)
-			return err
+			if !r.autoRedirect || !fasthttp.StatusCodeIsRedirect(ctx.Response().StatusCode()) {
+				return err
+			}
 		}
 	}
 	if !r.autoRedirect {
@@ -72,6 +74,9 @@ func (r *handler) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.ICh
 		if err != nil {
 			return err
 		}
+	}
+	if !fasthttp.StatusCodeIsRedirect(ctx.Response().StatusCode()) {
+		return nil
 	}
 	return fmt.Errorf("too many redirects")
 }
@@ -96,7 +101,10 @@ func redirect(ctx http_service.IHttpContext) error {
 		ctx.SetBalance(balanceHandler)
 	}
 	ctx.Proxy().URI().SetPath(u.Path)
-	ctx.Proxy().URI().SetRawQuery(u.Query().Encode())
+	for k, v := range u.Query() {
+		ctx.Proxy().URI().SetQuery(k, v[0])
+	}
+	//ctx.Proxy().URI().SetRawQuery(u.Query().Encode())
 	//ctx.Proxy().URI().SetPath(u.RawPath)
 
 	err = ctx.GetComplete().Complete(ctx)

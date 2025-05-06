@@ -21,7 +21,15 @@ func (l *worker) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err e
 	return http_service.DoHttpFilter(l, ctx, next)
 }
 
+func (l *worker) bodyFinish(ctx http_service.IHttpContext) {
+	points := monitor_entry.ReadProxy(ctx)
+	points = append(points, monitor_entry.ReadRequest(ctx)...)
+	monitorManager.Output(l.Id(), points)
+	return
+}
+
 func (l *worker) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
+	ctx.Proxy().AppendBodyFinish(l.bodyFinish)
 	log.Debug("start monitor...")
 	apiID := ctx.GetLabel("api_id")
 	monitorManager.ConcurrencyAdd(apiID, 1)
@@ -29,9 +37,11 @@ func (l *worker) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.ICha
 	if err != nil {
 		log.Error(err)
 	}
-	points := monitor_entry.ReadProxy(ctx)
-	points = append(points, monitor_entry.ReadRequest(ctx)...)
-	monitorManager.Output(l.Id(), points)
+
+	if ctx.Response().IsBodyStream() {
+		return nil
+	}
+	l.bodyFinish(ctx)
 	return nil
 }
 

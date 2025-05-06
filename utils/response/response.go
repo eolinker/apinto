@@ -2,11 +2,12 @@ package response
 
 import (
 	"fmt"
+	"net/http"
+
 	http_entry "github.com/eolinker/apinto/entries/http-entry"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/metrics"
-	"net/http"
 )
 
 type IResponse interface {
@@ -17,7 +18,7 @@ type Response struct {
 	StatusCode  int      `json:"status_code" label:"HTTP状态码"`
 	ContentType string   `json:"content_type" label:"Content-Type"`
 	Charset     string   `json:"charset" label:"Charset"`
-	Headers     []Header `json:"headers" label:"Header参数"` //key:value
+	Headers     []Header `json:"header" label:"Header参数"` //key:value
 	Body        string   `json:"body" label:"Body" description:"body模版, 支持 #{label} 语法"`
 }
 

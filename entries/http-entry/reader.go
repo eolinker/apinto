@@ -274,7 +274,21 @@ var (
 			}),
 			"body": Fields{
 				"": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
-					return string(ctx.Response().GetBody()), true
+					body := string(ctx.Response().GetBody())
+					encoding := ctx.Response().Headers().Get("Content-Encoding")
+					if encoding == "gzip" {
+						reader, err := gzip.NewReader(bytes.NewReader([]byte(body)))
+						if err != nil {
+							return "", false
+						}
+						defer reader.Close()
+						data, err := io.ReadAll(reader)
+						if err != nil {
+							return "", false
+						}
+						return string(data), true
+					}
+					return body, true
 				}),
 			},
 			"header": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {

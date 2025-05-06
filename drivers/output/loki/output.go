@@ -160,6 +160,7 @@ func (o *Output) doLoop() {
 				return
 			}
 			data, _ := json.Marshal(entry)
+			log.Infof("send data to loki: %s", string(data))
 			req, err := o.genRequest(data)
 			if err != nil {
 				log.Errorf("gen request error: %v,data is %s", err, string(data))

@@ -61,8 +61,12 @@ type Error struct {
 	Code    string `json:"code"`
 }
 
-func getTokens(text string) int {
-	tkm, _ := tiktoken.GetEncoding("cl100k_base") // 使用 OpenAI 的分词模型
+func getTokens(text string, model string) int {
+	tkm, err := tiktoken.EncodingForModel(model)
+	if err != nil {
+		tkm, _ = tiktoken.GetEncoding("cl100k_base") // 使用 OpenAI 的分词模型
+	}
+
 	tokens := tkm.Encode(text, nil, nil)
 	return len(tokens)
 }

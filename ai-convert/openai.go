@@ -78,7 +78,7 @@ func (o *OpenAIConvert) RequestConvert(ctx eoscContext.EoContext, extender map[s
 		chatRequest.Config.Model = GetAIModel(ctx)
 	}
 	for _, msg := range chatRequest.Config.Messages {
-		promptToken += getTokens(msg.Content)
+		promptToken += getTokens(msg.Content, chatRequest.Config.Model)
 	}
 	SetAIModelInputToken(httpContext, promptToken)
 	httpContext.Proxy().AppendStreamBodyHandle(o.streamHandler)
@@ -232,7 +232,7 @@ func (o *OpenAIConvert) streamHandler(ctx http_service.IHttpContext, p []byte) (
 			return p, nil
 		}
 		if len(resp.Choices) > 0 {
-			outputToken += getTokens(resp.Choices[0].Delta.Content)
+			outputToken += getTokens(resp.Choices[0].Delta.Content, resp.Model)
 			totalToken += outputToken
 		}
 		if resp.Usage != nil {
