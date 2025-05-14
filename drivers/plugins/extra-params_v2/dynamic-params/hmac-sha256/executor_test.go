@@ -43,6 +43,16 @@ func TestExecutor(t *testing.T) {
 type Context struct {
 }
 
+func (c *Context) ProxyClone() http_service.IRequest {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *Context) SetProxy(proxy http_service.IRequest) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (c *Context) RequestId() string {
 	//TODO implement me
 	panic("implement me")

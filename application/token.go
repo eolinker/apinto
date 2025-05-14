@@ -15,14 +15,6 @@ var (
 
 var validPosition = []string{PositionHeader, PositionQuery, PositionBody}
 
-//func GetToken(ctx http_service.IHttpContext, tokenName string, position string) (string, bool) {
-//	token, has := getToken(ctx, tokenName, position)
-//	if has {
-//		ctx.SetLabel("token", token)
-//	}
-//	return token, has
-//}
-
 func GetToken(ctx http_service.IHttpContext, tokenName string, position string) (string, bool) {
 	switch position {
 	case PositionHeader:

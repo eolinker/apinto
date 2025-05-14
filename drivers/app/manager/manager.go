@@ -14,6 +14,7 @@ var _ IManager = (*Manager)(nil)
 
 type IManager interface {
 	Get(id string) (application.IAuth, bool)
+	GetApp(appId string) (application.IApp, bool)
 	List() []application.IAuthUser
 	ListByDriver(driver string) []application.IAuthUser
 	Set(app application.IApp, filters []application.IAuth, users map[string][]application.ITransformConfig)
@@ -26,11 +27,19 @@ type IManager interface {
 type Manager struct {
 	// filters map[string]application.IAuthUser
 	eosc.Untyped[string, application.IAuth]
+	apps        eosc.Untyped[string, application.IApp]
 	appManager  *AppManager
 	driverAlias map[string]string
 	drivers     []string
 	locker      sync.RWMutex
 	app         application.IApp
+}
+
+func (m *Manager) GetApp(appId string) (application.IApp, bool) {
+	if !strings.HasSuffix(appId, "@app") {
+		appId = appId + "@app"
+	}
+	return m.apps.Get(appId)
 }
 
 func (m *Manager) AnonymousApp() application.IApp {
@@ -47,7 +56,7 @@ func (m *Manager) SetAnonymousApp(app application.IApp) {
 }
 
 func NewManager(driverAlias map[string]string, drivers []string) IManager {
-	return &Manager{Untyped: eosc.BuildUntyped[string, application.IAuth](), appManager: NewAppManager(), driverAlias: driverAlias, drivers: drivers}
+	return &Manager{Untyped: eosc.BuildUntyped[string, application.IAuth](), appManager: NewAppManager(), driverAlias: driverAlias, drivers: drivers, apps: eosc.BuildUntyped[string, application.IApp]()}
 }
 
 func (m *Manager) List() []application.IAuthUser {
@@ -121,6 +130,7 @@ func (m *Manager) Set(app application.IApp, filters []application.IAuth, users m
 			}
 		}
 	}
+	m.apps.Set(app.Id(), app)
 
 	return
 }
@@ -150,4 +160,5 @@ func (m *Manager) Del(appID string) {
 		}
 	}
 	m.appManager.DelByAppID(appID)
+	m.apps.Del(appID)
 }

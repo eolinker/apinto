@@ -74,6 +74,15 @@ func anonymousAppHandler(ctx http_service.IHttpContext) (bool, error) {
 
 func (a *App) auth(ctx http_service.IHttpContext) error {
 	log.Debug("start auth...")
+	appId := ctx.GetLabel("application_id")
+	if appId != "" {
+		app, has := appManager.GetApp(appId)
+		if has {
+			setLabels(ctx, app.Labels())
+			return nil
+		}
+
+	}
 	if appManager.Count() < 1 {
 		if a.forceAuth {
 			return fmt.Errorf("no app to auth")

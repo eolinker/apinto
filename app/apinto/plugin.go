@@ -16,6 +16,7 @@ import (
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
 	js_inject "github.com/eolinker/apinto/drivers/plugins/js-inject"
 	"github.com/eolinker/apinto/drivers/plugins/oauth2"
+	oauth2_introspection "github.com/eolinker/apinto/drivers/plugins/oauth2-introspection"
 	params_check "github.com/eolinker/apinto/drivers/plugins/params-check"
 	params_check_v2 "github.com/eolinker/apinto/drivers/plugins/params-check-v2"
 	"github.com/eolinker/apinto/drivers/plugins/prometheus"
@@ -119,6 +120,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 
 	// 鉴权插件
 	oauth2.Register(extenderRegister)
+	oauth2_introspection.Register(extenderRegister)
 
 	// ai相关插件
 	ai_prompt.Register(extenderRegister)
