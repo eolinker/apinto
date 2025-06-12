@@ -6,11 +6,16 @@ cd ${BasePath}/
 
 
 VERSION=$(genVersion $1)
-folder="${BasePath}/out/apinto-${VERSION}"
 ARCH=$2
+if [[ "$ARCH" == "" ]]
+then
+	ARCH="amd64"
+fi
+folder="${BasePath}/out/apinto-${VERSION}-${ARCH}"
+
 if [[ ! -d "$folder" ]]
 then
-#  mkdir -p "$folder"
+  mkdir -p "$folder"
   ${CMD}/build.sh $1 ${ARCH}
   if [[ "$?" != "0" ]]
   then

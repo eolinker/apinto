@@ -10,7 +10,12 @@ echo $0
 
 VERSION=$(genVersion $1)
 ARCH=$2
-OUTPATH="${BasePath}/out/apinto-${VERSION}"
+if [[ "$ARCH" == "" ]]
+then
+		ARCH="amd64"
+fi
+
+OUTPATH="${BasePath}/out/apinto-${VERSION}-${ARCH}"
 buildApp apinto $VERSION ${ARCH}
 
 cp -a ${BasePath}/build/resources/*  ${OUTPATH}/

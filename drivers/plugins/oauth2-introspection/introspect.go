@@ -47,20 +47,20 @@ func setAppLabel(ctx http_service.IHttpContext, t *IntrospectionResponseBody, co
 		ctx.Proxy().Header().SetHeader("X-Consumer-Anonymous", "true")
 	}
 	ctx.SetLabel("application_id", a.Id())
-	ctx.SetLabel("application_name", a.Name())
+	ctx.SetLabel("application", a.Name())
 	ctx.Proxy().Header().SetHeader("X-Consumer-ID", a.Id())
 	ctx.Proxy().Header().SetHeader("X-Consumer-Username", a.Name())
 
 	return nil
 }
 
-func verifyIntrospection(t *IntrospectionResponseBody, clientId string, scopes map[string]struct{}) error {
+func verifyIntrospection(t *IntrospectionResponseBody, scopes map[string]struct{}) error {
 	if t.Active != true {
 		return fmt.Errorf("token is not active")
 	}
-	if t.ClientId != clientId {
-		return fmt.Errorf("invalid client_id")
-	}
+	//if t.ClientId != clientId {
+	//	return fmt.Errorf("invalid client_id")
+	//}
 
 	now := time.Now()
 	if t.Exp < now.Unix() {

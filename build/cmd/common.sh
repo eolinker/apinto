@@ -31,7 +31,12 @@ function genVersion(){
 function buildApp(){
     APP=$1
     VERSION=$2
-    OUTPATH="${BasePath}/out/${APP}-${VERSION}"
+    ARCH=$3
+		if [[ "$ARCH" == "" ]]
+		then
+				ARCH="amd64"
+		fi
+    OUTPATH="${BasePath}/out/${APP}-${VERSION}-${ARCH}"
     echo "rm -rf ${OUTPATH}"
     rm -rf ${OUTPATH}
     echo "mkdir -p ${OUTPATH}"
@@ -45,11 +50,7 @@ function buildApp(){
            -X 'github.com/eolinker/apinto/utils/version.goVersion=$(go version)'
            -X 'github.com/eolinker/apinto/utils/version.eoscVersion=${EOSC_VERSION}'"
     echo -e "build $APP:go build -ldflags "-w -s $flags" -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
-    ARCH=$3
-    if [[ "$ARCH" == "" ]]
-    then
-    		ARCH="amd64"
-    fi
+
     echo "CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -ldflags \"-w -s $flags\" -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
     CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -ldflags "-w -s $flags" -o ${OUTPATH}/$APP ${BasePath}/app/$APP
 #    echo "build $APP:${buildCMD}"
@@ -73,7 +74,8 @@ function packageApp(){
     then
     		ARCH="amd64"
     fi
-    cp -r "${BasePath}/out/${APP}-${VERSION}" "${BasePath}/out/${APP}"
+    OUTPATH="${BasePath}/out/${APP}-${VERSION}-${ARCH}"
+    cp -r "${OUTPATH}" "${BasePath}/out/${APP}"
 		cd "${BasePath}/out"
     tar -zcf "${BasePath}/out/${APP}_${VERSION}_linux_${ARCH}.tar.gz" ${APP}
     rm -rf "${BasePath}/out/${APP}"

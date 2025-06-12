@@ -128,7 +128,7 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 			return fmt.Errorf(errInfo)
 		}
 	}
-	err = verifyIntrospection(introspectionInfo.Config, e.clientId, e.scopes)
+	err = verifyIntrospection(introspectionInfo.Config, e.scopes)
 	if err != nil {
 		// 校验失败
 		errInfo := fmt.Sprintf("verify introspection error: %s", err.Error())

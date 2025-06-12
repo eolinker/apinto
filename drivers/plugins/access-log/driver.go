@@ -26,6 +26,9 @@ func check(v interface{}) (*Config, error) {
 func getList(ids []eosc.RequireId) ([]output.IEntryOutput, error) {
 	ls := make([]output.IEntryOutput, 0, len(ids))
 	for _, id := range ids {
+		if workers == nil {
+			continue
+		}
 		worker, has := workers.Get(string(id))
 		if !has {
 			return nil, fmt.Errorf("%s:%w", id, eosc.ErrorWorkerNotExits)

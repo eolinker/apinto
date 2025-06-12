@@ -36,7 +36,6 @@ func check(v interface{}) (*Config, error) {
 			}
 
 		}
-
 		if len(strings.TrimSpace(conf.ResponseSchema)) > 0 {
 			var val interface{}
 
