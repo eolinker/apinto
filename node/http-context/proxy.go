@@ -92,23 +92,11 @@ func (r *ProxyRequest) reset(request *fasthttp.Request, remoteAddr string) {
 			r.req.Header.Set("x-forwarded-for", r.remoteAddr)
 		}
 	}
-	//if len(forwardedFor) > 0 {
-	//	r.req.Header.SetProvider("x-forwarded-for", fmt.Sprint(string(forwardedFor), ", ", r.remoteAddr))
-	//} else {
-	//	r.req.Header.SetProvider("x-forwarded-for", r.remoteAddr)
-	//}
+
 	if r.realIP != "0.0.0.0" {
 		r.req.Header.Set("x-real-ip", r.realIP)
 	}
 }
-
-//func NewProxyRequest(request *fasthttp.Request, remoteAddr string) *ProxyRequest {
-//	proxyRequest := fasthttp.AcquireRequest()
-//	request.CopyTo(proxyRequest)
-//	return &ProxyRequest{
-//		RequestReader: NewRequestReader(proxyRequest, remoteAddr),
-//	}
-//}
 
 func (r *ProxyRequest) SetMethod(s string) {
 	r.Request().Header.SetMethod(s)

@@ -39,7 +39,6 @@ type HTTPCheck struct {
 	nodes  discovery.INodes
 	ctx    context.Context
 	cancel context.CancelFunc
-
 	client *http.Client
 	locker sync.RWMutex
 }
@@ -54,6 +53,7 @@ func (h *HTTPCheck) doCheckLoop(nodes discovery.INodes) {
 		return
 	}
 	ticker := time.NewTicker(h.config.Period)
+	//timer := time.NewTimer(h.config.Period)
 
 	defer ticker.Stop()
 	for {
@@ -62,24 +62,10 @@ func (h *HTTPCheck) doCheckLoop(nodes discovery.INodes) {
 			return
 		case <-ticker.C:
 			{
-
 				h.check(nodes)
 			}
 		}
 	}
-}
-
-// Reset 重置HTTPCheck的配置
-func (h *HTTPCheck) Reset(conf interface{}) error {
-	cf, ok := conf.(Config)
-	if !ok {
-		return nil
-	}
-	h.reset(&cf)
-	return nil
-}
-func (h *HTTPCheck) reset(conf *Config) {
-	h.config = conf
 }
 
 // Stop 停止HTTPCheck，中止定时检查
@@ -96,24 +82,27 @@ func (h *HTTPCheck) check(nodes discovery.INodes) {
 	失败则下次定时检查再进行检测
 	*/
 	for _, ns := range nodes.All() {
-		if ns.Status() != discovery.Down {
-			continue
-		}
+		//if ns.Status() != discovery.Down {
+		//	continue
+		//}
 		uri := fmt.Sprintf("%s://%s/%s", h.config.Protocol, strings.TrimSuffix(ns.Addr(), "/"), strings.TrimPrefix(h.config.URL, "/"))
 		h.client.Timeout = h.config.Timeout
 		request, err := http.NewRequest(h.config.Method, uri, nil)
 		if err != nil {
 			log.Error(err)
+			ns.Down()
 			continue
 		}
 		resp, err := h.client.Do(request)
 		if err != nil {
 			log.Error(err)
+			ns.Down()
 			continue
 		}
 		resp.Body.Close()
 		if h.config.SuccessCode != resp.StatusCode {
 			log.Error(err)
+			ns.Down()
 			continue
 		}
 		ns.Up()

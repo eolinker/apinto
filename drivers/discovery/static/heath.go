@@ -35,30 +35,21 @@ func (s *HeathCheckHandler) reset(cfg *Config) error {
 		}
 		return nil
 	}
-	checker := s.checker
-	if checker == nil {
-		checker = health_check_http.NewHTTPCheck(
-			health_check_http.Config{
-				Protocol:    cfg.Health.Scheme,
-				Method:      cfg.Health.Method,
-				URL:         cfg.Health.URL,
-				SuccessCode: cfg.Health.SuccessCode,
-				Period:      time.Duration(cfg.Health.Period) * time.Second,
-				Timeout:     time.Duration(cfg.Health.Timeout) * time.Millisecond,
-			})
-		checker.Check(s.nodes)
-	} else {
-		_ = checker.Reset(
-			health_check_http.Config{
-				Protocol:    cfg.Health.Scheme,
-				Method:      cfg.Health.Method,
-				URL:         cfg.Health.URL,
-				SuccessCode: cfg.Health.SuccessCode,
-				Period:      time.Duration(cfg.Health.Period) * time.Second,
-				Timeout:     time.Duration(cfg.Health.Timeout) * time.Millisecond,
-			},
-		)
+
+	checker := health_check_http.NewHTTPCheck(
+		health_check_http.Config{
+			Protocol:    cfg.Health.Scheme,
+			Method:      cfg.Health.Method,
+			URL:         cfg.Health.URL,
+			SuccessCode: cfg.Health.SuccessCode,
+			Period:      time.Duration(cfg.Health.Period) * time.Second,
+			Timeout:     time.Duration(cfg.Health.Timeout) * time.Millisecond,
+		})
+	checker.Check(s.nodes)
+	if s.checker != nil {
+		s.checker.Stop()
 	}
+
 	s.checker = checker
 
 	return nil
