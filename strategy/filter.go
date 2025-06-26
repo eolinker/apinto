@@ -15,25 +15,33 @@ func ParseFilter(config FilterConfig) (IFilter, error) {
 			continue
 		}
 		cks := make([]checker.Checker, 0, len(patterns))
-
+	OuterLoop:
 		for _, p := range patterns {
-			if name == "ip" {
+			switch name {
+			case "ip":
 				c, err := newIPChecker(p)
 				if err != nil {
 					return nil, err
 				}
 				cks = append(cks, c)
-				continue
+			case "time":
+				c, err := newTimestampChecker(p)
+				if err != nil {
+					return nil, err
+				}
+				cks = append(cks, c)
+			default:
+				c, err := checker.Parse(p)
+				if err != nil {
+					return nil, err
+				}
+				if c.CheckType() == checker.CheckTypeAll {
+					cks = nil
+					break OuterLoop
+				}
+				cks = append(cks, c)
 			}
-			c, err := checker.Parse(p)
-			if err != nil {
-				return nil, err
-			}
-			if c.CheckType() == checker.CheckTypeAll {
-				cks = nil
-				break
-			}
-			cks = append(cks, c)
+
 		}
 
 		if len(cks) != 0 {

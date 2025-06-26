@@ -29,4 +29,5 @@ const (
 	// CheckMultiple 复合匹配
 	CheckMultiple
 	CheckTypeIP
+	CheckTypeTimeRange
 )

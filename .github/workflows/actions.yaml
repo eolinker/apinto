@@ -16,7 +16,7 @@ jobs:
       - name: SetUpGo
         uses: actions/setup-go@v3
         with:
-          go-version: '1.21.1'
+          go-version: '1.23.6'
       - name: Checkout  #Checkout代码
         uses: actions/checkout@v3
       - name: GoTidy
@@ -32,14 +32,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   dockerImage:
-    needs: [releasePackage]
     name: buildDockerImage
     runs-on: ubuntu-latest
     steps:
+      - name: SetOutput #处理Tag字符串并存进outputs
+        id: vars
+        run: |
+          echo "tag=${GITHUB_REF#refs/*/v}" >> $GITHUB_OUTPUT
       - name: SetupGo
         uses: actions/setup-go@v3
         with:
-          go-version: '1.21.1'
+          go-version: '1.23.6'
       - uses: actions/checkout@v3
       - name: SetOutput
         id: vars
@@ -47,20 +50,11 @@ jobs:
       - name: GoTidy
         run: |
           go mod tidy
-      - name: Pack  #运行打包脚本并且将生成的tar包复制至Dockerfile所在目录
-        run: |
-          ./build/cmd/package.sh ${{ steps.vars.outputs.tag }}
-          cp ./out/apinto_${{ steps.vars.outputs.tag }}_linux_amd64.tar.gz ./build/resources/apinto.linux.x64.tar.gz
       - name: Login Docker   #登录docker
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
-      - name: buildImage
+      - name: Push  #运行打包脚本并且将生成的tar包复制至Dockerfile所在目录
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/apinto-gateway:${{ steps.vars.outputs.tag }} -f ./build/resources/Dockerfile ./build/resources
-      - name: pushImage
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/apinto-gateway:${{ steps.vars.outputs.tag }}
-          docker tag ${{ secrets.DOCKER_USERNAME }}/apinto-gateway:${{ steps.vars.outputs.tag }} ${{ secrets.DOCKER_USERNAME }}/apinto-gateway:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/apinto-gateway:latest
+          ./build/cmd/docker_publish.sh ${{ steps.vars.outputs.tag }} ${{ secrets.DOCKER_USERNAME }} "" latest

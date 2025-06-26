@@ -3,8 +3,10 @@ package strategy
 import (
 	"fmt"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/eosc/log"
@@ -81,7 +83,7 @@ func (i *ipCidrChecker) Key() string {
 }
 
 func (i *ipCidrChecker) Value() string {
-	return i.org
+	return i.cidr.String()
 }
 
 func newIpCidrChecker(ip string) (*ipCidrChecker, error) {
@@ -89,7 +91,7 @@ func newIpCidrChecker(ip string) (*ipCidrChecker, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ipCidrChecker{cidr: cidr}, nil
+	return &ipCidrChecker{cidr: cidr, org: ip}, nil
 }
 
 func (i *ipCidrChecker) Check(ip string) bool {
@@ -146,6 +148,73 @@ func (i *ipV4RangeChecker) Check(ip string) bool {
 		}
 	}
 	return true
+}
+
+type timestampChecker struct {
+	org       string
+	startTime time.Time
+	endTime   time.Time
+}
+
+func newTimestampChecker(timeRange string) (*timestampChecker, error) {
+	// 正则表达式：匹配 HH:mm:ss - HH:mm:ss
+	regex := `^((?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d|24:00:00) - ((?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d|24:00:00)$`
+	re := regexp.MustCompile(regex)
+	if !re.MatchString(timeRange) {
+		return nil, fmt.Errorf("invalid time format, expected HH:mm:ss - HH:mm:ss (00:00:00 - 24:00:00)")
+	}
+
+	// 提取开始时间和结束时间
+	times := strings.Split(timeRange, " - ")
+	startTimeStr, endTimeStr := times[0], times[1]
+	// 解析开始时间和结束时间（假设在当前日期）
+	startTime, err := time.Parse("15:04:05", startTimeStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse start time: %v", err)
+	}
+	if endTimeStr == "24:00:00" {
+		// 特殊处理 24:00:00，表示第二天的 00:00:00
+		endTimeStr = "23:59:59"
+	}
+
+	endTime, err := time.Parse("15:04:05", endTimeStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse end time: %v", err)
+	}
+	if startTime.After(endTime) {
+		return nil, fmt.Errorf("start time %s cannot be after end time %s", startTimeStr, endTimeStr)
+	}
+	return &timestampChecker{startTime: startTime, endTime: endTime}, nil
+
+}
+
+func (t *timestampChecker) Check(v string, has bool) bool {
+	if !has {
+		return false
+	}
+	now, err := time.ParseInLocation("2006-01-02 15:04:05", v, time.Local)
+	if err != nil {
+		log.Error("invalid timestamp format: %s, error: %v", v, err)
+		return false
+	}
+	startTime := time.Date(now.Year(), now.Month(), now.Day(), t.startTime.Hour(), t.startTime.Minute(), t.startTime.Second(), 0, time.Local)
+	endTime := time.Date(now.Year(), now.Month(), now.Day(), t.endTime.Hour(), t.endTime.Minute(), t.endTime.Second(), 0, time.Local)
+	if startTime.Before(now) && endTime.After(now) {
+		return true
+	}
+	return false
+}
+
+func (t *timestampChecker) Key() string {
+	return t.org
+}
+
+func (t *timestampChecker) CheckType() checker.CheckType {
+	return checker.CheckTypeTimeRange
+}
+
+func (t *timestampChecker) Value() string {
+	return t.org
 }
 
 type IChecker interface {

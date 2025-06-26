@@ -75,6 +75,7 @@ func (h *httpHandler) Serve(ctx eocontext.EoContext) {
 	ctx.SetLabel("method", httpContext.Request().Method())
 	ctx.SetLabel("path", httpContext.Request().URI().RequestURI())
 	ctx.SetLabel("ip", httpContext.Request().RealIp())
+	ctx.SetLabel("time", httpContext.AcceptTime().Format("2006-01-02 15:04:05"))
 
 	ctx.SetCompleteHandler(h.completeHandler)
 	ctx.SetBalance(h.service)

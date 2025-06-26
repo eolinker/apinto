@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
+	
 	"github.com/eolinker/eosc/log"
-
+	
 	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/eosc/common/bean"
 	"github.com/eolinker/eosc/config"
@@ -26,7 +26,7 @@ const (
 	GRPC RouterType = iota
 	Http
 	Dubbo2
-	TslTCP
+	TlsTCP
 	AnyTCP
 	depth
 )
@@ -50,28 +50,29 @@ type RouterServerHandler func(port int, listener net.Listener)
 
 func init() {
 	matchWriters[AnyTCP] = matchersToMatchWriters(cmux.Any())
-
-	matchWriters[TslTCP] = matchersToMatchWriters(cmux.TLS())
+	
+	matchWriters[TlsTCP] = matchersToMatchWriters(cmux.TLS())
+	
 	matchWriters[Http] = matchersToMatchWriters(cmux.HTTP1Fast(http.MethodPatch))
 	matchWriters[Dubbo2] = matchersToMatchWriters(cmux.PrefixMatcher(string([]byte{0xda, 0xbb})))
 	matchWriters[GRPC] = []cmux.MatchWriter{cmux.HTTP2MatchHeaderFieldPrefixSendSettings("content-type", "application/grpc")}
 	var tf traffic.ITraffic
 	var listenCfg *config.ListenUrl
 	bean.Autowired(&tf, &listenCfg)
-
+	
 	bean.AddInitializingBeanFunc(func() {
 		initListener(tf, listenCfg)
 	})
 }
 func initListener(tf traffic.ITraffic, listenCfg *config.ListenUrl) {
-
+	
 	if tf.IsStop() {
 		return
 	}
-
+	
 	wg := sync.WaitGroup{}
 	tcp, ssl := tf.Listen(listenCfg.ListenUrls...)
-
+	
 	listenerByPort := make(map[int][]net.Listener)
 	for _, l := range tcp {
 		port := readPort(l.Addr())
@@ -79,7 +80,7 @@ func initListener(tf traffic.ITraffic, listenCfg *config.ListenUrl) {
 	}
 	if len(ssl) > 0 {
 		tlsConfig := &tls.Config{GetCertificate: certs.GetCertificateFunc()}
-
+		
 		for _, l := range ssl {
 			log.Debug("ssl listen: ", l.Addr().String())
 			port := readPort(l.Addr())
@@ -87,9 +88,9 @@ func initListener(tf traffic.ITraffic, listenCfg *config.ListenUrl) {
 		}
 	}
 	for port, lns := range listenerByPort {
-
+		
 		var ln net.Listener = mixl.NewMixListener(port, lns...)
-
+		
 		wg.Add(1)
 		go func(ln net.Listener, p int) {
 			wg.Done()
@@ -100,10 +101,10 @@ func initListener(tf traffic.ITraffic, listenCfg *config.ListenUrl) {
 					go handler(p, cMux.MatchWithWriters(matchWriters[i]...))
 				}
 			}
-
+			
 			cMux.Serve()
 		}(ln, port)
-
+		
 	}
 	wg.Wait()
 	return
