@@ -22,9 +22,10 @@ fi
 SYS_ARCH=$(arch)
 if [[ (${SYS_ARCH} == "aarch64" || $(arch) == "arm64") && $ARCH == "amd64" ]];then
   OPTIONS="--platform=linux/amd64"
-elif [[ $(arch) == "amd64" && $ARCH == "arm64" ]];then
+elif [[ (${SYS_ARCH}  == "amd64" || ${SYS_ARCH} == "x86_64") && $ARCH == "arm64" ]];then
   OPTIONS="--platform=linux/arm64"
 fi
+
 
 ./build/cmd/package.sh ${VERSION} ${ARCH}
 PackageName=apinto_${VERSION}_linux_${ARCH}.tar.gz
