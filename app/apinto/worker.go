@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/extends"
 	process_worker "github.com/eolinker/eosc/process-worker"
 )
@@ -12,9 +11,4 @@ func ProcessWorker() {
 }
 func registerInnerExtenders() {
 	extends.AddInnerExtendProject("eolinker.com", "apinto", Register)
-}
-
-func Register(extenderRegister eosc.IExtenderDriverRegister) {
-	driverRegister(extenderRegister)
-	pluginRegister(extenderRegister)
 }

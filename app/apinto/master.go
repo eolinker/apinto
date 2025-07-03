@@ -6,7 +6,7 @@ import (
 
 func ProcessMaster() {
 	handler := &process_master.MasterHandler{
-		InitProfession: ApintoProfession,
+		InitProfession: Profession,
 	}
 	process_master.ProcessDo(handler)
 }

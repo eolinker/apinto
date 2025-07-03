@@ -1,12 +1,14 @@
-package certs
+package gm_certs
 
 import (
+	"github.com/tjfoc/gmsm/gmtls"
+
+	"github.com/tjfoc/gmsm/x509"
+
 	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
-	"github.com/tjfoc/gmsm/gmtls"
-	"github.com/tjfoc/gmsm/x509"
 )
 
 var (
@@ -20,11 +22,15 @@ type Worker struct {
 }
 
 func (w *Worker) Check(conf interface{}, _ map[eosc.RequireId]eosc.IWorker) error {
-	config, ok := conf.(*Config)
+	c, ok := conf.(*Config)
 	if !ok {
 		return eosc.ErrorConfigIsNil
 	}
-	_, err := parseCert(config.Key, config.Pem)
+	_, err := parseCert(c.SignKey, c.SignCert)
+	if err != nil {
+		return err
+	}
+	_, err = parseCert(c.EncKey, c.EncCert)
 	if err != nil {
 		return err
 	}
@@ -45,15 +51,20 @@ func (w *Worker) Start() error {
 
 func (w *Worker) Reset(conf interface{}, _ map[eosc.RequireId]eosc.IWorker) error {
 
-	config := conf.(*Config)
+	c := conf.(*Config)
 
-	cert, err := parseCert(config.Key, config.Pem)
+	signCert, err := parseCert(c.SignKey, c.SignCert)
 	if err != nil {
 		return err
 	}
 
-	w.config = config
-	certs.SaveCert(w.Id(), []*gmtls.Certificate{cert})
+	encCert, err := parseCert(c.EncKey, c.EncCert)
+	if err != nil {
+		return err
+	}
+
+	w.config = c
+	certs.SaveCert(w.Id(), []*gmtls.Certificate{signCert, encCert})
 
 	return nil
 }

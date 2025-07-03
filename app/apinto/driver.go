@@ -9,6 +9,7 @@ import (
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
 	"github.com/eolinker/apinto/drivers/discovery/static"
+	gm_certs "github.com/eolinker/apinto/drivers/gm-certs"
 	"github.com/eolinker/apinto/drivers/output/loki"
 	auth_interceptor "github.com/eolinker/apinto/drivers/plugins/auth-interceptor"
 	data_mask_strategy "github.com/eolinker/apinto/drivers/strategy/data-mask-strategy"
@@ -89,40 +90,7 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 
 	// 证书
 	certs.Register(extenderRegister)
-
-	//// AI供应商
-	//openAI.Register(extenderRegister)
-	//
-	//google.Register(extenderRegister)
-	//moonshot.Register(extenderRegister)
-	//tongyi.Register(extenderRegister)
-	//zhipuai.Register(extenderRegister)
-	//fireworks.Register(extenderRegister)
-	//novita.Register(extenderRegister)
-	//mistralai.Register(extenderRegister)
-	//
-	//anthropic.Register(extenderRegister)
-	//
-	//baichuan.Register(extenderRegister)
-	//stepfun.Register(extenderRegister)
-	//wenxin.Register(extenderRegister)
-	//yi.Register(extenderRegister)
-	//perfxcloud.Register(extenderRegister)
-	//cohere.Register(extenderRegister)
-	//deepseek.Register(extenderRegister)
-	//hunyuan.Register(extenderRegister)
-	//openrouter.Register(extenderRegister)
-	//groq.Register(extenderRegister)
-	//upstage.Register(extenderRegister)
-	//minimax.Register(extenderRegister)
-	//chatglm.Register(extenderRegister)
-	//bedrock.Register(extenderRegister)
-	//spark.Register(extenderRegister)
-	//nvidia.Register(extenderRegister)
-	//vertex_ai.Register(extenderRegister)
-	//fakegpt.Register(extenderRegister)
-	//zhinao.Register(extenderRegister)
-	//ollama.Register(extenderRegister)
+	gm_certs.Register(extenderRegister)
 
 	ai_provider.Register(extenderRegister)
 	ai_key.Register(extenderRegister)
