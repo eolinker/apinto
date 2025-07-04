@@ -63,6 +63,7 @@ func initListener(tf traffic.ITraffic, listenCfg *config.ListenUrl) {
 			GetCertificate:   certs.GetAutoCertificateFunc(),
 			GetKECertificate: certs.GetKECertificate(),
 			GMSupport:        support,
+			MinVersion:       gmtls.VersionGMSSL,
 			MaxVersion:       tls.VersionTLS13,
 		}
 
@@ -79,15 +80,15 @@ func initListener(tf traffic.ITraffic, listenCfg *config.ListenUrl) {
 		wg.Add(1)
 		go func(ln net.Listener, p int) {
 			wg.Done()
-			cMux := cmux.New(ln)
+			m := cmux.New(ln)
 			for i, handler := range handlers {
 				log.Debug("i is ", i, " handler is ", handler)
 				if handler != nil {
-					go handler(p, cMux.MatchWithWriters(matchWriters[i]...))
+					go handler(p, m.MatchWithWriters(matchWriters[i]...))
 				}
 			}
 
-			cMux.Serve()
+			m.Serve()
 		}(ln, port)
 
 	}
