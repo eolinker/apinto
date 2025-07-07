@@ -1,8 +1,8 @@
 module github.com/eolinker/apinto
 
-go 1.21
+go 1.23
 
-toolchain go1.21.1
+toolchain go1.23.1
 
 require (
 	github.com/Shopify/sarama v1.32.0
@@ -10,9 +10,8 @@ require (
 	github.com/brianvoe/gofakeit/v6 v6.20.1
 	github.com/clbanning/mxj v1.8.4
 	github.com/coocood/freecache v1.2.2
-	//github.com/dgrr/http2 v0.3.5
 	github.com/dubbogo/gost v1.13.1
-	github.com/eolinker/eosc v0.20.6
+	github.com/eolinker/eosc v0.21.1
 	github.com/fasthttp/websocket v1.5.0
 	github.com/fullstorydev/grpcurl v1.8.7
 	github.com/go-redis/redis/v8 v8.11.5
@@ -44,7 +43,10 @@ require (
 	google.golang.org/protobuf v1.34.2
 )
 
-require github.com/xdg-go/scram v1.1.0
+require (
+	github.com/tjfoc/gmsm v1.4.1
+	github.com/xdg-go/scram v1.1.0
+)
 
 require (
 	cloud.google.com/go/compute v1.23.3 // indirect
@@ -204,4 +206,6 @@ require (
 
 replace github.com/soheilhy/cmux v0.1.5 => github.com/hmzzrcs/cmux v0.1.6
 
-//replace github.com/eolinker/eosc => ../eosc
+//replace (
+//	github.com/eolinker/eosc => ../eosc
+//)

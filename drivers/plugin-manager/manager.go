@@ -92,7 +92,11 @@ func (p *PluginManager) Reset(conf interface{}) error {
 	list := p.pluginObjs.List()
 	// 遍历，全量更新
 	for _, v := range list {
+		old := v.fs
 		v.fs = p.createFilters(v.conf)
+		if old != nil {
+			old.Destroy()
+		}
 	}
 
 	return nil

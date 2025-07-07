@@ -5,14 +5,13 @@
  * Proin dapibus sapien vel ante. Aliquam erat volutpat. Pellentesque sagittis ligula eget metus.
  * Vestibulum commodo. Ut rhoncus gravida arcu.
  */
-
 package main
 
 import (
 	"github.com/eolinker/eosc"
 )
 
-func ApintoProfession() []*eosc.ProfessionConfig {
+func Profession() []*eosc.ProfessionConfig {
 	return []*eosc.ProfessionConfig{
 		{
 			Name:         "router",
@@ -253,6 +252,12 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 					Label: "证书",
 					Desc:  "证书",
 				},
+				{
+					Id:    "eolinker.com:apinto:gm-ssl-server",
+					Name:  "gm-server",
+					Label: "国密证书",
+					Desc:  "国密证书",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
@@ -299,188 +304,5 @@ func ApintoProfession() []*eosc.ProfessionConfig {
 				},
 			},
 		},
-		//{
-		//	Name:         "ai-provider",
-		//	Label:        "AI服务提供者",
-		//	Desc:         "AI服务提供者",
-		//	Dependencies: nil,
-		//	AppendLabels: nil,
-		//	Drivers: []*eosc.DriverConfig{
-		//		//{
-		//		//	Id:    "eolinker.com:apinto:ai-provider",
-		//		//	Name:  "ai-provider",
-		//		//	Label: "ai-provider",
-		//		//	Desc:  "ai-provider",
-		//		//},
-		//		{
-		//			Id:    "eolinker.com:apinto:openai",
-		//			Name:  "openai",
-		//			Label: "openAI",
-		//			Desc:  "openAI",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:google", // 插件ID
-		//			Name:  "google",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "Google",
-		//			Desc:  "Google",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:moonshot", // 插件ID
-		//			Name:  "moonshot",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "moonshot",
-		//			Desc:  "moonshot",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:tongyi", // 插件ID
-		//			Name:  "tongyi",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "tongyi",
-		//			Desc:  "tongyi",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:zhipuai", // 插件ID
-		//			Name:  "zhipuai",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "zhipuai",
-		//			Desc:  "zhipuai",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:fireworks", // 插件ID
-		//			Name:  "fireworks",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "fireworks",
-		//			Desc:  "fireworks",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:novita", // 插件ID
-		//			Name:  "novita",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "novita",
-		//			Desc:  "novita",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:mistralai", // 插件ID
-		//			Name:  "mistralai",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "mistralai",
-		//			Desc:  "mistralai",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:anthropic", // 插件ID
-		//			Name:  "anthropic",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "Anthropic",
-		//			Desc:  "Anthropic",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:baichuan", // 插件ID
-		//			Name:  "baichuan",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "Baichuan",
-		//			Desc:  "Baichuan",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:stepfun", // 插件ID
-		//			Name:  "stepfun",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "Stepfun",
-		//			Desc:  "Stepfun",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:wenxin", // 插件ID
-		//			Name:  "wenxin",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "Wenxin",
-		//			Desc:  "Wenxin",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:yi", // 插件ID
-		//			Name:  "yi",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "yi",
-		//			Desc:  "yi",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:perfxcloud", // 插件ID
-		//			Name:  "perfxcloud",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "Perfxcloud",
-		//			Desc:  "Perfxcloud",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:cohere", // 插件ID
-		//			Name:  "cohere",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "Cohere",
-		//			Desc:  "Cohere",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:deepseek", // 插件ID
-		//			Name:  "deepseek",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "Deepseek",
-		//			Desc:  "Deepseek",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:hunyuan", // 插件ID
-		//			Name:  "hunyuan",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "Hunyuan",
-		//			Desc:  "Hunyuan",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:openrouter", // 插件ID
-		//			Name:  "openrouter",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "OpenRouter",
-		//			Desc:  "OpenRouter",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:groq", // 插件ID
-		//			Name:  "groq",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "GroqCloud",
-		//			Desc:  "GroqCloud",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:upstage", // 插件ID
-		//			Name:  "upstage",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "upstage",
-		//			Desc:  "upstage",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:minimax", // 插件ID
-		//			Name:  "minimax",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "minimax",
-		//			Desc:  "minimax",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:chatglm", // 插件ID
-		//			Name:  "chatglm",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "chatglm",
-		//			Desc:  "chatglm",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:bedrock", // 插件ID
-		//			Name:  "bedrock",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "AWS Bedrock",
-		//			Desc:  "AWS Bedrock",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:spark", // 插件ID
-		//			Name:  "spark",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "讯飞星火",
-		//			Desc:  "讯飞星火",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:nvidia", // 插件ID
-		//			Name:  "nvidia",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "Nvidia",
-		//			Desc:  "Nvidia",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:vertex_ai", // 插件ID
-		//			Name:  "vertex_ai",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "Vertex AI",
-		//			Desc:  "Vertex AI",
-		//		},
-		//		{
-		//			Id:    "eolinker.com:apinto:fakegpt", // 插件ID
-		//			Name:  "fakegpt",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "Fake GPT",
-		//			Desc:  "Fake GPT",
-		//		}, {
-		//			Id:    "eolinker.com:apinto:zhinao", // 插件ID
-		//			Name:  "zhinao",                     // 驱动名称，应和定义文件的provider字段一致
-		//			Label: "zhinao",
-		//			Desc:  "zhinao",
-		//		},
-		//	},
-		//	Mod: eosc.ProfessionConfig_Worker,
-		//},
 	}
 }

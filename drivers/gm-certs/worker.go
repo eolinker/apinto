@@ -1,8 +1,9 @@
-package certs
+package gm_certs
 
 import (
-	"crypto/tls"
-	"crypto/x509"
+	"github.com/tjfoc/gmsm/gmtls"
+
+	"github.com/tjfoc/gmsm/x509"
 
 	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/apinto/drivers"
@@ -21,11 +22,15 @@ type Worker struct {
 }
 
 func (w *Worker) Check(conf interface{}, _ map[eosc.RequireId]eosc.IWorker) error {
-	config, ok := conf.(*Config)
+	c, ok := conf.(*Config)
 	if !ok {
 		return eosc.ErrorConfigIsNil
 	}
-	_, err := parseCert(config.Key, config.Pem)
+	_, err := parseCert(c.SignKey, c.SignCert)
+	if err != nil {
+		return err
+	}
+	_, err = parseCert(c.EncKey, c.EncCert)
 	if err != nil {
 		return err
 	}
@@ -35,7 +40,7 @@ func (w *Worker) Check(conf interface{}, _ map[eosc.RequireId]eosc.IWorker) erro
 func (w *Worker) Destroy() error {
 
 	controller.Del(w.Id())
-	certs.DelCert(w.Id())
+	certs.DelGMCert(w.Id())
 	return nil
 }
 
@@ -46,15 +51,20 @@ func (w *Worker) Start() error {
 
 func (w *Worker) Reset(conf interface{}, _ map[eosc.RequireId]eosc.IWorker) error {
 
-	config := conf.(*Config)
+	c := conf.(*Config)
 
-	cert, err := parseCert(config.Key, config.Pem)
+	signCert, err := parseCert(c.SignKey, c.SignCert)
 	if err != nil {
 		return err
 	}
 
-	w.config = config
-	certs.SaveCert(w.Id(), cert)
+	encCert, err := parseCert(c.EncKey, c.EncCert)
+	if err != nil {
+		return err
+	}
+
+	w.config = c
+	certs.SaveGMCert(w.Id(), []*gmtls.Certificate{signCert, encCert})
 
 	return nil
 }
@@ -67,7 +77,7 @@ func (w *Worker) CheckSkill(string) bool {
 	return false
 }
 
-func parseCert(privateKey, pemValue string) (*tls.Certificate, error) {
+func parseCert(privateKey, pemValue string) (*gmtls.Certificate, error) {
 	cert, err := genCert([]byte(privateKey), []byte(pemValue))
 	if err == nil {
 		return cert, nil
@@ -84,8 +94,8 @@ func parseCert(privateKey, pemValue string) (*tls.Certificate, error) {
 	return genCert(keydata, pem)
 }
 
-func genCert(key, pem []byte) (*tls.Certificate, error) {
-	certificate, err := tls.X509KeyPair(pem, key)
+func genCert(key, pem []byte) (*gmtls.Certificate, error) {
+	certificate, err := gmtls.X509KeyPair(pem, key)
 	if err != nil {
 		return nil, err
 	}
