@@ -156,17 +156,21 @@ type timestampChecker struct {
 	endTime   time.Time
 }
 
-func newTimestampChecker(timeRange string) (*timestampChecker, error) {
-	// 正则表达式：匹配 HH:mm:ss - HH:mm:ss
-	regex := `^((?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d|24:00:00) - ((?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d|24:00:00)$`
-	re := regexp.MustCompile(regex)
-	if !re.MatchString(timeRange) {
-		return nil, fmt.Errorf("invalid time format, expected HH:mm:ss - HH:mm:ss (00:00:00 - 24:00:00)")
-	}
+var (
+	timeRangeRegex = regexp.MustCompile(`^((?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d|24:00:00)$`)
+)
 
+func newTimestampChecker(timeRange string) (*timestampChecker, error) {
 	// 提取开始时间和结束时间
-	times := strings.Split(timeRange, " - ")
-	startTimeStr, endTimeStr := times[0], times[1]
+	times := strings.Split(timeRange, "-")
+	startTimeStr, endTimeStr := strings.TrimSpace(times[0]), strings.TrimSpace(times[1])
+
+	if !timeRangeRegex.MatchString(startTimeStr) {
+		return nil, fmt.Errorf("invalid time format for start time: %s", startTimeStr)
+	}
+	if !timeRangeRegex.MatchString(endTimeStr) {
+		return nil, fmt.Errorf("invalid time format for end time: %s", endTimeStr)
+	}
 	// 解析开始时间和结束时间（假设在当前日期）
 	startTime, err := time.Parse("15:04:05", startTimeStr)
 	if err != nil {

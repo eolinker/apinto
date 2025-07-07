@@ -49,7 +49,7 @@ func initListener(tf traffic.ITraffic, listenCfg *config.ListenUrl) {
 	}
 
 	wg := sync.WaitGroup{}
-	tcp, ssl := tf.Listen(listenCfg.ListenUrls...)
+	tcp, ssl, gmSsl := tf.Listen(listenCfg.ListenUrls...)
 
 	listenerByPort := make(map[int][]net.Listener)
 	for _, l := range tcp {
@@ -57,18 +57,27 @@ func initListener(tf traffic.ITraffic, listenCfg *config.ListenUrl) {
 		listenerByPort[port] = append(listenerByPort[port], l)
 	}
 	if len(ssl) > 0 {
+		tlsConfig := &tls.Config{
+			GetCertificate: certs.GetCertificateFunc(),
+			MinVersion:     tls.VersionSSL30,
+			MaxVersion:     tls.VersionTLS13,
+		}
+		for _, l := range ssl {
+			log.Debug("ssl listen: ", l.Addr().String())
+			port := readPort(l.Addr())
+			listenerByPort[port] = append(listenerByPort[port], tls.NewListener(l, tlsConfig))
+		}
+	}
+	if len(gmSsl) > 0 {
 		support := gmtls.NewGMSupport()
 		support.EnableMixMode()
 		gmTlsConfig := &gmtls.Config{
-			GetCertificate:   certs.GetAutoCertificateFunc(),
+			GetCertificate:   certs.GetGMCertificateFunc(),
 			GetKECertificate: certs.GetKECertificate(),
 			GMSupport:        support,
-			MinVersion:       gmtls.VersionGMSSL,
-			MaxVersion:       tls.VersionTLS13,
 		}
-
-		for _, l := range ssl {
-			log.Debug("ssl listen: ", l.Addr().String())
+		for _, l := range gmSsl {
+			log.Debug("gm ssl listen: ", l.Addr().String())
 			port := readPort(l.Addr())
 			listenerByPort[port] = append(listenerByPort[port], gmtls.NewListener(l, gmTlsConfig))
 		}

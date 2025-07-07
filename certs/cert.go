@@ -1,6 +1,7 @@
 package certs
 
 import (
+	"crypto/tls"
 	"errors"
 	"sync"
 	"sync/atomic"
@@ -11,52 +12,58 @@ import (
 
 var errorCertificateNotExit = errors.New("not exist cert")
 
-type ICert interface {
-	SaveCert(workerId string, cert []*gmtls.Certificate)
-	DelCert(workerId string)
-}
-
 var (
-	workerMaps = make(map[string][]*gmtls.Certificate)
-	lock       = sync.RWMutex{}
+	currentWorkers = make(map[string]*tls.Certificate)
+	gmWorkers      = make(map[string][]*gmtls.Certificate)
+
+	lock = sync.RWMutex{}
 	// currentCert 普通TLS证书
-	currentCert = atomic.Pointer[config.Cert]{}
+	currentCert = atomic.Pointer[config.Cert[tls.Certificate]]{}
 	// gmCert gmTLS证书
-	gmCert = atomic.Pointer[config.Cert]{}
+	gmCert = atomic.Pointer[config.Cert[gmtls.Certificate]]{}
 	// gmEncCert gmTLS加密证书
-	gmEncCert = atomic.Pointer[config.Cert]{}
+	gmEncCert = atomic.Pointer[config.Cert[gmtls.Certificate]]{}
 )
 
 func init() {
-	currentCert.Store(config.NewCert(nil))
-
+	currentCert.Store(config.NewCert[tls.Certificate](nil))
+	gmCert.Store(config.NewCert[gmtls.Certificate](nil))
+	gmEncCert.Store(config.NewCert[gmtls.Certificate](nil))
 }
 func DelCert(workerId string) {
 	lock.Lock()
 	defer lock.Unlock()
-	delete(workerMaps, workerId)
+	delete(currentWorkers, workerId)
 	rebuild()
 }
 
-func SaveCert(workerId string, certs []*gmtls.Certificate) {
+func SaveCert(workerId string, certs *tls.Certificate) {
 	lock.Lock()
 	defer lock.Unlock()
-	workerMaps[workerId] = certs
+	currentWorkers[workerId] = certs
 	rebuild()
 }
-func rebuild() {
-	currentMap := make(map[string]*gmtls.Certificate)
+
+func SaveGMCert(workerId string, certs []*gmtls.Certificate) {
+	lock.Lock()
+	defer lock.Unlock()
+	gmWorkers[workerId] = certs
+	gmRebuild()
+}
+
+func DelGMCert(workerId string) {
+	lock.Lock()
+	defer lock.Unlock()
+	delete(gmWorkers, workerId)
+	gmRebuild()
+}
+
+func gmRebuild() {
 	gmMap := make(map[string]*gmtls.Certificate)
 	gmEncMap := make(map[string]*gmtls.Certificate)
-	for _, cs := range workerMaps {
+	for _, cs := range gmWorkers {
 		l := len(cs)
 		switch {
-		case l == 1:
-			i := cs[0]
-			currentMap[i.Leaf.Subject.CommonName] = i
-			for _, dnsName := range i.Leaf.DNSNames {
-				currentMap[dnsName] = i
-			}
 		case l == 2:
 			i := cs[0]
 			gmMap[i.Leaf.Subject.CommonName] = i
@@ -74,26 +81,36 @@ func rebuild() {
 		}
 
 	}
-	currentCert.Swap(config.NewCert(currentMap))
 	gmCert.Swap(config.NewCert(gmMap))
 	gmEncCert.Swap(config.NewCert(gmEncMap))
 }
+func rebuild() {
+	currentMap := make(map[string]*tls.Certificate)
+	for _, cs := range currentWorkers {
+		i := cs
+		currentMap[i.Leaf.Subject.CommonName] = i
+		for _, dnsName := range i.Leaf.DNSNames {
+			currentMap[dnsName] = i
+		}
+	}
+	currentCert.Swap(config.NewCert(currentMap))
+}
 
-func GetCertificateFunc(certsLocal ...*config.Cert) func(info *gmtls.ClientHelloInfo) (*gmtls.Certificate, error) {
+func GetCertificateFunc(certsLocal ...*config.Cert[tls.Certificate]) func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
 
 	if len(certsLocal) == 0 {
 
-		return func(info *gmtls.ClientHelloInfo) (*gmtls.Certificate, error) {
+		return func(info *tls.ClientHelloInfo) (*tls.Certificate, error) {
 			return currentCert.Load().GetCertificate(info)
 		}
 	}
-	certList := make([]*config.Cert, 0, len(certsLocal))
+	certList := make([]*config.Cert[tls.Certificate], 0, len(certsLocal))
 	for _, c := range certsLocal {
 		if c != nil {
 			certList = append(certList, c)
 		}
 	}
-	return func(info *gmtls.ClientHelloInfo) (certificate *gmtls.Certificate, err error) {
+	return func(info *tls.ClientHelloInfo) (certificate *tls.Certificate, err error) {
 		certificate, err = currentCert.Load().GetCertificate(info)
 		if certificate != nil {
 			return
@@ -112,19 +129,8 @@ func GetCertificateFunc(certsLocal ...*config.Cert) func(info *gmtls.ClientHello
 
 }
 
-func GetAutoCertificateFunc(certsLocal ...*config.Cert) func(info *gmtls.ClientHelloInfo) (*gmtls.Certificate, error) {
+func GetGMCertificateFunc() func(info *gmtls.ClientHelloInfo) (*gmtls.Certificate, error) {
 	return func(info *gmtls.ClientHelloInfo) (*gmtls.Certificate, error) {
-		gmFlag := false
-		// 检查支持协议中是否包含GMSSL
-		for _, v := range info.SupportedVersions {
-			if v == gmtls.VersionGMSSL {
-				gmFlag = true
-				break
-			}
-		}
-		if !gmFlag {
-			return GetCertificateFunc(certsLocal...)(info)
-		}
 		return gmCert.Load().GetCertificate(info)
 	}
 }

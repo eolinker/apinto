@@ -1,12 +1,13 @@
 package certs
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+
 	"github.com/eolinker/apinto/certs"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc"
-	"github.com/tjfoc/gmsm/gmtls"
-	"github.com/tjfoc/gmsm/x509"
 )
 
 var (
@@ -53,7 +54,7 @@ func (w *Worker) Reset(conf interface{}, _ map[eosc.RequireId]eosc.IWorker) erro
 	}
 
 	w.config = config
-	certs.SaveCert(w.Id(), []*gmtls.Certificate{cert})
+	certs.SaveCert(w.Id(), cert)
 
 	return nil
 }
@@ -66,7 +67,7 @@ func (w *Worker) CheckSkill(string) bool {
 	return false
 }
 
-func parseCert(privateKey, pemValue string) (*gmtls.Certificate, error) {
+func parseCert(privateKey, pemValue string) (*tls.Certificate, error) {
 	cert, err := genCert([]byte(privateKey), []byte(pemValue))
 	if err == nil {
 		return cert, nil
@@ -83,8 +84,8 @@ func parseCert(privateKey, pemValue string) (*gmtls.Certificate, error) {
 	return genCert(keydata, pem)
 }
 
-func genCert(key, pem []byte) (*gmtls.Certificate, error) {
-	certificate, err := gmtls.X509KeyPair(pem, key)
+func genCert(key, pem []byte) (*tls.Certificate, error) {
+	certificate, err := tls.X509KeyPair(pem, key)
 	if err != nil {
 		return nil, err
 	}

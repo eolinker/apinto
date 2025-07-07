@@ -40,7 +40,7 @@ func (w *Worker) Check(conf interface{}, _ map[eosc.RequireId]eosc.IWorker) erro
 func (w *Worker) Destroy() error {
 
 	controller.Del(w.Id())
-	certs.DelCert(w.Id())
+	certs.DelGMCert(w.Id())
 	return nil
 }
 
@@ -64,7 +64,7 @@ func (w *Worker) Reset(conf interface{}, _ map[eosc.RequireId]eosc.IWorker) erro
 	}
 
 	w.config = c
-	certs.SaveCert(w.Id(), []*gmtls.Certificate{signCert, encCert})
+	certs.SaveGMCert(w.Id(), []*gmtls.Certificate{signCert, encCert})
 
 	return nil
 }
