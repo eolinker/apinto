@@ -68,7 +68,6 @@ func (o *OpenAIConvert) RequestConvert(ctx eoscContext.EoContext, extender map[s
 	if err != nil {
 		return err
 	}
-	var promptToken int
 	chatRequest := eosc.NewBase[Request](extender)
 	err = json.Unmarshal(body, chatRequest)
 	if err != nil {
@@ -77,21 +76,23 @@ func (o *OpenAIConvert) RequestConvert(ctx eoscContext.EoContext, extender map[s
 	if chatRequest.Config.Model == "" {
 		chatRequest.Config.Model = GetAIModel(ctx)
 	}
+	totalMessageBuilder := strings.Builder{}
 	for _, msg := range chatRequest.Config.Messages {
-		promptToken += getTokens(msg.Content, chatRequest.Config.Model)
+		totalMessageBuilder.WriteString(msg.Content)
 	}
+	promptToken := getTokens(totalMessageBuilder.String(), chatRequest.Config.Model)
 	SetAIModelInputToken(httpContext, promptToken)
-	httpContext.Proxy().AppendStreamBodyHandle(o.streamHandler)
 	if o.apikey != "" {
 		httpContext.Proxy().Header().SetHeader("Authorization", "Bearer "+o.apikey)
 	}
-
+	httpContext.Response().IsBodyStream()
 	httpContext.Proxy().URI().SetPath(o.path)
 	body, _ = json.Marshal(chatRequest)
 	httpContext.Proxy().Body().SetRaw("application/json", body)
 	if o.balanceHandler != nil {
 		ctx.SetBalance(o.balanceHandler)
 	}
+	//httpContext.Proxy().AppendStreamBodyHandle(o.streamHandler)
 	httpContext.Proxy().AppendBodyFinish(o.bodyFinish)
 
 	return nil
@@ -176,16 +177,38 @@ func (o *OpenAIConvert) bodyFinish(ctx http_service.IHttpContext) {
 		return
 	}
 	encoding := ctx.Response().Headers().Get("content-encoding")
-	if encoding == "gzip" {
+	if encoding != "utf-8" && encoding != "" {
 		tmp, err := encoder.ToUTF8(encoding, body)
 		if err != nil {
 			log.Errorf("convert to utf-8 error: %v, body: %s", err, string(body))
 			return
 		}
-		var resp openai.ChatCompletionResponse
-		err = json.Unmarshal(tmp, &resp)
+		body = tmp
+	}
+	streamRunning := ctx.GetLabel("stream_running")
+	if streamRunning == "true" {
+		usage, err := calculateStreamOutputToken(body, GetAIModel(ctx))
 		if err != nil {
-			log.Errorf("unmarshal body error: %v, body: %s", err, string(tmp))
+			log.Errorf("calculate stream output error: %v, body: %s", err, string(body))
+			return
+		}
+		input := usage.Input
+		if input == 0 {
+			input = GetAIModelInputToken(ctx)
+		}
+		output := usage.Output
+		total := usage.Total
+		if total == 0 {
+			total = input + output
+		}
+		SetAIModelInputToken(ctx, input)
+		SetAIModelOutputToken(ctx, output)
+		SetAIModelTotalToken(ctx, total)
+	} else {
+		var resp openai.ChatCompletionResponse
+		err := json.Unmarshal(body, &resp)
+		if err != nil {
+			log.Errorf("unmarshal body error: %v, body: %s", err, string(body))
 			return
 		}
 		SetAIModelInputToken(ctx, resp.Usage.PromptTokens)
@@ -195,52 +218,84 @@ func (o *OpenAIConvert) bodyFinish(ctx http_service.IHttpContext) {
 	SetAIStatusNormal(ctx)
 }
 
-func (o *OpenAIConvert) streamHandler(ctx http_service.IHttpContext, p []byte) ([]byte, error) {
-	encoding := ctx.Response().Headers().Get("content-encoding")
-	if encoding == "gzip" {
-		return p, nil
-	}
+type TokenUsage struct {
+	Input  int
+	Output int
+	Total  int
+}
 
-	// 对响应数据进行划分
-	inputToken := GetAIModelInputToken(ctx)
-	outputToken := GetAIModelOutputToken(ctx)
-	totalToken := inputToken
-	defer func() {
-		SetAIModelInputToken(ctx, inputToken)
-		SetAIModelOutputToken(ctx, outputToken)
-		SetAIModelTotalToken(ctx, totalToken)
-	}()
-	scanner := bufio.NewScanner(bytes.NewReader(p))
+func calculateStreamOutputToken(body []byte, model string) (*TokenUsage, error) {
+	builder := strings.Builder{}
+	scanner := bufio.NewScanner(bytes.NewReader(body))
 	for scanner.Scan() {
 		line := scanner.Text()
-		if encoding != "utf-8" && encoding != "" {
-			tmp, err := encoder.ToUTF8(encoding, []byte(line))
-			if err != nil {
-				log.Errorf("convert to utf-8 error: %v, line: %s", err, line)
-				return p, nil
-			}
-			line = string(tmp)
-		}
-
 		line = strings.TrimPrefix(line, "data:")
 		if line == "" || strings.Trim(line, " ") == "[DONE]" {
-			return p, nil
+			continue
 		}
 		var resp openai.ChatCompletionStreamResponse
 		err := json.Unmarshal([]byte(line), &resp)
 		if err != nil {
-			return p, nil
+			log.Errorf("unmarshal stream body error: %v, body: %s", err, string(body))
+			continue
 		}
 		if len(resp.Choices) > 0 {
-			outputToken += getTokens(resp.Choices[0].Delta.Content, resp.Model)
-			totalToken += outputToken
+			builder.WriteString(resp.Choices[0].Delta.Content)
+
 		}
 		if resp.Usage != nil {
-			inputToken = resp.Usage.PromptTokens
-			outputToken = resp.Usage.CompletionTokens
-			totalToken = resp.Usage.TotalTokens
+			return &TokenUsage{resp.Usage.PromptTokens, resp.Usage.CompletionTokens, resp.Usage.TotalTokens}, nil
 		}
 	}
-
-	return p, nil
+	return &TokenUsage{0, getTokens(builder.String(), model), 0}, nil
 }
+
+//func (o *OpenAIConvert) streamHandler(ctx http_service.IHttpContext, p []byte) ([]byte, error) {
+//	encoding := ctx.Response().Headers().Get("content-encoding")
+//	if encoding == "gzip" {
+//		return p, nil
+//	}
+//
+//	// 对响应数据进行划分
+//	inputToken := GetAIModelInputToken(ctx)
+//	outputToken := GetAIModelOutputToken(ctx)
+//	totalToken := inputToken
+//	defer func() {
+//		SetAIModelInputToken(ctx, inputToken)
+//		SetAIModelOutputToken(ctx, outputToken)
+//		SetAIModelTotalToken(ctx, totalToken)
+//	}()
+//	scanner := bufio.NewScanner(bytes.NewReader(p))
+//	for scanner.Scan() {
+//		line := scanner.Text()
+//		if encoding != "utf-8" && encoding != "" {
+//			tmp, err := encoder.ToUTF8(encoding, []byte(line))
+//			if err != nil {
+//				log.Errorf("convert to utf-8 error: %v, line: %s", err, line)
+//				return p, nil
+//			}
+//			line = string(tmp)
+//		}
+//
+//		line = strings.TrimPrefix(line, "data:")
+//		if line == "" || strings.Trim(line, " ") == "[DONE]" {
+//			return p, nil
+//		}
+//		var resp openai.ChatCompletionStreamResponse
+//		err := json.Unmarshal([]byte(line), &resp)
+//		if err != nil {
+//			return p, nil
+//		}
+//		if len(resp.Choices) > 0 {
+//			outputToken += getTokens(resp.Choices[0].Delta.Content, resp.Model)
+//			totalToken += outputToken
+//		}
+//		if resp.Usage != nil {
+//			inputToken = resp.Usage.PromptTokens
+//			outputToken = resp.Usage.CompletionTokens
+//			totalToken = resp.Usage.TotalTokens
+//		}
+//	}
+//
+//	return p, nil
+//}
