@@ -64,7 +64,7 @@ type Error struct {
 func getTokens(text string, model string) int {
 	tkm, err := tiktoken.EncodingForModel(model)
 	if err != nil {
-		tkm, _ = tiktoken.GetEncoding("cl100k_base") // 使用 OpenAI 的分词模型
+		tkm, _ = tiktoken.GetEncoding(tiktoken.MODEL_CL100K_BASE) // 使用 OpenAI 的分词模型
 	}
 
 	tokens := tkm.Encode(text, nil, nil)
