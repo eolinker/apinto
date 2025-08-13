@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/formatter"
 	"github.com/eolinker/eosc/log"
@@ -69,7 +69,7 @@ func (o *tProducer) close() {
 		o.cancel()
 		o.cancel = nil
 	}
-	o.producer.AsyncClose()
+	o.producer.Close()
 	o.producer = nil
 	o.formatter = nil
 }
@@ -94,7 +94,6 @@ func (o *tProducer) output(entry eosc.IEntry) error {
 	}
 	log.DebugF("kafka send addr: %s, topic: %s, data: %s", o.conf.Address, o.conf.Topic, data)
 	o.write(msg)
-
 	return nil
 }
 
@@ -122,15 +121,24 @@ func (o *tProducer) work(producer sarama.AsyncProducer, ctx context.Context, cfg
 		case err := <-producer.Errors():
 			log.DebugF("receive error.kafka addr: %s,kafka topic: %s,kafka partition: %d", cfg.Address, cfg.Topic, cfg.Partition)
 			if err != nil {
-				log.Warnf("kafka error:%s", err.Error())
+				log.Errorf("kafka error:%s", err.Error())
 			}
 		case success, ok := <-producer.Successes():
-			log.DebugF("receive success.kafka addr: %s,kafka topic: %s,kafka partition: %d", cfg.Address, cfg.Topic, cfg.Partition)
 			if !ok {
-				log.Errorf("kafka producer closed")
 				return
 			}
-			log.DebugF("kafka success:%s", success)
+			log.DebugF("Message sent to partition %d at offset %d\n", success.Partition, success.Offset)
+			//key, err := success.Key.Encode()
+			//if err != nil {
+			//	log.Errorf("kafka error:%s", err.Error())
+			//	continue
+			//}
+			//value, err := success.Value.Encode()
+			//if err != nil {
+			//	log.Errorf("kafka error:%s", err.Error())
+			//	continue
+			//}
+			//log.DebugF("kafka success addr: %s, topic: %s, partition: %d, key: %s, value: %s", cfg.Address, cfg.Topic, success.Partition, string(key), string(value))
 		}
 	}
 }

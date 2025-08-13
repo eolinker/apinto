@@ -27,6 +27,9 @@ func newAdditionalParam(params []*Additional) *additionalParam {
 }
 
 func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
+	if len(a.params) < 1 {
+		return nil
+	}
 	contentType, _, _ := mime.ParseMediaType(ctx.Proxy().Body().ContentType())
 	bodyParams, formParams, err := parseBodyParams(ctx)
 	if err != nil {

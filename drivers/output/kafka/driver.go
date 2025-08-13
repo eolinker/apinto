@@ -13,7 +13,6 @@ type Driver struct {
 
 func Check(v *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 	_, err := v.doCheck()
-
 	return err
 }
 
