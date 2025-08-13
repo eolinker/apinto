@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sashabaranov/go-openai"
 	"strings"
 
 	ai_convert "github.com/eolinker/apinto/ai-convert"
@@ -15,15 +16,15 @@ import (
 )
 
 type RequestMessage struct {
-	Model     string            `json:"model"`
-	Messages  []Message         `json:"messages"`
-	Variables map[string]string `json:"variables,omitempty"`
+	Model     string                         `json:"model"`
+	Messages  []openai.ChatCompletionMessage `json:"messages"`
+	Variables map[string]string              `json:"variables,omitempty"`
 }
 
-type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
+//type Message struct {
+//	Role    string `json:"role"`
+//	Content string `json:"content"`
+//}
 
 type executor struct {
 	drivers.WorkerBase
@@ -112,7 +113,7 @@ func genRequestMessage(ctx http_context.IHttpContext, body []byte, prompt string
 		}
 		prompt = strings.Replace(prompt, fmt.Sprintf("{{%s}}", k), baseMsg.Config.Variables[k], -1)
 	}
-	messages := []Message{
+	messages := []openai.ChatCompletionMessage{
 		{
 			Role:    "system",
 			Content: prompt,

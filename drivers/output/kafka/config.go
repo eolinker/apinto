@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 	"github.com/eolinker/eosc"
 )
 
@@ -114,8 +114,10 @@ func (c *Config) doCheck() (*ProducerConfig, error) {
 	}
 	// 只监听错误
 	s.Producer.Return.Errors = true
-	s.Producer.Return.Successes = false
+	s.Producer.Return.Successes = true
 	s.Producer.RequiredAcks = sarama.WaitForLocal
+	s.Producer.Compression = sarama.CompressionGZIP
+	s.Producer.CompressionLevel = sarama.CompressionLevelDefault
 
 	p.Address = strings.Split(conf.Address, ",")
 	if len(p.Address) == 0 {

@@ -1,7 +1,5 @@
 package model
 
-import "time"
-
 type Server struct {
 	Id    int64
 	Name  string
@@ -10,7 +8,7 @@ type Server struct {
 }
 
 type ComplexServer struct {
-	Addr   string
-	Time   time.Time
+	Addr string
+	//Time   time.Time
 	Server Server
 }

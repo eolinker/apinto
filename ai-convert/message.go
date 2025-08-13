@@ -47,14 +47,6 @@ type ModelConfig struct {
 	TopLogProbs         int                                  `json:"top_logprobs,omitempty"`
 }
 
-// Message represents a single message in the conversation.
-type Message struct {
-	// Role indicates the role of the message sender (e.g., "system", "user", "assistant").
-	Role string `json:"role"`
-	// Content contains the actual text of the message.
-	Content string `json:"content"`
-}
-
 type Error struct {
 	Message string `json:"message"`
 	Type    string `json:"type"`
