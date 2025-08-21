@@ -2,6 +2,7 @@ package ai_provider
 
 import (
 	_ "github.com/eolinker/apinto/drivers/ai-provider/authropic"
+	_ "github.com/eolinker/apinto/drivers/ai-provider/azure-openai"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/baichuan"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/bailianyun"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/bedrock"
