@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/eolinker/eosc/eocontext"
 	"net/url"
+	"strings"
 
 	"github.com/eolinker/eosc/log"
 
@@ -58,6 +59,7 @@ func NewChat(apiVersion string, handler ai_convert.IConverter) (ai_convert.IConv
 }
 
 type Chat struct {
+	apiKey     string
 	apiVersion string
 	handler    ai_convert.IConverter
 }
@@ -66,12 +68,19 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	if c.handler == nil {
 		return fmt.Errorf("handler is not initialized")
 	}
+
+	err := c.handler.RequestConvert(ctx, extender)
+	if err != nil {
+		return err
+	}
 	httpContext, err := http_service.Assert(ctx)
 	if err != nil {
 		return err
 	}
+	httpContext.Proxy().URI().SetPath(fmt.Sprintf("/openai/deployments/%s/%s", ai_convert.GetAIModel(ctx), strings.TrimPrefix(httpContext.Proxy().URI().Path(), "/v1")))
 	httpContext.Proxy().URI().SetQuery("api-version", c.apiVersion)
-	return c.handler.RequestConvert(httpContext, extender)
+	httpContext.Proxy().Header().SetHeader("api-key", c.apiKey)
+	return nil
 }
 
 func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
