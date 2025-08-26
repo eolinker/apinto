@@ -59,7 +59,6 @@ func NewChat(apiVersion string, handler ai_convert.IConverter) (ai_convert.IConv
 }
 
 type Chat struct {
-	apiKey     string
 	apiVersion string
 	handler    ai_convert.IConverter
 }
@@ -79,7 +78,6 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	}
 	httpContext.Proxy().URI().SetPath(fmt.Sprintf("/openai/deployments/%s/%s", ai_convert.GetAIModel(ctx), strings.TrimPrefix(httpContext.Proxy().URI().Path(), "/v1")))
 	httpContext.Proxy().URI().SetQuery("api-version", c.apiVersion)
-	httpContext.Proxy().Header().SetHeader("api-key", c.apiKey)
 	return nil
 }
 
