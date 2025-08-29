@@ -41,7 +41,9 @@ func getDescSource(protobufID string, reflect bool) (grpc_descriptor.IDescriptor
 	if protobufID == "" {
 		return nil, fmt.Errorf("protobuf id is empty")
 	}
-
+	if worker == nil {
+		return nil, fmt.Errorf("protobuf worker is not initialized")
+	}
 	w, ok := worker.Get(protobufID)
 	if ok {
 		v, ok := w.(grpc_descriptor.IDescriptor)
