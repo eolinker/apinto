@@ -26,7 +26,7 @@ func (j *jwt) GetUser(ctx http_service.IHttpContext) (*application.UserInfo, boo
 	}
 	name, err := j.doJWTAuthentication(token)
 	if err != nil {
-		log.DebugF("[%s] get user error:%s", driverName, token)
+		log.DebugF("[%s] get user error:%s,err is: %s", driverName, token, err.Error())
 		return nil, false
 	}
 	return j.users.Get(name)

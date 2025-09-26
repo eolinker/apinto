@@ -3,6 +3,7 @@ package fasthttp_client
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -10,7 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
-
+	
 	"github.com/eolinker/eosc/eocontext"
 	"github.com/valyala/fasthttp"
 )
@@ -80,15 +81,15 @@ func GenDialFunc(isTls bool) (fasthttp.DialFunc, error) {
 }
 
 func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostClient, string, error) {
-
+	
 	scheme, nodeAddr := readAddress(addr)
 	host := nodeAddr
 	isTLS := strings.EqualFold(scheme, "https")
-
+	
 	if !strings.EqualFold(scheme, "http") && !isTLS {
 		return nil, "", fmt.Errorf("unsupported protocol %q. http and https are supported", scheme)
 	}
-
+	
 	c.mLock.RLock()
 	m := c.m
 	if isTLS {
@@ -102,7 +103,7 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 	}
 	c.mLock.Lock()
 	defer c.mLock.Unlock()
-
+	
 	if isTLS {
 		m = c.ms
 	} else {
@@ -114,7 +115,7 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 			return nil, "", err
 		}
 		dialAddr := addMissingPort(nodeAddr, isTLS)
-
+		
 		httpAddr := dialAddr
 		if isTLS {
 			if rewriteHost != "" && rewriteHost != nodeAddr {
@@ -132,20 +133,29 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 				}
 			}
 		}
-
+		
 		hc = &fasthttp.HostClient{
 			Addr:  httpAddr,
 			IsTLS: isTLS,
 			TLSConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
-			Dial:               dial,
-			StreamResponseBody: true,
-			MaxConns:           DefaultMaxConns,
-			MaxConnWaitTimeout: DefaultMaxConnWaitTimeout,
-			RetryIf: func(request *fasthttp.Request) bool {
-				return false
+			
+			Dial:                dial,
+			StreamResponseBody:  true,
+			MaxConns:            DefaultMaxConns,
+			MaxIdleConnDuration: 0,
+			
+			// 重试配置：针对 ErrConnectionClosed 自动重试
+			MaxIdemponentCallAttempts: 3, // 最大重试次数（默认 3），适用于幂等请求（如 GET）
+			RetryIfErr: func(req *fasthttp.Request, attempts int, err error) (resetTimeout bool, retry bool) {
+				if errors.Is(err, fasthttp.ErrConnectionClosed) { // 针对你的错误重试
+					return true, true // 重试并重置超时
+				}
+				return false, false
 			},
+			
+			ConnPoolStrategy: fasthttp.LIFO,
 		}
 		//http2.ConfigureClient(hc, http2.ClientOpts{})
 		m[key] = hc
@@ -153,7 +163,7 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 			go c.startCleaner(m)
 		}
 	}
-
+	
 	return hc, scheme, nil
 }
 
@@ -195,14 +205,15 @@ func (c *Client) ProxyTimeout(addr string, host string, req *fasthttp.Request, r
 			resp.SetConnectionClose()
 		}
 	}()
-
+	
 	client, scheme, err := c.getHostClient(addr, host)
 	if err != nil {
 		return err
 	}
 	request.URI().SetScheme(scheme)
+	
 	return client.DoTimeout(req, resp, timeout)
-
+	
 }
 
 func (c *Client) startCleaner(m map[string]*fasthttp.HostClient) {
@@ -220,7 +231,7 @@ func (c *Client) startCleaner(m map[string]*fasthttp.HostClient) {
 					delete(m, k)
 				}
 			}
-
+			
 			if len(m) == 0 {
 				mustStop = true
 			}
@@ -234,7 +245,7 @@ func (c *Client) startCleaner(m map[string]*fasthttp.HostClient) {
 
 func (c *Client) mCleaner(m map[string]*fasthttp.HostClient) {
 	mustStop := false
-
+	
 	//sleep := c.MaxIdleConnDuration
 	//if sleep < time.Second {
 	//	sleep = time.Second
@@ -253,9 +264,9 @@ func (c *Client) mCleaner(m map[string]*fasthttp.HostClient) {
 		if len(m) == 0 {
 			mustStop = true
 		}
-
+		
 		c.mLock.Unlock()
-
+		
 		if mustStop {
 			break
 		}

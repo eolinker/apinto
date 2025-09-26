@@ -1,8 +1,8 @@
 module github.com/eolinker/apinto
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.23.6
+toolchain go1.24.7
 
 require (
 	github.com/IBM/sarama v1.45.2
@@ -34,9 +34,9 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/traefik/yaegi v0.16.1
 	github.com/urfave/cli/v2 v2.23.4
-	github.com/valyala/fasthttp v1.59.0
-	golang.org/x/crypto v0.38.0
-	golang.org/x/net v0.40.0
+	github.com/valyala/fasthttp v1.66.0
+	golang.org/x/crypto v0.42.0
+	golang.org/x/net v0.44.0
 	golang.org/x/oauth2 v0.14.0
 	google.golang.org/api v0.149.0
 	google.golang.org/grpc v1.61.0
@@ -112,7 +112,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.20.0 // indirect
-	golang.org/x/sync v0.14.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231106174013-bbf56f31fb17 // indirect
@@ -123,7 +123,7 @@ require (
 
 require (
 	dubbo.apache.org/dubbo-go/v3 v3.0.2-0.20220519062747-f6405fa79d5c
-	github.com/andybalholm/brotli v1.1.1
+	github.com/andybalholm/brotli v1.2.0
 	github.com/apache/dubbo-go-hessian2 v1.11.6
 	github.com/armon/go-metrics v0.3.9 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -196,8 +196,8 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.23.0
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0
+	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/text v0.29.0
 	golang.org/x/time v0.1.0 // indirect
 	google.golang.org/genproto v0.0.0-20231106174013-bbf56f31fb17 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect

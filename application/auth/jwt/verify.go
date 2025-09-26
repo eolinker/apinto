@@ -510,6 +510,7 @@ func typeOfData(data interface{}) reflect.Kind {
 // doJWTAuthentication 进行JWT鉴权
 func (j *jwt) doJWTAuthentication(tokenStr string) (string, error) {
 	tokenStr = strings.TrimPrefix(tokenStr, "Bearer ")
+	tokenStr = strings.TrimPrefix(tokenStr, "bearer ")
 	token, err := decodeToken(tokenStr)
 	if err != nil {
 		return "", errors.New("Bad token; " + err.Error())
@@ -553,6 +554,9 @@ func (j *jwt) doJWTAuthentication(tokenStr string) (string, error) {
 	}
 	if err = verifyRegisteredClaims(token, j.cfg.ClaimsToVerify); err != nil {
 		return "", err
+	}
+	if j.cfg.Path == "" {
+		return j.cfg.Iss, nil
 	}
 
 	data, _ := json.Marshal(token.Claims)
