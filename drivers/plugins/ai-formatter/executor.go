@@ -161,15 +161,20 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		if len(balances) == 0 {
 			body := ctx.Response().GetBody()
 			if len(body) == 0 {
-				ctx.Response().SetBody([]byte(err.Error()))
-				ctx.Response().SetStatus(400, "Bad Request")
+				if ctx.Response().StatusCode() != 504 {
+					ctx.Response().SetBody([]byte(err.Error()))
+					ctx.Response().SetStatus(400, "Bad Request")
+				}
+
 			}
 			return err
 		}
 		err = e.doBalance(ctx, cloneProxy, next) // Fallback to balance logic
 		if err != nil {
-			ctx.Response().SetBody([]byte(err.Error()))
-			ctx.Response().SetStatus(400, "Bad Request")
+			if ctx.Response().StatusCode() != 504 {
+				ctx.Response().SetBody([]byte(err.Error()))
+				ctx.Response().SetStatus(400, "Bad Request")
+			}
 			return err
 		}
 	}

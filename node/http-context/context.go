@@ -183,6 +183,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 
 	host := node.Addr()
 	request := ctx.proxyRequest.Request()
+	request.CloseBodyStream()
 	rewriteHost := string(request.Host())
 	upstreamHost := ctx.GetUpstreamHostHandler()
 	if upstreamHost != nil {
@@ -205,6 +206,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 
 	beginTime := time.Now()
 	response := fasthttp.AcquireResponse()
+	//var client *fasthttp.HostClient
 	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, response, timeout)
 
 	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, response.Header, beginTime, time.Now())
@@ -230,38 +232,44 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 			// 流式传输，非200状态码不考虑流式传输
 			ctx.response.Response.SetStatusCode(response.StatusCode())
 			ctx.SetLabel("stream_running", "true")
-
 			ctx.response.Response.SetBodyStreamWriter(func(w *bufio.Writer) {
+				reader := response.BodyStream()
 				defer func() {
+					response.SetConnectionClose()
 					ctx.SetLabel("stream_running", "false")
 					ctx.FastFinish()
 					fasthttp.ReleaseResponse(response)
 				}()
-				reader := response.BodyStream()
+
 				buffer := make([]byte, 4096) // 4KB 缓冲区
 				for {
 					n, err := reader.Read(buffer)
-					if n > 0 {
-						chunk := buffer[:n]
-						chunk, err = ctx.proxyRequest.StreamBodyHandles(ctx, chunk)
-						if err != nil {
-							log.Errorf("exec stream func error: %v", err)
-						}
-
-						n, err = w.Write(chunk)
-						if err != nil {
-							log.Errorf("stream write error: %v", err)
-							break
-						}
-						ctx.Response().SetBody(chunk)
-
-						w.Flush() // 实时发送数据
-					}
 					if err != nil {
 						if err == io.EOF {
 							break
 						}
 						log.Errorf("stream read error: %v", err)
+						break
+					}
+					chunk := buffer[:n]
+					chunk, err = ctx.proxyRequest.StreamBodyHandles(ctx, chunk)
+					if err != nil {
+						log.Errorf("exec stream func error: %v", err)
+					}
+
+					n, err = w.Write(chunk)
+					if err != nil {
+						log.Errorf("stream write error: %v", err)
+						response.SetConnectionClose()
+						break
+					}
+					ctx.Response().SetBody(chunk)
+
+					err = w.Flush() // 实时发送数据
+					if err != nil {
+						// 停止读取上游数据
+						log.Errorf("stream flush error: %v", err)
+						response.SetConnectionClose()
 						break
 					}
 				}
