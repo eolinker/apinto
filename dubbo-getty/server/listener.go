@@ -140,7 +140,6 @@ func (h *RpcServerHandler) OnMessage(session getty.Session, pkg interface{}) {
 	resp.Status = hessian.Response_OK
 	resp.Event = req.Event
 	resp.SerialID = req.SerialID
-	resp.Version = "2.0.2"
 
 	// heartbeat
 	if req.Event {

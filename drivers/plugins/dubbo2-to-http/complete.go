@@ -9,7 +9,6 @@ import (
 
 	"dubbo.apache.org/dubbo-go/v3/protocol"
 	"dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
-	hessian "github.com/apache/dubbo-go-hessian2"
 	"github.com/eolinker/apinto/utils"
 	"github.com/eolinker/eosc/eocontext"
 	dubbo2_context "github.com/eolinker/eosc/eocontext/dubbo2-context"
@@ -43,86 +42,92 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 	}
 
 	paramBody := ctx.Proxy().GetParam()
-	if len(paramBody.TypesList) != len(paramBody.ValuesList) || len(c.params) != len(paramBody.TypesList) {
-		ctx.Response().SetBody(Dubbo2ErrorResult(errParamLen))
-		return err
-	}
+	//if len(paramBody.TypesList) != len(paramBody.ValuesList) || len(c.params) != len(paramBody.TypesList) {
+	//	ctx.Response().SetBody(Dubbo2ErrorResult(errParamLen))
+	//	return err
+	//}
 
-	paramMap := make(map[string]interface{})
-	for i := range paramBody.ValuesList {
-		paramMap[paramBody.TypesList[i]] = paramBody.ValuesList[i]
-	}
+	//paramMap := make(map[string]interface{})
+	//for i := range paramBody.ValuesList {
+	//	paramMap[paramBody.TypesList[i]] = paramBody.ValuesList[i]
+	//}
 
-	log.DebugF("dubbo2-to-http complete paramMap = %v", paramMap)
+	//log.DebugF("dubbo2-to-http complete paramMap = %v", paramMap)
 
 	//设置响应开始时间
 	proxyTime := time.Now()
 	defer func() {
 		ctx.Response().SetResponseTime(time.Since(proxyTime))
 	}()
-
-	var reqBody []byte
-
-	if len(paramMap) == 1 && c.params[0].fieldName != "" {
-		object, ok := paramMap[c.params[0].className]
-		if !ok {
-			err = fmt.Errorf("参数解析错误，未找到的名称为 %s className", c.params[0].className)
-			ctx.Response().SetBody(Dubbo2ErrorResult(err))
-			return err
-		}
-
-		object = formatData(object)
-
-		maps := make(map[string]hessian.Object)
-		maps[c.params[0].fieldName] = object
-
-		bytes, err := json.Marshal(maps)
-		if err != nil {
-			ctx.Response().SetBody(Dubbo2ErrorResult(err))
-			return err
-		}
-		reqBody = bytes
-	} else if len(paramMap) == 1 && c.params[0].fieldName == "" {
-		object, ok := paramMap[c.params[0].className]
-		if !ok {
-			err = fmt.Errorf("参数解析错误，未找到的名称为 %s className", c.params[0].className)
-			ctx.Response().SetBody(Dubbo2ErrorResult(err))
-			return err
-		}
-
-		log.DebugF("dubbo2-to-http complete paramMap = %v params[0] = %v object=%v", paramMap, c.params[0], object)
-
-		object = formatData(object)
-
-		bytes, err := json.Marshal(object)
-		if err != nil {
-			log.Errorf("dubbo2-to-http complete err=%v", err)
-			ctx.Response().SetBody(Dubbo2ErrorResult(err))
-			return err
-		}
-		reqBody = bytes
-	} else {
-		maps := make(map[string]hessian.Object)
-		for _, p := range c.params {
-			object, ok := paramMap[p.className]
-			if !ok {
-				err = fmt.Errorf("参数解析错误，未找到的名称为 %s className", p.className)
-				ctx.Response().SetBody(Dubbo2ErrorResult(err))
-				return err
-			}
-			object = formatData(object)
-
-			maps[p.fieldName] = object
-		}
-
-		bytes, err := json.Marshal(maps)
-		if err != nil {
-			ctx.Response().SetBody(Dubbo2ErrorResult(err))
-			return err
-		}
-		reqBody = bytes
-
+	reqBody, err := json.Marshal(map[string]interface{}{
+		"types":  paramBody.TypesList,
+		"values": paramBody.ValuesList,
+	})
+	if err != nil {
+		ctx.Response().SetBody(Dubbo2ErrorResult(err))
+		return err
 	}
+
+	//if len(paramMap) == 1 && c.params[0].fieldName != "" {
+	//	object, ok := paramMap[c.params[0].className]
+	//	if !ok {
+	//		err = fmt.Errorf("参数解析错误，未找到的名称为 %s className", c.params[0].className)
+	//		ctx.Response().SetBody(Dubbo2ErrorResult(err))
+	//		return err
+	//	}
+	//
+	//	object = formatData(object)
+	//
+	//	maps := make(map[string]hessian.Object)
+	//	maps[c.params[0].fieldName] = object
+	//
+	//	bytes, err := json.Marshal(maps)
+	//	if err != nil {
+	//		ctx.Response().SetBody(Dubbo2ErrorResult(err))
+	//		return err
+	//	}
+	//	reqBody = bytes
+	//} else if len(paramMap) == 1 && c.params[0].fieldName == "" {
+	//	object, ok := paramMap[c.params[0].className]
+	//	if !ok {
+	//		err = fmt.Errorf("参数解析错误，未找到的名称为 %s className", c.params[0].className)
+	//		ctx.Response().SetBody(Dubbo2ErrorResult(err))
+	//		return err
+	//	}
+	//
+	//	log.DebugF("dubbo2-to-http complete paramMap = %v params[0] = %v object=%v", paramMap, c.params[0], object)
+	//
+	//	object = formatData(object)
+	//
+	//	bytes, err := json.Marshal(object)
+	//	if err != nil {
+	//		log.Errorf("dubbo2-to-http complete err=%v", err)
+	//		ctx.Response().SetBody(Dubbo2ErrorResult(err))
+	//		return err
+	//	}
+	//	reqBody = bytes
+	//} else {
+	//	maps := make(map[string]hessian.Object)
+	//	for _, p := range c.params {
+	//		object, ok := paramMap[p.className]
+	//		if !ok {
+	//			err = fmt.Errorf("参数解析错误，未找到的名称为 %s className", p.className)
+	//			ctx.Response().SetBody(Dubbo2ErrorResult(err))
+	//			return err
+	//		}
+	//		object = formatData(object)
+	//
+	//		maps[p.fieldName] = object
+	//	}
+
+	//	bytes, err := json.Marshal(maps)
+	//	if err != nil {
+	//		ctx.Response().SetBody(Dubbo2ErrorResult(err))
+	//		return err
+	//	}
+	//	reqBody = bytes
+	//
+	//}
 
 	balance := ctx.GetBalance()
 	scheme := balance.Scheme()
@@ -163,7 +168,14 @@ func (c *Complete) Complete(org eocontext.EoContext) error {
 				return err
 			}
 
-			ctx.Response().SetBody(getResponse(val, ctx.Proxy().Attachments()))
+			payload := impl.NewResponsePayload(formatData(val), nil, nil)
+			respBody := protocol.RPCResult{
+				Attrs: payload.Attachments,
+				Err:   payload.Exception,
+				Rest:  payload.RspObj,
+			}
+
+			ctx.Response().SetBody(respBody)
 			return nil
 		}
 		log.Error("dubbo upstream send error: ", lastErr)

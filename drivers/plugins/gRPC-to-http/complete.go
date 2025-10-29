@@ -6,29 +6,29 @@ import (
 	"net/url"
 	"strings"
 	"time"
-
+	
 	"github.com/eolinker/apinto/entries/ctx_key"
 	"github.com/eolinker/apinto/entries/router"
-
+	
 	grpc_descriptor "github.com/eolinker/apinto/grpc-descriptor"
-
+	
 	"github.com/jhump/protoreflect/dynamic"
-
+	
 	"github.com/jhump/protoreflect/desc"
-
+	
 	"github.com/valyala/fasthttp"
-
+	
 	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
-
+	
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
+	
 	grpc_context "github.com/eolinker/eosc/eocontext/grpc-context"
-
+	
 	"github.com/eolinker/eosc/log"
-
+	
 	"google.golang.org/grpc/metadata"
-
+	
 	"github.com/eolinker/eosc/eocontext"
 )
 
@@ -62,39 +62,39 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
-
+	
 	retryValue := ctx.Value(ctx_key.CtxKeyRetry)
 	retry, ok := retryValue.(int)
 	if !ok {
 		retry = router.DefaultRetry
 	}
-
+	
 	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
 	if !ok {
 		timeout = router.DefaultTimeout
 	}
-
+	
 	descriptor, err := h.descriptor.Descriptor().FindSymbol(fmt.Sprintf("%s.%s", ctx.Proxy().Service(), ctx.Proxy().Method()))
 	if err != nil {
 		return err
 	}
 	methodDesc := descriptor.GetFile().FindService(ctx.Proxy().Service()).FindMethodByName(ctx.Proxy().Method())
 	message := ctx.Proxy().Message(methodDesc.GetInputType())
-
+	
 	body, err := message.MarshalJSON()
 	if err != nil {
 		return err
 	}
 	balance := ctx.GetBalance()
-
+	
 	scheme := balance.Scheme()
 	switch strings.ToLower(scheme) {
 	case "", "tcp":
 		scheme = "http"
 	case "tsl", "ssl", "https":
 		scheme = "https"
-
+		
 	}
 	path := h.path
 	if path == "" {
@@ -104,9 +104,9 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 	defer fasthttp.ReleaseRequest(request)
 	var lastErr error
 	timeOut := balance.TimeOut()
-
+	
 	for index := 0; index <= retry; index++ {
-
+		
 		if timeout > 0 && time.Since(proxyTime) > timeout {
 			return ErrorTimeoutComplete
 		}
@@ -114,7 +114,7 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 		if err != nil {
 			return status.Error(codes.NotFound, err.Error())
 		}
-
+		
 		request.URI()
 		host := ""
 		passHost, targetHost := ctx.GetUpstreamHostHandler().PassHost()
@@ -130,14 +130,14 @@ func (h *complete) Complete(org eocontext.EoContext) error {
 			host = targetHost
 		}
 		response := fasthttp.AcquireResponse()
-
+		
 		lastErr = fasthttp_client.ProxyTimeout(scheme, host, node, request, response, timeOut)
 		if lastErr == nil {
 			return newGRPCResponse(ctx, response, methodDesc)
 		}
 		log.Error("http upstream send error: ", lastErr)
 	}
-
+	
 	return status.Error(codes.Internal, lastErr.Error())
 }
 
@@ -149,7 +149,7 @@ func newGRPCResponse(ctx grpc_context.IGrpcContext, response *fasthttp.Response,
 		log.Debug("body is: ", string(response.Body()))
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
-
+	
 	ctx.Response().Write(message)
 	hs := strings.Split(response.Header.String(), "\r\n")
 	for _, t := range hs {
@@ -163,7 +163,7 @@ func newGRPCResponse(ctx grpc_context.IGrpcContext, response *fasthttp.Response,
 		}
 		ctx.Response().Headers().Set(vs[0], strings.TrimSpace(vs[1]))
 	}
-
+	
 	return nil
 }
 

@@ -25,13 +25,9 @@ import (
 	"github.com/google/uuid"
 )
 
-func NewDubboParamBody(typesList []string, valuesList []hessian.Object) *dubbo2_context.Dubbo2ParamBody {
+func NewDubboParamBody(typesList []string, valuesList []interface{}) *dubbo2_context.Dubbo2ParamBody {
 
-	valList := make([]interface{}, 0, len(valuesList))
-	for _, v := range valuesList {
-		valList = append(valList, v)
-	}
-	return &dubbo2_context.Dubbo2ParamBody{TypesList: typesList, ValuesList: valList}
+	return &dubbo2_context.Dubbo2ParamBody{TypesList: typesList, ValuesList: valuesList}
 }
 
 var _ dubbo2_context.IDubbo2Context = (*DubboContext)(nil)
@@ -67,13 +63,17 @@ func NewContext(req *invocation.RPCInvocation, port int) dubbo2_context.IDubbo2C
 
 	t := time.Now()
 
-	method, typesList, valuesList := argumentsUnmarshal(req.Arguments())
-	if method == "" || len(typesList) == 0 || len(valuesList) == 0 {
-		log.Errorf("dubbo2 NewContext method=%s typesList=%v valuesList=%v req=%v", method, typesList, valuesList, req)
-	}
+	//method, typesList, valuesList := argumentsUnmarshal(req.Arguments())
+	//if method == "" || len(typesList) == 0 || len(valuesList) == 0 {
+	//	log.Errorf("dubbo2 NewContext method=%s typesList=%v valuesList=%v req=%v", method, typesList, valuesList, req)
+	//}
+	method := req.MethodName()
 
 	path := req.GetAttachmentWithDefaultValue(constant.PathKey, "")
-	serviceName := req.GetAttachmentWithDefaultValue(constant.InterfaceKey, "")
+	serviceName := req.GetAttachmentWithDefaultValue(constant.ServiceKey, "")
+	if serviceName == "" {
+		serviceName = path
+	}
 	group := req.GetAttachmentWithDefaultValue(constant.GroupKey, "")
 	version := req.GetAttachmentWithDefaultValue(constant.VersionKey, "")
 
@@ -81,7 +81,10 @@ func NewContext(req *invocation.RPCInvocation, port int) dubbo2_context.IDubbo2C
 
 	serviceWriter := NewRequestServiceWrite(path, serviceName, group, version, method)
 
-	paramBody := NewDubboParamBody(typesList, valuesList)
+	paramBody := &dubbo2_context.Dubbo2ParamBody{
+		TypesList:  req.ParameterTypeNames(),
+		ValuesList: req.Arguments(),
+	}
 	proxy := NewProxy(serviceWriter, paramBody, req.Attachments())
 
 	copyMaps := utils.CopyMaps(req.Attachments())
@@ -94,21 +97,20 @@ func NewContext(req *invocation.RPCInvocation, port int) dubbo2_context.IDubbo2C
 	requestReader := NewRequestReader(serviceReader, localAddr, remoteIp, copyMaps)
 
 	addr, _ := netip.ParseAddrPort(localAddr)
-
 	addrPort := net.TCPAddrFromAddrPort(addr)
 
 	dubboContext := &DubboContext{
+		netIP:         addrPort.IP,
+		localAddr:     addrPort,
+		ctx:           context.Background(),
+		response:      &Response{},
+		requestReader: requestReader,
+		proxy:         proxy,
 		labels:        make(map[string]string),
 		port:          port,
 		requestID:     uuid.New().String(),
-		proxy:         proxy,
-		requestReader: requestReader,
-		netIP:         addrPort.IP,
-		localAddr:     addrPort,
 		acceptTime:    t,
-		response:      &Response{},
 	}
-	dubboContext.ctx = context.Background()
 	dubboContext.WithValue("request_time", t)
 
 	return dubboContext
