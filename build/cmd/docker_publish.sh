@@ -9,7 +9,7 @@ Version=$(genVersion $1)
 echo ${Version}
 
 Username="eolinker"
-if [[ "$1" != "" ]]
+if [[ "$2" != "" ]]
 then
 		Username=$2
 fi

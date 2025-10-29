@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -183,7 +184,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 
 	host := node.Addr()
 	request := ctx.proxyRequest.Request()
-	request.CloseBodyStream()
+	//request.CloseBodyStream()
 	rewriteHost := string(request.Host())
 	upstreamHost := ctx.GetUpstreamHostHandler()
 	if upstreamHost != nil {
@@ -203,6 +204,9 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 		rewriteHost = host
 		request.URI().SetHost(host)
 	}
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	log.DebugF("After: HeapAlloc=%.2f MB", float64(m.HeapAlloc)/(1024.0*1024.0))
 
 	beginTime := time.Now()
 	response := fasthttp.AcquireResponse()
@@ -363,6 +367,9 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 
 // NewContext 创建Context
 func NewContext(ctx *fasthttp.RequestCtx, port int) *HttpContext {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	log.DebugF("Before: HeapAlloc=%.2f MB", float64(m.HeapAlloc)/(1024.0*1024.0))
 
 	remoteAddr := ctx.RemoteAddr().String()
 
@@ -374,9 +381,9 @@ func NewContext(ctx *fasthttp.RequestCtx, port int) *HttpContext {
 	// 原始请求最大读取body为8k，使用clone request
 	request := fasthttp.AcquireRequest()
 
-	if ctx.Request.IsBodyStream() && ctx.Request.Header.ContentLength() > 8*1024 {
-		ctx.Request.Body()
-	}
+	//if ctx.Request.IsBodyStream() && ctx.Request.Header.ContentLength() > 8*1024 {
+	//	ctx.Request.Body()
+	//}
 	ctx.Request.CopyTo(request)
 	httpContext.requestReader.reset(request, remoteAddr)
 

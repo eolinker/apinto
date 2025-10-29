@@ -2,6 +2,7 @@ package http_context
 
 import (
 	"bytes"
+	"github.com/eolinker/eosc/log"
 	"io"
 	"strings"
 
@@ -32,7 +33,8 @@ const (
 type BodyRequestHandler struct {
 	request *fasthttp.Request
 
-	formdata *multipart.Form
+	formdata    *multipart.Form
+	isResetFile bool
 }
 
 func (b *BodyRequestHandler) MultipartForm() (*multipart.Form, error) {
@@ -52,7 +54,8 @@ func (b *BodyRequestHandler) MultipartForm() (*multipart.Form, error) {
 		File:  form.File,
 	}
 
-	return form, b.resetFile()
+	//return form, b.resetFile()
+	return form, nil
 }
 func (b *BodyRequestHandler) Files() (map[string][]*multipart.FileHeader, error) {
 	form, err := b.MultipartForm()
@@ -121,6 +124,18 @@ func (b *BodyRequestHandler) BodyForm() (url.Values, error) {
 
 // RawBody 获取raw数据
 func (b *BodyRequestHandler) RawBody() ([]byte, error) {
+	if b.isResetFile == false {
+		contentType, _, _ := mime.ParseMediaType(string(b.request.Header.ContentType()))
+		if contentType == MultipartForm {
+			err := b.resetFile()
+			if err != nil {
+				log.Errorf("reset file error: %v", err)
+				return nil, err
+			}
+			b.isResetFile = true
+		}
+	}
+
 	return b.request.Body(), nil
 }
 
@@ -148,7 +163,9 @@ func (b *BodyRequestHandler) SetToForm(key, value string) error {
 			return err
 		}
 		multipartForm.Value[key] = []string{value}
-		return b.resetFile()
+		b.isResetFile = false
+		//return b.resetFile()
+		return nil
 	default:
 		return ErrorNotForm
 	}
@@ -169,7 +186,9 @@ func (b *BodyRequestHandler) AddForm(key, value string) error {
 			return err
 		}
 		multipartForm.Value[key] = append(multipartForm.Value[key], value)
-		return b.resetFile()
+		b.isResetFile = false
+		//return b.resetFile()
+		return nil
 	default:
 		return ErrorNotForm
 	}
@@ -187,8 +206,9 @@ func (b *BodyRequestHandler) AddFile(key string, file *multipart.FileHeader) err
 		return err
 	}
 	multipartForm.File[key] = append(multipartForm.File[key], file)
-
-	return b.resetFile()
+	b.isResetFile = false
+	//return b.resetFile()
+	return nil
 }
 
 // SetFile 设置文件参数
@@ -200,7 +220,8 @@ func (b *BodyRequestHandler) SetFile(files map[string][]*multipart.FileHeader) e
 	}
 	multipartForm.File = files
 
-	return b.resetFile()
+	//return b.resetFile()
+	return nil
 }
 
 func (b *BodyRequestHandler) resetFile() error {
@@ -218,11 +239,6 @@ func (b *BodyRequestHandler) resetFile() error {
 			if err != nil {
 				return err
 			}
-			//part, err := writer.CreateFormFile(name, f.Filename)
-			//if err != nil {
-			//	fio.Close()
-			//	return err
-			//}
 			part, err := writer.CreatePart(f.Header)
 			if err != nil {
 				return err
@@ -279,7 +295,8 @@ func (b *BodyRequestHandler) SetForm(values url.Values) error {
 			return err
 		}
 		multipartForm.Value = values
-		return b.resetFile()
+		//return b.resetFile()
+		return nil
 	}
 
 	return ErrorNotForm

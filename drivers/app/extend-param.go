@@ -31,10 +31,10 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 		return nil
 	}
 	contentType, _, _ := mime.ParseMediaType(ctx.Proxy().Body().ContentType())
-	bodyParams, formParams, err := parseBodyParams(ctx)
-	if err != nil {
-		return fmt.Errorf(`fail to parse body! [err]: %v`, err)
-	}
+	var bodyParams interface{}
+	var formParams map[string][]string
+	var err error
+
 	for _, p := range a.params {
 		conflict := p.Conflict
 		if conflict == "" {
@@ -44,6 +44,12 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 		case application.PositionBody:
 			if ctx.Proxy().Method() != http.MethodPost && ctx.Proxy().Method() != http.MethodPut && ctx.Proxy().Method() != http.MethodPatch {
 				continue
+			}
+			if bodyParams == nil && formParams == nil {
+				bodyParams, formParams, err = parseBodyParams(ctx)
+				if err != nil {
+					return fmt.Errorf(`fail to parse body! [err]: %v`, err)
+				}
 			}
 			switch contentType {
 			case http_context.FormData, http_context.MultipartForm:
