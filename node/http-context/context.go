@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/eolinker/apinto/entries/ctx_key"
@@ -44,6 +45,7 @@ type HttpContext struct {
 	balance             eoscContext.BalanceHandler
 	upstreamHostHandler eoscContext.UpstreamHostHandler
 	labels              map[string]string
+	locker              sync.RWMutex
 	port                int
 	entry               eosc.IEntry
 }
@@ -133,15 +135,22 @@ func (ctx *HttpContext) GetEntry() eosc.IEntry {
 }
 
 func (ctx *HttpContext) SetLabel(name, value string) {
+	ctx.locker.Lock()
+	defer ctx.locker.Unlock()
 	ctx.labels[name] = value
 }
 
 func (ctx *HttpContext) GetLabel(name string) string {
+	ctx.locker.RLock()
+	defer ctx.locker.RUnlock()
 	return ctx.labels[name]
 }
 
 func (ctx *HttpContext) Labels() map[string]string {
-	return ctx.labels
+	ctx.locker.RLock()
+	defer ctx.locker.RUnlock()
+	labels := ctx.labels
+	return labels
 }
 
 func (ctx *HttpContext) GetComplete() eoscContext.CompleteHandler {
