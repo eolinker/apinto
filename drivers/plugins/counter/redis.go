@@ -12,7 +12,7 @@ import (
 
 	"github.com/eolinker/apinto/resources"
 
-	redis "github.com/go-redis/redis/v8"
+	redis "github.com/redis/go-redis/v9"
 )
 
 type RedisCounter struct {

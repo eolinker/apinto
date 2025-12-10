@@ -61,6 +61,30 @@ func (n *cacheLocal) Close() error {
 	return nil
 }
 
+func (n *cacheLocal) AcquireLock(ctx context.Context, key string, value string, ttl int) BoolResult {
+
+	n.keyLock.Lock()
+	lock, has := n.keyLocks[key]
+	if !has {
+		lock = &sync.Mutex{}
+		n.keyLocks[key] = lock
+	}
+	n.keyLock.Unlock()
+	lock.Lock()
+	return NewBoolResult(true, nil)
+}
+
+func (n *cacheLocal) ReleaseLock(ctx context.Context, key string, value string) StatusResult {
+	n.keyLock.Lock()
+	lock, has := n.keyLocks[key]
+	if has {
+		lock.Unlock()
+		delete(n.keyLocks, key)
+	}
+	n.keyLock.Unlock()
+	return NewStatusResult(nil)
+}
+
 func (n *cacheLocal) Set(ctx context.Context, key string, value []byte, expiration time.Duration) StatusResult {
 
 	err := n.client.Set([]byte(key), value, int(expiration.Seconds()))

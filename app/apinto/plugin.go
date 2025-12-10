@@ -9,6 +9,7 @@ import (
 	"github.com/eolinker/apinto/drivers/plugins/app"
 	auto_redirect "github.com/eolinker/apinto/drivers/plugins/auto-redirect"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
+	custom_oauth2_introspection "github.com/eolinker/apinto/drivers/plugins/custom-oauth2-introspection"
 	data_transform "github.com/eolinker/apinto/drivers/plugins/data-transform"
 	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
@@ -29,7 +30,7 @@ import (
 	rsa_filter "github.com/eolinker/apinto/drivers/plugins/rsa-filter"
 	script_handler "github.com/eolinker/apinto/drivers/plugins/script-handler"
 	data_mask "github.com/eolinker/apinto/drivers/plugins/strategy/data-mask"
-	
+
 	access_log "github.com/eolinker/apinto/drivers/plugins/access-log"
 	body_check "github.com/eolinker/apinto/drivers/plugins/body-check"
 	circuit_breaker "github.com/eolinker/apinto/drivers/plugins/circuit-breaker"
@@ -53,12 +54,12 @@ import (
 	"github.com/eolinker/apinto/drivers/plugins/strategy/grey"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/limiting"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/visit"
-	
+
 	"github.com/eolinker/eosc"
 )
 
 func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
-	
+
 	// 服务治理-策略相关插件
 	limiting.Register(extenderRegister)
 	cache.Register(extenderRegister)
@@ -66,17 +67,17 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	visit.Register(extenderRegister)
 	fuse.Register(extenderRegister)
 	data_mask.Register(extenderRegister)
-	
+
 	// Dubbo协议相关插件
 	dubbo2_proxy_rewrite.Register(extenderRegister)
 	http_to_dubbo2.Register(extenderRegister)
 	dubbo2_to_http.Register(extenderRegister)
-	
+
 	// gRPC协议相关插件
 	http_to_grpc.Register(extenderRegister)
 	grpc_to_http.Register(extenderRegister)
 	grpc_proxy_rewrite.Register(extenderRegister)
-	
+
 	// 请求处理相关插件
 	body_check.Register(extenderRegister)
 	extra_params.Register(extenderRegister)
@@ -90,7 +91,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	data_transform.Register(extenderRegister)
 	request_interception.Register(extenderRegister)
 	request_file_parse.Register(extenderRegister)
-	
+
 	// 响应处理插件
 	response_rewrite.Register(extenderRegister)
 	response_rewrite_v2.Register(extenderRegister)
@@ -98,7 +99,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	gzip.Register(extenderRegister)
 	response_file_parse.Register(extenderRegister)
 	auto_redirect.Register(extenderRegister)
-	
+
 	// 安全相关插件
 	ip_restriction.Register(extenderRegister)
 	rate_limiting.Register(extenderRegister)
@@ -111,24 +112,25 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	acl.Register(extenderRegister)
 	access_relational.Register(extenderRegister)
 	replay_attack_defender.Register(extenderRegister)
-	
+
 	// 可观测性（输出内容到第三方）
 	access_log.Register(extenderRegister)
 	prometheus.Register(extenderRegister)
 	monitor.Register(extenderRegister)
 	proxy_mirror.Register(extenderRegister)
-	
+
 	// 计数插件
 	counter.Register(extenderRegister)
-	
+
 	// 鉴权插件
 	oauth2.Register(extenderRegister)
 	oauth2_introspection.Register(extenderRegister)
-	
+	custom_oauth2_introspection.Register(extenderRegister)
+
 	// ai相关插件
 	ai_prompt.Register(extenderRegister)
 	ai_formatter.Register(extenderRegister)
 	//ai_balance.Register(extenderRegister)
-	
+
 	script_handler.Register(extenderRegister)
 }

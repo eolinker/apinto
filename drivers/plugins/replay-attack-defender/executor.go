@@ -10,7 +10,7 @@ import (
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	"net/http"
 	"strconv"
 	"sync"
@@ -46,14 +46,14 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 		ctx.Response().SetBody([]byte(err.Error()))
 		return err
 	}
-	
+
 	nonce := ctx.Request().Header().GetHeader(e.nonceHeader)
 	if nonce == "" {
 		ctx.Response().SetStatus(http.StatusBadRequest, "Bad Request")
 		ctx.Response().SetBody([]byte("missing nonce"))
 		return fmt.Errorf("missing nonce")
 	}
-	
+
 	sign := ctx.Request().Header().GetHeader(e.signHeader)
 	if sign == "" {
 		ctx.Response().SetStatus(http.StatusBadRequest, "Bad Request")
@@ -106,7 +106,7 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (e *executor) reset(conf *Config) error {
-	
+
 	if conf.NonceHeader == "" {
 		conf.NonceHeader = "X-Ca-Nonce"
 	}
@@ -136,11 +136,11 @@ func (e *executor) CheckSkill(skill string) bool {
 	return http_service.FilterSkillName == skill
 }
 
-func checkTimestamp(timestamp string, ) (int64, error) {
+func checkTimestamp(timestamp string) (int64, error) {
 	if timestamp == "" {
 		return 0, fmt.Errorf("missing timestamp")
 	}
-	
+
 	ts, err := strconv.ParseInt(timestamp, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("invalid timestamp %s, error: %v", timestamp, err)

@@ -14,7 +14,6 @@ require (
 	github.com/eolinker/eosc v0.21.2
 	github.com/fasthttp/websocket v1.5.0
 	github.com/fullstorydev/grpcurl v1.8.7
-	github.com/go-redis/redis/v8 v8.11.5
 	github.com/google/uuid v1.4.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/consul/api v1.9.1
@@ -44,6 +43,7 @@ require (
 )
 
 require (
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/xdg-go/scram v1.1.0
 )

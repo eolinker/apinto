@@ -9,6 +9,8 @@ import (
 const CacheSkill = "github.com/eolinker/apinto/resources.resources.ICache"
 
 type ICache interface {
+	AcquireLock(ctx context.Context, key string, value string, ttl int) BoolResult
+	ReleaseLock(ctx context.Context, key string, value string) StatusResult
 	Set(ctx context.Context, key string, value []byte, expiration time.Duration) StatusResult
 	SetNX(ctx context.Context, key string, value []byte, expiration time.Duration) BoolResult
 	DecrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) IntResult

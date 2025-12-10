@@ -30,6 +30,14 @@ func (e *Empty) Exec(ctx context.Context) error {
 	return ErrorNotInitRedis
 }
 
+func (e *Empty) AcquireLock(ctx context.Context, key string, value string, ttl int) resources.BoolResult {
+	return boolError
+}
+
+func (e *Empty) ReleaseLock(ctx context.Context, key string, value string) resources.StatusResult {
+	return statusError
+}
+
 func (e *Empty) Set(ctx context.Context, key string, value []byte, expiration time.Duration) resources.StatusResult {
 
 	return statusError

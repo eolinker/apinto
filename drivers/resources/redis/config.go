@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/eolinker/eosc"
-	redis "github.com/go-redis/redis/v8"
+	redis "github.com/redis/go-redis/v9"
 )
 
 type Config struct {

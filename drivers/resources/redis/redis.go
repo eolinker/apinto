@@ -7,23 +7,40 @@ import (
 
 	"github.com/eolinker/eosc/log"
 
+	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/eolinker/apinto/resources"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
+func newBoolResult(ok bool, err error) resources.BoolResult {
+	return &boolResult{
+		ok:  ok,
+		err: err,
+	}
+}
+
+type boolResult struct {
+	ok  bool
+	err error
+}
+
+func (b *boolResult) Result() (bool, error) {
+	return b.ok, b.err
+}
+
 type statusResult struct {
-	statusCmd *redis.StatusCmd
+	err error
 }
 
 func (s *statusResult) Result() error {
-	return s.statusCmd.Err()
+	return s.err
 }
 
-type Cmdable struct {
-	cmdable redis.Cmdable
+type CmdAble struct {
+	cmdAble redis.Cmdable
 }
 
-func (r *Cmdable) BuildVector(name string, uni, step time.Duration) (resources.Vector, error) {
+func (r *CmdAble) BuildVector(name string, uni, step time.Duration) (resources.Vector, error) {
 
 	if uni < time.Second {
 		uni = time.Second
@@ -40,31 +57,77 @@ func (r *Cmdable) BuildVector(name string, uni, step time.Duration) (resources.V
 
 	key := fmt.Sprintf("%s:%d:%d", name, uni, step)
 
-	return newVector(key, int64(uni), int64(step), r.cmdable), nil
+	return newVector(key, int64(uni), int64(step), r.cmdAble), nil
 }
 
-func (r *Cmdable) Tx() resources.TX {
-	tx := r.cmdable.TxPipeline()
+func (r *CmdAble) Tx() resources.TX {
+	tx := r.cmdAble.TxPipeline()
 	return &TxPipeline{
-		Cmdable: Cmdable{
-			cmdable: tx,
+		CmdAble: CmdAble{
+			cmdAble: tx,
 		},
 		p: tx,
 	}
 }
 
-func (r *Cmdable) Set(ctx context.Context, key string, value []byte, expiration time.Duration) resources.StatusResult {
+// 加锁：使用 ExponentialBackOff 重试
+func acquireLockWithBackoff(ctx context.Context, rdb redis.Cmdable, key, value string, ttl int) (bool, error) {
+	operation := func() error {
+		res, err := rdb.SetNX(ctx, key, value, time.Duration(ttl)*time.Second).Result()
+		if err != nil {
+			return err // 网络错误，重试
+		}
+		if res {
+			return nil // 成功，不再重试
+		}
+		return backoff.Permanent(fmt.Errorf("锁已被占用")) // 加锁失败，但非永久错误（继续重试）
+	}
 
-	return &statusResult{statusCmd: r.cmdable.Set(ctx, key, value, expiration)}
+	// 配置指数退避：初始 100ms，乘数 2，最大间隔 5s，最大时长 30s，抖动 0.5
+	b := backoff.NewExponentialBackOff()
+	b.InitialInterval = 100 * time.Millisecond
+	b.Multiplier = 2
+	b.MaxInterval = 5 * time.Second
+	b.MaxElapsedTime = 30 * time.Second
+	b.RandomizationFactor = 0.5 // 抖动：间隔 ±50%
+
+	err := backoff.Retry(operation, backoff.WithContext(b, ctx))
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
-func (r *Cmdable) SetNX(ctx context.Context, key string, value []byte, expiration time.Duration) resources.BoolResult {
-
-	return r.cmdable.SetNX(ctx, key, value, expiration)
+func (r *CmdAble) AcquireLock(ctx context.Context, key string, value string, ttl int) resources.BoolResult {
+	ok, err := acquireLockWithBackoff(ctx, r.cmdAble, key, value, ttl)
+	return newBoolResult(ok, err)
 }
 
-func (r *Cmdable) DecrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
-	pipeline := r.cmdable.Pipeline()
+// Lua 解锁脚本
+var unlockScript = redis.NewScript(`
+if redis.call("get", KEYS[1]) == ARGV[1] then
+    return redis.call("del", KEYS[1])
+else
+    return 0
+end
+`)
+
+func (r *CmdAble) ReleaseLock(ctx context.Context, key string, value string) resources.StatusResult {
+	return &statusResult{err: unlockScript.Run(ctx, r.cmdAble, []string{key}, value).Err()}
+}
+
+func (r *CmdAble) Set(ctx context.Context, key string, value []byte, expiration time.Duration) resources.StatusResult {
+
+	return &statusResult{err: r.cmdAble.Set(ctx, key, value, expiration).Err()}
+}
+
+func (r *CmdAble) SetNX(ctx context.Context, key string, value []byte, expiration time.Duration) resources.BoolResult {
+
+	return r.cmdAble.SetNX(ctx, key, value, expiration)
+}
+
+func (r *CmdAble) DecrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
+	pipeline := r.cmdAble.Pipeline()
 	result := pipeline.DecrBy(ctx, key, decrement)
 	if expiration > 0 {
 		pipeline.Expire(ctx, key, expiration)
@@ -77,8 +140,8 @@ func (r *Cmdable) DecrBy(ctx context.Context, key string, decrement int64, expir
 
 }
 
-func (r *Cmdable) IncrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
-	pipeline := r.cmdable.Pipeline()
+func (r *CmdAble) IncrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
+	pipeline := r.cmdAble.Pipeline()
 	result := pipeline.IncrBy(ctx, key, decrement)
 	if expiration > 0 {
 		pipeline.Expire(ctx, key, expiration)
@@ -91,22 +154,22 @@ func (r *Cmdable) IncrBy(ctx context.Context, key string, decrement int64, expir
 	return result
 }
 
-func (r *Cmdable) Keys(ctx context.Context, key string) resources.StringSliceResult {
-	return r.cmdable.Keys(ctx, key)
+func (r *CmdAble) Keys(ctx context.Context, key string) resources.StringSliceResult {
+	return r.cmdAble.Keys(ctx, key)
 }
 
-func (r *Cmdable) Get(ctx context.Context, key string) resources.StringResult {
-	return r.cmdable.Get(ctx, key)
-
-}
-
-func (r *Cmdable) GetDel(ctx context.Context, key string) resources.StringResult {
-	return r.cmdable.GetDel(ctx, key)
+func (r *CmdAble) Get(ctx context.Context, key string) resources.StringResult {
+	return r.cmdAble.Get(ctx, key)
 
 }
 
-func (r *Cmdable) HMSetN(ctx context.Context, key string, fields map[string]interface{}, expiration time.Duration) resources.BoolResult {
-	pipeline := r.cmdable.Pipeline()
+func (r *CmdAble) GetDel(ctx context.Context, key string) resources.StringResult {
+	return r.cmdAble.GetDel(ctx, key)
+
+}
+
+func (r *CmdAble) HMSetN(ctx context.Context, key string, fields map[string]interface{}, expiration time.Duration) resources.BoolResult {
+	pipeline := r.cmdAble.Pipeline()
 	result := pipeline.HMSet(ctx, key, fields)
 	if expiration > 0 {
 		pipeline.Expire(ctx, key, expiration)
@@ -119,26 +182,26 @@ func (r *Cmdable) HMSetN(ctx context.Context, key string, fields map[string]inte
 	return result
 }
 
-func (r *Cmdable) HMGet(ctx context.Context, key string, fields ...string) resources.ArrayInterfaceResult {
-	return r.cmdable.HMGet(ctx, key, fields...)
+func (r *CmdAble) HMGet(ctx context.Context, key string, fields ...string) resources.ArrayInterfaceResult {
+	return r.cmdAble.HMGet(ctx, key, fields...)
 }
 
-func (r *Cmdable) Del(ctx context.Context, keys ...string) resources.IntResult {
-	return r.cmdable.Del(ctx, keys...)
+func (r *CmdAble) Del(ctx context.Context, keys ...string) resources.IntResult {
+	return r.cmdAble.Del(ctx, keys...)
 }
 
-func (r *Cmdable) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) resources.InterfaceResult {
+func (r *CmdAble) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) resources.InterfaceResult {
 	switch s := script.(type) {
 	case string:
-		return redis.NewScript(s).Run(ctx, r.cmdable, keys, args...)
+		return redis.NewScript(s).Run(ctx, r.cmdAble, keys, args...)
 	case *redis.Script:
-		return s.Run(ctx, r.cmdable, keys, args...)
+		return s.Run(ctx, r.cmdAble, keys, args...)
 	}
 	return resources.NewInterfaceResult(nil, fmt.Errorf("script type error: %T", script))
 }
 
 type TxPipeline struct {
-	Cmdable
+	CmdAble
 	p redis.Pipeliner
 }
 

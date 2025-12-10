@@ -7,7 +7,7 @@ import (
 	"github.com/eolinker/apinto/resources"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
-	redis "github.com/go-redis/redis/v8"
+	redis "github.com/redis/go-redis/v9"
 )
 
 var (
@@ -40,8 +40,8 @@ func (w *Worker) Start() error {
 	if err != nil {
 		return err
 	}
-	h := &Cmdable{
-		cmdable: client,
+	h := &CmdAble{
+		cmdAble: client,
 	}
 	w.client, w.ICache, w.IVectors = client, h, h
 	w.isRunning = true
@@ -67,8 +67,8 @@ func (w *Worker) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 		}
 		if w.isRunning {
 			oc := w.client
-			w.client, w.ICache = client, &Cmdable{
-				cmdable: client,
+			w.client, w.ICache = client, &CmdAble{
+				cmdAble: client,
 			}
 			oc.Close()
 			if len(w.config.Scopes) > 0 {
