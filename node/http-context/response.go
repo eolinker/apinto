@@ -101,12 +101,10 @@ func (r *Response) GetBody() []byte {
 	if r.IsBodyStream() {
 		return r.streamBody.Bytes()
 	}
-	if strings.Contains(r.GetHeader("Content-Encoding"), "gzip") {
-		body, _ := r.BodyGunzip()
-		r.DelHeader("Content-Encoding")
-		r.SetHeader("Content-Length", strconv.Itoa(len(body)))
-		r.Response.SetBody(body)
-	}
+	body, _ := r.BodyUncompressed()
+	r.SetHeader("Content-Length", strconv.Itoa(len(body)))
+	r.DelHeader("Content-Encoding")
+	r.Response.SetBody(body)
 	return r.Response.Body()
 }
 
