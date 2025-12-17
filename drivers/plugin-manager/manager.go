@@ -16,7 +16,7 @@ import (
 
 var (
 	errConfig                      = errors.New("invalid config")
-	ErrorDriverNotExit             = errors.New("drive not exit")
+	ErrorDriverNotExist            = errors.New("driver not exist")
 	ErrorGlobalPluginMastConfig    = errors.New("global must have config")
 	ErrorGlobalPluginConfigInvalid = errors.New("invalid global config")
 )
@@ -171,7 +171,8 @@ func (p *PluginManager) check(conf interface{}) (Plugins, error) {
 		log.DebugF("new plugin:%d=>%v", i, cf)
 		newPlugin, err := p.newPlugin(cf)
 		if err != nil {
-			return nil, err
+			log.Error("new plugin error:", err)
+			continue
 		}
 		plugins = append(plugins, newPlugin)
 	}

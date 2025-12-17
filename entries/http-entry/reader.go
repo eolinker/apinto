@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"github.com/eolinker/eosc/log"
 	"io"
 	"net/url"
 	"os"
@@ -270,7 +271,32 @@ var (
 
 		"response": Fields{
 			"": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
-				return ctx.Response().String(), true
+				builder := &strings.Builder{}
+				err := ctx.Response().Headers().Write(builder)
+				if err != nil {
+					log.Errorf("write response headers error: %v", err)
+					return "", false
+				}
+				body := ctx.Response().GetBody()
+				encoding := ctx.Response().Headers().Get("Content-Encoding")
+				if encoding == "gzip" {
+					reader, err := gzip.NewReader(bytes.NewReader(body))
+					if err != nil {
+						return "", false
+					}
+					defer reader.Close()
+					data, err := io.ReadAll(reader)
+					if err != nil {
+						return "", false
+					}
+					body = data
+				}
+				_, err = builder.Write(body)
+				if err != nil {
+					log.Errorf("write response body error: %v", err)
+					return "", false
+				}
+				return builder.String(), true
 			}),
 			"body": Fields{
 				"": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {

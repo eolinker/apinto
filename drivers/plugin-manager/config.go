@@ -3,6 +3,7 @@ package plugin_manager
 import (
 	"fmt"
 	"github.com/eolinker/eosc"
+	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/variable"
 	"reflect"
 )
@@ -17,7 +18,7 @@ type PluginWorkerConfig struct {
 	Plugins []*PluginConfig `json:"plugins" yaml:"plugins"`
 }
 
-//PluginConfig 全局插件配置
+// PluginConfig 全局插件配置
 type PluginConfig struct {
 	Name       string                 `json:"name" yaml:"name" `
 	ID         string                 `json:"id" yaml:"id"`
@@ -71,7 +72,8 @@ func (p *PluginConfig) Reset(originVal reflect.Value, targetVal reflect.Value, v
 
 	cfgType, err := p.GetType(originVal)
 	if err != nil {
-		return nil, err
+		log.Errorf("PluginConfig Reset get type error: %v", err)
+		return nil, nil
 	}
 	usedVariables := make([]string, 0, variables.Len())
 	targetType := targetVal.Type()
