@@ -1,9 +1,6 @@
 package response_filter
 
 import (
-	"github.com/ohler55/ojg/jp"
-	"github.com/ohler55/ojg/oj"
-
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
@@ -16,8 +13,7 @@ var _ eosc.IWorker = (*executor)(nil)
 
 type executor struct {
 	drivers.WorkerBase
-	bodyFilter   []jp.Expr
-	headerFilter []string
+	filters []IFilter
 }
 
 func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
@@ -32,23 +28,17 @@ func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 			return err
 		}
 	}
-	body := ctx.Response().GetBody()
-	n, err := oj.Parse(body)
-	if err != nil {
-		return err
-	}
-	for _, filter := range e.bodyFilter {
-		filter.Del(n)
-	}
-	body, err = oj.Marshal(n)
-	ctx.Response().SetBody(body)
-	for _, filter := range e.headerFilter {
-		ctx.Response().DelHeader(filter)
+	for _, filter := range e.filters {
+		err = filter.Filter(ctx)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func (e *executor) Destroy() {
+	e.filters = nil
 	return
 }
 

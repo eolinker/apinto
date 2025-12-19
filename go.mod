@@ -11,7 +11,7 @@ require (
 	github.com/clbanning/mxj v1.8.4
 	github.com/coocood/freecache v1.2.2
 	github.com/dubbogo/gost v1.13.1
-	github.com/eolinker/eosc v0.21.2
+	github.com/eolinker/eosc v0.21.3
 	github.com/fasthttp/websocket v1.5.0
 	github.com/fullstorydev/grpcurl v1.8.7
 	github.com/google/uuid v1.4.0
@@ -22,7 +22,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.28
 	github.com/nacos-group/nacos-sdk-go/v2 v2.2.3
 	github.com/nsqio/go-nsq v1.1.0
-	github.com/ohler55/ojg v1.25.1
+	github.com/ohler55/ojg v1.27.0
 	github.com/pkg/sftp v1.13.4
 	github.com/pkoukk/tiktoken-go v0.1.7
 	github.com/polarismesh/polaris-go v1.1.0
@@ -44,6 +44,8 @@ require (
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/tidwall/gjson v1.18.0
+	github.com/tidwall/sjson v1.2.5
 	github.com/tjfoc/gmsm v1.4.1
 	github.com/xdg-go/scram v1.1.0
 )
@@ -105,6 +107,8 @@ require (
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b // indirect
 	github.com/shirou/gopsutil/v3 v3.22.2 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.4.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
@@ -205,5 +209,3 @@ require (
 )
 
 replace github.com/soheilhy/cmux v0.1.5 => github.com/hmzzrcs/cmux v0.1.6
-
-//replace github.com/eolinker/eosc => ../eosc

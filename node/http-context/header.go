@@ -162,6 +162,13 @@ func (r *ResponseHeader) Headers() http.Header {
 	return r.cache.Clone()
 }
 
+func (r *ResponseHeader) HeaderReset() {
+	r.locker.RLock()
+	defer r.locker.RUnlock()
+	r.cache = http.Header{}
+	r.header.Reset()
+}
+
 func (r *ResponseHeader) SetHeader(key, value string) {
 	r.locker.Lock()
 	defer r.locker.Unlock()

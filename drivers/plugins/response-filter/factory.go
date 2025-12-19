@@ -1,15 +1,14 @@
 package response_filter
 
 import (
-	"strings"
-
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
-	"github.com/ohler55/ojg/jp"
 )
 
 const (
-	Name = "response_filter"
+	Name            = "response_filter"
+	WhiteFilterType = "white"
+	BlackFilterType = "black"
 )
 
 func Register(register eosc.IExtenderDriverRegister) {
@@ -17,26 +16,47 @@ func Register(register eosc.IExtenderDriverRegister) {
 }
 
 func NewFactory() eosc.IExtenderDriverFactory {
-	return drivers.NewFactory[Config](Create)
+	return drivers.NewFactory[Config](Create, check)
 }
 
 func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
-	bodyFilter := make([]jp.Expr, 0, len(conf.BodyFilter))
-	for _, filter := range conf.BodyFilter {
-		key := filter
-		if !strings.HasPrefix(key, "$.") {
-			key = "$." + key
+	filters := make([]IFilter, 0, 4)
+	if len(conf.BodyFilter) > 0 {
+		switch conf.BodyFilterType {
+		case WhiteFilterType:
+			filter, err := NewBodyWhiteFilter(conf.BodyFilter)
+			if err != nil {
+				return nil, err
+			}
+			filters = append(filters, filter)
+		case BlackFilterType:
+			filter, err := NewBodyBlackFilter(conf.BodyFilter)
+			if err != nil {
+				return nil, err
+			}
+			filters = append(filters, filter)
 		}
-		expr, err := jp.ParseString(filter)
-		if err != nil {
-			return nil, err
+	}
+
+	if len(conf.HeaderFilter) > 0 {
+		switch conf.HeaderFilterType {
+		case WhiteFilterType:
+			filter, err := NewHeaderWhiteFilter(conf.HeaderFilter)
+			if err != nil {
+				return nil, err
+			}
+			filters = append(filters, filter)
+		case BlackFilterType:
+			filter, err := NewHeaderBlackFilter(conf.HeaderFilter)
+			if err != nil {
+				return nil, err
+			}
+			filters = append(filters, filter)
 		}
-		bodyFilter = append(bodyFilter, expr)
 	}
 
 	return &executor{
-		WorkerBase:   drivers.Worker(id, name),
-		bodyFilter:   bodyFilter,
-		headerFilter: conf.HeaderFilter,
+		WorkerBase: drivers.Worker(id, name),
+		filters:    filters,
 	}, nil
 }
