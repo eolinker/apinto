@@ -390,9 +390,9 @@ func NewContext(ctx *fasthttp.RequestCtx, port int) *HttpContext {
 	// 原始请求最大读取body为8k，使用clone request
 	request := fasthttp.AcquireRequest()
 
-	//if ctx.Request.IsBodyStream() && ctx.Request.Header.ContentLength() > 8*1024 {
-	//	ctx.Request.Body()
-	//}
+	if ctx.Request.IsBodyStream() && ctx.Request.Header.ContentLength() > 8*1024 {
+		ctx.Request.Body()
+	}
 	ctx.Request.CopyTo(request)
 	httpContext.requestReader.reset(request, remoteAddr)
 

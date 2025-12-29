@@ -15,15 +15,17 @@ import (
 )
 
 var (
-	errProviderNotFound = errors.New("provider not found")
-	errKeyNotFound      = errors.New("key not found")
+	errProviderNotFound  = errors.New("provider not found")
+	errModelTypeNotFound = errors.New("model type not found")
+	errKeyNotFound       = errors.New("key not found")
 )
 
 type executor struct {
 	drivers.WorkerBase
-	provider string
-	model    string
-	modelCfg string
+	provider  string
+	model     string
+	modelType ai_convert.ModelType
+	modelCfg  string
 }
 
 func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) error {
@@ -65,8 +67,12 @@ func (e *executor) doConverter(ctx http_context.IHttpContext, next eocontext.ICh
 			Status:   status,
 		})
 	}()
+	converter, has := resource.Get(e.modelType)
+	if !has {
+		return errModelTypeNotFound
+	}
 
-	if err := resource.RequestConvert(ctx, extender); err != nil {
+	if err := converter.RequestConvert(ctx, extender); err != nil {
 		return err
 	}
 
@@ -82,7 +88,7 @@ func (e *executor) doConverter(ctx http_context.IHttpContext, next eocontext.ICh
 		}
 		return nil
 	}
-	if err := resource.ResponseConvert(ctx); err != nil {
+	if err := converter.ResponseConvert(ctx); err != nil {
 		return err
 	}
 	status = ai_convert.GetAIStatus(ctx)
@@ -205,7 +211,11 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string
 		}
 		ctx.SetProxy(cloneProxy)
 		ai_convert.SetAIKey(ctx, r.ID())
-		if err = r.RequestConvert(ctx, extender); err != nil {
+		converter, has := r.Get(e.modelType)
+		if !has {
+			continue
+		}
+		if err = converter.RequestConvert(ctx, extender); err != nil {
 			ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
 				Provider: e.provider,
 				Model:    e.model,
@@ -235,7 +245,7 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string
 			}
 			return nil
 		}
-		if err = r.ResponseConvert(ctx); err != nil {
+		if err = converter.ResponseConvert(ctx); err != nil {
 			//return err
 			log.Errorf("response convert error: %v", err)
 			continue

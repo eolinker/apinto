@@ -27,8 +27,8 @@ type InferenceConfig struct {
 	TopP        float64 `json:"topP"`
 }
 
-// BedrockResponse 代表 Amazon Bedrock 的 JSON 响应格式
-type BedrockResponse struct {
+// Response 代表 Amazon Bedrock 的 JSON 响应格式
+type Response struct {
 	Metrics struct {
 		LatencyMs int `json:"latencyMs"`
 	} `json:"metrics"`
@@ -49,7 +49,7 @@ type BedrockResponse struct {
 }
 
 // ConvertBedrockToOpenAI 通用转换方法
-func ConvertBedrockToOpenAI(requestId string, model string, bedrockResp BedrockResponse, isStream bool) openai.ChatCompletionResponse {
+func ConvertBedrockToOpenAI(requestId string, model string, bedrockResp Response, isStream bool) openai.ChatCompletionResponse {
 	// 提取文本内容
 	textContent := ""
 	if len(bedrockResp.Output.Message.Content) > 0 {

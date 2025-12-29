@@ -1,13 +1,15 @@
 package ai_formatter
 
 import (
+	ai_convert "github.com/eolinker/apinto/ai-convert"
 	"github.com/eolinker/eosc"
 )
 
 type Config struct {
-	Provider string `json:"provider"`
-	Model    string `json:"model"`
-	Config   string `json:"config"`
+	Provider  string `json:"provider"`
+	Model     string `json:"model"`
+	ModelType string `json:"model_type"`
+	Config    string `json:"config"`
 }
 
 func checkConfig(v interface{}) (*Config, error) {
@@ -15,5 +17,10 @@ func checkConfig(v interface{}) (*Config, error) {
 	if !ok {
 		return nil, eosc.ErrorConfigType
 	}
+
+	if conf.ModelType == "" {
+		conf.ModelType = ai_convert.ModelTypeChat.String()
+	}
+
 	return conf, nil
 }

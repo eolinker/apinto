@@ -25,7 +25,8 @@ const (
 
 type CheckError func(ctx http_service.IHttpContext, body []byte) bool
 
-type OpenAIConvert struct {
+type OpenAIChat struct {
+	provider       string
 	apikey         string
 	path           string
 	checkErr       CheckError
@@ -33,8 +34,9 @@ type OpenAIConvert struct {
 	balanceHandler eoscContext.BalanceHandler
 }
 
-func NewOpenAIConvert(apikey string, baseUrl string, timeout time.Duration, checkErr CheckError, errorCallback func(ctx http_service.IHttpContext, body []byte)) (*OpenAIConvert, error) {
-	c := &OpenAIConvert{
+func NewOpenAIChat(provider string, apikey string, baseUrl string, timeout time.Duration, checkErr CheckError, errorCallback func(ctx http_service.IHttpContext, body []byte)) (IConverterDriver, error) {
+	c := &OpenAIChat{
+		provider:      provider,
 		apikey:        apikey,
 		checkErr:      checkErr,
 		errorCallback: errorCallback,
@@ -59,7 +61,15 @@ func NewOpenAIConvert(apikey string, baseUrl string, timeout time.Duration, chec
 	return c, nil
 }
 
-func (o *OpenAIConvert) RequestConvert(ctx eoscContext.EoContext, extender map[string]interface{}) error {
+func (o *OpenAIChat) Provider() string {
+	return o.provider
+}
+
+func (o *OpenAIChat) ModelType() ModelType {
+	return ModelTypeChat
+}
+
+func (o *OpenAIChat) RequestConvert(ctx eoscContext.EoContext, extender map[string]interface{}) error {
 	httpContext, err := http_service.Assert(ctx)
 	if err != nil {
 		return err
@@ -158,11 +168,11 @@ func ResponseConvert(ctx eoscContext.EoContext, checkErr CheckError, errorCallba
 	return nil
 }
 
-func (o *OpenAIConvert) ResponseConvert(ctx eoscContext.EoContext) error {
+func (o *OpenAIChat) ResponseConvert(ctx eoscContext.EoContext) error {
 	return ResponseConvert(ctx, o.checkErr, o.errorCallback)
 }
 
-func (o *OpenAIConvert) bodyFinish(ctx http_service.IHttpContext) {
+func (o *OpenAIChat) bodyFinish(ctx http_service.IHttpContext) {
 	body := ctx.Response().GetBody()
 	defer func() {
 		SetAIProviderStatuses(ctx, AIProviderStatus{
@@ -250,7 +260,7 @@ func calculateStreamOutputToken(body []byte, model string) (*TokenUsage, error) 
 	return &TokenUsage{0, getTokens(builder.String(), model), 0}, nil
 }
 
-//func (o *OpenAIConvert) streamHandler(ctx http_service.IHttpContext, p []byte) ([]byte, error) {
+//func (o *OpenAIChat) streamHandler(ctx http_service.IHttpContext, p []byte) ([]byte, error) {
 //	encoding := ctx.Response().Headers().Get("content-encoding")
 //	if encoding == "gzip" {
 //		return p, nil
