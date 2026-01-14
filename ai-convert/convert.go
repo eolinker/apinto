@@ -19,6 +19,7 @@ func (m ModelType) String() string {
 const (
 	ModelTypeChat  ModelType = "chat"
 	ModelTypeImage ModelType = "image"
+	ModelTypeVideo ModelType = "video"
 )
 
 type IConverterFactory interface {
@@ -65,7 +66,7 @@ func NewConverter[T any](provider string, cfg *T, fns []IConvertDriverCreateFunc
 		}
 		c.drivers.Set(driver.ModelType(), driver)
 	}
-
+	
 	return c, nil
 }
 
