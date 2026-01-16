@@ -3,11 +3,11 @@ package grey_strategy
 import (
 	"strings"
 	"time"
-
+	
 	session_keep "github.com/eolinker/apinto/upstream/session-keep"
-
+	
 	"github.com/eolinker/apinto/discovery"
-
+	
 	"github.com/eolinker/apinto/checker"
 	"github.com/eolinker/apinto/drivers/discovery/static"
 	"github.com/eolinker/apinto/strategy"
@@ -31,6 +31,7 @@ type GreyMatch interface {
 type IGreyHandler interface {
 	strategy.IFilter
 	GreyMatch
+	Name() string
 	DoGrey(ctx eocontext.EoContext)
 	IsStop() bool
 	Priority() int
@@ -43,6 +44,10 @@ type GreyHandler struct {
 	GreyMatch
 	app            discovery.IApp
 	balanceHandler eocontext.BalanceHandler
+}
+
+func (g *GreyHandler) Name() string {
+	return g.name
 }
 
 func (g *GreyHandler) Nodes() []eocontext.INode {
@@ -82,7 +87,7 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	
 	handler := &GreyHandler{
 		name:     conf.Name,
 		IFilter:  filter,
@@ -97,12 +102,12 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	
 	balanceHandler, err := balanceFactory.Create(app, "", 0)
 	if err != nil {
 		return nil, err
 	}
-
+	
 	if conf.Rule.Distribution == percent {
 		greyFlowHandler := &flowHandler{
 			id:     1,
@@ -112,7 +117,7 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 			id:     2,
 			weight: 10000 - greyFlowHandler.weight,
 		}
-
+		
 		robin := NewRobin(greyFlowHandler, normalFlowHandler)
 		handler.GreyMatch = &greyFlow{flowRobin: robin}
 		if conf.Rule.KeepSession {
@@ -122,26 +127,26 @@ func NewGreyHandler(conf *Config) (*GreyHandler, error) {
 				GreyMatch: handler.GreyMatch,
 			}
 		}
-
+		
 	} else {
 		ruleFilter := make(matchingHandlerFilters, 0)
 		for _, matching := range conf.Rule.Matching {
-
+			
 			check, err := checker.Parse(matching.Value)
 			if err != nil {
 				return nil, err
 			}
-
+			
 			matchingHandlerVal := &matchingHandler{
 				Type:    matching.Type,
 				name:    matching.Name,
 				value:   matching.Value,
 				checker: check,
 			}
-
+			
 			ruleFilter = append(ruleFilter, matchingHandlerVal)
 		}
-
+		
 		handler.GreyMatch = &ruleGreyMatch{ruleFilter: ruleFilter}
 	}
 	old := handler.app

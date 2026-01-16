@@ -5,10 +5,10 @@ import (
 	"github.com/eolinker/eosc/log"
 	"io"
 	"strings"
-
+	
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/valyala/fasthttp"
-
+	
 	"mime"
 	"mime/multipart"
 	"net/url"
@@ -19,27 +19,23 @@ var (
 )
 
 const (
-	MultipartForm  = "multipart/form-data"
-	FormData       = "application/x-www-form-urlencoded"
-	TEXT           = "text/plain"
-	JSON           = "application/json"
-	JavaScript     = "application/javascript"
-	AppLicationXML = "application/xml"
-	TextXML        = "text/xml"
-	Html           = "text/html"
+	MultipartForm = "multipart/form-data"
+	FormData      = "application/x-www-form-urlencoded"
+	JSON          = "application/json"
 )
 
 // BodyRequestHandler body请求处理器
 type BodyRequestHandler struct {
 	request *fasthttp.Request
-
-	formdata    *multipart.Form
-	isResetFile bool
+	form    *multipart.Form
+	
+	needResetFile bool
+	isResetFile   bool
 }
 
 func (b *BodyRequestHandler) MultipartForm() (*multipart.Form, error) {
-	if b.formdata != nil {
-		return b.formdata, nil
+	if b.form != nil {
+		return b.form, nil
 	}
 	if !strings.Contains(b.ContentType(), MultipartForm) {
 		return nil, ErrorNotMultipart
@@ -48,13 +44,11 @@ func (b *BodyRequestHandler) MultipartForm() (*multipart.Form, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	b.formdata = &multipart.Form{
+	b.form = &multipart.Form{
 		Value: form.Value,
 		File:  form.File,
 	}
-
-	//return form, b.resetFile()
+	
 	return form, nil
 }
 func (b *BodyRequestHandler) Files() (map[string][]*multipart.FileHeader, error) {
@@ -66,16 +60,13 @@ func (b *BodyRequestHandler) Files() (map[string][]*multipart.FileHeader, error)
 }
 func (b *BodyRequestHandler) reset(request *fasthttp.Request) {
 	b.request = request
-	b.formdata = nil
-}
-func NewBodyRequestHandler(request *fasthttp.Request) *BodyRequestHandler {
-	return &BodyRequestHandler{request: request}
+	b.form = nil
 }
 
 // GetForm 获取表单参数
 func (b *BodyRequestHandler) GetForm(key string) string {
 	contentType, _, _ := mime.ParseMediaType(b.ContentType())
-
+	
 	switch contentType {
 	case FormData:
 		args := b.request.PostArgs()
@@ -93,7 +84,7 @@ func (b *BodyRequestHandler) GetForm(key string) string {
 			return vs[0]
 		}
 		return ""
-
+		
 	}
 	return ""
 }
@@ -105,7 +96,7 @@ func (b *BodyRequestHandler) ContentType() string {
 
 // BodyForm 获取表单参数
 func (b *BodyRequestHandler) BodyForm() (url.Values, error) {
-
+	
 	contentType, _, _ := mime.ParseMediaType(string(b.request.Header.ContentType()))
 	switch contentType {
 	case FormData:
@@ -119,7 +110,7 @@ func (b *BodyRequestHandler) BodyForm() (url.Values, error) {
 	default:
 		return nil, ErrorNotForm
 	}
-
+	
 }
 
 // RawBody 获取raw数据
@@ -135,7 +126,7 @@ func (b *BodyRequestHandler) RawBody() ([]byte, error) {
 			b.isResetFile = true
 		}
 	}
-
+	
 	return b.request.Body(), nil
 }
 
@@ -145,9 +136,9 @@ func (b *BodyRequestHandler) GetFile(key string) ([]*multipart.FileHeader, bool)
 		return nil, false
 	}
 	fl, has := multipartForm.File[key]
-
+	
 	return fl, has
-
+	
 }
 
 func (b *BodyRequestHandler) SetToForm(key, value string) error {
@@ -163,8 +154,7 @@ func (b *BodyRequestHandler) SetToForm(key, value string) error {
 			return err
 		}
 		multipartForm.Value[key] = []string{value}
-		b.isResetFile = false
-		//return b.resetFile()
+		b.needResetFile = true
 		return nil
 	default:
 		return ErrorNotForm
@@ -173,7 +163,7 @@ func (b *BodyRequestHandler) SetToForm(key, value string) error {
 
 // AddForm 新增表单参数
 func (b *BodyRequestHandler) AddForm(key, value string) error {
-
+	
 	contentType, _, _ := mime.ParseMediaType(string(b.request.Header.ContentType()))
 	switch contentType {
 	case FormData:
@@ -186,8 +176,7 @@ func (b *BodyRequestHandler) AddForm(key, value string) error {
 			return err
 		}
 		multipartForm.Value[key] = append(multipartForm.Value[key], value)
-		b.isResetFile = false
-		//return b.resetFile()
+		b.needResetFile = true
 		return nil
 	default:
 		return ErrorNotForm
@@ -196,7 +185,7 @@ func (b *BodyRequestHandler) AddForm(key, value string) error {
 
 // AddFile 新增文件参数
 func (b *BodyRequestHandler) AddFile(key string, file *multipart.FileHeader) error {
-
+	
 	contentType, _, _ := mime.ParseMediaType(b.ContentType())
 	if contentType != FormData && contentType != MultipartForm {
 		return ErrorNotMultipart
@@ -206,33 +195,42 @@ func (b *BodyRequestHandler) AddFile(key string, file *multipart.FileHeader) err
 		return err
 	}
 	multipartForm.File[key] = append(multipartForm.File[key], file)
-	b.isResetFile = false
-	//return b.resetFile()
+	b.needResetFile = true
 	return nil
 }
 
 // SetFile 设置文件参数
 func (b *BodyRequestHandler) SetFile(files map[string][]*multipart.FileHeader) error {
-
+	
 	multipartForm, err := b.MultipartForm()
 	if err != nil {
 		return err
 	}
 	multipartForm.File = files
+	b.needResetFile = true
+	return nil
+}
 
-	//return b.resetFile()
+func (b *BodyRequestHandler) RefactorBody() error {
+	if b.needResetFile {
+		err := b.resetFile()
+		if err != nil {
+			return err
+		}
+		b.isResetFile = true
+	}
 	return nil
 }
 
 func (b *BodyRequestHandler) resetFile() error {
-	multipartForm := b.formdata
+	multipartForm := b.form
 	if multipartForm == nil {
 		return nil
 	}
-
+	
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
-
+	
 	for _, fs := range multipartForm.File {
 		for _, f := range fs {
 			fio, err := f.Open()
@@ -243,7 +241,7 @@ func (b *BodyRequestHandler) resetFile() error {
 			if err != nil {
 				return err
 			}
-
+			
 			data, err := io.ReadAll(fio)
 			if err != nil {
 				fio.Close()
@@ -257,7 +255,7 @@ func (b *BodyRequestHandler) resetFile() error {
 			fio.Close()
 		}
 	}
-
+	
 	for key, values := range multipartForm.Value {
 		//temp := make(url.Values)
 		//temp[key] = values
@@ -268,7 +266,7 @@ func (b *BodyRequestHandler) resetFile() error {
 				return err
 			}
 		}
-
+		
 	}
 	err := writer.Close()
 	if err != nil {
@@ -281,7 +279,7 @@ func (b *BodyRequestHandler) resetFile() error {
 
 // SetForm 设置表单参数
 func (b *BodyRequestHandler) SetForm(values url.Values) error {
-
+	
 	contentType, _, _ := mime.ParseMediaType(b.ContentType())
 	if contentType != FormData && contentType != MultipartForm {
 		return ErrorNotForm
@@ -295,10 +293,11 @@ func (b *BodyRequestHandler) SetForm(values url.Values) error {
 			return err
 		}
 		multipartForm.Value = values
+		b.needResetFile = true
 		//return b.resetFile()
 		return nil
 	}
-
+	
 	return ErrorNotForm
 }
 
@@ -306,5 +305,5 @@ func (b *BodyRequestHandler) SetForm(values url.Values) error {
 func (b *BodyRequestHandler) SetRaw(contentType string, body []byte) {
 	b.request.SetBodyRaw(body)
 	b.request.Header.SetContentType(contentType)
-
+	
 }

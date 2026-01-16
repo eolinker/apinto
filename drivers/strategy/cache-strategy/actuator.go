@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 	"time"
-
+	
 	"github.com/eolinker/apinto/drivers/strategy/cache-strategy/cache"
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/eocontext"
@@ -43,7 +43,7 @@ func (a *tActuator) Set(id string, val *CacheValidTimeHandler) {
 	// 调用来源有锁
 	a.all[id] = val
 	a.rebuild()
-
+	
 }
 
 func (a *tActuator) Del(id string) {
@@ -53,7 +53,7 @@ func (a *tActuator) Del(id string) {
 }
 
 func (a *tActuator) rebuild() {
-
+	
 	handlers := make([]*CacheValidTimeHandler, 0, len(a.all))
 	for _, h := range a.all {
 		if !h.stop {
@@ -72,7 +72,7 @@ func newtActuator() *tActuator {
 }
 
 func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, iCache resources.ICache) error {
-
+	
 	httpCtx, err := http_service.Assert(ctx)
 	if err != nil {
 		if next != nil {
@@ -80,25 +80,27 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, iCa
 		}
 		return err
 	}
-
+	
 	if httpCtx.Request().Method() != http.MethodGet {
 		if next != nil {
 			return next.DoChain(ctx)
 		}
 		return nil
 	}
-
+	
 	a.lock.RLock()
 	handlers := a.handlers
 	a.lock.RUnlock()
-
+	
 	for _, handler := range handlers {
 		if handler.filter.Check(httpCtx) {
-
+			
 			uri := httpCtx.Request().URI().RequestURI()
 			responseData := cache.GetResponseData(iCache, uri)
-
+			
 			if responseData != nil {
+				ctx.WithValue("is_block", true)
+				ctx.SetLabel("block_name", handler.name)
 				ctx.SetLabel("handler", "cache")
 				httpCtx.SetCompleteHandler(responseData)
 			} else {
@@ -107,7 +109,7 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, iCa
 			break
 		}
 	}
-
+	
 	if next != nil {
 		return next.DoChain(ctx)
 	}
@@ -131,18 +133,18 @@ func NewCacheGetCompleteHandler(orgHandler eocontext.CompleteHandler, validTime 
 }
 
 func (c *CacheCompleteHandler) Complete(ctx eocontext.EoContext) error {
-
+	
 	if c.orgHandler != nil {
 		if err := c.orgHandler.Complete(ctx); err != nil {
 			return err
 		}
 	}
-
+	
 	httpCtx, err := http_service.Assert(ctx)
 	if err != nil {
 		return nil
 	}
-
+	
 	//从cache-control中判断是否需要缓存
 	if parseHttpContext(httpCtx).IsCache() {
 		responseData := &cache.ResponseData{
@@ -163,7 +165,7 @@ func (hs handlerListSort) Len() int {
 }
 
 func (hs handlerListSort) Less(i, j int) bool {
-
+	
 	return hs[i].priority < hs[j].priority
 }
 
@@ -191,19 +193,19 @@ func (c httpContext) IsCache() bool {
 			return false
 		}
 	}
-
+	
 	if c.NoCache() {
 		return false
 	}
-
+	
 	if !c.IsPublic() {
 		return false
 	}
-
+	
 	if _, ok := c.cacheControl["no-store"]; ok {
 		return false
 	}
-
+	
 	return true
 }
 
@@ -214,7 +216,7 @@ func (c httpContext) IsPublic() bool {
 		}
 		return false
 	}
-
+	
 	//只要不是私有的 都算公有
 	if _, ok := c.cacheControl["private"]; ok {
 		return false
@@ -226,10 +228,10 @@ func parseHttpContext(httpCtx http_service.IHttpContext) httpContext {
 	hc := httpContext{
 		cacheControl: make(map[string]string),
 	}
-
+	
 	hc.resHeader = httpCtx.Response().Headers()
 	hc.reqHeader = httpCtx.Request().Header().Headers()
-
+	
 	cacheControlHeader := httpCtx.Response().GetHeader("Cache-Control")
 	for _, part := range strings.Split(cacheControlHeader, ",") {
 		part = strings.Trim(part, " ")
@@ -239,7 +241,7 @@ func parseHttpContext(httpCtx http_service.IHttpContext) httpContext {
 		if strings.ContainsRune(part, '=') {
 			keyVal := strings.Split(part, "=")
 			hc.cacheControl[strings.Trim(keyVal[0], " ")] = strings.Trim(keyVal[1], ",")
-
+			
 		} else {
 			hc.cacheControl[part] = ""
 		}

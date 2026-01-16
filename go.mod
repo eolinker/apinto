@@ -11,7 +11,7 @@ require (
 	github.com/clbanning/mxj v1.8.4
 	github.com/coocood/freecache v1.2.2
 	github.com/dubbogo/gost v1.13.1
-	github.com/eolinker/eosc v0.21.3
+	github.com/eolinker/eosc v0.21.4
 	github.com/fasthttp/websocket v1.5.0
 	github.com/fullstorydev/grpcurl v1.8.7
 	github.com/google/uuid v1.4.0
@@ -209,3 +209,5 @@ require (
 )
 
 replace github.com/soheilhy/cmux v0.1.5 => github.com/hmzzrcs/cmux v0.1.6
+
+//replace github.com/eolinker/eosc => ../eosc

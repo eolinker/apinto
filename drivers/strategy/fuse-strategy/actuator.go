@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
-
+	
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -47,7 +47,7 @@ func (a *tActuator) Set(id string, val *FuseHandler) {
 	// 调用来源有锁
 	a.all[id] = val
 	a.rebuild()
-
+	
 }
 
 func (a *tActuator) Del(id string) {
@@ -57,7 +57,7 @@ func (a *tActuator) Del(id string) {
 }
 
 func (a *tActuator) rebuild() {
-
+	
 	handlers := make([]*FuseHandler, 0, len(a.all))
 	for _, h := range a.all {
 		if !h.stop {
@@ -76,7 +76,7 @@ func newtActuator() *tActuator {
 }
 
 func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cache resources.ICache) error {
-
+	
 	httpCtx, err := http_service.Assert(ctx)
 	if err != nil {
 		if next != nil {
@@ -93,24 +93,26 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, cac
 		if !handler.filter.Check(httpCtx) {
 			continue
 		}
-
+		
 		metrics := handler.rule.metric.Metrics(entry)
-
+		
 		if handler.IsFuse(ctx.Context(), metrics, cache) {
 			handler.rule.response.Response(httpCtx)
+			ctx.WithValue("is_block", true)
+			ctx.SetLabel("block_name", handler.name)
 			ctx.SetLabel("handler", "fuse")
 			return nil
 		} else {
 			ctx.SetFinish(newFuseFinishHandler(ctx.GetFinish(), cache, handler, metrics))
 			break
 		}
-
+		
 	}
-
+	
 	if next != nil {
 		return next.DoChain(ctx)
 	}
-
+	
 	return nil
 }
 
@@ -131,35 +133,35 @@ func newFuseFinishHandler(orgHandler eocontext.FinishHandler, cache resources.IC
 }
 
 func (f *fuseFinishHandler) Finish(eoCtx eocontext.EoContext) error {
-
+	
 	defer func() {
 		if f.orgHandler != nil {
 			f.orgHandler.Finish(eoCtx)
 		}
 	}()
-
+	
 	httpCtx, _ := http_service.Assert(eoCtx)
-
+	
 	fuseTime := f.fuseHandler.rule.fuseTime
-
+	
 	ctx := eoCtx.Context()
 	statusCode := httpCtx.Response().StatusCode()
-
+	
 	//熔断状态
 	status := getFuseStatus(ctx, f.metrics, f.cache)
-
+	
 	switch f.fuseHandler.rule.codeStatusMap[statusCode] {
 	case codeStatusError:
 		//记录失败count
-
+		
 		tx := f.cache.Tx()
 		errCount, _ := tx.IncrBy(ctx, getErrorCountKey(f.metrics), 1, time.Second).Result()
 		//清除恢复的计数器
 		tx.Del(ctx, getSuccessCountKey(f.metrics))
 		_ = tx.Exec(ctx)
-
+		
 		if errCount == f.fuseHandler.rule.fuseConditionCount {
-
+			
 			lockerKey := fmt.Sprintf("fuse_locker_%s", f.metrics)
 			ok, err := f.cache.SetNX(ctx, lockerKey, []byte(fuseStatusObserve), time.Second).Result()
 			if err != nil {
@@ -169,33 +171,33 @@ func (f *fuseFinishHandler) Finish(eoCtx eocontext.EoContext) error {
 			if !ok {
 				return nil
 			}
-
+			
 			fuseCountKey := getFuseCountKey(f.metrics)
 			expUnix := int64(0)
-
+			
 			fuseCount, _ := f.cache.IncrBy(ctx, fuseCountKey, 1, time.Hour).Result()
 			txDone := f.cache.Tx()
 			if status == fuseStatusHealthy {
 				fuseCount = 1
 				txDone.Set(ctx, fuseCountKey, []byte("1"), time.Hour)
 			}
-
+			
 			exp := time.Duration(fuseCount) * fuseTime.time
 			if exp >= fuseTime.maxTime {
 				exp = fuseTime.maxTime
 			}
-
+			
 			expUnix = time.Now().Add(exp).UnixNano()
-
+			
 			txDone.Set(ctx, getFuseStatusKey(f.metrics), []byte(strconv.FormatInt(expUnix, 16)), fuseStatusTime)
 			txDone.Del(ctx, lockerKey)
 			_ = txDone.Exec(ctx)
 		}
-
+	
 	case codeStatusSuccess:
 		if status == fuseStatusObserve {
 			successCount, _ := f.cache.IncrBy(ctx, getSuccessCountKey(f.metrics), 1, time.Second).Result()
-
+			
 			//恢复正常期
 			if successCount == f.fuseHandler.rule.recoverConditionCount {
 				lockerKey := fmt.Sprintf("fuse_locker_%s", f.metrics)
@@ -205,7 +207,7 @@ func (f *fuseFinishHandler) Finish(eoCtx eocontext.EoContext) error {
 					return err
 				}
 				if ok {
-
+					
 					tx := f.cache.Tx()
 					//删除熔断状态的key就是恢复正常期
 					tx.Del(ctx, getFuseStatusKey(f.metrics))
@@ -215,12 +217,12 @@ func (f *fuseFinishHandler) Finish(eoCtx eocontext.EoContext) error {
 					_ = tx.Exec(ctx)
 				}
 			}
-
+			
 		}
 	}
-
+	
 	return nil
-
+	
 }
 
 type handlerListSort []*FuseHandler
@@ -230,7 +232,7 @@ func (hs handlerListSort) Len() int {
 }
 
 func (hs handlerListSort) Less(i, j int) bool {
-
+	
 	return hs[i].priority < hs[j].priority
 }
 

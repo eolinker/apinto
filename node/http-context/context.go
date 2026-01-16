@@ -11,17 +11,17 @@ import (
 	"strings"
 	"sync"
 	"time"
-
+	
 	"github.com/eolinker/apinto/entries/ctx_key"
 	http_entry "github.com/eolinker/apinto/entries/http-entry"
-
+	
 	"github.com/eolinker/eosc"
-
+	
 	"github.com/eolinker/eosc/log"
 	"github.com/eolinker/eosc/utils/config"
-
+	
 	fasthttp_client "github.com/eolinker/apinto/node/fasthttp-client"
-
+	
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/google/uuid"
@@ -41,7 +41,7 @@ type HttpContext struct {
 	ctx                context.Context
 	completeHandler    eoscContext.CompleteHandler
 	finishHandler      eoscContext.FinishHandler
-
+	
 	balance             eoscContext.BalanceHandler
 	upstreamHostHandler eoscContext.UpstreamHostHandler
 	labels              map[string]string
@@ -71,7 +71,7 @@ func (ctx *HttpContext) ProxyClone() http_service.IRequest {
 	req := fasthttp.AcquireRequest()
 	// 将原始请求内容拷贝到新请求
 	ctx.proxyRequest.Request().CopyTo(req)
-
+	
 	// 使用 ProxyRequest.reset 初始化克隆的 ProxyRequest
 	cloneProxy := &ProxyRequest{}
 	cloneProxy.reset(req, ctx.proxyRequest.remoteAddr)
@@ -190,8 +190,9 @@ func (ctx *HttpContext) Response() http_service.IResponse {
 }
 
 func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout time.Duration) error {
-
+	
 	host := node.Addr()
+	ctx.proxyRequest.Body().RefactorBody()
 	request := ctx.proxyRequest.Request()
 	//request.CloseBodyStream()
 	rewriteHost := string(request.Host())
@@ -216,20 +217,19 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	log.DebugF("After: HeapAlloc=%.2f MB", float64(m.HeapAlloc)/(1024.0*1024.0))
-
 	beginTime := time.Now()
 	response := fasthttp.AcquireResponse()
 	//var client *fasthttp.HostClient
 	ctx.response.responseError = fasthttp_client.ProxyTimeout(scheme, rewriteHost, node, request, response, timeout)
-
+	
 	agent := newRequestAgent(&ctx.proxyRequest, host, scheme, response.Header, beginTime, time.Now())
-
+	
 	if ctx.response.responseError != nil {
 		agent.setStatusCode(504)
 	} else {
 		agent.setStatusCode(response.StatusCode())
 	}
-
+	
 	if response.RemoteAddr() != nil {
 		ip, port := parseAddr(response.RemoteAddr().String())
 		agent.setRemoteIP(ip)
@@ -253,7 +253,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 					ctx.FastFinish()
 					fasthttp.ReleaseResponse(response)
 				}()
-
+				
 				buffer := make([]byte, 4096) // 4KB 缓冲区
 				for {
 					n, err := reader.Read(buffer)
@@ -269,7 +269,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 					if err != nil {
 						log.Errorf("exec stream func error: %v", err)
 					}
-
+					
 					n, err = w.Write(chunk)
 					if err != nil {
 						log.Errorf("stream write error: %v", err)
@@ -277,7 +277,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 						break
 					}
 					ctx.Response().SetBody(chunk)
-
+					
 					err = w.Flush() // 实时发送数据
 					if err != nil {
 						// 停止读取上游数据
@@ -288,7 +288,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 				}
 				ctx.proxyRequest.ProxyBodyFinish(ctx)
 			})
-
+			
 			agent.setResponseLength(-1)
 			ctx.proxyRequests = append(ctx.proxyRequests, agent)
 			return nil
@@ -306,12 +306,12 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)
 	fasthttp.ReleaseResponse(response)
 	return ctx.response.responseError
-
+	
 }
 
 func (ctx *HttpContext) Context() context.Context {
 	if ctx.ctx == nil {
-
+		
 		ctx.ctx = context.Background()
 	}
 	return ctx.ctx
@@ -334,7 +334,7 @@ func (ctx *HttpContext) Proxy() http_service.IRequest {
 }
 
 func (ctx *HttpContext) Request() http_service.IRequestReader {
-
+	
 	return &ctx.requestReader
 }
 
@@ -346,15 +346,15 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 	copyContext := copyPool.Get().(*cloneContext)
 	copyContext.org = ctx
 	copyContext.proxyRequests = make([]http_service.IProxy, 0, 2)
-
+	
 	req := fasthttp.AcquireRequest()
 	// 当body未读取，调用Body方法读出stream中当所有body内容，避免请求体被截断
 	ctx.proxyRequest.req.Body()
 	ctx.proxyRequest.req.CopyTo(req)
-
+	
 	resp := fasthttp.AcquireResponse()
 	//ctx.fastHttpRequestCtx.Response.CopyTo(resp)
-
+	
 	copyContext.proxyRequest.reset(req, ctx.requestReader.remoteAddr)
 	copyContext.response.reset(resp)
 	resp.Header.CopyTo(copyContext.response.header)
@@ -370,7 +370,7 @@ func (ctx *HttpContext) Clone() (eoscContext.EoContext, error) {
 	//记录请求时间
 	copyContext.ctx = context.WithValue(ctx.Context(), http_service.KeyCloneCtx, true)
 	copyContext.WithValue(ctx_key.CtxKeyRetry, 0)
-
+	
 	return copyContext, nil
 }
 
@@ -379,23 +379,23 @@ func NewContext(ctx *fasthttp.RequestCtx, port int) *HttpContext {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	log.DebugF("Before: HeapAlloc=%.2f MB", float64(m.HeapAlloc)/(1024.0*1024.0))
-
+	
 	remoteAddr := ctx.RemoteAddr().String()
-
+	
 	httpContext := pool.Get().(*HttpContext)
-
+	
 	httpContext.fastHttpRequestCtx = ctx
 	httpContext.requestID = uuid.New().String()
-
+	
 	// 原始请求最大读取body为8k，使用clone request
 	request := fasthttp.AcquireRequest()
-
+	
 	//if ctx.Request.IsBodyStream() && ctx.Request.Header.ContentLength() > 8*1024 {
 	//	ctx.Request.Body()
 	//}
 	ctx.Request.CopyTo(request)
 	httpContext.requestReader.reset(request, remoteAddr)
-
+	
 	// proxyRequest保留原始请求
 	httpContext.proxyRequest.reset(&ctx.Request, remoteAddr)
 	httpContext.proxyRequests = httpContext.proxyRequests[:0]
@@ -405,9 +405,9 @@ func NewContext(ctx *fasthttp.RequestCtx, port int) *HttpContext {
 	//记录请求时间
 	httpContext.ctx = context.Background()
 	httpContext.WithValue("request_time", ctx.Time())
-
+	
 	return httpContext
-
+	
 }
 
 // RequestId 请求ID
@@ -421,12 +421,12 @@ func (ctx *HttpContext) FastFinish() {
 		// 暂时不释放
 		return
 	}
-
+	
 	if ctx.response.responseError != nil {
 		ctx.fastHttpRequestCtx.SetStatusCode(504)
 		ctx.fastHttpRequestCtx.SetBodyString(ctx.response.responseError.Error())
 	}
-
+	
 	ctx.port = 0
 	ctx.ctx = nil
 	ctx.balance = nil
@@ -436,13 +436,13 @@ func (ctx *HttpContext) FastFinish() {
 	if ctx.requestReader.req != nil {
 		fasthttp.ReleaseRequest(ctx.requestReader.req)
 	}
-
+	
 	ctx.requestReader.Finish()
 	ctx.proxyRequest.Finish()
 	ctx.response.Finish()
 	ctx.fastHttpRequestCtx = nil
 	pool.Put(ctx)
-
+	
 }
 
 func parseAddr(addr string) (string, int) {
