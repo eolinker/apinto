@@ -78,9 +78,13 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 	a.lock.RUnlock()
 	var matchHandler *handler
 	for _, h := range handlers {
-		if !h.filter.Check(httpCtx) {
-			ctx.SetLabel("disable_stream", "true")
+		if h.filter.Check(httpCtx) {
 			matchHandler = h
+			err = matchHandler.RequestExec(ctx)
+			if err != nil {
+				return err
+			}
+			ctx.SetLabel("disable_stream", "true")
 			break
 		}
 	}
@@ -92,7 +96,7 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 		}
 	}
 	if matchHandler != nil {
-		err = matchHandler.RequestExec(ctx)
+		err = matchHandler.ResponseExec(ctx)
 		if err != nil {
 			return err
 		}
