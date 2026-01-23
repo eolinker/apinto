@@ -98,7 +98,7 @@ func (c *client) getInternalAccess(serviceName string) ([]discovery.NodeInfo, er
 			}
 
 			if port < 0 {
-				log.Errorf("no available port, service: %s, subset: %s", serviceName, subset.String())
+				log.Errorf("no available port, service: %s, ip: %s, port: %d", serviceName, addr.IP, port)
 				continue
 			}
 			log.DebugF("service: %s, subset: %s, port: %d", serviceName, subset.String(), port)
