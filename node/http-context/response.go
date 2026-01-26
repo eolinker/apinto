@@ -20,7 +20,10 @@ type Response struct {
 	*fasthttp.Response
 	length          int
 	responseTime    time.Duration
+	statusCode      int
+	status          string
 	proxyStatusCode int
+	proxyStatus     string
 	responseError   error
 	remoteIP        string
 	remotePort      int
@@ -153,7 +156,6 @@ func (r *Response) SetStatus(code int, status string) {
 	r.responseError = nil
 }
 
-// 原始的响应状态码
 func (r *Response) ProxyStatusCode() int {
 	return r.proxyStatusCode
 }

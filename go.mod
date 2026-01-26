@@ -24,7 +24,7 @@ require (
 	github.com/pkg/sftp v1.13.4
 	github.com/pkoukk/tiktoken-go v0.1.7
 	github.com/polarismesh/polaris-go v1.1.0
-	github.com/redis/go-redis/v9 v9.7.0
+	github.com/redis/go-redis/v9 v9.17.2
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
 	github.com/sashabaranov/go-openai v1.40.5
 	github.com/soheilhy/cmux v0.1.5
@@ -43,6 +43,7 @@ require (
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/go-redsync/redsync/v4 v4.15.0
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
 	github.com/tjfoc/gmsm v1.4.1
@@ -152,7 +153,7 @@ require (
 	github.com/apache/dubbo-go-hessian2 v1.11.6
 	github.com/armon/go-metrics v0.3.9 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect

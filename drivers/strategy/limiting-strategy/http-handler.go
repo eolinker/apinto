@@ -38,6 +38,7 @@ func (hd *actuatorHttp) Assert(ctx eocontext.EoContext) bool {
 }
 
 func (hd *actuatorHttp) compareAndAddCount(ctx http_service.IHttpContext, vector resources.Vector, metricsValue, period, handlerName string, threshold int64, response response.IResponse) error {
+	vector.CompareAndAdd(metricsValue, threshold, 1)
 	value := vector.Get(metricsValue)
 	if value >= threshold {
 		setLimitingStrategyContent(ctx, handlerName, response)
