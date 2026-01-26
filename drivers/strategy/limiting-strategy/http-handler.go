@@ -2,6 +2,7 @@ package limiting_strategy
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/eolinker/apinto/resources"
@@ -37,13 +38,15 @@ func (hd *actuatorHttp) Assert(ctx eocontext.EoContext) bool {
 }
 
 func (hd *actuatorHttp) compareAndAddCount(ctx http_service.IHttpContext, vector resources.Vector, metricsValue, period, handlerName string, threshold int64, response response.IResponse) error {
-	if vector.Get(metricsValue) >= threshold {
+	value := vector.Get(metricsValue)
+	if value >= threshold {
 		setLimitingStrategyContent(ctx, handlerName, response)
 		log.DebugF("refuse by limiting strategy %s of %s query.", handlerName, period)
 		ctx.WithValue("is_block", true)
 		ctx.SetLabel("block_name", handlerName)
 		return ErrorLimitingRefuse
 	}
+	ctx.Response().SetHeader(fmt.Sprintf("x-rate-limit-%s", period), fmt.Sprintf("%d/%d", value+1, threshold))
 	vector.Add(metricsValue, 1)
 	return nil
 }
