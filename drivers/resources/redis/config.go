@@ -64,7 +64,7 @@ func (c *Config) connect() (redis.UniversalClient, error) {
 	}
 	client := getClient(options, c.Mode)
 	if client == nil {
-		return nil, fmt.Errorf("get client error")
+		return nil, fmt.Errorf("get cmd error")
 	}
 	err := client.Ping(context.Background()).Err()
 	if err != nil {
