@@ -38,29 +38,28 @@ func (hd *actuatorHttp) Assert(ctx eocontext.EoContext) bool {
 }
 
 func (hd *actuatorHttp) compareAndAddCount(ctx http_service.IHttpContext, vector resources.Vector, metricsValue, period, handlerName string, threshold int64, response response.IResponse) error {
-	vector.CompareAndAdd(metricsValue, threshold, 1)
-	value := vector.Get(metricsValue)
-	if value >= threshold {
+	value, ok := vector.CompareAndAdd(ctx.Context(), metricsValue, threshold, 1)
+	if !ok {
 		setLimitingStrategyContent(ctx, handlerName, response)
 		log.DebugF("refuse by limiting strategy %s of %s query.", handlerName, period)
 		ctx.WithValue("is_block", true)
 		ctx.SetLabel("block_name", handlerName)
 		return ErrorLimitingRefuse
 	}
-	ctx.Response().SetHeader(fmt.Sprintf("x-rate-limit-%s", period), fmt.Sprintf("%d/%d", value+1, threshold))
-	vector.Add(metricsValue, 1)
+	ctx.Response().SetHeader(fmt.Sprintf("x-rate-limit-count-%s", period), fmt.Sprintf("%d/%d", value, threshold))
 	return nil
 }
 
 func (hd *actuatorHttp) compareAndAddLength(ctx http_service.IHttpContext, vector resources.Vector, metricsValue, period, handlerName string, threshold, contentLength int64, response response.IResponse) error {
-	if vector.Get(metricsValue) >= threshold {
+	value, ok := vector.CompareAndAdd(ctx.Context(), metricsValue, threshold, contentLength)
+	if !ok {
 		setLimitingStrategyContent(ctx, handlerName, response)
 		log.DebugF("refuse by limiting strategy %s of %s traffic.", handlerName, period)
 		ctx.WithValue("is_block", true)
 		ctx.SetLabel("block_name", handlerName)
 		return ErrorLimitingRefuse
 	}
-	vector.Add(metricsValue, contentLength)
+	ctx.Response().SetHeader(fmt.Sprintf("x-rate-limit-traffic-%s", period), fmt.Sprintf("%d/%d", value, threshold))
 	return nil
 }
 

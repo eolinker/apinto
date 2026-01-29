@@ -2,15 +2,13 @@ package redis
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"github.com/eolinker/eosc/log"
-
 	redis "github.com/redis/go-redis/v9"
 	"strconv"
 	"time"
 )
-
-const defaultLockTTL = time.Second * 3
 
 type Vector struct {
 	name string
@@ -22,85 +20,112 @@ type Vector struct {
 	lockTTL time.Duration
 }
 
-func (v *Vector) CompareAndAdd(key string, threshold, delta int64) (int64, bool) {
+// 建议把脚本提前加载，得到 SHA1，避免每次 EVAL 都传全文
+var (
+	compareAndAddLua string // 在 init 或启动时加载
+	getLua           string
+	addLua           string
+	//go:embed lua/compare_and_add.lua
+	compareAndAddScript embed.FS
+	//go:embed lua/get.lua
+	getScript embed.FS
+	//go:embed lua/add.lua
+	addScript embed.FS
+)
+
+func init() {
+	script, err := compareAndAddScript.ReadFile("lua/compare_and_add.lua")
+	if err != nil {
+		panic(err)
+	}
+	compareAndAddLua = string(script)
+	script, err = getScript.ReadFile("lua/get.lua")
+	if err != nil {
+		panic(err)
+	}
+	getLua = string(script)
+	script, err = addScript.ReadFile("lua/add.lua")
+	if err != nil {
+		panic(err)
+	}
+	addLua = string(script)
+}
+
+// CompareAndAdd 去锁版本（推荐）
+func (v *Vector) CompareAndAdd(ctx context.Context, key string, threshold, delta int64) (int64, bool) {
 	token := fmt.Sprintf("strategy-limiting:%s:%s", v.name, key)
-	index := time.Now().UnixNano() / v.step
-	bucketStart := (index / v.size) * v.size // 当前桶起始 index
-	ctx := context.Background()
+	nowNs := time.Now().UnixNano()
+	index := nowNs / v.step
+	bucketStart := (index / v.size) * v.size
 
-	lockKey := fmt.Sprintf("lock:%s", token) // 锁 key 基于 token
-	lock := newSimpleLock(v.cmd, lockKey, v.lockTTL)
+	args := []interface{}{
+		strconv.FormatInt(index, 10),
+		strconv.FormatInt(bucketStart, 10),
+		strconv.FormatInt(threshold, 10),
+		strconv.FormatInt(delta, 10),
+	}
 
-	if err := lock.Lock(ctx); err != nil {
-		// 加锁失败，直接拒绝（可加重试逻辑）
+	// 使用 EVAL 执行
+	result, err := v.cmd.Eval(ctx, compareAndAddLua, []string{token}, args...).Result()
+	if err != nil {
+		log.Errorf("CompareAndAdd lua failed: %v", err)
 		return 0, false
 	}
-	defer func() {
-		if err := lock.Unlock(ctx); err != nil {
-			log.Errorf("Unlock error: %v", err)
-		}
-		// 可选：清理过期桶（e.g., DEL token if old）
-	}()
 
-	// 锁内：安全执行 get + incr
-	currentSum := v.get(ctx, token, bucketStart)
-	if currentSum > threshold {
-		return currentSum, false // 已超阈值
+	res, ok := result.([]interface{})
+	if !ok || len(res) != 2 {
+		return 0, false
 	}
 
-	// 增量（HIncrBy 是原子的，但因锁保护，整个操作安全）
-	field := fmt.Sprintf("%d", index)
-	_, err := v.cmd.HIncrBy(ctx, token, field, delta).Result()
+	current, _ := res[0].(int64) // 或用 redis.Int64(res[0])
+	success, _ := res[1].(int64)
+
+	return current, success == 1
+}
+func (v *Vector) Add(ctx context.Context, key string, delta int64) int64 {
+	token := fmt.Sprintf("strategy-limiting:%s:%s", v.name, key)
+	nowNs := time.Now().UnixNano()
+	index := nowNs / v.step
+	bucketStart := (index / v.size) * v.size
+
+	args := []interface{}{
+		strconv.FormatInt(index, 10),
+		strconv.FormatInt(bucketStart, 10),
+		strconv.FormatInt(delta, 10),
+	}
+
+	result, err := v.cmd.Eval(ctx, addLua, []string{token}, args...).Result()
 	if err != nil {
-		log.Errorf("HIncrBy error: %v", err)
-		return currentSum, false
+		log.Errorf("Add lua failed: %v", err)
+		return 0
 	}
 
-	return currentSum + delta, true
-}
-
-func (v *Vector) Add(key string, delta int64) int64 {
-	token := fmt.Sprint("strategy-limiting:", v.name, ":", key)
-	index := time.Now().UnixNano() / v.step
-	ctx := context.Background()
-	result, err := v.cmd.HIncrBy(ctx, token, fmt.Sprint(index), delta).Result()
-	if err != nil {
-		log.Errorf("redis vector add error %v", err)
+	val, ok := result.(int64)
+	if !ok {
+		return 0
 	}
-	return result
+	return val
 }
 
-func (v *Vector) Get(key string) int64 {
-	token := fmt.Sprint("strategy-limiting:", v.name, ":", key)
-	index := time.Now().UnixNano() / v.step
-	ctx := context.Background()
-	from := index / v.size * v.size
-	return v.get(ctx, token, from)
-}
-func (v *Vector) get(ctx context.Context, token string, from int64) int64 {
-	result, err := v.cmd.HGetAll(ctx, token).Result()
+func (v *Vector) Get(ctx context.Context, key string) int64 {
+	token := fmt.Sprintf("strategy-limiting:%s:%s", v.name, key)
+	nowNs := time.Now().UnixNano()
+	index := nowNs / v.step
+	bucketStart := (index / v.size) * v.size
+
+	result, err := v.cmd.Eval(ctx, getLua, []string{token},
+		strconv.FormatInt(bucketStart, 10)).Result()
 	if err != nil {
 		return 0
 	}
-	rv := int64(0)
-	delKeys := make([]string, 0, len(result))
-	for k, v := range result {
-		i, e := strconv.ParseInt(k, 10, 64)
-		if e != nil || i < from {
-			delKeys = append(delKeys, k)
-			continue
-		}
-		value, er := strconv.ParseInt(v, 10, 64)
-		if er != nil {
-			delKeys = append(delKeys, k)
-			continue
-		}
-		rv += value
+
+	sum, ok := result.(int64)
+	if !ok {
+		return 0
 	}
-	v.cmd.HDel(ctx, token, delKeys...)
-	return rv
+	return sum
 }
 
 func newVector(name string, uin int64, step int64, cmd redis.Cmdable) *Vector {
-	return &Vector{name: name, step: step, cmd: cmd, size: uin / step, lockTTL: defaultLockTTL}
+	return &Vector{name: name, step: step, cmd: cmd, size: uin / step}
 }
