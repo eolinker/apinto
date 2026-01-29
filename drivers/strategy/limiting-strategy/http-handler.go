@@ -2,6 +2,7 @@ package limiting_strategy
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/eolinker/apinto/resources"
@@ -45,19 +46,20 @@ func (hd *actuatorHttp) compareAndAddCount(ctx http_service.IHttpContext, vector
 		ctx.SetLabel("block_name", handlerName)
 		return ErrorLimitingRefuse
 	}
-	ctx.Response().SetHeader(fmt.Sprintf("x-rate-limit-%s", period), fmt.Sprintf("%d/%d", value, threshold))
+	ctx.Response().SetHeader(fmt.Sprintf("x-rate-limit-count-%s", period), fmt.Sprintf("%d/%d", value, threshold))
 	return nil
 }
 
 func (hd *actuatorHttp) compareAndAddLength(ctx http_service.IHttpContext, vector resources.Vector, metricsValue, period, handlerName string, threshold, contentLength int64, response response.IResponse) error {
-	if vector.Get(nil, metricsValue) >= threshold {
+	value, ok := vector.CompareAndAdd(ctx.Context(), metricsValue, threshold, contentLength)
+	if !ok {
 		setLimitingStrategyContent(ctx, handlerName, response)
 		log.DebugF("refuse by limiting strategy %s of %s traffic.", handlerName, period)
 		ctx.WithValue("is_block", true)
 		ctx.SetLabel("block_name", handlerName)
 		return ErrorLimitingRefuse
 	}
-	vector.Add(nil, metricsValue, contentLength)
+	ctx.Response().SetHeader(fmt.Sprintf("x-rate-limit-traffic-%s", period), fmt.Sprintf("%d/%d", value, threshold))
 	return nil
 }
 
