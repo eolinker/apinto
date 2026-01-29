@@ -79,14 +79,14 @@ type vectorLocal struct {
 	vm    map[string]*vectorValues
 }
 
-func (v *vectorLocal) CompareAndAdd(key string, threshold, delta int64) bool {
+func (v *vectorLocal) CompareAndAdd(key string, threshold, delta int64) (int64, bool) {
 	index, vector := v.refresh(key)
 	value := v.read(vector)
 	if value <= threshold {
 		atomic.AddInt64(&vector.vectors[index%v.size], delta)
-		return true
+		return 0, true
 	}
-	return false
+	return 0, false
 }
 
 type vectorValues struct {
@@ -94,9 +94,10 @@ type vectorValues struct {
 	lastIndex int64
 }
 
-func (v *vectorLocal) Add(key string, delta int64) {
+func (v *vectorLocal) Add(key string, delta int64) int64 {
 	index, vector := v.refresh(key)
 	atomic.AddInt64(&vector.vectors[index%v.size], delta)
+	return 0
 }
 
 func (v *vectorLocal) Get(key string) int64 {
