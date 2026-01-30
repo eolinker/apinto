@@ -28,7 +28,7 @@ if #to_del > 0 then
 	redis.call('HDEL', key, unpack(to_del))
 end
 
--- 设置过期（粗略，2倍窗口 + 裕度）
-redis.call('EXPIRE', key, 2 * (curr_idx - win_start + 100))
+-- ARGV[#ARGV] 是 Go 传进来的 ttl 秒数（最后一个参数）
+redis.call('EXPIRE', KEYS[1], ARGV[#ARGV])
 
 return new_val

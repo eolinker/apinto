@@ -23,7 +23,4 @@ if #to_del > 0 then
 	redis.call('HDEL', key, unpack(to_del))
 end
 
--- 可选：刷新过期时间
-redis.call('EXPIRE', key, 2 * (win_start + 1000 - win_start))  -- 简单示例
-
 return sum

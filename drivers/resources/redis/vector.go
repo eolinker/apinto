@@ -51,6 +51,42 @@ func init() {
 	addLua = string(script)
 }
 
+// 根据 step 判断粒度并返回保守的 multiplier（用于 ttl = window_sec * multiplier）
+func (v *Vector) getExpireMultiplier() int {
+	stepSec := v.step / int64(time.Second)
+
+	switch {
+	case stepSec == 1: // 秒级
+		return 8 // 8倍 + 裕度，够覆盖抖动
+	case stepSec >= 60 && stepSec < 3600: // 分钟级（60s ~ 59min）
+		return 6
+	case stepSec >= 3600: // 小时级及以上
+		return 4
+	default:
+		return 6 // 默认偏保守
+	}
+}
+
+// 计算窗口总秒数
+func (v *Vector) windowSeconds() int64 {
+	return v.size * v.step / int64(time.Second)
+}
+
+// 获取最终的 TTL 秒数（可直接传给 Lua 的最后一个 ARGV）
+func (v *Vector) getTTLSeconds() int {
+	winSec := v.windowSeconds()
+	if winSec <= 0 {
+		return 3600 // 防止异常
+	}
+	mult := v.getExpireMultiplier()
+	// 额外加一点固定裕度（防止边界情况）
+	extra := int64(600) // 10分钟
+	if winSec > 3600*24 {
+		extra = 86400 // 大窗口再加1天
+	}
+	return int(winSec*int64(mult) + extra)
+}
+
 // CompareAndAdd 去锁版本（推荐）
 func (v *Vector) CompareAndAdd(ctx context.Context, key string, threshold, delta int64) (int64, bool) {
 	token := fmt.Sprintf("strategy-limiting:%s:%s", v.name, key)
@@ -63,6 +99,7 @@ func (v *Vector) CompareAndAdd(ctx context.Context, key string, threshold, delta
 		strconv.FormatInt(bucketStart, 10),
 		strconv.FormatInt(threshold, 10),
 		strconv.FormatInt(delta, 10),
+		strconv.Itoa(v.getTTLSeconds()),
 	}
 
 	// 使用 EVAL 执行
@@ -92,6 +129,7 @@ func (v *Vector) Add(ctx context.Context, key string, delta int64) int64 {
 		strconv.FormatInt(index, 10),
 		strconv.FormatInt(bucketStart, 10),
 		strconv.FormatInt(delta, 10),
+		strconv.Itoa(v.getTTLSeconds()),
 	}
 
 	result, err := v.cmd.Eval(ctx, addLua, []string{token}, args...).Result()

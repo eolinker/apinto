@@ -9,7 +9,7 @@ require (
 	github.com/clbanning/mxj v1.8.4
 	github.com/coocood/freecache v1.2.2
 	github.com/dubbogo/gost v1.13.1
-	github.com/eolinker/eosc v0.21.4
+	github.com/eolinker/eosc v0.21.5
 	github.com/fasthttp/websocket v1.5.0
 	github.com/fullstorydev/grpcurl v1.8.7
 	github.com/google/uuid v1.6.0
@@ -43,7 +43,6 @@ require (
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1
-	github.com/go-redsync/redsync/v4 v4.15.0
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
 	github.com/tjfoc/gmsm v1.4.1
@@ -232,4 +231,4 @@ require (
 
 replace github.com/soheilhy/cmux v0.1.5 => github.com/hmzzrcs/cmux v0.1.6
 
-replace github.com/eolinker/eosc => ../eosc
+//replace github.com/eolinker/eosc => ../eosc
