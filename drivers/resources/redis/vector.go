@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/log"
 	redis "github.com/redis/go-redis/v9"
 	"strconv"
@@ -17,7 +18,8 @@ type Vector struct {
 	size int64 // 窗口桶大小（槽数）
 	cmd  redis.Cmdable
 	// 新增：锁 TTL（秒），建议短于业务时间
-	lockTTL time.Duration
+	lockTTL     time.Duration
+	localVector resources.Vector
 }
 
 // 建议把脚本提前加载，得到 SHA1，避免每次 EVAL 都传全文
@@ -105,8 +107,7 @@ func (v *Vector) CompareAndAdd(ctx context.Context, key string, threshold, delta
 	// 使用 EVAL 执行
 	result, err := v.cmd.Eval(ctx, compareAndAddLua, []string{token}, args...).Result()
 	if err != nil {
-		log.Errorf("CompareAndAdd lua failed: %v", err)
-		return 0, false
+		return v.localVector.CompareAndAdd(ctx, key, threshold, delta)
 	}
 
 	res, ok := result.([]interface{})
@@ -164,6 +165,7 @@ func (v *Vector) Get(ctx context.Context, key string) int64 {
 	return sum
 }
 
-func newVector(name string, uin int64, step int64, cmd redis.Cmdable) *Vector {
-	return &Vector{name: name, step: step, cmd: cmd, size: uin / step}
+func newVector(name string, uin int64, step int64, cmd redis.Cmdable, localVector resources.Vector) *Vector {
+
+	return &Vector{name: name, step: step, cmd: cmd, size: uin / step, localVector: localVector}
 }

@@ -81,11 +81,9 @@ type vectorLocal struct {
 }
 
 func (v *vectorLocal) CompareAndAdd(ctx context.Context, key string, threshold, delta int64) (int64, bool) {
-	v.lock.Lock()
-	defer v.lock.Unlock()
 	index, vector := v.refresh(key)
 	value := v.read(vector)
-	if value <= threshold {
+	if value < threshold {
 		atomic.AddInt64(&vector.vectors[index%v.size], delta)
 		return value + delta, true
 	}

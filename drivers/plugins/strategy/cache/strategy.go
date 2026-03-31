@@ -13,16 +13,12 @@ import (
 
 type Strategy struct {
 	drivers.WorkerBase
-	cache        scope_manager.IProxyOutput[resources.ICache]
 	redisID      string
 	doFilterOnce sync.Once
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
-	s.doFilterOnce.Do(func() {
-		s.cache = scope_manager.Auto[resources.ICache](s.redisID, "redis")
-	})
-	cl := s.cache.List()
+	cl := scope_manager.Auto[resources.ICache](s.redisID, "redis").List()
 	if len(cl) > 0 {
 		return cache_strategy.DoStrategy(ctx, next, cl[0])
 	} else {

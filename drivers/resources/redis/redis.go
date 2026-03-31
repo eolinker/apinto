@@ -56,8 +56,10 @@ func (r *CmdAble) BuildVector(name string, uni, step time.Duration) (resources.V
 	step = uni / size
 
 	key := fmt.Sprintf("%s:%d:%d", name, uni, step)
+	vector := resources.LocalVector()
 
-	return newVector(key, int64(uni), int64(step), r.cmdAble), nil
+	localVector, _ := vector.BuildVector(name, uni, step)
+	return newVector(key, int64(uni), int64(step), r.cmdAble, localVector), nil
 }
 
 func (r *CmdAble) Tx() resources.TX {

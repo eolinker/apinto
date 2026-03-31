@@ -39,10 +39,7 @@ func (b *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err
 }
 
 func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) error {
-	b.once.Do(func() {
-		b.cache = scope_manager.Auto[resources.ICache](b.cacheID, "redis")
-	})
-
+	b.cache = scope_manager.Auto[resources.ICache](b.cacheID, "redis")
 	key := b.keyGenerate.Key(ctx)
 	ct, has := b.counters.Get(key)
 	if !has {
