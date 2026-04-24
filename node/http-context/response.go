@@ -2,6 +2,7 @@ package http_context
 
 import (
 	"bytes"
+	"github.com/eolinker/eosc/log"
 	"strconv"
 	"strings"
 	"time"
@@ -104,7 +105,11 @@ func (r *Response) GetBody() []byte {
 	if r.IsBodyStream() {
 		return r.streamBody.Bytes()
 	}
-	body, _ := r.BodyUncompressed()
+	body, err := r.BodyUncompressed()
+	if err != nil {
+		log.Errorf("fail to uncompress,unsupported content encoding: %s.", string(r.header.ContentEncoding()))
+		return r.Response.Body()
+	}
 	r.SetHeader("Content-Length", strconv.Itoa(len(body)))
 	r.DelHeader("Content-Encoding")
 	r.Response.SetBody(body)
