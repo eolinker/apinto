@@ -11,12 +11,13 @@ var (
 )
 
 type Config struct {
-	AllowOrigins     string `json:"allow_origins" label:"允许跨域访问的Origin" default:"*"`
-	AllowMethods     string `json:"allow_methods" label:"允许通过的请求方式" default:"*" description:"多种请求方式用英文逗号隔开"`
-	AllowCredentials bool   `json:"allow_credentials" label:"请求中是否携带cookie"`
-	AllowHeaders     string `json:"allow_headers" label:"允许跨域访问时请求方携带的非CORS规范以外的Header" default:"*" description:"多种请求方式用英文逗号隔开"`
-	ExposeHeaders    string `json:"expose_headers" label:"允许跨域访问时响应方携带的非CORS规范以外的Header" default:"*" description:"多种请求方式用英文逗号隔开"`
-	MaxAge           int32  `json:"max_age" description:"浏览器缓存CORS结果的最大时间" description:"单位：s，最小值：1" default:"5" minimum:"1"`
+	AllowOrigins        string `json:"allow_origins" label:"允许跨域访问的Origin" default:"*"`
+	AllowMethods        string `json:"allow_methods" label:"允许通过的请求方式" default:"*" description:"多种请求方式用英文逗号隔开"`
+	AllowCredentials    bool   `json:"allow_credentials" label:"请求中是否携带cookie"`
+	AllowPrivateNetwork bool   `json:"allow_private_network" label:"是否允许跨域访问时携带私网IP地址" default:"false"`
+	AllowHeaders        string `json:"allow_headers" label:"允许跨域访问时请求方携带的非CORS规范以外的Header" default:"*" description:"多种请求方式用英文逗号隔开"`
+	ExposeHeaders       string `json:"expose_headers" label:"允许跨域访问时响应方携带的非CORS规范以外的Header" default:"*" description:"多种请求方式用英文逗号隔开"`
+	MaxAge              int32  `json:"max_age" description:"浏览器缓存CORS结果的最大时间" description:"单位：s，最小值：1" default:"5" minimum:"1"`
 }
 
 func (c *Config) doCheck() error {
@@ -53,11 +54,14 @@ func (c *Config) genOptionHandler() optionHandler {
 		resp := ctx.Response()
 		ctx.Response().SetHeader("Access-Control-Allow-Origin", c.AllowOrigins)
 		ctx.Response().SetHeader("Access-Control-Allow-Methods", c.AllowMethods)
-		ctx.Response().SetHeader("Access-Control-Max-Age", string(c.MaxAge))
+		ctx.Response().SetHeader("Access-Control-Max-Age", strconv.Itoa(int(c.MaxAge)))
 		ctx.Response().SetHeader("Access-Control-Expose-Headers", c.ExposeHeaders)
 		ctx.Response().SetHeader("Access-Control-Allow-Headers", c.AllowHeaders)
 		ctx.Response().SetHeader("Access-Control-Allow-Credentials", strconv.FormatBool(c.AllowCredentials))
-		resp.SetStatus(200, "200")
+		if c.AllowPrivateNetwork {
+			ctx.Response().SetHeader("Access-Control-Allow-Private-Network", "true")
+		}
+		resp.SetStatus(204, "204")
 		resp.SetBody([]byte(info))
 		return nil
 	}

@@ -56,15 +56,16 @@ func (c *Config) connect() (redis.UniversalClient, error) {
 		return nil, fmt.Errorf("addrs:%w", eosc.ErrorRequire)
 	}
 	options := &redis.UniversalOptions{
-		Addrs:      c.Addrs,
-		MasterName: c.MasterName,
-		Username:   c.Username,
-		Password:   c.Password,
-		DB:         c.DB,
+		Addrs:       c.Addrs,
+		MasterName:  c.MasterName,
+		Username:    c.Username,
+		Password:    c.Password,
+		DB:          c.DB,
+		DialTimeout: 2 * time.Second,
 	}
 	client := getClient(options, c.Mode)
 	if client == nil {
-		return nil, fmt.Errorf("get client error")
+		return nil, fmt.Errorf("get cmd error")
 	}
 	err := client.Ping(context.Background()).Err()
 	if err != nil {

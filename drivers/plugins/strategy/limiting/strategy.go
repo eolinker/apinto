@@ -19,20 +19,14 @@ type Strategy struct {
 	redisScalars *limiting_strategy.Scalars
 	lastVectorId string
 	redisID      string
-	once         sync.Once
-	lock         sync.RWMutex
-	doFilterOnce sync.Once
+
+	lock sync.RWMutex
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
-	s.doFilterOnce.Do(func() {
-		s.buildProxy = scope_manager.Auto[resources.IVectors](s.redisID, "redis")
-
-	})
-	iVectorsList := s.buildProxy.List()
+	iVectorsList := scope_manager.Auto[resources.IVectors](s.redisID, "redis").List()
 	var scalars *limiting_strategy.Scalars
 	if len(iVectorsList) > 0 {
-
 		iVectors := iVectorsList[0]
 		id := iVectors.(eosc.IWorker).Id()
 		s.lock.RLock()
@@ -58,18 +52,17 @@ func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) 
 		}
 
 	} else {
-
-		s.once.Do(func() {
+		if s.localScalars == nil {
 			iVectors := resources.LocalVector()
 			s.localScalars = &limiting_strategy.Scalars{}
-
 			s.localScalars.QuerySecond, _ = iVectors.BuildVector("query", time.Second, time.Second/2)
 			s.localScalars.QueryMinute, _ = iVectors.BuildVector("query", time.Minute, time.Second*10)
 			s.localScalars.QueryHour, _ = iVectors.BuildVector("query", time.Hour, time.Minute*10)
 			s.localScalars.TrafficsSecond, _ = iVectors.BuildVector("traffic", time.Second, time.Second/2)
 			s.localScalars.TrafficsMinute, _ = iVectors.BuildVector("traffic", time.Minute, time.Second*10)
 			s.localScalars.TrafficsHour, _ = iVectors.BuildVector("traffic", time.Hour, time.Minute*10)
-		})
+		}
+		s.lastVectorId = ""
 		scalars = s.localScalars
 	}
 

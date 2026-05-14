@@ -272,11 +272,17 @@ var (
 		"response": Fields{
 			"": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 				builder := &strings.Builder{}
+				builder.WriteString("HTTP/1.1 ")
+				builder.WriteString(strconv.Itoa(ctx.Response().StatusCode()))
+				builder.WriteString(" ")
+				builder.WriteString(ctx.Response().Status())
+				builder.WriteString("\r\n")
 				err := ctx.Response().Headers().Write(builder)
 				if err != nil {
 					log.Errorf("write response headers error: %v", err)
 					return "", false
 				}
+
 				body := ctx.Response().GetBody()
 				encoding := ctx.Response().Headers().Get("Content-Encoding")
 				if encoding == "gzip" {

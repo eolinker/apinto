@@ -192,6 +192,7 @@ func (ctx *HttpContext) Response() http_service.IResponse {
 func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout time.Duration) error {
 
 	host := node.Addr()
+	ctx.proxyRequest.Body().RefactorBody()
 	request := ctx.proxyRequest.Request()
 	//request.CloseBodyStream()
 	rewriteHost := string(request.Host())
@@ -216,7 +217,6 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	log.DebugF("After: HeapAlloc=%.2f MB", float64(m.HeapAlloc)/(1024.0*1024.0))
-
 	beginTime := time.Now()
 	response := fasthttp.AcquireResponse()
 	//var client *fasthttp.HostClient
@@ -265,6 +265,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 						break
 					}
 					chunk := buffer[:n]
+					agent.responseBody.Write(chunk)
 					chunk, err = ctx.proxyRequest.StreamBodyHandles(ctx, chunk)
 					if err != nil {
 						log.Errorf("exec stream func error: %v", err)

@@ -108,6 +108,11 @@ func Profession() []*eosc.ProfessionConfig {
 					Name:  "polaris",
 					Label: "北极星服务发现",
 					Desc:  "北极星服务发现",
+				}, {
+					Id:    "eolinker.com:apinto:discovery_kubernetes",
+					Name:  "kubernetes",
+					Label: "kubernetes服务发现",
+					Desc:  "kubernetes服务发现",
 				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,

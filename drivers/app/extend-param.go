@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"net/textproto"
 	"strings"
-
+	
 	"github.com/ohler55/ojg/oj"
-
+	
 	"github.com/ohler55/ojg/jp"
-
+	
 	http_context "github.com/eolinker/apinto/node/http-context"
-
+	
 	"github.com/eolinker/apinto/application"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -34,7 +34,7 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 	var bodyParams interface{}
 	var formParams map[string][]string
 	var err error
-
+	
 	for _, p := range a.params {
 		conflict := p.Conflict
 		if conflict == "" {
@@ -130,10 +130,16 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 			}
 		}
 	}
-
+	
 	if strings.Contains(contentType, http_context.FormData) || strings.Contains(contentType, http_context.MultipartForm) {
+		if formParams == nil {
+			return nil
+		}
 		ctx.Proxy().Body().SetForm(formParams)
 	} else if strings.Contains(contentType, http_context.JSON) {
+		if bodyParams == nil {
+			return nil
+		}
 		b, _ := json.Marshal(bodyParams)
 		ctx.Proxy().Body().SetRaw(contentType, b)
 	}

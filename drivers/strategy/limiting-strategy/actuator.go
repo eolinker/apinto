@@ -3,7 +3,7 @@ package limiting_strategy
 import (
 	"sort"
 	"sync"
-
+	
 	"github.com/eolinker/apinto/resources"
 	"github.com/eolinker/eosc/eocontext"
 )
@@ -15,7 +15,7 @@ var (
 func init() {
 	actuator := newActuator()
 	actuatorSet = actuator
-
+	
 }
 
 type ActuatorSet interface {
@@ -38,7 +38,7 @@ func (a *tActuatorSet) Set(id string, limiting *LimitingHandler) {
 	// 调用来源有锁
 	a.all[id] = limiting
 	a.rebuild()
-
+	
 }
 
 func (a *tActuatorSet) Del(id string) {
@@ -48,7 +48,7 @@ func (a *tActuatorSet) Del(id string) {
 }
 
 func (a *tActuatorSet) rebuild() {
-
+	
 	handlers := make([]*LimitingHandler, 0, len(a.all))
 	for _, h := range a.all {
 		if !h.stop {
@@ -62,13 +62,13 @@ func (a *tActuatorSet) rebuild() {
 }
 func newActuator() *tActuatorSet {
 	return &tActuatorSet{
-
+		
 		all: make(map[string]*LimitingHandler),
 	}
 }
 
 func (a *tActuatorSet) Strategy(ctx eocontext.EoContext, next eocontext.IChain, scalars *Scalars) error {
-
+	
 	a.lock.RLock()
 	handlers := a.handlers
 	a.lock.RUnlock()
@@ -77,14 +77,13 @@ func (a *tActuatorSet) Strategy(ctx eocontext.EoContext, next eocontext.IChain, 
 		if ach.Assert(ctx) {
 			err := ach.Check(ctx, handlers, scalars)
 			if err != nil {
-
 				ctx.SetLabel("handler", "limiting")
 				return err
 			}
 			break
 		}
 	}
-
+	
 	if next != nil {
 		return next.DoChain(ctx)
 	}
@@ -98,7 +97,7 @@ func (hs handlerListSort) Len() int {
 }
 
 func (hs handlerListSort) Less(i, j int) bool {
-
+	
 	return hs[i].priority < hs[j].priority
 }
 
@@ -110,7 +109,7 @@ type Scalars struct {
 	QuerySecond resources.Vector
 	QueryMinute resources.Vector
 	QueryHour   resources.Vector
-
+	
 	TrafficsSecond resources.Vector
 	TrafficsMinute resources.Vector
 	TrafficsHour   resources.Vector

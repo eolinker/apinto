@@ -7,6 +7,7 @@ import (
 	"github.com/eolinker/apinto/drivers/certs"
 	"github.com/eolinker/apinto/drivers/discovery/consul"
 	"github.com/eolinker/apinto/drivers/discovery/eureka"
+	"github.com/eolinker/apinto/drivers/discovery/kubernetes"
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
 	"github.com/eolinker/apinto/drivers/discovery/static"
 	gm_certs "github.com/eolinker/apinto/drivers/gm-certs"
@@ -56,6 +57,7 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	consul.Register(extenderRegister)
 	eureka.Register(extenderRegister)
 	polaris.Register(extenderRegister)
+	kubernetes.Register(extenderRegister)
 
 	// 应用
 	app.Register(extenderRegister)

@@ -99,10 +99,15 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain, iCa
 			responseData := cache.GetResponseData(iCache, uri)
 
 			if responseData != nil {
+				ctx.WithValue("is_block", true)
+				ctx.SetLabel("block_name", handler.name)
 				ctx.SetLabel("handler", "cache")
+				httpCtx.Response().SetHeader("Strategy", handler.name)
 				httpCtx.SetCompleteHandler(responseData)
 			} else {
-				httpCtx.SetCompleteHandler(NewCacheGetCompleteHandler(httpCtx.GetComplete(), handler.validTime, uri, iCache))
+				cacheHandler := NewCacheGetCompleteHandler(httpCtx.GetComplete(), handler.validTime, uri, iCache)
+				httpCtx.Proxy().AppendBodyFinish(cacheHandler.bodyFinish)
+				httpCtx.SetCompleteHandler(cacheHandler)
 			}
 			break
 		}
@@ -128,6 +133,21 @@ func NewCacheGetCompleteHandler(orgHandler eocontext.CompleteHandler, validTime 
 		uri:        uri,
 		cache:      cache,
 	}
+}
+
+func (c *CacheCompleteHandler) bodyFinish(ctx http_service.IHttpContext) {
+	//从cache-control中判断是否需要缓存
+	if parseHttpContext(ctx).IsCache() {
+		responseData := &cache.ResponseData{
+			Header:    ctx.Response().Headers(),
+			Body:      ctx.Response().GetBody(),
+			ValidTime: c.validTime,
+			Now:       time.Now(),
+		}
+		cache.SetResponseData(c.cache, ctx.Request().URI().RequestURI(), responseData, c.validTime)
+	}
+
+	return
 }
 
 func (c *CacheCompleteHandler) Complete(ctx eocontext.EoContext) error {

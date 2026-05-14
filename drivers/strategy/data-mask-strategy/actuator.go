@@ -73,31 +73,57 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 	if err != nil {
 		return err
 	}
+	a.lock.RLock()
+	handlers := a.handlers
+	a.lock.RUnlock()
+	var matchHandler *handler
+	for _, h := range handlers {
+		if h.filter.Check(httpCtx) {
+			matchHandler = h
+			err = matchHandler.RequestExec(ctx)
+			if err != nil {
+				return err
+			}
+			ctx.SetLabel("disable_stream", "true")
+			break
+		}
+	}
+
 	if next != nil {
 		err = next.DoChain(ctx)
 		if err != nil {
 			return err
 		}
 	}
-	a.lock.RLock()
-	handlers := a.handlers
-	a.lock.RUnlock()
-	//var execHandler *handler
-	for _, h := range handlers {
-		// 匹配Filter
-		if !h.filter.Check(httpCtx) {
-			// 未命中，下一条规则
-			continue
-		}
-		err = h.ResponseExec(httpCtx)
+	if matchHandler != nil {
+		err = matchHandler.ResponseExec(ctx)
 		if err != nil {
 			return err
 		}
-		ctx.SetLabel("block_name", h.name)
-		//execHandler = h
-		// 匹配中后，跳出循环
-		break
+		ctx.WithValue("is_block", true)
+		ctx.SetLabel("block_name", matchHandler.name)
+		ctx.SetLabel("handler", "data_mask")
+		return nil
 	}
+
+	////var execHandler *handler
+	//for _, h := range handlers {
+	//	// 匹配Filter
+	//	if !h.filter.Check(httpCtx) {
+	//		// 未命中，下一条规则
+	//		continue
+	//	}
+	//	err = h.ResponseExec(httpCtx)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	ctx.WithValue("is_block", true)
+	//	ctx.SetLabel("block_name", h.name)
+	//	ctx.SetLabel("handler", "data_mask")
+	//	//execHandler = h
+	//	// 匹配中后，跳出循环
+	//	break
+	//}
 
 	return nil
 }

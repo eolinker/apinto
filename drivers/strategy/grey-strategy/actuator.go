@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync"
 	"time"
-
+	
 	"github.com/eolinker/apinto/strategy"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -41,7 +41,7 @@ func (a *tActuator) Set(id string, val *GreyHandler) {
 	// 调用来源有锁
 	a.all[id] = val
 	a.rebuild()
-
+	
 }
 
 func (a *tActuator) Del(id string) {
@@ -51,7 +51,7 @@ func (a *tActuator) Del(id string) {
 }
 
 func (a *tActuator) rebuild() {
-
+	
 	handlers := make([]IGreyHandler, 0, len(a.all))
 	for _, h := range a.all {
 		if !h.IsStop() {
@@ -70,7 +70,7 @@ func newtActuator() *tActuator {
 }
 
 func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) error {
-
+	
 	httpCtx, err := http_service.Assert(ctx)
 	if err != nil {
 		if next != nil {
@@ -78,21 +78,24 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 		}
 		return err
 	}
-
+	
 	a.lock.RLock()
 	handlers := a.handlers
 	a.lock.RUnlock()
-
+	
 	for _, handler := range handlers {
 		//check筛选条件
 		if handler.Check(httpCtx) {
 			if handler.Match(ctx) { //是否触发灰度
 				handler.DoGrey(ctx)
+				ctx.WithValue("is_block", true)
+				ctx.SetLabel("block_name", handler.Name())
+				ctx.SetLabel("handler", "grey")
 				break
 			}
 		}
 	}
-
+	
 	if next != nil {
 		return next.DoChain(ctx)
 	}
@@ -124,7 +127,7 @@ func (hs handlerListSort) Len() int {
 }
 
 func (hs handlerListSort) Less(i, j int) bool {
-
+	
 	return hs[i].Priority() < hs[j].Priority()
 }
 
