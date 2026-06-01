@@ -132,6 +132,12 @@ Apinto支持在arm64、amd64架构上运行。
 apinto start
 ```
 
+## 设计文档
+
+仓库内沉淀的模块设计文档存放于 [docs/design/](docs/design/)：
+
+- [渠道-资源组多级绑定设计](docs/design/channel-resource-group.md) — 基于现有 [drivers/app](drivers/app) 复用的多级绑定方案（显式绑定 + 跟随继承、关系层/物化层/缓存三层模型、reconciler）
+
 ### Bug 和需求反馈
 如果想要反馈 Bug、提供产品意见，可以创建一个 Github issue 联系我们，十分感谢！
 

@@ -8,7 +8,7 @@ import (
 
 type IConverterCreateFunc func(cfg string) (IConverter, error)
 
-type IConvertDriverCreateFunc[T any] func(*T) (IConverterDriver, error)
+type IConvertDriverCreateFunc[T any] func(ModelType, *T) (IConverterDriver, error)
 
 type ModelType string
 
@@ -17,9 +17,22 @@ func (m ModelType) String() string {
 }
 
 const (
-	ModelTypeChat  ModelType = "chat"
-	ModelTypeImage ModelType = "image"
-	ModelTypeVideo ModelType = "video"
+	//ModelTypeChat 原生Chat格式
+	ModelTypeChat ModelType = "chat"
+	//ModelTypeOpenAIChat openAI兼容格式
+	ModelTypeOpenAIChat ModelType = "openai-chat"
+	//ModelTypeImageGeneration 图片生成（文生图）
+	ModelTypeImageGeneration ModelType = "image-generation"
+	//ModelTypeImageEdit 图片编辑（图生图）
+	ModelTypeImageEdit ModelType = "image-edit"
+	//ModelTypeImageTaskCommit 提交图片生成任务
+	ModelTypeImageTaskCommit = "image-task-commit"
+	//ModelTypeImageTaskQuery 查询图片
+	ModelTypeImageTaskQuery = "image-task-query"
+	//ModelTypeVideoTaskCommit 提交视频生成任务
+	ModelTypeVideoTaskCommit ModelType = "video-task-commit"
+	//ModelTypeVideoTaskQuery 查询视频
+	ModelTypeVideoTaskQuery ModelType = "video-task-query"
 )
 
 type IConverterFactory interface {
@@ -52,21 +65,21 @@ func CheckProviderSkill(skill string) bool {
 	return skill == "github.com/eolinker/apinto/convert.provider.IProvider"
 }
 
-func NewConverter[T any](provider string, cfg *T, fns []IConvertDriverCreateFunc[T]) (IConverter, error) {
+func NewConverter[T any](provider string, cfg *T, fns map[ModelType]IConvertDriverCreateFunc[T]) (IConverter, error) {
 	if len(fns) == 0 {
 		return nil, fmt.Errorf("no driver found for %s provider", provider)
 	}
 	c := &Converter{
 		drivers: eosc.BuildUntyped[ModelType, IConverterDriver](),
 	}
-	for _, fn := range fns {
-		driver, err := fn(cfg)
+	for mt, fn := range fns {
+		driver, err := fn(mt, cfg)
 		if err != nil {
 			return nil, err
 		}
-		c.drivers.Set(driver.ModelType(), driver)
+		c.drivers.Set(mt, driver)
 	}
-	
+
 	return c, nil
 }
 

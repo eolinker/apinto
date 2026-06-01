@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"github.com/eolinker/apinto/utils"
 	"sync"
 	"sync/atomic"
 
@@ -98,7 +99,8 @@ func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 			(*globalFilters).Chain(httpContext, completeCaller)
 		}
 	} else {
-		httpContext.SetLabel("current_running", "true")
+		//httpContext.SetLabel("current_running", "true")
+		utils.SetCurrentRunning(httpContext, true)
 		log.Debug("match has:", port)
 		r.Serve(httpContext)
 	}

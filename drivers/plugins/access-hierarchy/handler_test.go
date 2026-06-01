@@ -12,7 +12,6 @@ import (
 	testifyAssert "github.com/stretchr/testify/assert"
 )
 
-// mockMetrics 实现了 metrics.Metrics 接口，用于在测试中模拟指标解析表达式的返回结果
 type mockMetrics struct {
 	val string
 }
@@ -25,7 +24,6 @@ func (m *mockMetrics) Key() string {
 	return m.val
 }
 
-// mockEntry 模拟实现了 eosc.IEntry 接口，作为测试运行时的参数
 type mockEntry struct{}
 
 func (m *mockEntry) Children(child string) []eosc.IEntry {
@@ -40,7 +38,6 @@ func (m *mockEntry) ReadLabel(pattern string) string {
 	return ""
 }
 
-// mockCustomerVar 模拟实现了 eosc.ICustomerVar 接口，用于保存和查询租户及资源组配置关系
 type mockCustomerVar struct {
 	data map[string]map[string]string
 }
@@ -73,8 +70,6 @@ func TestHandler_Check(t *testing.T) {
 	defer func() { customerVar = oldVar }()
 
 	t.Run("empty app or resource ID", func(t *testing.T) {
-		// 场景：AppID 或 ResourceID 提取出的结果为空
-		// 预期：无法解析出有效指标，安全拒绝，返回 false
 		mockVar := &mockCustomerVar{data: make(map[string]map[string]string)}
 		customerVar = mockVar
 
@@ -92,8 +87,6 @@ func TestHandler_Check(t *testing.T) {
 	})
 
 	t.Run("no app groups bound", func(t *testing.T) {
-		// 场景：App 没有绑定 to 资源组
-		// 预期：在 app_groups 映射中无对应记录，返回 false
 		mockVar := &mockCustomerVar{data: make(map[string]map[string]string)}
 		customerVar = mockVar
 
@@ -105,9 +98,6 @@ func TestHandler_Check(t *testing.T) {
 	})
 
 	t.Run("simple explicit resource match pass", func(t *testing.T) {
-		// 场景：最基础的显式资源组绑定关系
-		// 关系：App1 -> Group1 (显式资源模式) -> 资源1
-		// 预期：未过期，直接匹配成功，返回 true
 		mockVar := &mockCustomerVar{
 			data: map[string]map[string]string{
 				"app_groups:app1": {
@@ -131,9 +121,6 @@ func TestHandler_Check(t *testing.T) {
 	})
 
 	t.Run("simple explicit resource expired app-group", func(t *testing.T) {
-		// 场景：应用与资源组的关联关系已过期
-		// 关系：App1 -> Group1 (绑定关系中时间戳在当前时间之前)
-		// 预期：检测到关系过期，拒绝访问，返回 false
 		pastTime := time.Now().UnixMilli() - 10000
 		mockVar := &mockCustomerVar{
 			data: map[string]map[string]string{
@@ -158,9 +145,6 @@ func TestHandler_Check(t *testing.T) {
 	})
 
 	t.Run("simple explicit resource expired group-resource", func(t *testing.T) {
-		// 场景：资源与资源组的关联关系已过期
-		// 关系：Group1 -> 资源1 (绑定关系中时间戳在当前时间之前)
-		// 预期：检测到资源授权过期，拒绝访问，返回 false
 		pastTime := time.Now().UnixMilli() - 10000
 		mockVar := &mockCustomerVar{
 			data: map[string]map[string]string{
@@ -185,9 +169,6 @@ func TestHandler_Check(t *testing.T) {
 	})
 
 	t.Run("follow tenant mode pass", func(t *testing.T) {
-		// 场景：资源组配置为“跟随租户”模式，能够沿着租户继承路径找到所辖资源
-		// 关系：App1 -> Group1 (跟随租户 tenant1) -> 租户拥有 Group2 (显式资源模式) -> 资源1
-		// 预期：DFS 递归正确匹配该继承关系，返回 true
 		mockVar := &mockCustomerVar{
 			data: map[string]map[string]string{
 				"app_groups:app1": {
@@ -219,9 +200,6 @@ func TestHandler_Check(t *testing.T) {
 	})
 
 	t.Run("follow tenant mode filter non-explicit owned group", func(t *testing.T) {
-		// 场景：跟随租户模式下，过滤租户下非“显式资源”类型的子组，防止（租户 -> 组 -> 租户）无限递归
-		// 关系：App1 -> Group1 (跟随租户 tenant1) -> 租户拥有 Group2 (但 Group2 又是跟随租户模式，非显式资源模式)
-		// 预期：跳过该组，不进行进一步递归，校验失败，返回 false
 		mockVar := &mockCustomerVar{
 			data: map[string]map[string]string{
 				"app_groups:app1": {
@@ -252,15 +230,6 @@ func TestHandler_Check(t *testing.T) {
 	})
 
 	t.Run("multi-level hierarchical granted groups pass", func(t *testing.T) {
-		// 场景：极其复杂的跨多级租户、多级被授权资源组（Granted Groups）的深度继承匹配
-		// 关系：
-		//   1. App1 绑定到 Group1
-		//   2. Group1 的元数据表明其跟随租户 tenant_child
-		//   3. tenant_child 被授予了（Granted）Group_parent 资源组权限
-		//   4. Group_parent 元数据表明其跟随上级租户 tenant_parent
-		//   5. tenant_parent 旗下拥有 Group_grandparent 资源组（显式资源模式）
-		//   6. Group_grandparent 绑定了目标资源 res1
-		// 预期：深层 DFS 递归能完美寻路通过，返回 true
 		mockVar := &mockCustomerVar{
 			data: map[string]map[string]string{
 				"app_groups:app1": {
@@ -298,9 +267,6 @@ func TestHandler_Check(t *testing.T) {
 	})
 
 	t.Run("cycle detection group cycle", func(t *testing.T) {
-		// 场景：防御性测试 - 资源组依赖成环
-		// 关系：Group1 -> 租户1 -> Group2 -> 租户2 -> Group1（形成环状依赖）
-		// 预期：DFS 递归检测到 Group1 已访问过，安全中断递归，不导致堆栈溢出，最终返回 false
 		mockVar := &mockCustomerVar{
 			data: map[string]map[string]string{
 				"app_groups:app1": {
@@ -332,9 +298,6 @@ func TestHandler_Check(t *testing.T) {
 	})
 
 	t.Run("cycle detection tenant cycle", func(t *testing.T) {
-		// 场景：防御性测试 - 租户级联依赖成环
-		// 关系：Group1 -> 租户1 -> Group2 -> 租户1（形成环状依赖）
-		// 预期：DFS 递归检测到 租户1 已访问过，安全中断递归，不导致堆栈溢出，最终返回 false
 		mockVar := &mockCustomerVar{
 			data: map[string]map[string]string{
 				"app_groups:app1": {
@@ -364,7 +327,6 @@ func TestHandler_Check(t *testing.T) {
 }
 
 func TestAccessHierarchy_WorkerMethods(t *testing.T) {
-	// 测试 AccessHierarchy 的工作器基本生命周期方法与 Skill 校验
 	ah := &AccessHierarchy{}
 	testifyAssert.NoError(t, ah.Start())
 	testifyAssert.NoError(t, ah.Stop())
@@ -375,7 +337,6 @@ func TestAccessHierarchy_WorkerMethods(t *testing.T) {
 }
 
 func TestAccessHierarchy_AssertAndParse(t *testing.T) {
-	// 测试配置格式 of Assert（类型断言转换）和规则解析
 	ah := &AccessHierarchy{}
 
 	cfg := &Config{
@@ -541,7 +502,7 @@ func TestAccessHierarchy_Filter(t *testing.T) {
 	}
 
 	ah.rules = []ruleHandler{
-		ah.newHandler("$ctx_app", "$ctx_res"),
+		ah.newHandler("$ctx_app", "$ctx_res", nil),
 	}
 
 	chain2 := &mockChain{}
@@ -856,6 +817,362 @@ func TestHandler_EdgeCasesAdditional(t *testing.T) {
 
 func TestAccessHierarchy_newHandlerEdge(t *testing.T) {
 	ah := &AccessHierarchy{}
-	h := ah.newHandler("ctx_app", "ctx_res")
+	h := ah.newHandler("ctx_app", "ctx_res", nil)
 	testifyAssert.NotNil(t, h)
+}
+
+func TestAccessHierarchy_CustomConfig(t *testing.T) {
+	ah := &AccessHierarchy{}
+	h := ah.newHandler("$ctx_app", "$ctx_res", &HierarchyConfig{
+		AppNodesPrefix:           "custom_app_groups:",
+		NodeMetaPrefix:           "custom_group_meta:",
+		NodeTargetsPrefix:        "custom_group_resources:",
+		ParentNodesPrefix:        "custom_tenant_groups:",
+		ParentGrantedNodesPrefix: "custom_tenant_granted_groups:",
+		MetaModeField:            "custom_mode",
+		MetaParentNodeField:      "custom_owner_tenant_id",
+		ModeExplicit:             "custom_explicit",
+		ModeFollowParent:         "custom_follow",
+	})
+	testifyAssert.NotNil(t, h)
+
+	handlerObj := h.(*handler)
+	testifyAssert.Equal(t, "custom_app_groups:", handlerObj.getAppNodesPrefix())
+	testifyAssert.Equal(t, "custom_group_meta:", handlerObj.getNodeMetaPrefix())
+	testifyAssert.Equal(t, "custom_group_resources:", handlerObj.getNodeTargetsPrefix())
+	testifyAssert.Equal(t, "custom_tenant_groups:", handlerObj.getParentNodesPrefix())
+	testifyAssert.Equal(t, "custom_tenant_granted_groups:", handlerObj.getParentGrantedNodesPrefix())
+	testifyAssert.Equal(t, "custom_mode", handlerObj.getMetaModeField())
+	testifyAssert.Equal(t, "custom_owner_tenant_id", handlerObj.getMetaParentNodeField())
+	testifyAssert.Equal(t, "custom_explicit", handlerObj.getModeExplicit())
+	testifyAssert.Equal(t, "custom_follow", handlerObj.getModeFollowParent())
+
+	hEmpty := ah.newHandler("$ctx_app", "$ctx_res", &HierarchyConfig{})
+	testifyAssert.NotNil(t, hEmpty)
+	handlerEmpty := hEmpty.(*handler)
+	testifyAssert.Equal(t, "app_groups:", handlerEmpty.getAppNodesPrefix())
+	testifyAssert.Equal(t, "group_meta:", handlerEmpty.getNodeMetaPrefix())
+	testifyAssert.Equal(t, "group_resources:", handlerEmpty.getNodeTargetsPrefix())
+	testifyAssert.Equal(t, "tenant_groups:", handlerEmpty.getParentNodesPrefix())
+	testifyAssert.Equal(t, "tenant_granted_groups:", handlerEmpty.getParentGrantedNodesPrefix())
+	testifyAssert.Equal(t, "mode", handlerEmpty.getMetaModeField())
+	testifyAssert.Equal(t, "owner_tenant_id", handlerEmpty.getMetaParentNodeField())
+	testifyAssert.Equal(t, "explicit_resources", handlerEmpty.getModeExplicit())
+	testifyAssert.Equal(t, "follow_tenant", handlerEmpty.getModeFollowParent())
+}
+
+func TestAccessHierarchy_CustomConfigExecution(t *testing.T) {
+	oldVar := customerVar
+	defer func() { customerVar = oldVar }()
+
+	customerVar = &mockCustomerVar{
+		data: map[string]map[string]string{
+			"custom_app_groups:app1": {
+				"group1": "0",
+			},
+			"custom_group_meta:group1": {
+				"custom_mode": "custom_explicit",
+			},
+			"custom_group_resources:group1": {
+				"res1": "0",
+			},
+		},
+	}
+
+	ah := &AccessHierarchy{}
+	h := ah.newHandler("$ctx_app", "$ctx_res", &HierarchyConfig{
+		AppNodesPrefix:    "custom_app_groups:",
+		NodeMetaPrefix:    "custom_group_meta:",
+		NodeTargetsPrefix: "custom_group_resources:",
+		MetaModeField:     "custom_mode",
+		ModeExplicit:      "custom_explicit",
+	})
+
+	chain := &mockChain{}
+	ctx := &mockHttpContext{
+		labels: map[string]string{
+			"app": "app1",
+			"res": "res1",
+		},
+		resp: &mockHttpResponse{},
+	}
+
+	ah.rules = []ruleHandler{h}
+	err := ah.DoHttpFilter(ctx, chain)
+	testifyAssert.NoError(t, err)
+	testifyAssert.True(t, chain.called)
+}
+
+func TestAccessHierarchy_InfiniteDepthSelfInheritance(t *testing.T) {
+	oldVar := customerVar
+	defer func() { customerVar = oldVar }()
+
+	mockVar := &mockCustomerVar{
+		data: map[string]map[string]string{
+			"user_roles:user1": {
+				"role1": "0",
+			},
+			"role_meta:role1": {
+				"mode":           "follow",
+				"parent_role_id": "role2",
+			},
+			"role_meta:role2": {
+				"mode":           "follow",
+				"parent_role_id": "role3",
+			},
+			"role_meta:role3": {
+				"mode": "explicit",
+			},
+			"role_permissions:role3": {
+				"permission1": "0",
+			},
+		},
+	}
+	customerVar = mockVar
+
+	ah := &AccessHierarchy{}
+	h := ah.newHandler("$ctx_app", "$ctx_res", &HierarchyConfig{
+		AppNodesPrefix:      "user_roles:",
+		NodeMetaPrefix:      "role_meta:",
+		NodeTargetsPrefix:   "role_permissions:",
+		MetaModeField:       "mode",
+		MetaParentNodeField: "parent_role_id",
+		ModeExplicit:        "explicit",
+		ModeFollowParent:    "follow",
+	})
+
+	handlerObj := h.(*handler)
+	testifyAssert.True(t, handlerObj.checkNodeHasTarget("role1", "permission1", time.Now().UnixMilli(), make(map[string]bool), make(map[string]bool)))
+	testifyAssert.False(t, handlerObj.checkNodeHasTarget("role1", "permission_nonexistent", time.Now().UnixMilli(), make(map[string]bool), make(map[string]bool)))
+}
+
+func TestAccessHierarchy_InfiniteDepthSelfInheritanceCycle(t *testing.T) {
+	oldVar := customerVar
+	defer func() { customerVar = oldVar }()
+
+	mockVar := &mockCustomerVar{
+		data: map[string]map[string]string{
+			"user_roles:user1": {
+				"role1": "0",
+			},
+			"role_meta:role1": {
+				"mode":           "follow",
+				"parent_role_id": "role2",
+			},
+			"role_meta:role2": {
+				"mode":           "follow",
+				"parent_role_id": "role1",
+			},
+		},
+	}
+	customerVar = mockVar
+
+	ah := &AccessHierarchy{}
+	h := ah.newHandler("$ctx_app", "$ctx_res", &HierarchyConfig{
+		AppNodesPrefix:      "user_roles:",
+		NodeMetaPrefix:      "role_meta:",
+		NodeTargetsPrefix:   "role_permissions:",
+		MetaModeField:       "mode",
+		MetaParentNodeField: "parent_role_id",
+		ModeExplicit:        "explicit",
+		ModeFollowParent:    "follow",
+	})
+
+	handlerObj := h.(*handler)
+	testifyAssert.False(t, handlerObj.checkNodeHasTarget("role1", "permission1", time.Now().UnixMilli(), make(map[string]bool), make(map[string]bool)))
+}
+
+func TestAccessHierarchy_BackwardCompatibleConfig(t *testing.T) {
+	ah := &AccessHierarchy{}
+	h := ah.newHandler("$ctx_app", "$ctx_res", &HierarchyConfig{
+		AppGroupsPrefix:           "old_app_groups:",
+		GroupMetaPrefix:           "old_group_meta:",
+		GroupResourcesPrefix:      "old_group_resources:",
+		TenantGroupsPrefix:        "old_tenant_groups:",
+		TenantGrantedGroupsPrefix: "old_tenant_granted_groups:",
+		MetaOwnerTenantField:      "old_owner_tenant_id",
+		ModeFollowTenant:          "old_follow_tenant",
+	})
+	testifyAssert.NotNil(t, h)
+
+	handlerObj := h.(*handler)
+	testifyAssert.Equal(t, "old_app_groups:", handlerObj.getAppNodesPrefix())
+	testifyAssert.Equal(t, "old_group_meta:", handlerObj.getNodeMetaPrefix())
+	testifyAssert.Equal(t, "old_group_resources:", handlerObj.getNodeTargetsPrefix())
+	testifyAssert.Equal(t, "old_tenant_groups:", handlerObj.getParentNodesPrefix())
+	testifyAssert.Equal(t, "old_tenant_granted_groups:", handlerObj.getParentGrantedNodesPrefix())
+	testifyAssert.Equal(t, "old_owner_tenant_id", handlerObj.getMetaParentNodeField())
+	testifyAssert.Equal(t, "old_follow_tenant", handlerObj.getModeFollowParent())
+}
+
+type mockRuleHandler struct {
+	returnValue bool
+}
+
+func (m *mockRuleHandler) Check(ctx eosc.IEntry) bool {
+	return m.returnValue
+}
+
+type mockAssertErrorHttpContext struct {
+	mockHttpContext
+}
+
+func (m *mockAssertErrorHttpContext) Assert(i interface{}) error {
+	return strconv.ErrSyntax
+}
+
+func TestAccessHierarchy_DoHttpFilterAssertError(t *testing.T) {
+	ah := &AccessHierarchy{
+		rules: []ruleHandler{&mockRuleHandler{returnValue: false}},
+	}
+	ctx := &mockAssertErrorHttpContext{}
+	chain := &mockChain{}
+	err := ah.DoHttpFilter(ctx, chain)
+	testifyAssert.Error(t, err)
+}
+
+func BenchmarkHandler_Check_Simple(b *testing.B) {
+	oldVar := customerVar
+	defer func() { customerVar = oldVar }()
+
+	customerVar = &mockCustomerVar{
+		data: map[string]map[string]string{
+			"app_groups:app1": {
+				"group1": "0",
+			},
+			"group_meta:group1": {
+				"mode": "explicit_resources",
+			},
+			"group_resources:group1": {
+				"res1": "0",
+			},
+		},
+	}
+
+	h := &handler{
+		a: &mockMetrics{val: "app1"},
+		b: &mockMetrics{val: "res1"},
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = h.Check(&mockEntry{})
+	}
+}
+
+func BenchmarkHandler_Check_10LevelsComplex(b *testing.B) {
+	oldVar := customerVar
+	defer func() { customerVar = oldVar }()
+
+	mockData := map[string]map[string]string{
+		"user_roles:user1": {
+			"role_1":        "0",
+			"role_1_extra1": "0",
+			"role_1_extra2": "0",
+			"role_1_extra3": "0",
+			"role_1_extra4": "0",
+		},
+	}
+
+	for i := 1; i <= 9; i++ {
+		currRole := "role_" + strconv.Itoa(i)
+		nextRole := "role_" + strconv.Itoa(i+1)
+		mockData["role_meta:"+currRole] = map[string]string{
+			"mode":           "follow",
+			"parent_role_id": nextRole,
+		}
+
+		for k := 1; k <= 4; k++ {
+			extraRole := currRole + "_extra" + strconv.Itoa(k)
+			mockData["role_meta:"+extraRole] = map[string]string{
+				"mode": "explicit",
+			}
+			mockData["role_permissions:"+extraRole] = map[string]string{
+				"other_permission": "0",
+			}
+		}
+	}
+
+	mockData["role_meta:role_10"] = map[string]string{
+		"mode": "explicit",
+	}
+	mockData["role_permissions:role_10"] = map[string]string{
+		"permission1": "0",
+	}
+
+	for k := 1; k <= 4; k++ {
+		extraRole := "role_10_extra" + strconv.Itoa(k)
+		mockData["role_meta:"+extraRole] = map[string]string{
+			"mode": "explicit",
+		}
+	}
+
+	customerVar = &mockCustomerVar{data: mockData}
+
+	ah := &AccessHierarchy{}
+	h := ah.newHandler("$ctx_app", "$ctx_res", &HierarchyConfig{
+		AppNodesPrefix:      "user_roles:",
+		NodeMetaPrefix:      "role_meta:",
+		NodeTargetsPrefix:   "role_permissions:",
+		MetaModeField:       "mode",
+		MetaParentNodeField: "parent_role_id",
+		ModeExplicit:        "explicit",
+		ModeFollowParent:    "follow",
+	})
+
+	handlerObj := h.(*handler)
+	handlerObj.a = &mockMetrics{val: "user1"}
+	handlerObj.b = &mockMetrics{val: "permission1"}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = h.Check(&mockEntry{})
+	}
+}
+
+func BenchmarkHandler_Check_DeepInheritance(b *testing.B) {
+	oldVar := customerVar
+	defer func() { customerVar = oldVar }()
+
+	customerVar = &mockCustomerVar{
+		data: map[string]map[string]string{
+			"user_roles:user1": {
+				"role1": "0",
+			},
+			"role_meta:role1": {
+				"mode":           "follow",
+				"parent_role_id": "role2",
+			},
+			"role_meta:role2": {
+				"mode":           "follow",
+				"parent_role_id": "role3",
+			},
+			"role_meta:role3": {
+				"mode": "explicit",
+			},
+			"role_permissions:role3": {
+				"permission1": "0",
+			},
+		},
+	}
+
+	ah := &AccessHierarchy{}
+	h := ah.newHandler("$ctx_app", "$ctx_res", &HierarchyConfig{
+		AppNodesPrefix:      "user_roles:",
+		NodeMetaPrefix:      "role_meta:",
+		NodeTargetsPrefix:   "role_permissions:",
+		MetaModeField:       "mode",
+		MetaParentNodeField: "parent_role_id",
+		ModeExplicit:        "explicit",
+		ModeFollowParent:    "follow",
+	})
+
+	handlerObj := h.(*handler)
+	handlerObj.a = &mockMetrics{val: "user1"}
+	handlerObj.b = &mockMetrics{val: "permission1"}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = h.Check(&mockEntry{})
+	}
 }

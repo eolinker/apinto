@@ -29,5 +29,5 @@ func Create(cfg string) (ai_convert.IConverter, error) {
 		return nil, err
 	}
 
-	return ai_convert.NewConverter(provider, &conf, driverCreate.List())
+	return ai_convert.NewConverter(provider, &conf, driverCreate.All())
 }

@@ -11,25 +11,21 @@ import (
 )
 
 var (
-	// 确保 AccessHierarchy 实现了 http_context.HttpFilter (HTTP 过滤器) 和 eosc.IWorker (基础 Worker 实例) 接口
 	_ eocontext.IFilter       = (*AccessHierarchy)(nil)
 	_ http_context.HttpFilter = (*AccessHierarchy)(nil)
 	_ eosc.IWorker            = (*AccessHierarchy)(nil)
 )
 
-// AccessHierarchy 实现多级渠道鉴权核心 Worker 实体
 type AccessHierarchy struct {
-	drivers.WorkerBase                    // 继承 Apinto 基础 Worker 结构
-	rules              []ruleHandler      // 解析配置生成的各校验规则处理器
-	response           response.IResponse // 校验失败时的 HTTP 响应模板
+	drivers.WorkerBase
+	rules              []ruleHandler
+	response           response.IResponse
 }
 
-// Start 启动 Worker（本插件无需额外后台驻留协程，直接返回 nil）
 func (w *AccessHierarchy) Start() error {
 	return nil
 }
 
-// Reset 在插件配置被修改（更新）时被系统自动调用，重构规则处理器与响应模板
 func (w *AccessHierarchy) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	config, err := assert(conf)
 	if err != nil {
@@ -45,16 +41,13 @@ func (w *AccessHierarchy) Reset(conf interface{}, workers map[eosc.RequireId]eos
 	return nil
 }
 
-// Stop 停止 Worker
 func (w *AccessHierarchy) Stop() error {
 	return nil
 }
 
-// Destroy 销毁 Worker，回收底层资源
 func (w *AccessHierarchy) Destroy() {
 }
 
-// CheckSkill 判断当前 Worker 是否支持对应的 Skill（本插件只应用在 Http 过滤链中）
 func (w *AccessHierarchy) CheckSkill(skill string) bool {
 	return http_context.FilterSkillName == skill
 }
@@ -67,7 +60,6 @@ func assert(v interface{}) (*Config, error) {
 	return cfg, nil
 }
 
-// 默认的 403 Forbidden 拦截响应模板
 var (
 	defaultResponse = response.Parse(&response.Response{
 		StatusCode:  http.StatusForbidden,
@@ -78,28 +70,93 @@ var (
 	})
 )
 
-// newHandler 为指定的 A、B 指标生成校验处理器
-func (w *AccessHierarchy) newHandler(a, b string) ruleHandler {
-	am := metrics.Parse(a) // 提取 A（通常是 AppID 指标）
-	bm := metrics.Parse(b) // 提取 B（通常是 ResourceID 指标）
+func (w *AccessHierarchy) newHandler(a, b string, hCfg *HierarchyConfig) ruleHandler {
+	am := metrics.Parse(a)
+	bm := metrics.Parse(b)
 	if am == nil || bm == nil {
 		return nil
 	}
-	return &handler{
+
+	h := &handler{
 		a: am,
 		b: bm,
+
+		appNodesPrefix:           "app_groups:",
+		nodeMetaPrefix:           "group_meta:",
+		nodeTargetsPrefix:        "group_resources:",
+		parentNodesPrefix:        "tenant_groups:",
+		parentGrantedNodesPrefix: "tenant_granted_groups:",
+
+		metaModeField:        "mode",
+		metaParentNodeField: "owner_tenant_id",
+
+		modeExplicit:     "explicit_resources",
+		modeFollowParent: "follow_tenant",
 	}
+
+	if hCfg != nil {
+		if hCfg.AppNodesPrefix != "" {
+			h.appNodesPrefix = hCfg.AppNodesPrefix
+		} else if hCfg.AppGroupsPrefix != "" {
+			h.appNodesPrefix = hCfg.AppGroupsPrefix
+		}
+
+		if hCfg.NodeMetaPrefix != "" {
+			h.nodeMetaPrefix = hCfg.NodeMetaPrefix
+		} else if hCfg.GroupMetaPrefix != "" {
+			h.nodeMetaPrefix = hCfg.GroupMetaPrefix
+		}
+
+		if hCfg.NodeTargetsPrefix != "" {
+			h.nodeTargetsPrefix = hCfg.NodeTargetsPrefix
+		} else if hCfg.GroupResourcesPrefix != "" {
+			h.nodeTargetsPrefix = hCfg.GroupResourcesPrefix
+		}
+
+		if hCfg.ParentNodesPrefix != "" {
+			h.parentNodesPrefix = hCfg.ParentNodesPrefix
+		} else if hCfg.TenantGroupsPrefix != "" {
+			h.parentNodesPrefix = hCfg.TenantGroupsPrefix
+		}
+
+		if hCfg.ParentGrantedNodesPrefix != "" {
+			h.parentGrantedNodesPrefix = hCfg.ParentGrantedNodesPrefix
+		} else if hCfg.TenantGrantedGroupsPrefix != "" {
+			h.parentGrantedNodesPrefix = hCfg.TenantGrantedGroupsPrefix
+		}
+
+		if hCfg.MetaModeField != "" {
+			h.metaModeField = hCfg.MetaModeField
+		}
+
+		if hCfg.MetaParentNodeField != "" {
+			h.metaParentNodeField = hCfg.MetaParentNodeField
+		} else if hCfg.MetaOwnerTenantField != "" {
+			h.metaParentNodeField = hCfg.MetaOwnerTenantField
+		}
+
+		if hCfg.ModeExplicit != "" {
+			h.modeExplicit = hCfg.ModeExplicit
+		}
+
+		if hCfg.ModeFollowParent != "" {
+			h.modeFollowParent = hCfg.ModeFollowParent
+		} else if hCfg.ModeFollowTenant != "" {
+			h.modeFollowParent = hCfg.ModeFollowTenant
+		}
+	}
+
+	return h
 }
 
-// parseConfig 转换配置项，初始化规则和响应拦截器
 func (w *AccessHierarchy) parseConfig(config *Config) (response.IResponse, []ruleHandler) {
 	responseHandler := response.Parse(config.Response)
 	if responseHandler == nil {
-		responseHandler = defaultResponse // 若未定义自定义 Response，则降级到 403
+		responseHandler = defaultResponse
 	}
 	rules := make([]ruleHandler, 0)
 	for _, rule := range config.Rules {
-		rh := w.newHandler(rule.A, rule.B)
+		rh := w.newHandler(rule.A, rule.B, config.Hierarchy)
 		if rh != nil {
 			rules = append(rules, rh)
 		}

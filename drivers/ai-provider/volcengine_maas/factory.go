@@ -32,5 +32,5 @@ func Create(cfg string) (ai_convert.IConverter, error) {
 	if conf.BaseUrl == "" {
 		conf.BaseUrl = "https://ark.cn-beijing.volces.com/api/v3"
 	}
-	return ai_convert.NewConverter(provider, &conf, driverCreate.List())
+	return ai_convert.NewConverter(provider, &conf, driverCreate.All())
 }

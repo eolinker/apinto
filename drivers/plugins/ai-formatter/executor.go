@@ -60,12 +60,7 @@ func (e *executor) doBalance(ctx http_context.IHttpContext, originProxy http_con
 func (e *executor) doConverter(ctx http_context.IHttpContext, next eocontext.IChain, resource ai_convert.IKeyResource, provider ai_convert.IProvider, extender map[string]interface{}) error {
 	status := ai_convert.StatusInvalid
 	defer func() {
-		ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
-			Provider: provider.Provider(),
-			Model:    provider.Model(),
-			Key:      resource.ID(),
-			Status:   status,
-		})
+		ai_convert.SetAIProviderStatuses(ctx, status)
 	}()
 	converter, has := resource.Get(e.modelType)
 	if !has {
@@ -216,24 +211,14 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string
 			continue
 		}
 		if err = converter.RequestConvert(ctx, extender); err != nil {
-			ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
-				Provider: e.provider,
-				Model:    e.model,
-				Key:      r.ID(),
-				Status:   ai_convert.StatusInvalid,
-			})
+			ai_convert.SetAIProviderStatuses(ctx, ai_convert.StatusInvalid)
 			continue
 		}
 
 		if next != nil {
 			if err = e.processNext(ctx, next, p); err != nil {
 				if ctx.Response().StatusCode() == 504 {
-					ai_convert.SetAIProviderStatuses(ctx, ai_convert.AIProviderStatus{
-						Provider: e.provider,
-						Model:    e.model,
-						Key:      r.ID(),
-						Status:   ai_convert.StatusTimeout,
-					})
+					ai_convert.SetAIProviderStatuses(ctx, ai_convert.StatusTimeout)
 				}
 				return err
 			}

@@ -23,3 +23,9 @@
 /outer/
 .env
 /.secrets
+/.agents/
+/.continue/
+/.qoder/
+/.roo/
+/.trae/
+/skills/

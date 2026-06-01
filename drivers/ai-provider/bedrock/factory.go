@@ -40,7 +40,7 @@ func Create(cfg string) (ai_convert.IConverter, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ai_convert.NewConverter(provider, &conf, driverCreate.List())
+	return ai_convert.NewConverter(provider, &conf, driverCreate.All())
 }
 
 // EventStreamToJSON 将 Amazon EventStream 格式的数据转换为 JSON 格式

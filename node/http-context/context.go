@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/eolinker/apinto/utils"
 	"io"
 	"net"
 	"runtime"
@@ -49,22 +50,6 @@ type HttpContext struct {
 	port                int
 	entry               eosc.IEntry
 }
-
-//func (ctx *HttpContext) BodyFinish() {
-//	bodyFinishes := ctx.bodyFinishes
-//	size := len(bodyFinishes)
-//	// ##倒序执行
-//	for i := size - 1; i >= 0; i-- {
-//		bodyFinishes[i](ctx)
-//	}
-//}
-
-//func (ctx *HttpContext) AppendBodyFinishFunc(finishFunc http_service.BodyFinishFunc) {
-//	if ctx.bodyFinishes == nil {
-//		ctx.bodyFinishes = make([]http_service.BodyFinishFunc, 0, 10)
-//	}
-//	ctx.bodyFinishes = append(ctx.bodyFinishes, finishFunc)
-//}
 
 func (ctx *HttpContext) ProxyClone() http_service.IRequest {
 	// 创建一个新的 ProxyRequest 实例
@@ -240,16 +225,18 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	response.Header.CopyTo(&ctx.response.Response.Header)
 	ctx.response.ResponseHeader.refresh()
 	if response.IsBodyStream() && response.Header.ContentLength() < 0 {
-		disableStream := ctx.GetLabel("disable_stream")
-		if response.StatusCode() == 200 && disableStream != "true" {
+		//disableStream := ctx.GetLabel("disable_stream")
+		if response.StatusCode() == 200 && utils.IsDisableStream(ctx) {
 			// 流式传输，非200状态码不考虑流式传输
 			ctx.response.Response.SetStatusCode(response.StatusCode())
-			ctx.SetLabel("stream_running", "true")
+			utils.SetStreamRunning(ctx, true)
+			//ctx.SetLabel("stream_running", "true")
 			ctx.response.Response.SetBodyStreamWriter(func(w *bufio.Writer) {
 				reader := response.BodyStream()
 				defer func() {
 					response.SetConnectionClose()
-					ctx.SetLabel("stream_running", "false")
+					utils.SetStreamRunning(ctx, false)
+					//ctx.SetLabel("stream_running", "false")
 					ctx.FastFinish()
 					fasthttp.ReleaseResponse(response)
 				}()
@@ -418,7 +405,7 @@ func (ctx *HttpContext) RequestId() string {
 
 // FastFinish finish
 func (ctx *HttpContext) FastFinish() {
-	if ctx.GetLabel("stream_running") == "true" || ctx.GetLabel("current_running") == "true" {
+	if utils.IsStreamRunning(ctx) || utils.IsCurrentRunning(ctx) {
 		// 暂时不释放
 		return
 	}

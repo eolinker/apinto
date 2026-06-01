@@ -3,7 +3,7 @@ package minimax
 import (
 	"encoding/json"
 	"github.com/eolinker/eosc"
-	
+
 	ai_convert "github.com/eolinker/apinto/ai-convert"
 )
 
@@ -29,6 +29,6 @@ func Create(cfg string) (ai_convert.IConverter, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ai_convert.NewConverter(provider, &conf, driverCreate.List())
-	
+	return ai_convert.NewConverter(provider, &conf, driverCreate.All())
+
 }

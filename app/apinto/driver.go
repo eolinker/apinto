@@ -39,6 +39,7 @@ import (
 
 	"github.com/eolinker/apinto/drivers/app"
 	"github.com/eolinker/apinto/drivers/output/prometheus"
+	pricing_driver "github.com/eolinker/apinto/drivers/pricing"
 	"github.com/eolinker/eosc"
 )
 
@@ -97,4 +98,7 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	ai_provider.Register(extenderRegister)
 	ai_key.Register(extenderRegister)
 	ai_model.Register(extenderRegister)
+
+	// 计费计算器（通用，用于 AI 与 API 共用）
+	pricing_driver.Register(extenderRegister)
 }

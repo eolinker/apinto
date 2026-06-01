@@ -19,7 +19,7 @@ func checkConfig(v interface{}) (*Config, error) {
 	}
 
 	if conf.ModelType == "" {
-		conf.ModelType = ai_convert.ModelTypeChat.String()
+		conf.ModelType = ai_convert.ModelTypeOpenAIChat.String()
 	}
 
 	return conf, nil

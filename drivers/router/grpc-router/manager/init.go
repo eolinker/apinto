@@ -18,6 +18,10 @@ var (
 	chainProxy eocontext.IChainPro
 )
 
+const (
+	MaxMessageSize = 100 * 1024 * 1024
+)
+
 func init() {
 
 	var routerManager = NewManager()
@@ -30,8 +34,8 @@ func init() {
 				}
 				return err
 			}),
-			grpc.MaxRecvMsgSize(64 * 1024 * 1024),
-			grpc.MaxSendMsgSize(64 * 1024 * 1024),
+			grpc.MaxRecvMsgSize(MaxMessageSize),
+			grpc.MaxSendMsgSize(MaxMessageSize),
 		}
 		server := grpc.NewServer(opts...)
 		server.Serve(ln)
