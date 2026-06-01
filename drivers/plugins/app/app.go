@@ -31,10 +31,13 @@ func (a *App) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain)
 	log.Debug("auth beginning")
 	err := a.auth(ctx)
 	if err != nil {
+		log.Errorf("auth error: %v", err)
+		ctx.SetLabel("auth_status", "fail")
 		ctx.Response().SetStatus(401, "Unauthorized")
 		ctx.Response().SetBody([]byte(err.Error()))
 		return err
 	}
+	ctx.SetLabel("auth_status", "success")
 	if next != nil {
 		err = next.DoChain(ctx)
 	}
@@ -48,10 +51,12 @@ func (a *App) DoWebsocketFilter(ctx http_service.IWebsocketContext, next eoconte
 	log.Debug("auth beginning")
 	err := a.auth(ctx)
 	if err != nil {
-		ctx.Response().SetStatus(403, "403")
+		ctx.SetLabel("auth_status", "fail")
+		ctx.Response().SetStatus(401, "Unauthorized")
 		ctx.Response().SetBody([]byte(err.Error()))
 		return err
 	}
+	ctx.SetLabel("auth_status", "success")
 	if next != nil {
 		err = next.DoChain(ctx)
 	}

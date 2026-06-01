@@ -7,6 +7,7 @@ import (
 	ai_formatter "github.com/eolinker/apinto/drivers/plugins/ai-formatter"
 	ai_prompt "github.com/eolinker/apinto/drivers/plugins/ai-prompt"
 	"github.com/eolinker/apinto/drivers/plugins/app"
+	"github.com/eolinker/apinto/drivers/plugins/app_response_rewrite"
 	auto_redirect "github.com/eolinker/apinto/drivers/plugins/auto-redirect"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	custom_oauth2_introspection "github.com/eolinker/apinto/drivers/plugins/custom-oauth2-introspection"
@@ -106,6 +107,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	cors.Register(extenderRegister)
 	circuit_breaker.Register(extenderRegister)
 	app.Register(extenderRegister)
+	app_response_rewrite.Register(extenderRegister)
 	rsa_filter.Register(extenderRegister)
 	aes.Register(extenderRegister)
 	js_inject.Register(extenderRegister)
