@@ -1,7 +1,6 @@
 package main
 
 import (
-	access_hierarchy "github.com/eolinker/apinto/drivers/plugins/access-hierarchy"
 	access_relational "github.com/eolinker/apinto/drivers/plugins/access-relational"
 	"github.com/eolinker/apinto/drivers/plugins/acl"
 	"github.com/eolinker/apinto/drivers/plugins/aes"
@@ -9,11 +8,13 @@ import (
 	ai_prompt "github.com/eolinker/apinto/drivers/plugins/ai-prompt"
 	"github.com/eolinker/apinto/drivers/plugins/app"
 	auto_redirect "github.com/eolinker/apinto/drivers/plugins/auto-redirect"
-	"github.com/eolinker/apinto/drivers/plugins/billing"
+
+	// "github.com/eolinker/apinto/drivers/plugins/billing"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
 	custom_oauth2_introspection "github.com/eolinker/apinto/drivers/plugins/custom-oauth2-introspection"
 	data_transform "github.com/eolinker/apinto/drivers/plugins/data-transform"
 	dubbo2_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/dubbo2-proxy-rewrite"
+	dynamic_billing "github.com/eolinker/apinto/drivers/plugins/dynamic-billing"
 	extra_params "github.com/eolinker/apinto/drivers/plugins/extra-params"
 	grpc_proxy_rewrite "github.com/eolinker/apinto/drivers/plugins/grpc-proxy-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/gzip"
@@ -112,7 +113,6 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	aes.Register(extenderRegister)
 	js_inject.Register(extenderRegister)
 	acl.Register(extenderRegister)
-	access_hierarchy.Register(extenderRegister)
 	access_relational.Register(extenderRegister)
 	replay_attack_defender.Register(extenderRegister)
 
@@ -136,7 +136,10 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	//ai_balance.Register(extenderRegister)
 
 	// 通用计费插件（覆盖 AI / API 调用计费）
-	billing.Register(extenderRegister)
+	// billing.Register(extenderRegister)
+
+	// 动态计费插件
+	dynamic_billing.Register(extenderRegister)
 
 	script_handler.Register(extenderRegister)
 }

@@ -42,6 +42,7 @@ require (
 )
 
 require (
+	github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible
 	github.com/anthropics/anthropic-sdk-go v1.43.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/tidwall/gjson v1.18.0

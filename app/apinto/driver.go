@@ -39,7 +39,7 @@ import (
 
 	"github.com/eolinker/apinto/drivers/app"
 	"github.com/eolinker/apinto/drivers/output/prometheus"
-	pricing_driver "github.com/eolinker/apinto/drivers/pricing"
+	pricing_driver "github.com/eolinker/apinto/drivers/pricing-policy"
 	"github.com/eolinker/eosc"
 )
 

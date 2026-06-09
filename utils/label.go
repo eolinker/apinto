@@ -8,6 +8,7 @@ const (
 	LabelStreamRunning  = "stream_running"
 	LabelCurrentRunning = "current_running"
 	LabelDisableStream  = "disable_stream"
+	LabelStreamJsonBody = "stream_json_body"
 )
 
 func IsStreamRunning(ctx eocontext.EoContext) bool {
@@ -47,4 +48,16 @@ func SetDisableStream(ctx eocontext.EoContext, disable bool) {
 func IsDisableStream(ctx eocontext.EoContext) bool {
 	value := ctx.GetLabel(LabelDisableStream)
 	return value == "true"
+}
+
+func SetStreamJsonBody(ctx eocontext.EoContext, body []byte) {
+	ctx.WithValue(LabelStreamJsonBody, body)
+}
+
+func GetStreamJsonBody(ctx eocontext.EoContext) []byte {
+	value := ctx.Value(LabelStreamJsonBody)
+	if value == nil {
+		return nil
+	}
+	return value.([]byte)
 }
