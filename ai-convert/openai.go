@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/eolinker/apinto/utils"
+	context_label "github.com/eolinker/apinto/utils/context-label"
 	"net/url"
 	"strings"
 	"time"
@@ -176,7 +176,7 @@ func (o *OpenAIChat) bodyFinish(ctx http_service.IHttpContext) {
 		}
 		body = tmp
 	}
-	if utils.IsStreamRunning(ctx) {
+	if context_label.IsStreamRunning(ctx) {
 		usage, err := calculateStreamOutputToken(body, GetAIModel(ctx))
 		if err != nil {
 			log.Errorf("calculate stream output error: %v, body: %s", err, string(body))

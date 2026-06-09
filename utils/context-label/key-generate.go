@@ -1,4 +1,4 @@
-package dynamic_billing
+package context_label
 
 import (
 	"fmt"
@@ -32,8 +32,10 @@ func parseVariables(template string) map[string]struct{} {
 	return vars
 }
 
+type GetLabelFunc func(ctx http_context.IHttpContext) string
+
 type IKeyGenerator interface {
-	Key(ctx http_context.IHttpContext) string
+	Key(ctx http_context.IHttpContext, fns ...GetLabelFunc) string
 }
 
 func NewKeyGenerator(org string) IKeyGenerator {
@@ -48,10 +50,22 @@ type keyGenerator struct {
 	vars map[string]struct{}
 }
 
-func (k *keyGenerator) Key(ctx http_context.IHttpContext) string {
+func (k *keyGenerator) Key(ctx http_context.IHttpContext, fns ...GetLabelFunc) string {
 	target := k.org
 	for key := range k.vars {
-		target = strings.ReplaceAll(target, fmt.Sprintf("{%s}", key), ctx.GetLabel(key))
+		value := ctx.GetLabel(key)
+		if value == "" {
+			for _, fn := range fns {
+				value = fn(ctx)
+				if value != "" {
+					break
+				}
+			}
+		}
+		if value == "" {
+			continue
+		}
+		target = strings.ReplaceAll(target, fmt.Sprintf("{%s}", key), value)
 	}
 
 	return target

@@ -1,6 +1,7 @@
 package pricing_policy
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/Knetic/govaluate"
@@ -42,7 +43,46 @@ type AllOf struct {
 
 type AnyOf struct {
 	*BasicRule
-	AllOf []*AllOf `json:"all_of,omitempty"`
+	AllOfRaw []json.RawMessage `json:"all_of,omitempty"`
+	AllOf    []*AllOf          `json:"-"`
+}
+
+func (a *AnyOf) UnmarshalJSON(data []byte) error {
+	type Alias AnyOf
+	aux := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(a),
+	}
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	if len(a.AllOfRaw) > 0 {
+		a.AllOf = make([]*AllOf, len(a.AllOfRaw))
+		for i, raw := range a.AllOfRaw {
+			var allOf AllOf
+			if err := json.Unmarshal(raw, &allOf); err != nil {
+				return err
+			}
+			a.AllOf[i] = &allOf
+		}
+	}
+	return nil
+}
+
+func (a *AnyOf) MarshalJSON() ([]byte, error) {
+	type Alias AnyOf
+	if len(a.AllOf) > 0 {
+		a.AllOfRaw = make([]json.RawMessage, len(a.AllOf))
+		for i, allOf := range a.AllOf {
+			raw, err := json.Marshal(allOf)
+			if err != nil {
+				return nil, err
+			}
+			a.AllOfRaw[i] = raw
+		}
+	}
+	return json.Marshal((*Alias)(a))
 }
 
 type BasicRule struct {

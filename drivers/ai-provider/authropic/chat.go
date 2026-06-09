@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/eolinker/apinto/utils"
+	context_label "github.com/eolinker/apinto/utils/context-label"
 	"net/url"
 	"strings"
 	"time"
@@ -205,7 +205,7 @@ func (c *Chat) bodyFinish(ctx http_service.IHttpContext) {
 		}
 		body = tmp
 	}
-	if utils.IsStreamRunning(ctx) {
+	if context_label.IsStreamRunning(ctx) {
 		input, output := calculateAnthropicStreamUsage(body)
 
 		if input == 0 {

@@ -1,7 +1,7 @@
 package http_router
 
 import (
-	"github.com/eolinker/apinto/utils"
+	context_label "github.com/eolinker/apinto/utils/context-label"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -17,7 +17,7 @@ func (f *Finisher) Finish(org eocontext.EoContext) error {
 		return err
 	}
 	//ctx.SetLabel("current_running", "false")
-	utils.SetCurrentRunning(ctx, false)
+	context_label.SetCurrentRunning(ctx, false)
 	ctx.FastFinish()
 
 	return nil

@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/eolinker/apinto/utils"
+	context_label "github.com/eolinker/apinto/utils/context-label"
 	"io"
 	"net"
 	"runtime"
@@ -226,16 +226,16 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	ctx.response.ResponseHeader.refresh()
 	if response.IsBodyStream() && response.Header.ContentLength() < 0 {
 		//disableStream := ctx.GetLabel("disable_stream")
-		if response.StatusCode() == 200 && utils.IsDisableStream(ctx) {
+		if response.StatusCode() == 200 && context_label.IsDisableStream(ctx) {
 			// 流式传输，非200状态码不考虑流式传输
 			ctx.response.Response.SetStatusCode(response.StatusCode())
-			utils.SetStreamRunning(ctx, true)
+			context_label.SetStreamRunning(ctx, true)
 			//ctx.SetLabel("stream_running", "true")
 			ctx.response.Response.SetBodyStreamWriter(func(w *bufio.Writer) {
 				reader := response.BodyStream()
 				defer func() {
 					response.SetConnectionClose()
-					utils.SetStreamRunning(ctx, false)
+					context_label.SetStreamRunning(ctx, false)
 					//ctx.SetLabel("stream_running", "false")
 					ctx.FastFinish()
 					fasthttp.ReleaseResponse(response)
@@ -405,7 +405,7 @@ func (ctx *HttpContext) RequestId() string {
 
 // FastFinish finish
 func (ctx *HttpContext) FastFinish() {
-	if utils.IsStreamRunning(ctx) || utils.IsCurrentRunning(ctx) {
+	if context_label.IsStreamRunning(ctx) || context_label.IsCurrentRunning(ctx) {
 		// 暂时不释放
 		return
 	}

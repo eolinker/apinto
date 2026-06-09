@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	context_label "github.com/eolinker/apinto/utils/context-label"
 	"net/http"
 	"strconv"
 	"time"
@@ -25,13 +26,14 @@ var _ eosc.IWorker = (*executor)(nil)
 
 type executor struct {
 	drivers.WorkerBase
-	redisID                 string
-	defaultConcurrencyLimit int
-	enableBalance           bool
-	taskKeyGenerator        IKeyGenerator
-	concurrencyKeyGenerator IKeyGenerator
-	balanceKeyGenerator     IKeyGenerator
-	priceKeyGenerator       IKeyGenerator
+	redisID                    string
+	defaultConcurrencyLimit    int
+	enableBalance              bool
+	taskKeyGenerator           context_label.IKeyGenerator
+	concurrencyKeyGenerator    context_label.IKeyGenerator
+	accountBalanceKeyGenerator context_label.IKeyGenerator
+	tenantBalanceKeyGenerator  context_label.IKeyGenerator
+	priceKeyGenerator          context_label.IKeyGenerator
 }
 
 // TaskInfo 描述了异步任务生成的元数据，用于二次状态查询时反查账户和资源组
@@ -59,10 +61,11 @@ func (e *executor) reset(cfg *Config, wks map[eosc.RequireId]eosc.IWorker) error
 
 	e.defaultConcurrencyLimit = cfg.ConcurrencyLimit
 	e.enableBalance = cfg.EnableBalance
-	e.balanceKeyGenerator = NewKeyGenerator(cfg.BalanceKey)
-	e.priceKeyGenerator = NewKeyGenerator(cfg.PriceKey)
-	e.taskKeyGenerator = NewKeyGenerator(cfg.TaskKey)
-	e.concurrencyKeyGenerator = NewKeyGenerator(cfg.ConcurrencyKey)
+	e.accountBalanceKeyGenerator = context_label.NewKeyGenerator(cfg.AccountBalanceKey)
+	e.priceKeyGenerator = context_label.NewKeyGenerator(cfg.PriceKey)
+	e.taskKeyGenerator = context_label.NewKeyGenerator(cfg.TaskKey)
+	e.concurrencyKeyGenerator = context_label.NewKeyGenerator(cfg.ConcurrencyKey)
+	e.tenantBalanceKeyGenerator = context_label.NewKeyGenerator(cfg.TenantBalanceKey)
 	return nil
 }
 
@@ -167,7 +170,12 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	// ==========================================
 	// 5. 组装余额扣减 Key
 	// ==========================================
-	balanceKey := e.balanceKeyGenerator.Key(ctx)
+	var balanceKey string
+	if context_label.IsUserConsumer(ctx) {
+		balanceKey = e.accountBalanceKeyGenerator.Key(ctx)
+	} else {
+		balanceKey = e.tenantBalanceKeyGenerator.Key(ctx)
+	}
 
 	// ==========================================
 	// 6. 并发限制检查 (Concurrency Check)
@@ -300,7 +308,7 @@ func (e *executor) immediateSettle(ctx http_context.IHttpContext, calc *pricing_
 	var res *pricing_policy.CalculateResult
 	var err error
 	if ctx.Response().IsBodyStream() {
-		body := utils.GetStreamJsonBody(ctx)
+		body := context_label.GetStreamJsonBody(ctx)
 		res, err = calc.CalculateFromChunk(body, priceData)
 	} else {
 		res, err = calc.Calculate(ctx, priceData)

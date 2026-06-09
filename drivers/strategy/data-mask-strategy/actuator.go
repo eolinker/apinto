@@ -1,7 +1,7 @@
 package data_mask_strategy
 
 import (
-	"github.com/eolinker/apinto/utils"
+	context_label "github.com/eolinker/apinto/utils/context-label"
 	"sort"
 	"sync"
 
@@ -86,7 +86,7 @@ func (a *tActuator) Strategy(ctx eocontext.EoContext, next eocontext.IChain) err
 				return err
 			}
 			//ctx.SetLabel("disable_stream", "true")
-			utils.SetDisableStream(ctx, true)
+			context_label.SetDisableStream(ctx, true)
 			break
 		}
 	}

@@ -1,6 +1,7 @@
 package pricing_policy
 
 import (
+	"encoding/json" // For JSON serialization/deserialization tests
 	"math"
 	"testing"
 )
@@ -332,5 +333,95 @@ func TestCalculator_MatchConditions(t *testing.T) {
 	// status 302 但 method POST 不符合嵌套子 AnyOf 中的条件，应该被拒绝
 	if matchCondition(cond, map[string]interface{}{"status": 302, "method": "POST"}) {
 		t.Error("expected false for status 302 with POST method")
+	}
+}
+
+// TestCalculator_ConditionJSON_Serialization 测试 Condition 的 JSON 序列化与反序列化，确保打破循环引用的同时依然能够完整恢复多级条件嵌套逻辑
+func TestCalculator_ConditionJSON_Serialization(t *testing.T) {
+	// 定义一个多级条件 JSON 字符串（AnyOf 里面嵌套 AllOf，AllOf 里面嵌套 AnyOf）
+	jsonStr := `{
+		"any_of": [
+			{
+				"key": "status",
+				"op": "==",
+				"value": "200",
+				"type": "integer"
+			},
+			{
+				"all_of": [
+					{
+						"key": "status",
+						"op": "==",
+						"value": "302",
+						"type": "integer",
+						"any_of": [
+							{
+								"key": "method",
+								"op": "==",
+								"value": "GET",
+								"type": "string"
+							}
+						]
+					}
+				]
+			}
+		]
+	}`
+
+	var cond Condition
+	if err := json.Unmarshal([]byte(jsonStr), &cond); err != nil {
+		t.Fatalf("failed to unmarshal Condition: %v", err)
+	}
+
+	// 1. 验证反序列化后的多级结构
+	if len(cond.AnyOf) != 2 {
+		t.Fatalf("expected 2 any_of conditions, got %d", len(cond.AnyOf))
+	}
+
+	// 验证第二分支（AllOf 嵌套）
+	secondAnyOf := cond.AnyOf[1]
+	if len(secondAnyOf.AllOf) != 1 {
+		t.Fatalf("expected 1 all_of in second any_of, got %d", len(secondAnyOf.AllOf))
+	}
+
+	nestedAllOf := secondAnyOf.AllOf[0]
+	if nestedAllOf.Key != "status" || nestedAllOf.Value != "302" {
+		t.Errorf("expected status==302, got %s %s %s", nestedAllOf.Key, nestedAllOf.Op, nestedAllOf.Value)
+	}
+
+	if len(nestedAllOf.AnyOf) != 1 {
+		t.Fatalf("expected 1 nested any_of inside all_of, got %d", len(nestedAllOf.AnyOf))
+	}
+
+	deepestAnyOf := nestedAllOf.AnyOf[0]
+	if deepestAnyOf.Key != "method" || deepestAnyOf.Value != "GET" {
+		t.Errorf("expected deepest key to be method==GET, got %s %s %s", deepestAnyOf.Key, deepestAnyOf.Op, deepestAnyOf.Value)
+	}
+
+	// 2. 验证序列化是否对称
+	marshaled, err := json.Marshal(&cond)
+	if err != nil {
+		t.Fatalf("failed to marshal Condition: %v", err)
+	}
+
+	// 再次反序列化回另一个结构体，确保一致性
+	var cond2 Condition
+	if err := json.Unmarshal(marshaled, &cond2); err != nil {
+		t.Fatalf("failed to unmarshal marshaled Condition: %v", err)
+	}
+
+	if len(cond2.AnyOf) != 2 || len(cond2.AnyOf[1].AllOf) != 1 || len(cond2.AnyOf[1].AllOf[0].AnyOf) != 1 {
+		t.Error("roundtrip serialization failed to recover same hierarchy structure")
+	}
+
+	// 3. 验证在此反序列化条件下的 matchCondition 运行结果
+	if !matchCondition(&cond, map[string]interface{}{"status": 200}) {
+		t.Error("expected true for status 200 in unmarshaled cond")
+	}
+	if !matchCondition(&cond, map[string]interface{}{"status": 302, "method": "GET"}) {
+		t.Error("expected true for status 302 with GET in unmarshaled cond")
+	}
+	if matchCondition(&cond, map[string]interface{}{"status": 302, "method": "POST"}) {
+		t.Error("expected false for status 302 with POST in unmarshaled cond")
 	}
 }

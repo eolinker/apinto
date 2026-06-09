@@ -2,7 +2,7 @@ package response_filter
 
 import (
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/utils"
+	context_label "github.com/eolinker/apinto/utils/context-label"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -23,7 +23,7 @@ func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err
 
 func (e *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IChain) (err error) {
 	//ctx.SetLabel("disable_stream", "true")
-	utils.SetDisableStream(ctx, true)
+	context_label.SetDisableStream(ctx, true)
 	if next != nil {
 		err = next.DoChain(ctx)
 		if err != nil {

@@ -1,7 +1,7 @@
 package manager
 
 import (
-	"github.com/eolinker/apinto/utils"
+	context_label "github.com/eolinker/apinto/utils/context-label"
 	"sync"
 	"sync/atomic"
 
@@ -100,7 +100,7 @@ func (m *Manager) FastHandler(port int, ctx *fasthttp.RequestCtx) {
 		}
 	} else {
 		//httpContext.SetLabel("current_running", "true")
-		utils.SetCurrentRunning(httpContext, true)
+		context_label.SetCurrentRunning(httpContext, true)
 		log.Debug("match has:", port)
 		r.Serve(httpContext)
 	}

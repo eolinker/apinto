@@ -1,6 +1,7 @@
 package main
 
 import (
+	access_relation_redis "github.com/eolinker/apinto/drivers/plugins/access-relation-redis"
 	access_relational "github.com/eolinker/apinto/drivers/plugins/access-relational"
 	"github.com/eolinker/apinto/drivers/plugins/acl"
 	"github.com/eolinker/apinto/drivers/plugins/aes"
@@ -114,6 +115,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	js_inject.Register(extenderRegister)
 	acl.Register(extenderRegister)
 	access_relational.Register(extenderRegister)
+	access_relation_redis.Register(extenderRegister)
 	replay_attack_defender.Register(extenderRegister)
 
 	// 可观测性（输出内容到第三方）
