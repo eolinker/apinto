@@ -11,6 +11,7 @@ import (
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
 	"github.com/eolinker/apinto/drivers/discovery/static"
 	gm_certs "github.com/eolinker/apinto/drivers/gm-certs"
+	influxdb_v2 "github.com/eolinker/apinto/drivers/output/influxdb-v2"
 	"github.com/eolinker/apinto/drivers/output/loki"
 	auth_interceptor "github.com/eolinker/apinto/drivers/plugins/auth-interceptor"
 	data_mask_strategy "github.com/eolinker/apinto/drivers/strategy/data-mask-strategy"
@@ -23,7 +24,6 @@ import (
 	"github.com/eolinker/apinto/drivers/output/nsq"
 	"github.com/eolinker/apinto/drivers/output/syslog"
 	plugin_manager "github.com/eolinker/apinto/drivers/plugin-manager"
-	"github.com/eolinker/apinto/drivers/resources/datasource/influxdbv2"
 	"github.com/eolinker/apinto/drivers/resources/redis"
 	dubbo2_router "github.com/eolinker/apinto/drivers/router/dubbo2-router"
 	grpc_router "github.com/eolinker/apinto/drivers/router/grpc-router"
@@ -77,7 +77,8 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	syslog.Register(extenderRegister)
 	prometheus.Register(extenderRegister)
 	redis.Register(extenderRegister)
-	influxdbv2.Register(extenderRegister)
+	influxdb_v2.Register(extenderRegister)
+	//influxdbv2.Register(extenderRegister)
 	loki.Register(extenderRegister)
 
 	// 服务治理-策略

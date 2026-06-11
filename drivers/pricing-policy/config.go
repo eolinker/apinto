@@ -92,8 +92,8 @@ type BasicRule struct {
 	Type  string `json:"type" label:"类型" enum:"string,integer,float,boolean"`
 }
 
-// RedisPricingData 描述了从 Redis 缓存中获取的动态资源定价内容的数据结构
-type RedisPricingData struct {
+// PricingData 描述了从 Redis 缓存中获取的动态资源定价内容的数据结构
+type PricingData struct {
 	BasicInfo *BasicInfo            `json:"basic_info"`
 	Strategy  map[string]*PricePlan `json:"strategy"`
 }

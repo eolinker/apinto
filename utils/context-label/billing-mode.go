@@ -1,4 +1,4 @@
-package utils
+package context_label
 
 import "github.com/eolinker/eosc/eocontext"
 

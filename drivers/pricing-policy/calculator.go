@@ -1,9 +1,9 @@
 package pricing_policy
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+	context_label "github.com/eolinker/apinto/utils/context-label"
 	"regexp"
 	"strconv"
 	"strings"
@@ -23,12 +23,15 @@ func preProcessExpression(expr string) string {
 
 // ProcessedRule 描述一个经过预编译及性能优化的高级定价规则实例。
 type ProcessedRule struct {
-	id           string                         // 规则 ID
-	name         string                         // 规则名称
-	conditions   *Condition                     // 规则的递归触发条件树
-	costExpr     *govaluate.EvaluableExpression // 预编译后的进货价（成本）计算表达式
-	saleExpr     *govaluate.EvaluableExpression // 预编译后的销售价（计费）计算表达式
-	officialExpr *govaluate.EvaluableExpression // 预编译后的官方参考价计算表达式
+	id              string                         // 规则 ID
+	name            string                         // 规则名称
+	conditions      *Condition                     // 规则的递归触发条件树
+	costOrgExpr     string                         // 进货价计算表达式
+	saleOrgExpr     string                         // 销售价计算表达式
+	officialOrgExpr string                         // 官方价计算表达式
+	costExpr        *govaluate.EvaluableExpression // 预编译后的进货价（成本）计算表达式
+	saleExpr        *govaluate.EvaluableExpression // 预编译后的销售价（计费）计算表达式
+	officialExpr    *govaluate.EvaluableExpression // 预编译后的官方参考价计算表达式
 }
 
 // CalculateResult 代表高级规则计算后输出的价格评估结果。
@@ -88,12 +91,15 @@ func NewCalculator(conf *Config) (*Calculator, error) {
 		}
 
 		processedRules = append(processedRules, &ProcessedRule{
-			id:           rule.ID,
-			name:         rule.Name,
-			conditions:   rule.Conditions,
-			costExpr:     costExpr,
-			saleExpr:     saleExpr,
-			officialExpr: officialExpr,
+			id:              rule.ID,
+			name:            rule.Name,
+			conditions:      rule.Conditions,
+			costOrgExpr:     rule.CostExpression,
+			saleOrgExpr:     rule.SaleExpression,
+			officialOrgExpr: rule.OfficialExpression,
+			costExpr:        costExpr,
+			saleExpr:        saleExpr,
+			officialExpr:    officialExpr,
 		})
 	}
 
@@ -115,37 +121,17 @@ func (c *Calculator) VariablesExtractor() *VariablesExtractor {
 }
 
 // Calculate 根据 EoContext 进行自定义属性抽取，结合从 Redis 获取的最新的资源定价内容执行公式计费。
-func (c *Calculator) Calculate(ctx eoscContext.EoContext, pricingData *RedisPricingData) (*CalculateResult, error) {
-	// 动态抓取当前 EoContext 下的所有已配置变量集
-	vars := c.variablesExtractor.ExtractAll(ctx)
-
-	// 直接在 pricing-policy 中保存计算用量提取到的原始变量字典（便于日志系统、统计、可观测性追溯），避免外部插件二次提取
-	if len(vars) > 0 {
-		if varsBytes, err := json.Marshal(vars); err == nil {
-			ctx.SetLabel("pricing_variables", string(varsBytes))
-			ctx.WithValue("pricing_variables", vars)
-		}
-	}
-
-	return c.CalculateFromVariables(vars, pricingData)
-}
-
-// CalculateFromChunk 根据流式的单个响应原始字节块进行提取转换，结合从 Redis 获取的最新的资源定价内容执行公式计费。
-func (c *Calculator) CalculateFromChunk(chunk []byte, pricingData *RedisPricingData) (*CalculateResult, error) {
-	// 从流式 Chunk 里解包和转换出最新的计量参数变量集
-	vars := c.variablesExtractor.ExtractAllFromChunk(chunk)
-	return c.CalculateFromVariables(vars, pricingData)
-}
-
-// CalculateFromVariables 根据给定的参数变量字典与从 Redis 中读取的最新资源定价大 JSON，
-// 执行高级规则链条的条件评估匹配，绑定价格并进行表达式最终计费计算。
-func (c *Calculator) CalculateFromVariables(vars map[string]interface{}, pricingData *RedisPricingData) (*CalculateResult, error) {
+func (c *Calculator) Calculate(ctx eoscContext.EoContext, pricingData *PricingData) (*CalculateResult, error) {
 	if pricingData == nil {
 		return nil, errors.New("redis pricing data is required but got nil")
 	}
-	if vars == nil {
-		vars = make(map[string]interface{})
+	// 动态抓取当前 EoContext 下的所有已配置变量集
+	vars := c.variablesExtractor.ExtractAll(ctx)
+	if len(vars) < 1 {
+		return nil, errors.New("no context variables extracted")
 	}
+
+	context_label.SetPriceVariables(ctx, vars)
 
 	// 1. 按配置的高级计费规则顺序，依次匹配条件
 	var matchedRule *ProcessedRule
@@ -160,18 +146,77 @@ func (c *Calculator) CalculateFromVariables(vars map[string]interface{}, pricing
 		return nil, errors.New("no advanced rules matched the given context variables")
 	}
 
-	// 2. 根据命中的规则 ID 绑定 Redis 中的具体计费价格包，如未配置则 Fallback 降级采用基础定价 (base)
+	context_label.SetChargeRule(ctx, matchedRule.id)
+	context_label.SetExprCost(ctx, matchedRule.costOrgExpr)
+	context_label.SetExprSale(ctx, matchedRule.saleOrgExpr)
+	context_label.SetExprOfficial(ctx, matchedRule.officialOrgExpr)
+	context_label.SetPriceMatchRule(ctx, matchedRule)
+	context_label.SetPriceMatchCondition(ctx, matchedRule.conditions)
+	params, err := c.generateParams(vars, pricingData, matchedRule)
+	if err != nil {
+		return nil, err
+	}
+	return c.CalculateFromVariables(params, matchedRule)
+}
+
+// CalculateFromChunk 根据流式的单个响应原始字节块进行提取转换，结合从 Redis 获取的最新的资源定价内容执行公式计费。
+func (c *Calculator) CalculateFromChunk(ctx eoscContext.EoContext, chunk []byte, pricingData *PricingData) (*CalculateResult, error) {
+	if pricingData == nil {
+		return nil, errors.New("redis pricing data is required but got nil")
+	}
+	// 从流式 Chunk 里解包和转换出最新的计量参数变量集
+	newVars := c.variablesExtractor.ExtractAllFromChunk(chunk)
+	if len(newVars) < 1 {
+		return &CalculateResult{}, nil
+	}
+	vars := context_label.GetPriceVariables(ctx)
+	if vars == nil {
+		vars = make(map[string]interface{})
+	}
+	for k, v := range newVars {
+		vars[k] = v
+	}
+	context_label.SetPriceVariables(ctx, vars)
+	var mr *ProcessedRule
+	matchedRule := context_label.GetPriceMatchRule(ctx)
+	if matchedRule == nil {
+		for _, rule := range c.rules {
+			if matchCondition(rule.conditions, vars) {
+				matchedRule = rule
+				break
+			}
+		}
+		if matchedRule == nil {
+			return nil, errors.New("no advanced rules matched the given context variables")
+		}
+		mr = matchedRule.(*ProcessedRule)
+		context_label.SetChargeRule(ctx, mr.id)
+		context_label.SetExprCost(ctx, mr.costOrgExpr)
+		context_label.SetExprSale(ctx, mr.saleOrgExpr)
+		context_label.SetExprOfficial(ctx, mr.officialOrgExpr)
+		context_label.SetPriceMatchCondition(ctx, mr.conditions)
+		context_label.SetPriceMatchRule(ctx, matchedRule)
+	} else {
+		mr = matchedRule.(*ProcessedRule)
+	}
+
+	params, err := c.generateParams(vars, pricingData, mr)
+	if err != nil {
+		return nil, err
+	}
+	return c.CalculateFromVariables(params, mr)
+}
+
+// 生成计费参数
+func (c *Calculator) generateParams(vars map[string]interface{}, pricingData *PricingData, matchedRule *ProcessedRule) (map[string]interface{}, error) {
 	var plan *PricePlan
 	if matchedRule.id != "" {
+		// 从缓存中获取对应的价格包
 		plan = pricingData.Strategy[matchedRule.id]
-	}
-	if plan == nil {
-		plan = pricingData.Strategy["base"]
 	}
 	if plan == nil {
 		return nil, fmt.Errorf("neither price plan for rule '%s' nor base pricing plan is configured in strategy", matchedRule.id)
 	}
-
 	// 3. 构建公式运行所需的上下文变量 map (合并自定义提取变量与绑定的动态价格变量)
 	params := make(map[string]interface{}, len(vars)+len(plan.Cost)+len(plan.Sale)+len(plan.Official))
 	for k, v := range vars {
@@ -186,14 +231,19 @@ func (c *Calculator) CalculateFromVariables(vars map[string]interface{}, pricing
 	for k, v := range plan.Official {
 		params["official_"+k] = v
 	}
+	return params, nil
+}
 
-	// 4. 计算成本价
+// CalculateFromVariables 根据给定的参数变量字典与从 Redis 中读取的最新资源定价大 JSON，
+// 执行高级规则链条的条件评估匹配，绑定价格并进行表达式最终计费计算。
+func (c *Calculator) CalculateFromVariables(params map[string]interface{}, matchedRule *ProcessedRule) (*CalculateResult, error) {
+	// 计算成本价
 	costPrice, err := evaluateExpression(matchedRule.costExpr, params)
 	if err != nil {
 		return nil, fmt.Errorf("evaluate cost_expression failed: %w", err)
 	}
 
-	// 5. 计算销售价
+	// 计算销售价
 	salePrice, err := evaluateExpression(matchedRule.saleExpr, params)
 	if err != nil {
 		return nil, fmt.Errorf("evaluate sale_expression failed: %w", err)

@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/eolinker/apinto/utils"
-
 	"github.com/eolinker/apinto/drivers"
 	pricing_policy "github.com/eolinker/apinto/drivers/pricing-policy"
 	"github.com/eolinker/apinto/resources"
@@ -42,7 +40,7 @@ type TaskInfo struct {
 	App        string `json:"app"`
 	IsCharged  bool   `json:"is_charged"`
 
-	PricingData *pricing_policy.RedisPricingData `json:"pricing_data,omitempty"`
+	PricingData *pricing_policy.PricingData `json:"pricing_data,omitempty"`
 	Cache       struct {
 		Body string `json:"body"`
 	} `json:"cache"`
@@ -96,9 +94,9 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	// ==========================================
 	// 2. 解析多层计费流属性 (Billing Mode, Step, Task ID)
 	// ==========================================
-	billingMode := utils.GetBillingMode(ctx)
+	billingMode := context_label.GetBillingMode(ctx)
 	if billingMode == "" {
-		billingMode = utils.BillingModeImmediate
+		billingMode = context_label.BillingModeImmediate
 	}
 
 	resourceID := ctx.GetLabel("resource")
@@ -107,9 +105,9 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	// ==========================================
 	// 3. 异步两阶段“查询结果 (query)”步骤的前置上下文反查还原与直接缓存拦截
 	// ==========================================
-	var snapshottedPricingData *pricing_policy.RedisPricingData
+	var snapshottedPricingData *pricing_policy.PricingData
 	var isCharged bool
-	if billingMode == utils.BillingModeTaskQuery && cache != nil {
+	if billingMode == context_label.BillingModeTaskQuery && cache != nil {
 		taskInfoKey := e.taskKeyGenerator.Key(ctx)
 		infoStr, rErr := cache.Get(ctx.Context(), taskInfoKey).Result()
 		if rErr == nil {
@@ -217,7 +215,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	// ==========================================
 	// 7. 余额前置阻断校验 (Balance Pre-check)
 	// ==========================================
-	isPreCheckRequired := billingMode == utils.BillingModeImmediate || billingMode == utils.BillingModeTaskCreate
+	isPreCheckRequired := billingMode == context_label.BillingModeImmediate || billingMode == context_label.BillingModeTaskCreate
 	if isPreCheckRequired && e.enableBalance && cache != nil {
 		balanceStr, bErr := cache.Get(ctx.Context(), balanceKey).Result()
 		if bErr == nil {
@@ -243,7 +241,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	// ==========================================
 	// 9. 异步两阶段“生成任务 (create)”后置落盘保存
 	// ==========================================
-	if utils.IsBillingMode(ctx, utils.BillingModeTaskCreate) {
+	if context_label.IsBillingMode(ctx, context_label.BillingModeTaskCreate) {
 		taskInfoKey := e.taskKeyGenerator.Key(ctx)
 		info := TaskInfo{
 			ResourceID: resourceID,
@@ -253,7 +251,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		// 获取并固化当前的定价配置数据，确保 query 阶段计费的一致性，防止中途价格配置变更
 		priceKey := e.priceKeyGenerator.Key(ctx)
 		if priceVal, pErr := cache.Get(ctx.Context(), priceKey).Result(); pErr == nil {
-			var rData pricing_policy.RedisPricingData
+			var rData pricing_policy.PricingData
 			if json.Unmarshal([]byte(priceVal), &rData) == nil {
 				info.PricingData = &rData
 			}
@@ -269,7 +267,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	// ==========================================
 	// 10. 组装资源定价价格 Key (优先使用固化的 PricingData，若无则从 Redis 动态读取)
 	// ==========================================
-	var priceData pricing_policy.RedisPricingData
+	var priceData pricing_policy.PricingData
 	if snapshottedPricingData != nil {
 		priceData = *snapshottedPricingData
 	} else {
@@ -287,7 +285,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			return err
 		}
 	}
-	if ctx.Response().IsBodyStream() && utils.IsBillingMode(ctx, utils.BillingModeImmediate) {
+	if ctx.Response().IsBodyStream() && context_label.IsBillingMode(ctx, context_label.BillingModeImmediate) {
 		// 只有文本模型需要异步
 		ctx.Proxy().AppendStreamBodyHandle(func(ctx http_context.IHttpContext, p []byte) ([]byte, error) {
 			// 考虑从上下文中获取原始Json数据，避免重复解析
@@ -304,12 +302,12 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	return e.settleBilling(ctx, calc, &priceData, balanceKey, resourceID, app, cache, billingMode, isCharged)
 }
 
-func (e *executor) immediateSettle(ctx http_context.IHttpContext, calc *pricing_policy.Calculator, priceData *pricing_policy.RedisPricingData, balanceKey, resourceID, app string, cache resources.ICache) error {
+func (e *executor) immediateSettle(ctx http_context.IHttpContext, calc *pricing_policy.Calculator, priceData *pricing_policy.PricingData, balanceKey, resourceID, app string, cache resources.ICache) error {
 	var res *pricing_policy.CalculateResult
 	var err error
 	if ctx.Response().IsBodyStream() {
 		body := context_label.GetStreamJsonBody(ctx)
-		res, err = calc.CalculateFromChunk(body, priceData)
+		res, err = calc.CalculateFromChunk(ctx, body, priceData)
 	} else {
 		res, err = calc.Calculate(ctx, priceData)
 	}
@@ -337,11 +335,11 @@ func (e *executor) immediateSettle(ctx http_context.IHttpContext, calc *pricing_
 	return nil
 }
 
-func (e *executor) settleBilling(ctx http_context.IHttpContext, calc *pricing_policy.Calculator, priceData *pricing_policy.RedisPricingData, balanceKey, resourceID, app string, cache resources.ICache, billingMode utils.BillingMode, isCharged bool) error {
+func (e *executor) settleBilling(ctx http_context.IHttpContext, calc *pricing_policy.Calculator, priceData *pricing_policy.PricingData, balanceKey, resourceID, app string, cache resources.ICache, billingMode context_label.BillingMode, isCharged bool) error {
 	switch billingMode {
-	case utils.BillingModeImmediate:
+	case context_label.BillingModeImmediate:
 		return e.immediateSettle(ctx, calc, priceData, balanceKey, resourceID, app, cache)
-	case utils.BillingModeTaskQuery:
+	case context_label.BillingModeTaskQuery:
 		if isCharged {
 			// 已经计费过或者任务完成状态为false，不做重复计费
 			return nil
@@ -391,7 +389,7 @@ func (e *executor) settleBilling(ctx http_context.IHttpContext, calc *pricing_po
 		taskByte, _ := json.Marshal(taskInfo)
 		cache.Set(ctx.Context(), taskKey, taskByte, 24*time.Hour)
 
-	case utils.BillingModeTaskCreate:
+	case context_label.BillingModeTaskCreate:
 	}
 
 	return nil

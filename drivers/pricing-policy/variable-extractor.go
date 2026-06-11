@@ -230,6 +230,7 @@ func (ve *VariablesExtractor) ExtractAll(ctx eoscContext.EoContext) map[string]i
 		val, err := ex.Extract(ctx)
 		if err == nil {
 			res[name] = val
+			ctx.WithValue(fmt.Sprintf("price_variable.%s", name), val)
 		}
 	}
 	return res
