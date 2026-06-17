@@ -18,7 +18,12 @@ var validPosition = []string{PositionHeader, PositionQuery, PositionBody}
 func GetToken(ctx http_service.IHttpContext, tokenName string, position string) (string, bool) {
 	switch position {
 	case PositionHeader:
-		value, has := ctx.Request().Header().Headers()[textproto.CanonicalMIMEHeaderKey(tokenName)]
+		headers := ctx.Request().Header().Headers()
+		value, has := headers[tokenName]
+		if has {
+			return value[0], has
+		}
+		value, has = headers[textproto.CanonicalMIMEHeaderKey(tokenName)]
 		if has {
 			return value[0], has
 		}
@@ -41,6 +46,7 @@ func GetToken(ctx http_service.IHttpContext, tokenName string, position string) 
 func HideToken(ctx http_service.IHttpContext, tokenName string, position string) {
 	switch position {
 	case PositionHeader:
+		ctx.Proxy().Header().DelHeader(tokenName)
 		ctx.Proxy().Header().DelHeader(textproto.CanonicalMIMEHeaderKey(tokenName))
 	case PositionQuery:
 		ctx.Proxy().URI().DelQuery(tokenName)

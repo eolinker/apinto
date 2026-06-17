@@ -141,11 +141,11 @@ func (c *Client) getHostClient(addr string, rewriteHost string) (*fasthttp.HostC
 			TLSConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
-
-			Dial:                dial,
-			StreamResponseBody:  true,
-			MaxConns:            DefaultMaxConns,
-			MaxIdleConnDuration: 0,
+			DisableHeaderNamesNormalizing: true,
+			Dial:                          dial,
+			StreamResponseBody:            true,
+			MaxConns:                      DefaultMaxConns,
+			MaxIdleConnDuration:           0,
 
 			// 重试配置：针对 ErrConnectionClosed 自动重试
 			MaxIdemponentCallAttempts: 3, // 最大重试次数（默认 3），适用于幂等请求（如 GET）

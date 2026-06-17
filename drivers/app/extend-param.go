@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"net/textproto"
 	"strings"
-	
+
 	"github.com/ohler55/ojg/oj"
-	
+
 	"github.com/ohler55/ojg/jp"
-	
+
 	http_context "github.com/eolinker/apinto/node/http-context"
-	
+
 	"github.com/eolinker/apinto/application"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
@@ -34,7 +34,7 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 	var bodyParams interface{}
 	var formParams map[string][]string
 	var err error
-	
+
 	for _, p := range a.params {
 		conflict := p.Conflict
 		if conflict == "" {
@@ -104,7 +104,11 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 				ctx.Proxy().Header().SetHeader(p.Key, p.Value)
 			case conflictOrigin, conflictError:
 				{
-					_, has := ctx.Proxy().Header().Headers()[textproto.CanonicalMIMEHeaderKey(p.Key)]
+					headers := ctx.Proxy().Header().Headers()
+					_, has := headers[p.Key]
+					if !has {
+						_, has = headers[textproto.CanonicalMIMEHeaderKey(p.Key)]
+					}
 					if !has {
 						ctx.Proxy().Header().SetHeader(p.Key, p.Value)
 					} else {
@@ -112,6 +116,7 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 							return fmt.Errorf(errorExist, p.Position, p.Key)
 						}
 					}
+
 				}
 			}
 		case application.PositionQuery:
@@ -130,7 +135,7 @@ func (a *additionalParam) Execute(ctx http_service.IHttpContext) error {
 			}
 		}
 	}
-	
+
 	if strings.Contains(contentType, http_context.FormData) || strings.Contains(contentType, http_context.MultipartForm) {
 		if formParams == nil {
 			return nil

@@ -20,11 +20,11 @@ func init() {
 
 	serverHandler := func(port int, ln net.Listener) {
 		server := fasthttp.Server{
-			StreamRequestBody:            true,
-			DisablePreParseMultipartForm: true,
-			MaxRequestBodySize:           100 * 1024 * 1024,
-			ReadBufferSize:               16 * 1024,
-
+			StreamRequestBody:             true,
+			DisablePreParseMultipartForm:  true,
+			MaxRequestBodySize:            100 * 1024 * 1024,
+			ReadBufferSize:                16 * 1024,
+			DisableHeaderNamesNormalizing: true,
 			Handler: func(ctx *fasthttp.RequestCtx) {
 				routerManager.FastHandler(port, ctx)
 			}}

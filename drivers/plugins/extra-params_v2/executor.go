@@ -183,8 +183,14 @@ func (e *executor) access(ctx http_service.IHttpContext) (int, error) {
 
 	// 处理Header参数
 	for _, param := range e.baseParam.header {
-		name := textproto.CanonicalMIMEHeaderKey(param.name)
-		_, has := ctx.Proxy().Header().Headers()[name]
+		headers := ctx.Proxy().Header().Headers()
+		name := param.name
+		_, has := headers[param.name]
+		if !has {
+			name = textproto.CanonicalMIMEHeaderKey(param.name)
+			_, has = headers[name]
+		}
+
 		if has {
 			if param.conflict == paramError {
 				return clientErrStatusCode, encodeErr(e.errorType, `[extra_params] header("`+name+`") has a conflict.`, clientErrStatusCode)
