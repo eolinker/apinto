@@ -2,6 +2,7 @@ package ai_convert
 
 import (
 	"fmt"
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 )
@@ -34,6 +35,22 @@ const (
 	//ModelTypeVideoTaskQuery 查询视频
 	ModelTypeVideoTaskQuery ModelType = "video-task-query"
 )
+
+var validModelType = map[ModelType]struct{}{
+	ModelTypeChat:            {},
+	ModelTypeOpenAIChat:      {},
+	ModelTypeImageGeneration: {},
+	ModelTypeVideoTaskCommit: {},
+	ModelTypeVideoTaskQuery:  {},
+	ModelTypeImageEdit:       {},
+	ModelTypeImageTaskCommit: {},
+	ModelTypeImageTaskQuery:  {},
+}
+
+func ModelTypeIsVaild(modelType ModelType) bool {
+	_, ok := validModelType[modelType]
+	return ok
+}
 
 type IConverterFactory interface {
 	Create(cfg string) (IConverter, error)

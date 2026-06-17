@@ -7,8 +7,10 @@ import (
 	"github.com/eolinker/apinto/drivers/plugins/aes"
 	ai_formatter "github.com/eolinker/apinto/drivers/plugins/ai-formatter"
 	ai_prompt "github.com/eolinker/apinto/drivers/plugins/ai-prompt"
+	ai_proxy "github.com/eolinker/apinto/drivers/plugins/ai-proxy"
 	"github.com/eolinker/apinto/drivers/plugins/app"
 	auto_redirect "github.com/eolinker/apinto/drivers/plugins/auto-redirect"
+	variable_relation "github.com/eolinker/apinto/drivers/plugins/variable-relation"
 
 	// "github.com/eolinker/apinto/drivers/plugins/billing"
 	"github.com/eolinker/apinto/drivers/plugins/cors"
@@ -115,6 +117,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	js_inject.Register(extenderRegister)
 	acl.Register(extenderRegister)
 	access_relational.Register(extenderRegister)
+	variable_relation.Register(extenderRegister)
 	access_relation_redis.Register(extenderRegister)
 	replay_attack_defender.Register(extenderRegister)
 
@@ -135,7 +138,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	// ai相关插件
 	ai_prompt.Register(extenderRegister)
 	ai_formatter.Register(extenderRegister)
-	//ai_balance.Register(extenderRegister)
+	ai_proxy.Register(extenderRegister)
 
 	// 通用计费插件（覆盖 AI / API 调用计费）
 	// billing.Register(extenderRegister)

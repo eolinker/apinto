@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/eolinker/apinto/checker"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
 	"github.com/eolinker/apinto/output"
@@ -22,6 +23,27 @@ import (
 
 var _ output.IEntryOutput = (*Output)(nil)
 var _ eosc.IWorker = (*Output)(nil)
+
+type filter struct {
+	key string
+	checker.Checker
+}
+
+func parseFilters(filters []*Filter) []*filter {
+	result := make([]*filter, 0, len(filters))
+	for _, f := range filters {
+		c, err := checker.Parse(f.Value)
+		if err != nil {
+			log.Errorf("parse filter value(%s) error: %v", f.Value, err)
+			continue
+		}
+		result = append(result, &filter{
+			key:     f.Key,
+			Checker: c,
+		})
+	}
+	return result
+}
 
 type Point struct {
 	Measurement string
@@ -39,6 +61,7 @@ type Output struct {
 	ctx         context.Context
 	cancel      context.CancelFunc
 	conf        *Config
+	filters     []*filter
 }
 
 func (o *Output) Start() error {
@@ -75,6 +98,7 @@ func (o *Output) reset(conf *Config) error {
 	o.metrics = conf.Metrics
 	o.measurement = conf.Measurement
 	o.conf = conf
+	o.filters = parseFilters(conf.Filters)
 
 	scope_manager.Set(o.Id(), o, conf.Scopes...)
 	return nil
@@ -101,6 +125,28 @@ func (o *Output) Close() error {
 }
 
 func (o *Output) Output(entry eosc.IEntry) error {
+	for _, f := range o.filters {
+		val := entry.Read(f.key)
+		var checkVal string
+		switch v := val.(type) {
+		case string:
+			checkVal = v
+		case bool:
+			checkVal = strconv.FormatBool(v)
+		case int:
+			checkVal = strconv.Itoa(v)
+		case int64:
+			checkVal = strconv.FormatInt(v, 10)
+		case nil:
+			checkVal = ""
+		default:
+			checkVal = fmt.Sprint(v)
+		}
+		if !f.Check(checkVal, true) {
+			return nil
+		}
+	}
+
 	msec := eosc.ReadStringFromEntry(entry, "msec")
 	msecInt, _ := strconv.ParseInt(msec, 10, 64)
 	var timestamp time.Time
@@ -126,8 +172,8 @@ func (o *Output) Output(entry eosc.IEntry) error {
 
 	fields := make(map[string]interface{})
 	for k, v := range o.conf.Fields {
-		if s, ok := v.(string); ok && strings.HasPrefix(s, "$") {
-			fields[k] = entry.Read(s[1:])
+		if strings.HasPrefix(v, "$") {
+			fields[k] = entry.Read(v[1:])
 		} else {
 			fields[k] = v
 		}

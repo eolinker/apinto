@@ -1,24 +1,16 @@
-package dynamic_billing
+package ai_proxy
 
 import (
-	"sync"
-
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/drivers/pricing-policy/manager"
 	"github.com/eolinker/eosc"
-	"github.com/eolinker/eosc/common/bean"
 )
+
+// API发布时，绑定该插件，实现AI代理功能
 
 const (
-	Name = "dynamic_billing"
+	Name = "ai_proxy"
 )
 
-var (
-	policyManager manager.IManager
-	once          sync.Once
-)
-
-// Register 注册 extender 驱动
 func Register(register eosc.IExtenderDriverRegister) {
 	register.RegisterExtenderDriver(Name, NewFactory())
 }
@@ -29,14 +21,10 @@ type Factory struct {
 
 func NewFactory() *Factory {
 	return &Factory{
-		IExtenderDriverFactory: drivers.NewFactory[Config](Create, checkConfig),
+		IExtenderDriverFactory: drivers.NewFactory[Config](Create, check),
 	}
 }
 
 func (f *Factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
-	once.Do(func() {
-		bean.Autowired(&policyManager)
-	})
-
 	return f.IExtenderDriverFactory.Create(profession, name, label, desc, params)
 }

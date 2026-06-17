@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	context_label "github.com/eolinker/apinto/utils/context-label"
 	"net/http"
 	"strconv"
 	"time"
+
+	context_label "github.com/eolinker/apinto/utils/context-label"
 
 	"github.com/eolinker/apinto/drivers"
 	pricing_policy "github.com/eolinker/apinto/drivers/pricing-policy"
@@ -166,17 +167,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	}
 
 	// ==========================================
-	// 5. 组装余额扣减 Key
-	// ==========================================
-	var balanceKey string
-	if context_label.IsUserConsumer(ctx) {
-		balanceKey = e.accountBalanceKeyGenerator.Key(ctx)
-	} else {
-		balanceKey = e.tenantBalanceKeyGenerator.Key(ctx)
-	}
-
-	// ==========================================
-	// 6. 并发限制检查 (Concurrency Check)
+	// 5. 并发限制检查 (Concurrency Check)
 	// ==========================================
 	concurrencyLimit := e.defaultConcurrencyLimit
 	if limitStr := ctx.GetLabel("concurrency_limit"); limitStr != "" {
@@ -213,15 +204,25 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	}
 
 	// ==========================================
+	// 6. 组装余额扣减 Key
+	// ==========================================
+	var balanceKey string
+	if context_label.IsUserConsumer(ctx) {
+		balanceKey = e.accountBalanceKeyGenerator.Key(ctx)
+	} else {
+		balanceKey = e.tenantBalanceKeyGenerator.Key(ctx)
+	}
+
+	// ==========================================
 	// 7. 余额前置阻断校验 (Balance Pre-check)
 	// ==========================================
 	isPreCheckRequired := billingMode == context_label.BillingModeImmediate || billingMode == context_label.BillingModeTaskCreate
 	if isPreCheckRequired && e.enableBalance && cache != nil {
 		balanceStr, bErr := cache.Get(ctx.Context(), balanceKey).Result()
 		if bErr == nil {
-			var balance float64
-			if _, scanErr := fmt.Sscanf(balanceStr, "%f", &balance); scanErr == nil {
-				if balance <= 0 {
+			if balanceInt, parseErr := strconv.ParseInt(balanceStr, 10, 64); parseErr == nil {
+				if balanceInt <= 0 {
+					balance := float64(balanceInt) / 100000.0
 					log.Errorf("[resource-pricing] insufficient balance for user %s: %f", app, balance)
 					ctx.Response().SetStatus(http.StatusPaymentRequired, "402")
 					ctx.Response().SetBody([]byte(`{"error":"insufficient balance"}`))

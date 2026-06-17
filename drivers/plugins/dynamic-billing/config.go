@@ -11,18 +11,18 @@ type Config struct {
 	EnableBalance     bool           `json:"enable_balance" label:"启用余额扣减" description:"是否启用扣款逻辑" default:"true"`
 	TaskKey           string         `json:"task_key" label:"异步任务 Key 模版" default:"dynamic-billing-task:{application}:{resource}" description:"支持{application}, {resource}等占位符"`
 	ConcurrencyKey    string         `json:"concurrency_key" label:"并发 Key 模版" default:"dynamic-billing-concurrency:{application}:{resource}" description:"支持{application}, {resource}等占位符"`
-	AccountBalanceKey string         `json:"account_balance_key" label:"余额扣减 Key 模版" default:"account:balance:{application}" description:"支持{application}等占位符"`
-	TenantBalanceKey  string         `json:"tenant_balance_key" label:"租户余额扣减 Key 模版" default:"tenant:balance:{tenant}" description:"支持{tenant}等占位符"`
+	AccountBalanceKey string         `json:"account_balance_key" label:"余额扣减 Key 模版" default:"balance:{application}" description:"支持{application}等占位符"`
+	TenantBalanceKey  string         `json:"tenant_balance_key" label:"租户余额扣减 Key 模版" default:"balance:{tenant}" description:"支持{tenant}等占位符"`
 	PriceKey          string         `json:"price_key" label:"资源定价价格 Key 模版" default:"access-resource-price:{application}:{resource}" description:"支持{application}, {resource}等占位符"`
 }
 
 // checkConfig 校验并设置默认值
 func checkConfig(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 	if cfg.AccountBalanceKey == "" {
-		cfg.AccountBalanceKey = "account:balance:{application}"
+		cfg.AccountBalanceKey = "balance:{application}"
 	}
 	if cfg.TenantBalanceKey == "" {
-		cfg.TenantBalanceKey = "tenant:balance:{tenant}"
+		cfg.TenantBalanceKey = "balance:{tenant}"
 	}
 	if cfg.PriceKey == "" {
 		cfg.PriceKey = "access-resource-price:{application}:{resource}"

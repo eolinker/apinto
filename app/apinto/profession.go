@@ -229,6 +229,12 @@ func Profession() []*eosc.ProfessionConfig {
 					Desc:  "influxdbv2输出",
 				},
 				{
+					Id:    "eolinker.com:apinto:influxdb-v2",
+					Name:  "influxdb-v2",
+					Label: "influxdb-v2输出",
+					Desc:  "influxdb-v2输出",
+				},
+				{
 					Id:    "eolinker.com:apinto:prometheus_output",
 					Name:  "prometheus",
 					Label: "prometheus输出",

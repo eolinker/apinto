@@ -7,7 +7,7 @@ import (
 	"github.com/eolinker/eosc"
 )
 
-const name = "influxdbv2"
+const name = "influxdb-v2"
 
 // Register 注册 influxdbv2 驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
