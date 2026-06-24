@@ -13,8 +13,17 @@ var _ http_service.IRequest = (*ProxyRequest)(nil)
 
 type ProxyRequest struct {
 	RequestReader
-	bodyFinishes  []http_service.BodyFinishFunc
-	streamHandler []http_service.StreamFunc
+	bodyFinishes    []http_service.BodyFinishFunc
+	streamBodyParse http_service.StreamParseFunc
+	streamHandler   []http_service.StreamFunc
+}
+
+func (r *ProxyRequest) SetStreamBodyParse(parseFunc http_service.StreamParseFunc) {
+	r.streamBodyParse = parseFunc
+}
+
+func (r *ProxyRequest) GetStreamBodyParse() http_service.StreamParseFunc {
+	return r.streamBodyParse
 }
 
 func (r *ProxyRequest) ProxyBodyFinish(ctx http_service.IHttpContext) {

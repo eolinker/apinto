@@ -41,7 +41,7 @@ func (e *executor) reset(conf *Config) error {
 	}
 	e.calculator = pc
 	if policyManager != nil {
-		policyManager.Set(e.Id(), e)
+		policyManager.Set(e.Name(), e)
 	}
 	return nil
 }

@@ -3,9 +3,12 @@ package dynamic_billing
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/redis/go-redis/v9"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	context_label "github.com/eolinker/apinto/utils/context-label"
@@ -25,14 +28,13 @@ var _ eosc.IWorker = (*executor)(nil)
 
 type executor struct {
 	drivers.WorkerBase
-	redisID                    string
-	defaultConcurrencyLimit    int
-	enableBalance              bool
-	taskKeyGenerator           context_label.IKeyGenerator
-	concurrencyKeyGenerator    context_label.IKeyGenerator
-	accountBalanceKeyGenerator context_label.IKeyGenerator
-	tenantBalanceKeyGenerator  context_label.IKeyGenerator
-	priceKeyGenerator          context_label.IKeyGenerator
+	redisID                 string
+	defaultConcurrencyLimit int
+	enableBalance           bool
+	taskKeyGenerator        context_label.IKeyGenerator
+	concurrencyKeyGenerator context_label.IKeyGenerator
+	balanceKeyGenerator     context_label.IKeyGenerator
+	priceKeyGenerator       context_label.IKeyGenerator
 }
 
 // TaskInfo 描述了异步任务生成的元数据，用于二次状态查询时反查账户和资源组
@@ -60,11 +62,10 @@ func (e *executor) reset(cfg *Config, wks map[eosc.RequireId]eosc.IWorker) error
 
 	e.defaultConcurrencyLimit = cfg.ConcurrencyLimit
 	e.enableBalance = cfg.EnableBalance
-	e.accountBalanceKeyGenerator = context_label.NewKeyGenerator(cfg.AccountBalanceKey)
+	e.balanceKeyGenerator = context_label.NewKeyGenerator(cfg.BalanceKey)
 	e.priceKeyGenerator = context_label.NewKeyGenerator(cfg.PriceKey)
 	e.taskKeyGenerator = context_label.NewKeyGenerator(cfg.TaskKey)
 	e.concurrencyKeyGenerator = context_label.NewKeyGenerator(cfg.ConcurrencyKey)
-	e.tenantBalanceKeyGenerator = context_label.NewKeyGenerator(cfg.TenantBalanceKey)
 	return nil
 }
 
@@ -147,8 +148,9 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		return nil
 	}
 
+	id := fmt.Sprintf("%s:%s", ctx.GetLabel("resource_type"), resourceID)
 	// 4. 定位计费计算器
-	w, has := policyManager.Get(resourceID)
+	w, has := policyManager.Get(id)
 	if !has {
 		log.Errorf("[dynamic-billing] pricing-policy worker %s not found in manager", resourceID)
 		if next != nil {
@@ -206,12 +208,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	// ==========================================
 	// 6. 组装余额扣减 Key
 	// ==========================================
-	var balanceKey string
-	if context_label.IsUserConsumer(ctx) {
-		balanceKey = e.accountBalanceKeyGenerator.Key(ctx)
-	} else {
-		balanceKey = e.tenantBalanceKeyGenerator.Key(ctx)
-	}
+	balanceKey := e.balanceKeyGenerator.Key(ctx)
 
 	// ==========================================
 	// 7. 余额前置阻断校验 (Balance Pre-check)
@@ -229,6 +226,16 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 					return nil
 				}
 			}
+		} else {
+			if errors.Is(err, redis.Nil) {
+				log.Warnf("[resource-pricing] balance key not found for user %s, treating as zero balance", app)
+				ctx.Response().SetStatus(http.StatusPaymentRequired, "402")
+				ctx.Response().SetBody([]byte(`{"error":"insufficient balance"}`))
+				return err
+			} else {
+				log.Errorf("[resource-pricing] error fetching balance for user %s: %v", app, bErr)
+				return err
+			}
 		}
 	}
 
@@ -237,6 +244,9 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	// ==========================================
 	if next != nil {
 		err = next.DoChain(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	// ==========================================
@@ -285,6 +295,10 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			log.Errorf("[dynamic-billing] unmarshal redis pricing data error: %v, raw data: %s", jsonErr, val)
 			return err
 		}
+		if priceData.BasicInfo != nil {
+			context_label.SetPriceVersion(ctx, priceData.BasicInfo.Version)
+			context_label.SetPriceVersion(ctx, priceData.BasicInfo.Rely)
+		}
 	}
 	if ctx.Response().IsBodyStream() && context_label.IsBillingMode(ctx, context_label.BillingModeImmediate) {
 		// 只有文本模型需要异步
@@ -307,29 +321,40 @@ func (e *executor) immediateSettle(ctx http_context.IHttpContext, calc *pricing_
 	var res *pricing_policy.CalculateResult
 	var err error
 	if ctx.Response().IsBodyStream() {
-		body := context_label.GetStreamJsonBody(ctx)
-		res, err = calc.CalculateFromChunk(ctx, body, priceData)
+		fn := ctx.Proxy().GetStreamBodyParse()
+		if fn == nil {
+			return nil
+		}
+		body := fn(ctx, ctx.Response().GetBody())
+		// # 遍历，以换行符分行
+		lines := strings.Split(string(body), "\n")
+		for _, line := range lines {
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
+			tmp, err := calc.CalculateFromChunk(ctx, []byte(line), priceData)
+			if err != nil {
+				continue
+			}
+			if tmp != nil {
+				res = tmp
+			}
+		}
 	} else {
 		res, err = calc.Calculate(ctx, priceData)
 	}
 	if err != nil {
 		log.Errorf("[dynamic-billing] calculate failed for resource %s: %v", resourceID, err)
-		ctx.SetLabel("pricing_status", "failed")
-		ctx.SetLabel("pricing_error", err.Error())
 		return err
 	}
 
-	ctx.SetLabel("pricing_status", "success")
-	ctx.SetLabel("pricing_cost", fmt.Sprintf("%f", res.Cost))
-	ctx.SetLabel("pricing_sale", fmt.Sprintf("%f", res.Sale))
-	ctx.SetLabel("pricing_official", fmt.Sprintf("%f", res.Official))
-	ctx.SetLabel("pricing_currency", calc.Currency())
+	context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
+	context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
+	context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
 
-	if e.enableBalance && cache != nil && res.Cost > 0 {
-		success := executeBalanceDeduction(ctx.Context(), cache, balanceKey, res.Cost, app)
+	if e.enableBalance && cache != nil && res.Sale > 0 {
+		success := executeBalanceDeduction(ctx.Context(), cache, balanceKey, res.Sale, app)
 		if !success {
-			ctx.SetLabel("pricing_status", "failed")
-			ctx.SetLabel("pricing_error", "insufficient balance during settlement")
 			return fmt.Errorf("insufficient balance during settlement")
 		}
 	}
@@ -358,16 +383,12 @@ func (e *executor) settleBilling(ctx http_context.IHttpContext, calc *pricing_po
 				return calcErr
 			}
 
-			ctx.SetLabel("pricing_status", "success")
-			ctx.SetLabel("pricing_cost", fmt.Sprintf("%f", res.Cost))
-			ctx.SetLabel("pricing_sale", fmt.Sprintf("%f", res.Sale))
-			ctx.SetLabel("pricing_official", fmt.Sprintf("%f", res.Official))
-			ctx.SetLabel("pricing_currency", calc.Currency())
+			context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
+			context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
+			context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
 			if e.enableBalance && cache != nil && res.Cost > 0 {
 				success := executeBalanceDeduction(ctx.Context(), cache, balanceKey, res.Cost, app)
 				if !success {
-					ctx.SetLabel("pricing_status", "failed")
-					ctx.SetLabel("pricing_error", "insufficient balance during settlement")
 					return fmt.Errorf("insufficient balance during settlement")
 				}
 			}
@@ -426,7 +447,8 @@ func executeBalanceDeduction(ctx context.Context, cache resources.ICache, balanc
 		redis.call('set', balanceKey, balance - deductAmount)
 		return 1
 	`
-	evalResCmd := cache.Run(ctx, deductLua, []string{balanceKey}, cost)
+	total := cost * 1000000
+	evalResCmd := cache.Run(ctx, deductLua, []string{balanceKey}, total)
 	_, evalErr := evalResCmd.Result()
 	if evalErr != nil {
 		log.Errorf("[resource-pricing] balance deduct redis error for user %s, cost=%f: %v", userID, cost, evalErr)

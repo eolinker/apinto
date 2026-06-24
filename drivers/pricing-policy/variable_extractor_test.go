@@ -2,6 +2,8 @@ package pricing_policy
 
 import (
 	"testing"
+
+	"github.com/tidwall/gjson"
 )
 
 // TestConvertType 测试从原始对象到目标数值类型的自动无损转换
@@ -108,5 +110,93 @@ func TestBodyExtractor_ExtractFromChunk_Fallback(t *testing.T) {
 	var expected int64 = 150
 	if val.(int64) != expected {
 		t.Errorf("expected extracted integer %v, got %v", expected, val)
+	}
+}
+
+func TestConvertJSONPathToGjson(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"$.content[?(@.role==\"reference_video\")]", "content.#(role==\"reference_video\")"},
+		{"content[?(@.role==\"reference_video\")]", "content.#(role==\"reference_video\")"},
+		{"$.choices.0.message.content", "choices.0.message.content"},
+	}
+
+	for _, tt := range tests {
+		actual := convertJSONPathToGjson(tt.input)
+		if actual != tt.expected {
+			t.Errorf("convertJSONPathToGjson(%q) = %q, expected %q", tt.input, actual, tt.expected)
+		}
+	}
+}
+
+func TestBodyExtractor_BooleanExistence(t *testing.T) {
+	extractor, err := NewBodyExtractor("$.content[?(@.role==\"reference_video\")]", false, "boolean")
+	if err != nil {
+		t.Fatalf("failed to create body extractor: %v", err)
+	}
+
+	// 1. Matches exist
+	bodyWithVideo := []byte(`{"content": [{"role": "user"}, {"role": "reference_video"}]}`)
+	res := gjson.GetBytes(bodyWithVideo, extractor.path)
+	val, err := convertGjsonType(res, extractor.varType)
+	if err != nil || val.(bool) != true {
+		t.Errorf("expected boolean existence to be true, got %v (err: %v)", val, err)
+	}
+
+	// 2. Matches do not exist
+	bodyWithoutVideo := []byte(`{"content": [{"role": "user"}]}`)
+	res2 := gjson.GetBytes(bodyWithoutVideo, extractor.path)
+	val2, err := convertGjsonType(res2, extractor.varType)
+	if err != nil || val2.(bool) != false {
+		t.Errorf("expected boolean existence to be false, got %v (err: %v)", val2, err)
+	}
+}
+
+func TestBodyExtractor_ArrayType(t *testing.T) {
+	extractor, err := NewBodyExtractor("$.content.#.role", false, "array")
+	if err != nil {
+		t.Fatalf("failed to create body extractor: %v", err)
+	}
+
+	body := []byte(`{"content": [{"role": "user"}, {"role": "reference_video"}]}`)
+	res := gjson.GetBytes(body, extractor.path)
+	val, err := convertGjsonType(res, extractor.varType)
+	if err != nil {
+		t.Fatalf("convert array type error: %v", err)
+	}
+
+	arr, ok := val.([]interface{})
+	if !ok || len(arr) != 2 || arr[0] != "user" || arr[1] != "reference_video" {
+		t.Errorf("expected [\"user\", \"reference_video\"], got %v", val)
+	}
+}
+
+func TestMatchBasicRule_Array(t *testing.T) {
+	rule1 := &BasicRule{
+		Key:   "roles",
+		Op:    "in",
+		Value: "reference_video,admin",
+		Type:  "array",
+	}
+
+	rule2 := &BasicRule{
+		Key:   "roles",
+		Op:    "==",
+		Value: "admin",
+		Type:  "array",
+	}
+
+	params := map[string]interface{}{
+		"roles": []interface{}{"user", "reference_video"},
+	}
+
+	if !matchBasicRule(rule1, params) {
+		t.Error("expected rule1 (in) to match")
+	}
+
+	if matchBasicRule(rule2, params) {
+		t.Error("expected rule2 (== admin) not to match")
 	}
 }

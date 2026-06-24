@@ -6,6 +6,7 @@ import (
 	_ "github.com/eolinker/apinto/drivers/ai-provider/baichuan"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/bailianyun"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/bedrock"
+	_ "github.com/eolinker/apinto/drivers/ai-provider/byteplus"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/chatglm"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/cohere"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/customize-openai"

@@ -23,6 +23,10 @@ type executor struct {
 	balanceHandler eoscContext.BalanceHandler
 }
 
+func (e *executor) ID() string {
+	return e.Name()
+}
+
 func (e *executor) GenExtender(cfg string) (map[string]interface{}, error) {
 	return ai_convert.TransformData(cfg, providerMapValue)
 }
@@ -88,7 +92,7 @@ func (e *executor) reset(cfg *Config) error {
 	e.provider = cfg.Provider
 	e.modelConfig = extender
 	e.disable = false
-	ai_convert.SetProvider(e.Id(), e)
+	ai_convert.SetProvider(e)
 	return nil
 }
 

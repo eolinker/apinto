@@ -73,6 +73,7 @@ func (o *OpenAIChat) ModelType() ModelType {
 }
 
 func (o *OpenAIChat) RequestConvert(ctx eoscContext.EoContext, extender map[string]interface{}) error {
+	context_label.SetBillingMode(ctx, context_label.BillingModeImmediate)
 	httpContext, err := http_service.Assert(ctx)
 	if err != nil {
 		return err
@@ -81,13 +82,18 @@ func (o *OpenAIChat) RequestConvert(ctx eoscContext.EoContext, extender map[stri
 	if err != nil {
 		return err
 	}
-	chatRequest := eosc.NewBase[Request](extender)
+	chatRequest := eosc.NewBase[openai.ChatCompletionRequest](extender)
 	err = json.Unmarshal(body, chatRequest)
 	if err != nil {
 		return fmt.Errorf("unmarshal body error: %v, body: %s", err, string(body))
 	}
 	if chatRequest.Config.Model == "" {
 		chatRequest.Config.Model = GetAIModel(ctx)
+	}
+	if chatRequest.Config.Stream {
+		chatRequest.Config.StreamOptions = &openai.StreamOptions{
+			IncludeUsage: true,
+		}
 	}
 	totalMessageBuilder := strings.Builder{}
 	for _, msg := range chatRequest.Config.Messages {
@@ -104,6 +110,7 @@ func (o *OpenAIChat) RequestConvert(ctx eoscContext.EoContext, extender map[stri
 	if o.balanceHandler != nil {
 		ctx.SetBalance(o.balanceHandler)
 	}
+	httpContext.Proxy().SetStreamBodyParse(StreamBodyParse)
 	httpContext.Proxy().AppendBodyFinish(o.bodyFinish)
 
 	return nil
@@ -156,6 +163,31 @@ func ResponseConvert(ctx eoscContext.EoContext, checkErr CheckError, errorCallba
 
 func (o *OpenAIChat) ResponseConvert(ctx eoscContext.EoContext) error {
 	return ResponseConvert(ctx, o.checkErr, o.errorCallback)
+}
+
+func StreamBodyParse(ctx http_service.IHttpContext, body []byte) []byte {
+	encoding := ctx.Response().Headers().Get("content-encoding")
+	target := body
+	if encoding != "utf-8" && encoding != "" {
+		tmp, err := encoder.ToUTF8(encoding, body)
+		if err != nil {
+			log.Errorf("convert to utf-8 error: %v, body: %s", err, string(body))
+			return body
+		}
+		target = tmp
+	}
+	builder := strings.Builder{}
+	scanner := bufio.NewScanner(bytes.NewReader(target))
+	for scanner.Scan() {
+		line := scanner.Text()
+		line = strings.TrimPrefix(line, "data:")
+		if line == "" || strings.Trim(line, " ") == "[DONE]" {
+			continue
+		}
+		builder.WriteString(line)
+		builder.WriteString("\n")
+	}
+	return []byte(builder.String())
 }
 
 func (o *OpenAIChat) bodyFinish(ctx http_service.IHttpContext) {

@@ -11,6 +11,7 @@ type Config struct {
 	Expired  int64  `json:"expired"`
 	Config   string `json:"config"`
 	Provider string `json:"provider"`
+	Bind     string `json:"bind"`
 	Priority int    `json:"priority"`
 	Disabled bool   `json:"disabled"`
 }

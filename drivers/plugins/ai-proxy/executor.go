@@ -371,6 +371,12 @@ func (e *executor) reset(cfg *Config) error {
 	e.modelIdFrom = cfg.ModelIdFrom
 	e.modelIdKey = cfg.ModelIdKey
 	e.defaultProvider = cfg.DefaultProvider
+	expr, err := jp.ParseString(cfg.ModelIdKey)
+	if err != nil {
+		return err
+	}
+	e.bodyExpr = expr
+	e.config = "{}"
 	return nil
 }
 

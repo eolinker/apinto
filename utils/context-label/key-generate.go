@@ -1,9 +1,6 @@
 package context_label
 
 import (
-	"fmt"
-	"strings"
-
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
@@ -50,23 +47,66 @@ type keyGenerator struct {
 	vars map[string]struct{}
 }
 
-func (k *keyGenerator) Key(ctx http_context.IHttpContext, fns ...GetLabelFunc) string {
-	target := k.org
-	for key := range k.vars {
-		value := ctx.GetLabel(key)
-		if value == "" {
-			for _, fn := range fns {
-				value = fn(ctx)
-				if value != "" {
-					break
-				}
+type placeholder struct {
+	start int
+	end   int
+	name  string
+}
+
+func findInnermostPlaceholders(runes []rune) []placeholder {
+	n := len(runes)
+	var list []placeholder
+	lastOpen := -1
+	for i := 0; i < n; i++ {
+		if runes[i] == '{' {
+			lastOpen = i
+		} else if runes[i] == '}' {
+			if lastOpen != -1 {
+				list = append(list, placeholder{
+					start: lastOpen,
+					end:   i,
+					name:  string(runes[lastOpen+1 : i]),
+				})
+				lastOpen = -1
 			}
 		}
-		if value == "" {
-			continue
-		}
-		target = strings.ReplaceAll(target, fmt.Sprintf("{%s}", key), value)
 	}
+	return list
+}
 
-	return target
+func (k *keyGenerator) Key(ctx http_context.IHttpContext, fns ...GetLabelFunc) string {
+	runes := []rune(k.org)
+	for {
+		placeholders := findInnermostPlaceholders(runes)
+		if len(placeholders) == 0 {
+			break
+		}
+		replaced := false
+		// Process from right to left to keep left indices valid
+		for i := len(placeholders) - 1; i >= 0; i-- {
+			p := placeholders[i]
+			value := ctx.GetLabel(p.name)
+			if value == "" {
+				for _, fn := range fns {
+					value = fn(ctx)
+					if value != "" {
+						break
+					}
+				}
+			}
+			if value != "" {
+				valueRunes := []rune(value)
+				newRunes := make([]rune, 0, len(runes)-(p.end-p.start+1)+len(valueRunes))
+				newRunes = append(newRunes, runes[:p.start]...)
+				newRunes = append(newRunes, valueRunes...)
+				newRunes = append(newRunes, runes[p.end+1:]...)
+				runes = newRunes
+				replaced = true
+			}
+		}
+		if !replaced {
+			break
+		}
+	}
+	return string(runes)
 }

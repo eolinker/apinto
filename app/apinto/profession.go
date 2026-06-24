@@ -288,6 +288,7 @@ func Profession() []*eosc.ProfessionConfig {
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
+
 		{
 			Name:         "ai-resource",
 			Label:        "AI资源",
@@ -312,6 +313,21 @@ func Profession() []*eosc.ProfessionConfig {
 					Name:  "ai-model",
 					Label: "ai-model",
 					Desc:  "ai-model",
+				},
+			},
+		},
+		{
+			Name:         "pricing",
+			Label:        "定价规则",
+			Desc:         "定价规则",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:apinto:pricing-policy",
+					Name:  "pricing-policy",
+					Label: "定价策略",
+					Desc:  "定价策略",
 				},
 			},
 		},

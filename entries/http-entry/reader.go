@@ -94,6 +94,21 @@ var (
 		"cluster": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return os.Getenv("cluster_id"), true
 		}),
+		"status_xxx": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			statusCode := ctx.Response().StatusCode()
+			switch {
+			case statusCode >= 200 && statusCode < 300:
+				return "2xx", true
+			case statusCode >= 300 && statusCode < 400:
+				return "3xx", true
+			case statusCode >= 400 && statusCode < 500:
+				return "4xx", true
+			case statusCode >= 500 && statusCode < 600:
+				return "5xx", true
+			default:
+				return "other", true
+			}
+		}),
 		"query": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			if name == "" {
 				return utils.QueryUrlEncode(ctx.Request().URI().RawQuery()), true
@@ -359,6 +374,9 @@ var (
 		"dst_port": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return ctx.Response().RemotePort(), true
 		}),
+		"response_length": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return ctx.Response().ContentLength(), true
+		}),
 		"proxy": proxyFields,
 	}
 
@@ -477,6 +495,23 @@ var (
 		"status": &proxyReader{
 			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
 				return proxy.StatusCode(), true
+			}),
+		},
+		"status_xxx": &proxyReader{
+			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
+				statusCode := proxy.StatusCode()
+				switch {
+				case statusCode >= 200 && statusCode < 300:
+					return "2xx", true
+				case statusCode >= 300 && statusCode < 400:
+					return "3xx", true
+				case statusCode >= 400 && statusCode < 500:
+					return "4xx", true
+				case statusCode >= 500 && statusCode < 600:
+					return "5xx", true
+				default:
+					return "other", true
+				}
 			}),
 		},
 		"path": &proxyReader{

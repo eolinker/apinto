@@ -308,12 +308,12 @@ func TestDynamicBilling_Executor(t *testing.T) {
 
 	// 4. 创建 resource-pricing plugin 实例
 	plugin := &executor{
-		WorkerBase:                 drivers.Worker("pricing_filter_test", "pricing_filter_test"),
-		redisID:                    "mock_cache",
-		accountBalanceKeyGenerator: context_label.NewKeyGenerator("balance:{application}"),
-		priceKeyGenerator:          context_label.NewKeyGenerator("access-resource-price:{application}:{resource}"),
-		taskKeyGenerator:           context_label.NewKeyGenerator("resource-pricing-task:{application}:{resource}"),
-		concurrencyKeyGenerator:    context_label.NewKeyGenerator("resource-pricing-concurrency:{application}:{resource}"),
+		WorkerBase:              drivers.Worker("pricing_filter_test", "pricing_filter_test"),
+		redisID:                 "mock_cache",
+		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
+		priceKeyGenerator:       context_label.NewKeyGenerator("access-resource-price:{application}:{resource}"),
+		taskKeyGenerator:        context_label.NewKeyGenerator("resource-pricing-task:{application}:{resource}"),
+		concurrencyKeyGenerator: context_label.NewKeyGenerator("resource-pricing-concurrency:{application}:{resource}"),
 	}
 
 	// 5. 模拟一次命中 200 成功的 HTTP 请求
@@ -450,14 +450,14 @@ func TestDynamicBilling_ConcurrencyAndBalance(t *testing.T) {
 
 	// 4. 创建 resource-pricing plugin 实例 (启用余额扣减，并限制并发为 1)
 	plugin := &executor{
-		WorkerBase:                 drivers.Worker("pricing_filter_test", "pricing_filter_test"),
-		redisID:                    "mock_cache",
-		defaultConcurrencyLimit:    1,
-		enableBalance:              true,
-		accountBalanceKeyGenerator: context_label.NewKeyGenerator("balance:{user}"),
-		priceKeyGenerator:          context_label.NewKeyGenerator("access-resource-price:{user}:{resource}"),
-		taskKeyGenerator:           context_label.NewKeyGenerator("resource-pricing-task:{user}:{resource}"),
-		concurrencyKeyGenerator:    context_label.NewKeyGenerator("resource-pricing-concurrency:{user}:{resource}"),
+		WorkerBase:              drivers.Worker("pricing_filter_test", "pricing_filter_test"),
+		redisID:                 "mock_cache",
+		defaultConcurrencyLimit: 1,
+		enableBalance:           true,
+		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{user}"),
+		priceKeyGenerator:       context_label.NewKeyGenerator("access-resource-price:{user}:{resource}"),
+		taskKeyGenerator:        context_label.NewKeyGenerator("resource-pricing-task:{user}:{resource}"),
+		concurrencyKeyGenerator: context_label.NewKeyGenerator("resource-pricing-concurrency:{user}:{resource}"),
 	}
 
 	// 5. 模拟一次 HTTP 请求 (余额模拟为 100)
@@ -564,14 +564,14 @@ func TestDynamicBilling_TaskPricingSnapshot(t *testing.T) {
 
 	// 4. 创建 dynamic-billing plugin 实例
 	plugin := &executor{
-		WorkerBase:                 drivers.Worker("pricing_filter_test", "pricing_filter_test"),
-		redisID:                    "mock_cache_snapshot",
-		defaultConcurrencyLimit:    100,
-		enableBalance:              true,
-		accountBalanceKeyGenerator: context_label.NewKeyGenerator("balance:{user}"),
-		priceKeyGenerator:          context_label.NewKeyGenerator("access-resource-price:{user}:{resource}"),
-		taskKeyGenerator:           context_label.NewKeyGenerator("dynamic-billing-task:{user}:{resource}"),
-		concurrencyKeyGenerator:    context_label.NewKeyGenerator("dynamic-billing-concurrency:{user}:{resource}"),
+		WorkerBase:              drivers.Worker("pricing_filter_test", "pricing_filter_test"),
+		redisID:                 "mock_cache_snapshot",
+		defaultConcurrencyLimit: 100,
+		enableBalance:           true,
+		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{user}"),
+		priceKeyGenerator:       context_label.NewKeyGenerator("access-resource-price:{user}:{resource}"),
+		taskKeyGenerator:        context_label.NewKeyGenerator("dynamic-billing-task:{user}:{resource}"),
+		concurrencyKeyGenerator: context_label.NewKeyGenerator("dynamic-billing-concurrency:{user}:{resource}"),
 	}
 
 	// 5. 模拟 Task Create 请求

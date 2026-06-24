@@ -2,6 +2,7 @@ package variable_relation
 
 import (
 	"fmt"
+	http_entry "github.com/eolinker/apinto/entries/http-entry"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"strings"
 )
@@ -153,6 +154,7 @@ func ExtractValues(pattern string, segments []Segment) (map[string]string, bool)
 
 // MatchRule 判断请求上下文是否匹配特定规则的变量解析值
 func MatchRule(ctx http_context.IHttpContext, pattern string, segments []Segment) bool {
+	entry := http_entry.NewEntry(ctx)
 	values, ok := ExtractValues(pattern, segments)
 	if !ok {
 		return false
@@ -171,7 +173,7 @@ func MatchRule(ctx http_context.IHttpContext, pattern string, segments []Segment
 				return false
 			}
 		default:
-			actualVal := ctx.GetLabel(name)
+			actualVal := entry.ReadLabel(name)
 			if patternVal != "*" && actualVal != patternVal {
 				return false
 			}

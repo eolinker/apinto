@@ -16,6 +16,7 @@ type executor struct {
 	drivers.WorkerBase
 	ctx      context.Context
 	cancel   context.CancelFunc
+	bind     string
 	provider string
 	key      ai_convert.IKeyResource
 }
@@ -50,12 +51,13 @@ func (e *executor) reset(conf *Config) error {
 
 	e.key = k
 	e.provider = conf.Provider
-	ai_convert.SetKeyResource(e.provider, e.key)
+	e.bind = conf.Bind
+	ai_convert.SetKeyResource(e.bind, e.key)
 	return nil
 }
 
 func (e *executor) Stop() error {
-	ai_convert.DelKeyResource(e.provider, e.Id())
+	ai_convert.DelKeyResource(e.bind, e.Id())
 	return nil
 }
 

@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	context_label "github.com/eolinker/apinto/utils/context-label"
+	"regexp"
 	"strconv"
+	"strings"
 
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
@@ -33,10 +36,25 @@ type BodyExtractor struct {
 	varType string // 目标数据类型（如 string, integer, float, boolean）
 }
 
+var jsonPathRegex = regexp.MustCompile(`^(\$?\.?)(.*?)\[\?\(@\.([a-zA-Z0-9_-]+)\s*([=!<>]+)\s*(.*?)\)\](.*)$`)
+
+func convertJSONPathToGjson(path string) string {
+	if jsonPathRegex.MatchString(path) {
+		path = jsonPathRegex.ReplaceAllString(path, "${2}.#(${3}${4}${5})${6}")
+	}
+	// Also strip leading $. if present
+	if strings.HasPrefix(path, "$.") {
+		path = path[2:]
+	} else if strings.HasPrefix(path, "$") {
+		path = path[1:]
+	}
+	return path
+}
+
 // NewBodyExtractor 实例化并配置一个 Body 提取器。
 func NewBodyExtractor(path string, isReq bool, varType string) (*BodyExtractor, error) {
 	return &BodyExtractor{
-		path:    path,
+		path:    convertJSONPathToGjson(path),
 		isReq:   isReq,
 		varType: varType,
 	}, nil
@@ -71,6 +89,12 @@ func (e *BodyExtractor) Extract(ctx eoscContext.EoContext) (interface{}, error) 
 // 支持从流式（Server-Sent Events，即 SSE 协议等）响应的 chunk 原始字节块中提取并转换目标变量。
 func (e *BodyExtractor) ExtractFromChunk(chunk []byte) (interface{}, error) {
 	if len(chunk) == 0 {
+		if e.varType == "boolean" {
+			return false, nil
+		}
+		if e.varType == "array" {
+			return []interface{}{}, nil
+		}
 		return nil, errors.New("empty chunk")
 	}
 
@@ -115,6 +139,12 @@ func (e *BodyExtractor) ExtractFromChunk(chunk []byte) (interface{}, error) {
 		if res.Exists() {
 			return convertGjsonType(res, e.varType)
 		}
+		if e.varType == "boolean" {
+			return false, nil
+		}
+		if e.varType == "array" {
+			return []interface{}{}, nil
+		}
 		return nil, fmt.Errorf("gjson path '%s' matches no values in chunk", e.path)
 	}
 
@@ -151,7 +181,32 @@ func convertGjsonType(res gjson.Result, targetType string) (interface{}, error) 
 	case "float":
 		return res.Float(), nil
 	case "boolean":
+		if !res.Exists() {
+			return false, nil
+		}
+		if res.Type == gjson.True {
+			return true, nil
+		}
+		if res.Type == gjson.False {
+			return false, nil
+		}
+		if res.Type == gjson.Null {
+			return false, nil
+		}
+		if res.IsObject() || res.IsArray() {
+			return true, nil
+		}
 		return res.Bool(), nil
+	case "array":
+		if res.IsArray() {
+			arr := res.Array()
+			vals := make([]interface{}, 0, len(arr))
+			for _, item := range arr {
+				vals = append(vals, item.Value())
+			}
+			return vals, nil
+		}
+		return []interface{}{res.Value()}, nil
 	default:
 		return res.Value(), nil
 	}
@@ -160,6 +215,12 @@ func convertGjsonType(res gjson.Result, targetType string) (interface{}, error) 
 // convertRawType 负责将原生数值等通用对象动态转为目标类型。
 func convertRawType(val interface{}, targetType string) (interface{}, error) {
 	if val == nil {
+		if targetType == "boolean" {
+			return false, nil
+		}
+		if targetType == "array" {
+			return []interface{}{}, nil
+		}
 		return nil, errors.New("value is nil")
 	}
 	strVal := fmt.Sprintf("%v", val)
@@ -184,9 +245,11 @@ func convertRawType(val interface{}, targetType string) (interface{}, error) {
 	case "boolean":
 		b, err := strconv.ParseBool(strVal)
 		if err != nil {
-			return nil, err
+			return false, nil
 		}
 		return b, nil
+	case "array":
+		return []interface{}{val}, nil
 	default:
 		return val, nil
 	}
@@ -230,20 +293,21 @@ func (ve *VariablesExtractor) ExtractAll(ctx eoscContext.EoContext) map[string]i
 		val, err := ex.Extract(ctx)
 		if err == nil {
 			res[name] = val
-			ctx.WithValue(fmt.Sprintf("price_variable.%s", name), val)
+			context_label.SetPriceVariable(ctx, name, val)
 		}
 	}
 	return res
 }
 
 // ExtractAllFromChunk 驱动执行所有已配置且支持流式提取的提取器，从当前流式 Chunk 里抓取所有成功提取的变量。
-func (ve *VariablesExtractor) ExtractAllFromChunk(chunk []byte) map[string]interface{} {
+func (ve *VariablesExtractor) ExtractAllFromChunk(ctx eoscContext.EoContext, chunk []byte) map[string]interface{} {
 	res := make(map[string]interface{}, len(ve.extractors))
 	for name, ex := range ve.extractors {
 		if streamEx, ok := ex.(IStreamVariableExtractor); ok {
 			val, err := streamEx.ExtractFromChunk(chunk)
 			if err == nil {
 				res[name] = val
+				context_label.SetPriceVariable(ctx, name, val)
 			}
 		}
 	}

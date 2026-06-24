@@ -1,7 +1,6 @@
 package pricing_policy
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/Knetic/govaluate"
@@ -17,7 +16,7 @@ type Config struct {
 
 type Variable struct {
 	Source string `json:"source" label:"来源" enum:"request_body,response_body,response_status" default:"response_body"`
-	Type   string `json:"type" label:"类型" enum:"string,integer,float,boolean" default:"integer"`
+	Type   string `json:"type" label:"类型" enum:"string,integer,float,boolean,array" default:"integer"`
 	Path   string `json:"path" label:"Json Path"`
 }
 
@@ -32,57 +31,8 @@ type Rule struct {
 }
 
 type Condition struct {
-	AllOf []*AllOf `json:"all_of" label:"满足全部条件，只能二选一"`
-	AnyOf []*AnyOf `json:"any_of" label:"满足任意条件，只能二选一"`
-}
-
-type AllOf struct {
-	*BasicRule
-	AnyOf []*AnyOf `json:"any_of,omitempty"`
-}
-
-type AnyOf struct {
-	*BasicRule
-	AllOfRaw []json.RawMessage `json:"all_of,omitempty"`
-	AllOf    []*AllOf          `json:"-"`
-}
-
-func (a *AnyOf) UnmarshalJSON(data []byte) error {
-	type Alias AnyOf
-	aux := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(a),
-	}
-	if err := json.Unmarshal(data, aux); err != nil {
-		return err
-	}
-	if len(a.AllOfRaw) > 0 {
-		a.AllOf = make([]*AllOf, len(a.AllOfRaw))
-		for i, raw := range a.AllOfRaw {
-			var allOf AllOf
-			if err := json.Unmarshal(raw, &allOf); err != nil {
-				return err
-			}
-			a.AllOf[i] = &allOf
-		}
-	}
-	return nil
-}
-
-func (a *AnyOf) MarshalJSON() ([]byte, error) {
-	type Alias AnyOf
-	if len(a.AllOf) > 0 {
-		a.AllOfRaw = make([]json.RawMessage, len(a.AllOf))
-		for i, allOf := range a.AllOf {
-			raw, err := json.Marshal(allOf)
-			if err != nil {
-				return nil, err
-			}
-			a.AllOfRaw[i] = raw
-		}
-	}
-	return json.Marshal((*Alias)(a))
+	AllOf []*BasicRule `json:"all_of" label:"满足全部条件，只能二选一"`
+	OneOf []*BasicRule `json:"one_of" label:"满足任意条件，只能二选一"`
 }
 
 type BasicRule struct {
@@ -140,7 +90,7 @@ func checkConfig(v interface{}) (*Config, error) {
 		}
 
 		switch variable.Type {
-		case "string", "integer", "float", "boolean":
+		case "string", "integer", "float", "boolean", "array":
 			// 合法的目标类型
 		default:
 			return nil, fmt.Errorf("unsupported type %s for variable %s", variable.Type, name)
@@ -158,6 +108,9 @@ func checkConfig(v interface{}) (*Config, error) {
 		if rule.SaleExpression == "" {
 			return nil, fmt.Errorf("sale_expression cannot be empty in rule %s", rule.ID)
 		}
+		if rule.OfficialExpression == "" {
+			rule.OfficialExpression = rule.CostExpression
+		}
 
 		// 提前校验进货价表达式语法
 		processedCost := preProcessExpression(rule.CostExpression)
@@ -172,11 +125,9 @@ func checkConfig(v interface{}) (*Config, error) {
 		}
 
 		// 提前校验官方参考售价表达式语法
-		if rule.OfficialExpression != "" {
-			processedOfficial := preProcessExpression(rule.OfficialExpression)
-			if _, err := govaluate.NewEvaluableExpression(processedOfficial); err != nil {
-				return nil, fmt.Errorf("invalid official_expression '%s' in rule %s: %w", rule.OfficialExpression, rule.ID, err)
-			}
+		processedOfficial := preProcessExpression(rule.OfficialExpression)
+		if _, err := govaluate.NewEvaluableExpression(processedOfficial); err != nil {
+			return nil, fmt.Errorf("invalid official_expression '%s' in rule %s: %w", rule.OfficialExpression, rule.ID, err)
 		}
 	}
 

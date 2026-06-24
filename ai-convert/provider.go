@@ -8,6 +8,7 @@ import (
 )
 
 type IProvider interface {
+	ID() string
 	Provider() string
 	Model() string
 	ModelConfig() map[string]interface{}

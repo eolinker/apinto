@@ -33,7 +33,7 @@ func check(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 	}
 
 	if cfg.ModelIdFrom == "body" && cfg.ModelIdKey == "" {
-		cfg.ModelIdKey = "model"
+		cfg.ModelIdKey = "$.model"
 	}
 
 	if cfg.ModelIdFrom == "path" && cfg.ModelIdKey != "" {

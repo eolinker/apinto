@@ -18,9 +18,28 @@ const (
 	LabelExprCost            = "cost_expr"
 	LabelExprSale            = "sale_expr"
 	LabelExprOfficial        = "official_expr"
-	LabelPriceMatchRule      = "price_variables"
+	LabelPriceMatchRule      = "price_match_rule"
 	LabelPriceMatchCondition = "price_conditions"
+	LabelPriceCurrency       = "price_currency"
+	LabelPriceVersion        = "price_version"
+	LabelPriceRelyVersion    = "price_rely_version"
 )
+
+func SetPriceVersion(ctx eocontext.EoContext, value string) {
+	ctx.WithValue(LabelPriceVersion, value)
+}
+
+func SetPriceRelyVersion(ctx eocontext.EoContext, value string) {
+	ctx.WithValue(LabelPriceRelyVersion, value)
+}
+
+func SetPriceCurrency(ctx eocontext.EoContext, value string) {
+	ctx.WithValue(LabelPriceCurrency, value)
+}
+
+func GetPriceCurrency(ctx eocontext.EoContext) string {
+	return ctx.Value(LabelPriceCurrency).(string)
+}
 
 func SetPriceMatchCondition(ctx eocontext.EoContext, value interface{}) {
 	ctx.WithValue(LabelPriceMatchCondition, value)
@@ -75,7 +94,11 @@ func SetPriceVariables(ctx eocontext.EoContext, value map[string]interface{}) {
 }
 
 func GetPriceVariables(ctx eocontext.EoContext) map[string]interface{} {
-	return ctx.Value(LabelPriceVariables).(map[string]interface{})
+	tmp, ok := ctx.Value(LabelPriceVariables).(map[string]interface{})
+	if ok {
+		return tmp
+	}
+	return make(map[string]interface{})
 }
 
 func GetChargeRule(ctx eocontext.EoContext) string {
@@ -86,35 +109,35 @@ func SetChargeRule(ctx eocontext.EoContext, value string) {
 	ctx.SetLabel(LabelChargeRule, value)
 }
 
-func SetPrice(ctx eocontext.EoContext, label string, value string) {
-	ctx.SetLabel(label, value)
+func SetPrice(ctx eocontext.EoContext, label string, value interface{}) {
+	ctx.WithValue(label, value)
 }
 
-func GetPrice(ctx eocontext.EoContext, label string) string {
-	return ctx.GetLabel(label)
+func GetPrice(ctx eocontext.EoContext, label string) interface{} {
+	return ctx.Value(label)
 }
 
-func SetPriceCost(ctx eocontext.EoContext, value string) {
+func SetPriceCost(ctx eocontext.EoContext, value interface{}) {
 	SetPrice(ctx, LabelPriceCost, value)
 }
 
-func GetPriceCost(ctx eocontext.EoContext) string {
+func GetPriceCost(ctx eocontext.EoContext) interface{} {
 	return GetPrice(ctx, LabelPriceCost)
 }
 
-func SetPriceSale(ctx eocontext.EoContext, value string) {
+func SetPriceSale(ctx eocontext.EoContext, value interface{}) {
 	SetPrice(ctx, LabelPriceSale, value)
 }
 
-func GetPriceSale(ctx eocontext.EoContext) string {
+func GetPriceSale(ctx eocontext.EoContext) interface{} {
 	return GetPrice(ctx, LabelPriceSale)
 }
 
-func SetPriceOfficial(ctx eocontext.EoContext, value string) {
+func SetPriceOfficial(ctx eocontext.EoContext, value interface{}) {
 	SetPrice(ctx, LabelPriceOfficial, value)
 }
 
-func GetPriceOfficial(ctx eocontext.EoContext) string {
+func GetPriceOfficial(ctx eocontext.EoContext) interface{} {
 	return GetPrice(ctx, LabelPriceOfficial)
 }
 

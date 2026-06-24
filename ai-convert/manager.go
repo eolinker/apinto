@@ -164,18 +164,18 @@ func NewBalanceManager() *BalanceManager {
 	}
 }
 
-func (m *BalanceManager) SetProvider(id string, p IProvider) {
+func (m *BalanceManager) SetProvider(p IProvider) {
 	if p.Priority() < 1 {
-		m.providers.Set(p.Provider(), p)
+		m.providers.Set(p.ID(), p)
 	}
 
-	m.balances.Set(id, p)
-	tmp, has := m.ids.Get(p.Provider())
+	m.balances.Set(p.ID(), p)
+	tmp, has := m.ids.Get(p.ID())
 	if !has {
 		tmp = eosc.BuildUntyped[string, IProvider]()
 	}
-	tmp.Set(id, p)
-	m.ids.Set(p.Provider(), tmp)
+	tmp.Set(p.ID(), p)
+	m.ids.Set(p.ID(), tmp)
 	m.sortBalances()
 }
 
@@ -205,19 +205,19 @@ func (m *BalanceManager) Del(id string) string {
 	}
 	if p.Priority() == 0 {
 		// 供应商本身
-		m.providers.Del(p.Provider())
-		m.ids.Del(p.Provider())
+		m.providers.Del(id)
+		m.ids.Del(id)
 		m.sortBalances()
-		return p.Provider()
+		return p.ID()
 	}
-	tmp, has := m.ids.Get(p.Provider())
+	tmp, has := m.ids.Get(p.ID())
 	if !has {
 		return ""
 	}
 	tmp.Del(id)
 	m.sortBalances()
 	if tmp.Count() < 1 {
-		m.providers.Del(p.Provider())
+		m.providers.Del(p.ID())
 		return p.Provider()
 	}
 
@@ -232,8 +232,8 @@ func Balances() []IProvider {
 	return balanceManager.Balances()
 }
 
-func SetProvider(id string, p IProvider) {
-	balanceManager.SetProvider(id, p)
+func SetProvider(p IProvider) {
+	balanceManager.SetProvider(p)
 }
 
 func GetProvider(provider string) (IProvider, bool) {

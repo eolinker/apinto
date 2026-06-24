@@ -226,7 +226,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	ctx.response.ResponseHeader.refresh()
 	if response.IsBodyStream() && response.Header.ContentLength() < 0 {
 		//disableStream := ctx.GetLabel("disable_stream")
-		if response.StatusCode() == 200 && context_label.IsDisableStream(ctx) {
+		if response.StatusCode() == 200 && !context_label.IsDisableStream(ctx) {
 			// 流式传输，非200状态码不考虑流式传输
 			ctx.response.Response.SetStatusCode(response.StatusCode())
 			context_label.SetStreamRunning(ctx, true)

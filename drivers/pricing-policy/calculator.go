@@ -152,7 +152,8 @@ func (c *Calculator) Calculate(ctx eoscContext.EoContext, pricingData *PricingDa
 	context_label.SetExprOfficial(ctx, matchedRule.officialOrgExpr)
 	context_label.SetPriceMatchRule(ctx, matchedRule)
 	context_label.SetPriceMatchCondition(ctx, matchedRule.conditions)
-	params, err := c.generateParams(vars, pricingData, matchedRule)
+	context_label.SetPriceCurrency(ctx, c.Currency())
+	params, err := c.generateParams(ctx, vars, pricingData, matchedRule)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +166,7 @@ func (c *Calculator) CalculateFromChunk(ctx eoscContext.EoContext, chunk []byte,
 		return nil, errors.New("redis pricing data is required but got nil")
 	}
 	// 从流式 Chunk 里解包和转换出最新的计量参数变量集
-	newVars := c.variablesExtractor.ExtractAllFromChunk(chunk)
+	newVars := c.variablesExtractor.ExtractAllFromChunk(ctx, chunk)
 	if len(newVars) < 1 {
 		return &CalculateResult{}, nil
 	}
@@ -200,7 +201,7 @@ func (c *Calculator) CalculateFromChunk(ctx eoscContext.EoContext, chunk []byte,
 		mr = matchedRule.(*ProcessedRule)
 	}
 
-	params, err := c.generateParams(vars, pricingData, mr)
+	params, err := c.generateParams(ctx, vars, pricingData, mr)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +209,7 @@ func (c *Calculator) CalculateFromChunk(ctx eoscContext.EoContext, chunk []byte,
 }
 
 // 生成计费参数
-func (c *Calculator) generateParams(vars map[string]interface{}, pricingData *PricingData, matchedRule *ProcessedRule) (map[string]interface{}, error) {
+func (c *Calculator) generateParams(ctx eoscContext.EoContext, vars map[string]interface{}, pricingData *PricingData, matchedRule *ProcessedRule) (map[string]interface{}, error) {
 	var plan *PricePlan
 	if matchedRule.id != "" {
 		// 从缓存中获取对应的价格包
@@ -219,6 +220,7 @@ func (c *Calculator) generateParams(vars map[string]interface{}, pricingData *Pr
 	}
 	// 3. 构建公式运行所需的上下文变量 map (合并自定义提取变量与绑定的动态价格变量)
 	params := make(map[string]interface{}, len(vars)+len(plan.Cost)+len(plan.Sale)+len(plan.Official))
+
 	for k, v := range vars {
 		params[k] = v
 	}
@@ -231,6 +233,9 @@ func (c *Calculator) generateParams(vars map[string]interface{}, pricingData *Pr
 	for k, v := range plan.Official {
 		params["official_"+k] = v
 	}
+	context_label.SetPriceCost(ctx, plan.Cost)
+	context_label.SetPriceSale(ctx, plan.Sale)
+	context_label.SetPriceOfficial(ctx, plan.Official)
 	return params, nil
 }
 
@@ -301,6 +306,60 @@ func matchBasicRule(rule *BasicRule, params map[string]interface{}) bool {
 	}
 
 	switch rule.Type {
+	case "array":
+		var actual []interface{}
+		switch v := val.(type) {
+		case []interface{}:
+			actual = v
+		case []string:
+			actual = make([]interface{}, len(v))
+			for i, s := range v {
+				actual[i] = s
+			}
+		case []int64:
+			actual = make([]interface{}, len(v))
+			for i, s := range v {
+				actual[i] = s
+			}
+		case []float64:
+			actual = make([]interface{}, len(v))
+			for i, s := range v {
+				actual[i] = s
+			}
+		default:
+			// Treat single value as a single-element array
+			actual = []interface{}{v}
+		}
+
+		// Helper to check if actual array contains a string representation of any expected value
+		contains := func(expected string) bool {
+			for _, item := range actual {
+				if fmt.Sprintf("%v", item) == expected {
+					return true
+				}
+			}
+			return false
+		}
+
+		switch rule.Op {
+		case "==", "in":
+			// For "in" or "==", we split rule.Value by commas and check if any expected value is contained in the actual array
+			parts := strings.Split(rule.Value, ",")
+			for _, p := range parts {
+				if contains(strings.TrimSpace(p)) {
+					return true
+				}
+			}
+			return false
+		case "!=":
+			parts := strings.Split(rule.Value, ",")
+			for _, p := range parts {
+				if contains(strings.TrimSpace(p)) {
+					return false
+				}
+			}
+			return true
+		}
 	case "integer":
 		var actual int64
 		switch v := val.(type) {
@@ -477,50 +536,6 @@ func matchBasicRule(rule *BasicRule, params map[string]interface{}) bool {
 	return false
 }
 
-// matchAllOf 递归计算一连串 AllOf 规则。所有元素必须全部返回 true 时才为 true。
-func matchAllOf(allOf *AllOf, params map[string]interface{}) bool {
-	if allOf == nil {
-		return true
-	}
-	// 评估自身 BasicRule 条件
-	if allOf.BasicRule != nil {
-		if !matchBasicRule(allOf.BasicRule, params) {
-			return false
-		}
-	}
-	// 评估嵌套子 AnyOf 条件
-	if len(allOf.AnyOf) > 0 {
-		for _, anyOf := range allOf.AnyOf {
-			if !matchAnyOf(anyOf, params) {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-// matchAnyOf 递归评估一连串 AnyOf 规则。只要有任意一个为 true 即刻返回 true。
-func matchAnyOf(anyOf *AnyOf, params map[string]interface{}) bool {
-	if anyOf == nil {
-		return true
-	}
-	// 评估自身 BasicRule 条件
-	if anyOf.BasicRule != nil {
-		if matchBasicRule(anyOf.BasicRule, params) {
-			return true
-		}
-	}
-	// 评估嵌套子 AllOf 条件
-	if len(anyOf.AllOf) > 0 {
-		for _, allOf := range anyOf.AllOf {
-			if matchAllOf(allOf, params) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // matchCondition 驱动执行整个规则级条件系统的递归评估入口。
 func matchCondition(cond *Condition, params map[string]interface{}) bool {
 	if cond == nil {
@@ -529,16 +544,16 @@ func matchCondition(cond *Condition, params map[string]interface{}) bool {
 	// 优先评估 AllOf 条件群
 	if len(cond.AllOf) > 0 {
 		for _, allOf := range cond.AllOf {
-			if !matchAllOf(allOf, params) {
+			if !matchBasicRule(allOf, params) {
 				return false
 			}
 		}
 		return true
 	}
-	// 评估 AnyOf 条件群
-	if len(cond.AnyOf) > 0 {
-		for _, anyOf := range cond.AnyOf {
-			if matchAnyOf(anyOf, params) {
+	// 评估 Item 条件群
+	if len(cond.OneOf) > 0 {
+		for _, anyOf := range cond.OneOf {
+			if matchBasicRule(anyOf, params) {
 				return true
 			}
 		}

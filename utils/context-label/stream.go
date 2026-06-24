@@ -49,15 +49,3 @@ func IsDisableStream(ctx eocontext.EoContext) bool {
 	value := ctx.GetLabel(LabelDisableStream)
 	return value == "true"
 }
-
-func SetStreamJsonBody(ctx eocontext.EoContext, body []byte) {
-	ctx.WithValue(LabelStreamJsonBody, body)
-}
-
-func GetStreamJsonBody(ctx eocontext.EoContext) []byte {
-	value := ctx.Value(LabelStreamJsonBody)
-	if value == nil {
-		return nil
-	}
-	return value.([]byte)
-}

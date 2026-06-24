@@ -3,7 +3,6 @@ package influxdb_v2
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -37,8 +36,12 @@ func parseFilters(filters []*Filter) []*filter {
 			log.Errorf("parse filter value(%s) error: %v", f.Value, err)
 			continue
 		}
+		key := f.Key
+		if strings.HasPrefix(key, "$") {
+			key = key[1:]
+		}
 		result = append(result, &filter{
-			key:     f.Key,
+			key:     key,
 			Checker: c,
 		})
 	}
@@ -80,9 +83,9 @@ func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 }
 
 func (o *Output) reset(conf *Config) error {
-	if reflect.DeepEqual(conf, o.conf) {
-		return nil
-	}
+	//if reflect.DeepEqual(conf, o.conf) {
+	//	return nil
+	//}
 
 	client := NewClient(conf)
 	if _, err := client.Ping(o.ctx); err != nil {
@@ -207,6 +210,14 @@ func (o *Output) doLoop() {
 			if o.client == nil || o.client.WriteAPI == nil {
 				continue
 			}
+			//if c.WriteAPI != nil {
+			//	p, ok := point.(monitor_entry.IPoint)
+			//	if !ok {
+			//		log.Error("need: ", reflect.TypeOf((monitor_entry.IPoint)(nil)), "now: ", reflect.TypeOf(point))
+			//		return nil
+			//	}
+			log.Debug("table: ", p.Measurement, " tags: ", p.Tags, " fields: ", p.Fields, " time: ", p.Time)
+
 			o.client.WritePoint(influxdb2.NewPoint(
 				p.Measurement,
 				p.Tags,
