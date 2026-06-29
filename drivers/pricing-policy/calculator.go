@@ -121,17 +121,30 @@ func (c *Calculator) VariablesExtractor() *VariablesExtractor {
 }
 
 // Calculate 根据 EoContext 进行自定义属性抽取，结合从 Redis 获取的最新的资源定价内容执行公式计费。
-func (c *Calculator) Calculate(ctx eoscContext.EoContext, pricingData *PricingData) (*CalculateResult, error) {
-	if pricingData == nil {
-		return nil, errors.New("redis pricing data is required but got nil")
-	}
+func (c *Calculator) Calculate(ctx eoscContext.EoContext, enableBalance bool, pricingData *PricingData, extendKeys ...string) (*CalculateResult, error) {
+
 	// 动态抓取当前 EoContext 下的所有已配置变量集
-	vars := c.variablesExtractor.ExtractAll(ctx)
+	vars := c.variablesExtractor.ExtractAll(ctx, extendKeys...)
 	if len(vars) < 1 {
 		return nil, errors.New("no context variables extracted")
 	}
+	oldVar := context_label.GetPriceVariables(ctx)
+	for k, v := range oldVar {
+		_, ok := vars[k]
+		if ok {
+			continue
+		}
+		vars[k] = v
+	}
 
 	context_label.SetPriceVariables(ctx, vars)
+	if !enableBalance {
+		return &CalculateResult{}, nil
+	}
+
+	if pricingData == nil {
+		return nil, errors.New("redis pricing data is required but got nil")
+	}
 
 	// 1. 按配置的高级计费规则顺序，依次匹配条件
 	var matchedRule *ProcessedRule
@@ -161,10 +174,8 @@ func (c *Calculator) Calculate(ctx eoscContext.EoContext, pricingData *PricingDa
 }
 
 // CalculateFromChunk 根据流式的单个响应原始字节块进行提取转换，结合从 Redis 获取的最新的资源定价内容执行公式计费。
-func (c *Calculator) CalculateFromChunk(ctx eoscContext.EoContext, chunk []byte, pricingData *PricingData) (*CalculateResult, error) {
-	if pricingData == nil {
-		return nil, errors.New("redis pricing data is required but got nil")
-	}
+func (c *Calculator) CalculateFromChunk(ctx eoscContext.EoContext, enableBalance bool, chunk []byte, pricingData *PricingData) (*CalculateResult, error) {
+
 	// 从流式 Chunk 里解包和转换出最新的计量参数变量集
 	newVars := c.variablesExtractor.ExtractAllFromChunk(ctx, chunk)
 	if len(newVars) < 1 {
@@ -178,6 +189,12 @@ func (c *Calculator) CalculateFromChunk(ctx eoscContext.EoContext, chunk []byte,
 		vars[k] = v
 	}
 	context_label.SetPriceVariables(ctx, vars)
+	if !enableBalance {
+		return &CalculateResult{}, nil
+	}
+	if pricingData == nil {
+		return nil, errors.New("redis pricing data is required but got nil")
+	}
 	var mr *ProcessedRule
 	matchedRule := context_label.GetPriceMatchRule(ctx)
 	if matchedRule == nil {

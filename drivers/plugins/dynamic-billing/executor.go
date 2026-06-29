@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/eolinker/apinto/encoder"
 	"github.com/redis/go-redis/v9"
 	"net/http"
 	"strconv"
@@ -35,14 +36,15 @@ type executor struct {
 	concurrencyKeyGenerator context_label.IKeyGenerator
 	balanceKeyGenerator     context_label.IKeyGenerator
 	priceKeyGenerator       context_label.IKeyGenerator
+	extenderKeys            []string
 }
 
 // TaskInfo 描述了异步任务生成的元数据，用于二次状态查询时反查账户和资源组
 type TaskInfo struct {
-	ResourceID string `json:"resource"`
-	App        string `json:"app"`
-	IsCharged  bool   `json:"is_charged"`
-
+	ResourceID  string                      `json:"resource"`
+	App         string                      `json:"app"`
+	IsCharged   bool                        `json:"is_charged"`
+	Variables   map[string]interface{}      `json:"variables,omitempty"`
 	PricingData *pricing_policy.PricingData `json:"pricing_data,omitempty"`
 	Cache       struct {
 		Body string `json:"body"`
@@ -66,6 +68,7 @@ func (e *executor) reset(cfg *Config, wks map[eosc.RequireId]eosc.IWorker) error
 	e.priceKeyGenerator = context_label.NewKeyGenerator(cfg.PriceKey)
 	e.taskKeyGenerator = context_label.NewKeyGenerator(cfg.TaskKey)
 	e.concurrencyKeyGenerator = context_label.NewKeyGenerator(cfg.ConcurrencyKey)
+	e.extenderKeys = cfg.ExtendKeys
 	return nil
 }
 
@@ -128,6 +131,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 				if info.PricingData != nil {
 					snapshottedPricingData = info.PricingData
 				}
+				context_label.SetPriceVariables(ctx, info.Variables)
 				isCharged = info.IsCharged
 				// 若已有成功计费并落盘缓存的响应，则直接写回响应体阻断拦截，防范重复调用与二次扣费
 				if isCharged && info.Cache.Body != "" {
@@ -152,7 +156,6 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	// 4. 定位计费计算器
 	w, has := policyManager.Get(id)
 	if !has {
-		log.Errorf("[dynamic-billing] pricing-policy worker %s not found in manager", resourceID)
 		if next != nil {
 			return next.DoChain(ctx)
 		}
@@ -215,15 +218,16 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	// ==========================================
 	isPreCheckRequired := billingMode == context_label.BillingModeImmediate || billingMode == context_label.BillingModeTaskCreate
 	if isPreCheckRequired && e.enableBalance && cache != nil {
-		balanceStr, bErr := cache.Get(ctx.Context(), balanceKey).Result()
-		if bErr == nil {
+		balanceStr, err := cache.Get(ctx.Context(), balanceKey).Result()
+		if err == nil {
 			if balanceInt, parseErr := strconv.ParseInt(balanceStr, 10, 64); parseErr == nil {
 				if balanceInt <= 0 {
 					balance := float64(balanceInt) / 100000.0
 					log.Errorf("[resource-pricing] insufficient balance for user %s: %f", app, balance)
+					err = errors.New(`{"error":"insufficient balance"}`)
 					ctx.Response().SetStatus(http.StatusPaymentRequired, "402")
-					ctx.Response().SetBody([]byte(`{"error":"insufficient balance"}`))
-					return nil
+					ctx.Response().SetBody([]byte(err.Error()))
+					return err
 				}
 			}
 		} else {
@@ -232,11 +236,100 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 				ctx.Response().SetStatus(http.StatusPaymentRequired, "402")
 				ctx.Response().SetBody([]byte(`{"error":"insufficient balance"}`))
 				return err
-			} else {
-				log.Errorf("[resource-pricing] error fetching balance for user %s: %v", app, bErr)
+			}
+			log.Errorf("[resource-pricing] error fetching balance for user %s: %v", app, err)
+			return err
+		}
+	}
+
+	// ==========================================
+	// 10. 组装资源定价价格 Key (优先使用固化的 PricingData，若无则从 Redis 动态读取)
+	// ==========================================
+	var priceData pricing_policy.PricingData
+	if e.enableBalance {
+		if snapshottedPricingData != nil {
+			priceData = *snapshottedPricingData
+		} else {
+			priceKey := e.priceKeyGenerator.Key(ctx)
+
+			strResult := cache.Get(ctx.Context(), priceKey)
+			val, err := strResult.Result()
+			if err != nil {
+				log.Errorf("[dynamic-billing] get redis price for key %s error: %v", priceKey, err)
 				return err
 			}
+
+			if err := json.Unmarshal([]byte(val), &priceData); err != nil {
+				log.Errorf("[dynamic-billing] unmarshal redis pricing data error: %v, raw data: %s", err, val)
+				return err
+			}
+			if priceData.BasicInfo != nil {
+				context_label.SetPriceVersion(ctx, priceData.BasicInfo.Version)
+				context_label.SetPriceVersion(ctx, priceData.BasicInfo.Rely)
+			}
 		}
+	}
+
+	fn := ctx.Proxy().GetStreamBodyParse()
+	//var res *pricing_policy.CalculateResult
+	if ctx.GetLabel("resource_type") == "api" {
+		ctx.Proxy().AppendBodyFinish(func(ctx http_context.IHttpContext) {
+			res, err := calc.Calculate(ctx, e.enableBalance, &priceData)
+			if err != nil {
+				log.Errorf("[dynamic-billing] calculate error: %v", err)
+				return
+			}
+			context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
+			context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
+			context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
+			if e.enableBalance && cache != nil && res.Sale > 0 {
+				success := executeBalanceDeduction(ctx.Context(), cache, balanceKey, res.Sale, app)
+				if !success {
+					return
+				}
+			}
+		})
+	} else if ctx.GetLabel("resource_type") == "ai" {
+		var res *pricing_policy.CalculateResult
+		// 只有文本模型需要异步
+		ctx.Proxy().AppendStreamBodyHandle(func(ctx http_context.IHttpContext, p []byte) ([]byte, error) {
+			var body []byte
+			if fn != nil {
+				body = fn(ctx, p)
+			} else {
+				body = p
+			}
+			encoding := ctx.Response().Headers().Get("content-encoding")
+			if encoding != "utf-8" && encoding != "" {
+				body, err = encoder.ToUTF8(encoding, body)
+				if err != nil {
+					log.Errorf("[dynamic-billing] failed to convert response body to UTF-8: %v", err)
+					return p, nil
+				}
+			}
+			// # 遍历，以换行符分行
+			lines := strings.Split(string(body), "\n")
+			for _, line := range lines {
+				if strings.TrimSpace(line) == "" {
+					continue
+				}
+				tmp, err := calc.CalculateFromChunk(ctx, e.enableBalance, []byte(line), &priceData)
+				if err != nil {
+					continue
+				}
+				if tmp != nil {
+					res = tmp
+				}
+
+			}
+			if e.enableBalance && cache != nil && res.Sale > 0 {
+				success := executeBalanceDeduction(ctx.Context(), cache, balanceKey, res.Sale, app)
+				if !success {
+					return p, nil
+				}
+			}
+			return p, nil
+		})
 	}
 
 	// ==========================================
@@ -253,10 +346,18 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	// 9. 异步两阶段“生成任务 (create)”后置落盘保存
 	// ==========================================
 	if context_label.IsBillingMode(ctx, context_label.BillingModeTaskCreate) {
+		fn := context_label.GetTaskIDSetFunc(ctx)
+		if fn != nil {
+			err := fn(ctx)
+			if err != nil {
+				return err
+			}
+		}
 		taskInfoKey := e.taskKeyGenerator.Key(ctx)
 		info := TaskInfo{
 			ResourceID: resourceID,
 			App:        app,
+			Variables:  calc.VariablesExtractor().ExtractAll(ctx, e.extenderKeys...),
 		}
 
 		// 获取并固化当前的定价配置数据，确保 query 阶段计费的一致性，防止中途价格配置变更
@@ -272,44 +373,11 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			_ = cache.Set(ctx.Context(), taskInfoKey, infoBytes, 24*time.Hour)
 			log.DebugF("[dynamic-billing] [create_task] successfully cached async task metadata and pricing snapshot for %s", taskInfoKey)
 		}
+
 		return nil
 	}
 
-	// ==========================================
-	// 10. 组装资源定价价格 Key (优先使用固化的 PricingData，若无则从 Redis 动态读取)
-	// ==========================================
-	var priceData pricing_policy.PricingData
-	if snapshottedPricingData != nil {
-		priceData = *snapshottedPricingData
-	} else {
-		priceKey := e.priceKeyGenerator.Key(ctx)
-
-		strResult := cache.Get(ctx.Context(), priceKey)
-		val, redisErr := strResult.Result()
-		if redisErr != nil {
-			log.Errorf("[dynamic-billing] get redis price for key %s error: %v", priceKey, redisErr)
-			return err
-		}
-
-		if jsonErr := json.Unmarshal([]byte(val), &priceData); jsonErr != nil {
-			log.Errorf("[dynamic-billing] unmarshal redis pricing data error: %v, raw data: %s", jsonErr, val)
-			return err
-		}
-		if priceData.BasicInfo != nil {
-			context_label.SetPriceVersion(ctx, priceData.BasicInfo.Version)
-			context_label.SetPriceVersion(ctx, priceData.BasicInfo.Rely)
-		}
-	}
-	if ctx.Response().IsBodyStream() && context_label.IsBillingMode(ctx, context_label.BillingModeImmediate) {
-		// 只有文本模型需要异步
-		ctx.Proxy().AppendStreamBodyHandle(func(ctx http_context.IHttpContext, p []byte) ([]byte, error) {
-			// 考虑从上下文中获取原始Json数据，避免重复解析
-			err = e.immediateSettle(ctx, calc, &priceData, balanceKey, resourceID, app, cache)
-			if err != nil {
-				return nil, err
-			}
-			return p, nil
-		})
+	if ctx.Response().IsBodyStream() {
 		return nil
 	}
 
@@ -320,29 +388,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 func (e *executor) immediateSettle(ctx http_context.IHttpContext, calc *pricing_policy.Calculator, priceData *pricing_policy.PricingData, balanceKey, resourceID, app string, cache resources.ICache) error {
 	var res *pricing_policy.CalculateResult
 	var err error
-	if ctx.Response().IsBodyStream() {
-		fn := ctx.Proxy().GetStreamBodyParse()
-		if fn == nil {
-			return nil
-		}
-		body := fn(ctx, ctx.Response().GetBody())
-		// # 遍历，以换行符分行
-		lines := strings.Split(string(body), "\n")
-		for _, line := range lines {
-			if strings.TrimSpace(line) == "" {
-				continue
-			}
-			tmp, err := calc.CalculateFromChunk(ctx, []byte(line), priceData)
-			if err != nil {
-				continue
-			}
-			if tmp != nil {
-				res = tmp
-			}
-		}
-	} else {
-		res, err = calc.Calculate(ctx, priceData)
-	}
+	res, err = calc.Calculate(ctx, e.enableBalance, priceData, e.extenderKeys...)
 	if err != nil {
 		log.Errorf("[dynamic-billing] calculate failed for resource %s: %v", resourceID, err)
 		return err
@@ -370,12 +416,19 @@ func (e *executor) settleBilling(ctx http_context.IHttpContext, calc *pricing_po
 			// 已经计费过或者任务完成状态为false，不做重复计费
 			return nil
 		}
-		taskStatus := ctx.GetLabel("task_status")
+		fn := context_label.GetTaskStatusParseFunc(ctx)
+		if fn == nil {
+			return nil
+		}
+		taskStatus, err := fn(ctx)
+		if err != nil {
+			return err
+		}
 		switch taskStatus {
-		case "running":
-		case "success":
+		case context_label.TaskStatusRunning:
+		case context_label.TaskStatusSuccess:
 			isCharged = true
-			res, calcErr := calc.Calculate(ctx, priceData)
+			res, calcErr := calc.Calculate(ctx, e.enableBalance, priceData, e.extenderKeys...)
 			if calcErr != nil {
 				log.Errorf("[dynamic-billing] calculate failed for resource %s: %v", resourceID, calcErr)
 				ctx.SetLabel("pricing_status", "failed")
@@ -387,16 +440,15 @@ func (e *executor) settleBilling(ctx http_context.IHttpContext, calc *pricing_po
 			context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
 			context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
 			if e.enableBalance && cache != nil && res.Cost > 0 {
-				success := executeBalanceDeduction(ctx.Context(), cache, balanceKey, res.Cost, app)
+				success := executeBalanceDeduction(ctx.Context(), cache, balanceKey, res.Sale, app)
 				if !success {
 					return fmt.Errorf("insufficient balance during settlement")
 				}
 			}
 			return nil
-		case "failed":
+		case context_label.TaskStatusFailed:
 			isCharged = true
 		}
-
 		taskKey := e.taskKeyGenerator.Key(ctx)
 		taskInfo := TaskInfo{
 			ResourceID: resourceID,
@@ -407,11 +459,13 @@ func (e *executor) settleBilling(ctx http_context.IHttpContext, calc *pricing_po
 			}(struct{ Body string }{
 				Body: string(ctx.Response().GetBody()),
 			}),
+			Variables: context_label.GetPriceVariables(ctx),
 		}
 		taskByte, _ := json.Marshal(taskInfo)
 		cache.Set(ctx.Context(), taskKey, taskByte, 24*time.Hour)
 
 	case context_label.BillingModeTaskCreate:
+
 	}
 
 	return nil

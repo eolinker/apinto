@@ -22,6 +22,7 @@ type ICache interface {
 	HMGet(ctx context.Context, key string, fields ...string) ArrayInterfaceResult
 	Del(ctx context.Context, keys ...string) IntResult
 	Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) InterfaceResult
+	SIsMember(ctx context.Context, key string, member interface{}) BoolResult
 	Tx() TX
 }
 
@@ -47,6 +48,10 @@ type IntResult interface {
 type StringResult interface {
 	Result() (string, error)
 	Bytes() ([]byte, error)
+}
+
+type SScanResult interface {
+	Result() (keys []string, cursor uint64, err error)
 }
 
 type StringSliceResult interface {

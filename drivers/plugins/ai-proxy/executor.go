@@ -3,8 +3,13 @@ package ai_proxy
 import (
 	"errors"
 	"fmt"
+	"github.com/eolinker/apinto/resources"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
+	context_label "github.com/eolinker/apinto/utils/context-label"
+	"github.com/redis/go-redis/v9"
 	"regexp"
 	"strings"
+	"time"
 
 	ai_convert "github.com/eolinker/apinto/ai-convert"
 	"github.com/eolinker/apinto/drivers"
@@ -24,8 +29,15 @@ var (
 	errKeyNotFound       = errors.New("key not found")
 )
 
+var (
+	taskCommit       = "task-commit"
+	taskQuery        = "task-query"
+	taskKeyGenerator = context_label.NewKeyGenerator("{product}:model:task")
+)
+
 type executor struct {
 	drivers.WorkerBase
+	redisID         string
 	modelType       ai_convert.ModelType
 	labels          map[string]string
 	modelIdFrom     string
@@ -33,6 +45,7 @@ type executor struct {
 	bodyExpr        jp.Expr
 	defaultProvider string
 	config          string
+	taskMode        string
 }
 
 func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
@@ -43,10 +56,10 @@ func (e *executor) extractModelID(ctx http_context.IHttpContext) (string, error)
 	if e.modelIdFrom == "path" {
 		path := ctx.Request().URI().Path()
 
-		// 去除 Google/gRPC 转 HTTP 常用的自定义动作后缀（如 :generateContent）
-		if idx := strings.Index(path, ":"); idx != -1 {
-			path = path[:idx]
-		}
+		//// 去除 Google/gRPC 转 HTTP 常用的自定义动作后缀（如 :generateContent）
+		//if idx := strings.Index(path, ":"); idx != -1 {
+		//	path = path[:idx]
+		//}
 
 		if e.modelIdKey != "" {
 			reg, err := regexp.Compile(e.modelIdKey)
@@ -103,11 +116,45 @@ func (e *executor) handleError(ctx http_context.IHttpContext, err error) error {
 	return err
 }
 
+func getCache(redisId string) (resources.ICache, error) {
+	var cache resources.ICache
+	var cl []resources.ICache
+	if redisId != "" {
+		cl = scope_manager.Auto[resources.ICache](redisId, "redis").List()
+	}
+	if len(cl) == 0 {
+		cl = scope_manager.Get[resources.ICache]("redis").List()
+	}
+	if len(cl) > 0 {
+		cache = cl[0]
+	} else {
+		return nil, fmt.Errorf("cache not found")
+	}
+	return cache, nil
+}
+
 func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IChain) error {
 	// 1. 提取 ModelID
 	extractedModelID, err := e.extractModelID(ctx)
 	if err != nil {
 		return e.handleError(ctx, err)
+	}
+	var cache resources.ICache
+	switch e.taskMode {
+	case taskQuery, taskCommit:
+		cache, err = getCache(e.redisID)
+		if err != nil {
+			return fmt.Errorf("get cache error: %v", err)
+		}
+
+		if e.taskMode == taskQuery {
+			context_label.SetTaskID(ctx, extractedModelID)
+			taskKey := fmt.Sprintf("%s:%s", taskKeyGenerator.Key(ctx), extractedModelID)
+			extractedModelID, err = cache.Get(ctx.Context(), taskKey).Result()
+			if err != nil && !errors.Is(err, redis.Nil) {
+				return fmt.Errorf("get cache error: %v", err)
+			}
+		}
 	}
 
 	// 2. 解析供应商与模型
@@ -135,8 +182,8 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			return e.handleError(ctx, fmt.Errorf("extracted model_id '%s' has no provider. Please use '{provider_id}/{model_id}' format, configure default_provider, or register the model in gateway", extractedModelID))
 		}
 	}
-
-	// 3. 写入 context
+	ctx.SetLabel("provider", provider)
+	ctx.SetLabel("model", model)
 	ai_convert.SetAIProvider(ctx, provider)
 	ai_convert.SetAIModel(ctx, model)
 
@@ -185,6 +232,20 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			return err
 		}
 	}
+
+	switch e.taskMode {
+	case taskCommit:
+		taskId := context_label.GetTaskID(ctx)
+		taskKey := fmt.Sprintf("%s:%s", taskKeyGenerator.Key(ctx), taskId)
+
+		ok, err := cache.SetNX(ctx.Context(), taskKey, []byte(extractedModelID), 24*time.Hour).Result()
+		if err != nil {
+			return fmt.Errorf("set cache error: %v", err)
+		}
+		if !ok {
+			return fmt.Errorf("task %s is in progress", taskId)
+		}
+	}
 	return nil
 }
 
@@ -206,49 +267,40 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string
 	if !has {
 		return errKeyNotFound
 	}
-	for _, r := range resources {
-		if !r.Health() {
-			continue
-		}
-		ctx.SetProxy(cloneProxy)
-		ai_convert.SetAIKey(ctx, r.ID())
-		converter, has := r.Get(e.modelType)
-		if !has {
-			continue
-		}
-		if err = converter.RequestConvert(ctx, extender); err != nil {
-			ai_convert.SetAIProviderStatuses(ctx, ai_convert.StatusInvalid)
-			continue
-		}
+	r := resources[0]
+	ctx.SetProxy(cloneProxy)
+	ai_convert.SetAIKey(ctx, r.ID())
+	converter, has := r.Get(e.modelType)
+	if !has {
+		return fmt.Errorf("key %s does not support model type %s", r.ID(), e.modelType)
+	}
+	if err = converter.RequestConvert(ctx, extender); err != nil {
+		return fmt.Errorf("request convert error: %v", err)
+	}
 
-		if next != nil {
-			if err = e.processNext(ctx, next, p); err != nil {
-				if ctx.Response().StatusCode() == 504 {
-					ai_convert.SetAIProviderStatuses(ctx, ai_convert.StatusTimeout)
-				}
-				return err
-			}
-		}
-		if ctx.Response().IsBodyStream() {
-			contentType := ctx.GetLabel("response-content-type")
-			if ctx.GetLabel("response-content-type") != "" {
-				ctx.Response().SetHeader("Content-Type", contentType)
-			}
-			return nil
-		}
-		if err = converter.ResponseConvert(ctx); err != nil {
-			log.Errorf("response convert error: %v", err)
-			continue
-		}
-		aiStatus := ai_convert.GetAIStatus(ctx)
-		switch aiStatus {
-		case ai_convert.StatusInvalidRequest, ai_convert.StatusNormal:
-			return nil
-		default:
-			continue
+	if next != nil {
+		if err = e.processNext(ctx, next, p); err != nil {
+			return err
 		}
 	}
-	return fmt.Errorf("all key resources for provider %s is invalid", provider)
+	if ctx.Response().IsBodyStream() {
+		contentType := ctx.GetLabel("response-content-type")
+		if ctx.GetLabel("response-content-type") != "" {
+			ctx.Response().SetHeader("Content-Type", contentType)
+		}
+		return nil
+	}
+	if err = converter.ResponseConvert(ctx); err != nil {
+		return fmt.Errorf("response convert error: %v", err)
+	}
+	//aiStatus := ai_convert.GetAIStatus(ctx)
+	//switch aiStatus {
+	//case ai_convert.StatusInvalidRequest, ai_convert.StatusNormal:
+	//	return nil
+	//default:
+	//	continue
+	//}
+	return nil
 }
 
 // doBalance handles fallback logic for switching providers when keys are invalid or exhausted.
@@ -371,12 +423,21 @@ func (e *executor) reset(cfg *Config) error {
 	e.modelIdFrom = cfg.ModelIdFrom
 	e.modelIdKey = cfg.ModelIdKey
 	e.defaultProvider = cfg.DefaultProvider
-	expr, err := jp.ParseString(cfg.ModelIdKey)
-	if err != nil {
-		return err
+	if e.modelIdFrom == "body" {
+		expr, err := jp.ParseString(cfg.ModelIdKey)
+		if err != nil {
+			return err
+		}
+		e.bodyExpr = expr
 	}
-	e.bodyExpr = expr
+
 	e.config = "{}"
+	if strings.Contains(cfg.ModelType, "task-commit") {
+		e.taskMode = taskCommit
+	} else if strings.Contains(cfg.ModelType, "task-query") {
+		e.taskMode = taskQuery
+	}
+
 	return nil
 }
 

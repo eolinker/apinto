@@ -1,15 +1,12 @@
 package access_relation_redis
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/eolinker/apinto/resources"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
-	"github.com/redis/go-redis/v9"
 )
 
 func (w *AccessRelationRedis) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IChain) (err error) {
@@ -49,34 +46,40 @@ func (w *AccessRelationRedis) checkRule(ctx http_context.IHttpContext, cache res
 		return false
 	}
 
-	var dataStr string
 	var err error
-
-	dataStr, err = cache.Get(ctx.Context(), redisKey).Result()
+	ok, err := cache.SIsMember(ctx.Context(), redisKey, resourceID).Result()
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			return false
-		}
-		log.Errorf("[access-relation-redis]redis get error: %v", err)
+		log.Errorf("[access-relation-redis]redis sismember error: %v", err)
 		return false
 	}
+	return ok
 
-	if err != nil || dataStr == "" {
-		return false
-	}
-
-	var resources []string
-	if err := json.Unmarshal([]byte(dataStr), &resources); err != nil {
-		return false
-	}
-
-	for _, r := range resources {
-		if r == resourceID {
-			return true
-		}
-	}
-
-	return false
+	//
+	//dataStr, err = cache.Get(ctx.Context(), redisKey).Result()
+	//if err != nil {
+	//	if errors.Is(err, redis.Nil) {
+	//		return false
+	//	}
+	//	log.Errorf("[access-relation-redis]redis get error: %v", err)
+	//	return false
+	//}
+	//
+	//if err != nil || dataStr == "" {
+	//	return false
+	//}
+	//
+	//var resources []string
+	//if err := json.Unmarshal([]byte(dataStr), &resources); err != nil {
+	//	return false
+	//}
+	//
+	//for _, r := range resources {
+	//	if r == resourceID {
+	//		return true
+	//	}
+	//}
+	//
+	//return false
 }
 
 func (w *AccessRelationRedis) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {

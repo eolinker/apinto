@@ -13,6 +13,7 @@ type Config struct {
 	ConcurrencyKey   string         `json:"concurrency_key" label:"并发 Key 模版" default:"dynamic-billing-concurrency:{application}:{resource}" description:"支持{application}, {resource}等占位符"`
 	BalanceKey       string         `json:"balance_key" label:"租户余额扣减 Key 模版" default:"balance:{balance_target}" description:"支持{balance_target}等占位符"`
 	PriceKey         string         `json:"price_key" label:"资源定价价格 Key 模版" default:"access-resource-price:{application}:{resource}" description:"支持{application}, {resource}等占位符"`
+	ExtendKeys       []string       `json:"extend_keys" label:"扩展 Key 模版" description:"支持{application}, {resource}等占位符"`
 }
 
 // checkConfig 校验并设置默认值

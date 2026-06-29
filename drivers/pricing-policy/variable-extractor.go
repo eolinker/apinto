@@ -287,13 +287,20 @@ func NewVariablesExtractor(vars map[string]*Variable) (*VariablesExtractor, erro
 }
 
 // ExtractAll 驱动执行所有已配置的提取器，返回包含所有提取成功变量的 map 数据集。
-func (ve *VariablesExtractor) ExtractAll(ctx eoscContext.EoContext) map[string]interface{} {
+func (ve *VariablesExtractor) ExtractAll(ctx eoscContext.EoContext, extenderVariable ...string) map[string]interface{} {
 	res := make(map[string]interface{}, len(ve.extractors))
 	for name, ex := range ve.extractors {
 		val, err := ex.Extract(ctx)
 		if err == nil {
 			res[name] = val
 			context_label.SetPriceVariable(ctx, name, val)
+		}
+	}
+	for _, name := range extenderVariable {
+		_, ok := res[name]
+		if !ok {
+			res[name] = 0
+			context_label.SetPriceVariable(ctx, name, 0)
 		}
 	}
 	return res

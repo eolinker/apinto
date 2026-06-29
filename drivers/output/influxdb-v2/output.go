@@ -224,6 +224,9 @@ func (o *Output) doLoop() {
 				p.Fields,
 				p.Time,
 			))
+			o.client.WriteAPI.Flush()
+		case err := <-o.client.WriteAPI.Errors():
+			log.Error("influxdbv2 write error: ", err)
 		case <-o.ctx.Done():
 			return
 		}

@@ -14,7 +14,7 @@ import (
 
 func init() {
 	driverCreate.Set(ai_convert.ModelTypeImageGeneration, func(mt ai_convert.ModelType, c *Config) (ai_convert.IConverterDriver, error) {
-		return NewImageGeneration(provider, c.APIKey, c.BaseUrl, mt, 0)
+		return NewImageGeneration(provider, c.APIKey, c.BaseUrl, mt, 10*time.Minute)
 	})
 }
 
@@ -102,6 +102,5 @@ func (i *ImageGeneration) RequestConvert(ctx eoscContext.EoContext, extender map
 }
 
 func (i *ImageGeneration) ResponseConvert(ctx eoscContext.EoContext) error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }

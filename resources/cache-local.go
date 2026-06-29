@@ -199,6 +199,13 @@ func (n *cacheLocal) Del(ctx context.Context, keys ...string) IntResult {
 	return NewIntResult(count, nil)
 }
 
+func (r *cacheLocal) SIsMember(ctx context.Context, key string, member interface{}) BoolResult {
+	return &boolResult{
+		val: false,
+		err: nil,
+	}
+}
+
 func (n *cacheLocal) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) InterfaceResult {
 	return NewInterfaceResult(nil, errors.New("not support"))
 }

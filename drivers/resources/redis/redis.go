@@ -202,6 +202,10 @@ func (r *CmdAble) Run(ctx context.Context, script interface{}, keys []string, ar
 	return resources.NewInterfaceResult(nil, fmt.Errorf("script type error: %T", script))
 }
 
+func (r *CmdAble) SIsMember(ctx context.Context, key string, member interface{}) resources.BoolResult {
+	return r.cmdAble.SIsMember(ctx, key, member)
+}
+
 type TxPipeline struct {
 	CmdAble
 	p redis.Pipeliner

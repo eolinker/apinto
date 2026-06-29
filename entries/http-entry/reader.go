@@ -240,6 +240,9 @@ var (
 			"uri": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 				return ctx.Request().URI().RequestURI(), true
 			}),
+			"count": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+				return 1, true
+			}),
 		},
 
 		"scheme": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {

@@ -22,6 +22,10 @@ var (
 type Empty struct {
 }
 
+func (e *Empty) SIsMember(ctx context.Context, key string, member interface{}) resources.BoolResult {
+	return boolError
+}
+
 func (e *Empty) BuildVector(name string, uni, step time.Duration) (resources.Vector, error) {
 	return nil, ErrorNotInitRedis
 }

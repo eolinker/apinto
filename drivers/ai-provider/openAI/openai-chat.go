@@ -11,6 +11,9 @@ func init() {
 	driverCreate.Set(ai_convert.ModelTypeOpenAIChat, func(mt ai_convert.ModelType, c *Config) (ai_convert.IConverterDriver, error) {
 		return ai_convert.NewOpenAIChat(provider, c.APIKey, c.Base, mt, 0, nil, errorCallback)
 	})
+	driverCreate.Set(ai_convert.ModelTypeChat, func(mt ai_convert.ModelType, c *Config) (ai_convert.IConverterDriver, error) {
+		return ai_convert.NewOpenAIChat(provider, c.APIKey, c.Base, mt, 0, nil, errorCallback)
+	})
 }
 
 func errorCallback(ctx http_service.IHttpContext, body []byte) {

@@ -111,7 +111,7 @@ func (o *OpenAIChat) RequestConvert(ctx eoscContext.EoContext, extender map[stri
 		ctx.SetBalance(o.balanceHandler)
 	}
 	httpContext.Proxy().SetStreamBodyParse(StreamBodyParse)
-	httpContext.Proxy().AppendBodyFinish(o.bodyFinish)
+	//httpContext.Proxy().AppendBodyFinish(o.bodyFinish)
 
 	return nil
 }
@@ -190,55 +190,56 @@ func StreamBodyParse(ctx http_service.IHttpContext, body []byte) []byte {
 	return []byte(builder.String())
 }
 
-func (o *OpenAIChat) bodyFinish(ctx http_service.IHttpContext) {
-	body := ctx.Response().GetBody()
-	defer func() {
-		SetAIProviderStatuses(ctx, GetAIStatus(ctx))
-	}()
-	if o.checkErr != nil && !o.checkErr(ctx, body) {
-		o.errorCallback(ctx, body)
-		return
-	}
-	encoding := ctx.Response().Headers().Get("content-encoding")
-	if encoding != "utf-8" && encoding != "" {
-		tmp, err := encoder.ToUTF8(encoding, body)
-		if err != nil {
-			log.Errorf("convert to utf-8 error: %v, body: %s", err, string(body))
-			return
-		}
-		body = tmp
-	}
-	if context_label.IsStreamRunning(ctx) {
-		usage, err := calculateStreamOutputToken(body, GetAIModel(ctx))
-		if err != nil {
-			log.Errorf("calculate stream output error: %v, body: %s", err, string(body))
-			return
-		}
-		input := usage.Input
-		if input == 0 {
-			input = GetAIModelInputToken(ctx)
-		}
-		output := usage.Output
-		total := usage.Total
-		if total == 0 {
-			total = input + output
-		}
-		SetAIModelInputToken(ctx, input)
-		SetAIModelOutputToken(ctx, output)
-		SetAIModelTotalToken(ctx, total)
-	} else {
-		var resp openai.ChatCompletionResponse
-		err := json.Unmarshal(body, &resp)
-		if err != nil {
-			log.Errorf("unmarshal body error: %v, body: %s", err, string(body))
-			return
-		}
-		SetAIModelInputToken(ctx, resp.Usage.PromptTokens)
-		SetAIModelOutputToken(ctx, resp.Usage.CompletionTokens)
-		SetAIModelTotalToken(ctx, resp.Usage.TotalTokens)
-	}
-	SetAIStatusNormal(ctx)
-}
+//
+//func (o *OpenAIChat) bodyFinish(ctx http_service.IHttpContext) {
+//	body := ctx.Response().GetBody()
+//	defer func() {
+//		SetAIProviderStatuses(ctx, GetAIStatus(ctx))
+//	}()
+//	if o.checkErr != nil && !o.checkErr(ctx, body) {
+//		o.errorCallback(ctx, body)
+//		return
+//	}
+//	encoding := ctx.Response().Headers().Get("content-encoding")
+//	if encoding != "utf-8" && encoding != "" {
+//		tmp, err := encoder.ToUTF8(encoding, body)
+//		if err != nil {
+//			log.Errorf("convert to utf-8 error: %v, body: %s", err, string(body))
+//			return
+//		}
+//		body = tmp
+//	}
+//	if context_label.IsStreamRunning(ctx) {
+//		usage, err := calculateStreamOutputToken(body, GetAIModel(ctx))
+//		if err != nil {
+//			log.Errorf("calculate stream output error: %v, body: %s", err, string(body))
+//			return
+//		}
+//		input := usage.Input
+//		if input == 0 {
+//			input = GetAIModelInputToken(ctx)
+//		}
+//		output := usage.Output
+//		total := usage.Total
+//		if total == 0 {
+//			total = input + output
+//		}
+//		SetAIModelInputToken(ctx, input)
+//		SetAIModelOutputToken(ctx, output)
+//		SetAIModelTotalToken(ctx, total)
+//	} else {
+//		var resp openai.ChatCompletionResponse
+//		err := json.Unmarshal(body, &resp)
+//		if err != nil {
+//			log.Errorf("unmarshal body error: %v, body: %s", err, string(body))
+//			return
+//		}
+//		SetAIModelInputToken(ctx, resp.Usage.PromptTokens)
+//		SetAIModelOutputToken(ctx, resp.Usage.CompletionTokens)
+//		SetAIModelTotalToken(ctx, resp.Usage.TotalTokens)
+//	}
+//	SetAIStatusNormal(ctx)
+//}
 
 type TokenUsage struct {
 	Input  int

@@ -14,6 +14,7 @@ import (
 	_ "github.com/eolinker/apinto/drivers/ai-provider/fakegpt"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/fireworks"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/google"
+	_ "github.com/eolinker/apinto/drivers/ai-provider/google-generative-ai"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/groq"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/hugging-face"
 	_ "github.com/eolinker/apinto/drivers/ai-provider/hunyuan"

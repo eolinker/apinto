@@ -1,15 +1,13 @@
-package openAI
+package google
 
 import (
 	"fmt"
 	"net/url"
 )
 
-// Config represents the configuration for OpenAI API.
-// It includes the necessary fields for authentication and base URL configuration.
 type Config struct {
-	APIKey string `json:"api_key"`  // APIKey is the authentication key for accessing OpenAI API.
-	Base   string `json:"base_url"` // Base is the base URL for OpenAI API. It can be customized if needed.
+	APIKey  string `json:"api_key"`
+	BaseUrl string `json:"base_url"`
 }
 
 // checkConfig validates the provided configuration.
@@ -26,10 +24,8 @@ func checkConfig(conf *Config) error {
 	if conf.APIKey == "" {
 		return fmt.Errorf("api_key is required")
 	}
-
-	// Validate the Base URL if it is provided.
-	if conf.Base != "" {
-		u, err := url.Parse(conf.Base)
+	if conf.BaseUrl != "" {
+		u, err := url.Parse(conf.BaseUrl)
 		if err != nil {
 			// Return an error if the Base URL cannot be parsed.
 			return fmt.Errorf("base url is invalid")
@@ -40,6 +36,5 @@ func checkConfig(conf *Config) error {
 		}
 	}
 
-	// Return the validated configuration.
 	return nil
 }
