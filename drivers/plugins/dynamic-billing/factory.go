@@ -1,10 +1,10 @@
 package dynamic_billing
 
 import (
+	"github.com/eolinker/apinto/price-calcular"
 	"sync"
 
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/drivers/pricing-policy/manager"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/common/bean"
 )
@@ -14,7 +14,7 @@ const (
 )
 
 var (
-	policyManager manager.IManager
+	policyManager price_calcular.IManager
 	once          sync.Once
 )
 

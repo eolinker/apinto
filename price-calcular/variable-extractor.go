@@ -1,18 +1,75 @@
-package pricing_policy
+package price_calcular
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
-	context_label "github.com/eolinker/apinto/utils/context-label"
+	"github.com/eolinker/apinto/common/context-label"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/Knetic/govaluate"
+	"github.com/eolinker/eosc/log"
 
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/tidwall/gjson"
 )
+
+type Variables map[string]*Variable
+
+func (vs Variables) Check() error {
+	for name, v := range vs {
+		if err := v.Check(name); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type Variable struct {
+	Source string `json:"source" label:"来源" enum:"request_body,response_body,response_status,expression" default:"response_body"`
+	Type   string `json:"type" label:"类型" enum:"string,integer,float,boolean,array" default:"integer"`
+	Path   string `json:"path" label:"Json Path 或表达式（source 为 expression 时填写算术表达式）"`
+}
+
+func (v *Variable) Check(name string) error {
+	if name == "" {
+		return fmt.Errorf("variable name cannot be empty")
+	}
+	switch v.Source {
+	case "request_body", "response_body":
+		if v.Path == "" {
+			return fmt.Errorf("path cannot be empty for v %s with source %s", name, v.Source)
+		}
+	case "response_status":
+		// 状态码提取器不需要配置 json path
+	case "expression":
+		if v.Path == "" {
+			return fmt.Errorf("expression cannot be empty for v %s with source expression", name)
+		}
+		// 提前校验表达式语法
+		if _, err := govaluate.NewEvaluableExpression(preProcessExpression(v.Path)); err != nil {
+			return fmt.Errorf("invalid expression '%s' for v %s: %w", v.Path, name, err)
+		}
+	default:
+		return fmt.Errorf("unsupported source %s for v %s", v.Source, name)
+	}
+
+	switch v.Type {
+	case "string", "integer", "float", "boolean", "array":
+		// 合法的目标类型
+	default:
+		return fmt.Errorf("unsupported type %s for v %s", v.Type, name)
+	}
+	return nil
+}
+
+type IExtractor interface {
+	ExtractAll(ctx eoscContext.EoContext) map[string]interface{}
+	ExtractAllFromChunk(ctx eoscContext.EoContext, chunk []byte) map[string]interface{}
+}
 
 // IVariableExtractor 定义了从普通请求上下文中提取自定义变量的统一接口。
 type IVariableExtractor interface {
@@ -171,6 +228,46 @@ func (e *StatusExtractor) Extract(ctx eoscContext.EoContext) (interface{}, error
 	return convertRawType(statusCode, e.varType)
 }
 
+// ExpressionExtractor 负责基于其它已提取出的变量，通过算术表达式（govaluate）计算派生变量。
+// 例如 total_token = input_token + output_token。
+// 它不直接从上下文提取，而是依赖 VariablesExtractor 在常规变量提取完成后调用。
+type ExpressionExtractor struct {
+	expr    *govaluate.EvaluableExpression // 预编译后的算术表达式
+	varType string                         // 目标类型
+}
+
+// NewExpressionExtractor 实例化一个表达式派生变量提取器。
+func NewExpressionExtractor(expression, varType string) (*ExpressionExtractor, error) {
+	expr, err := govaluate.NewEvaluableExpression(preProcessExpression(expression))
+	if err != nil {
+		return nil, err
+	}
+	return &ExpressionExtractor{expr: expr, varType: varType}, nil
+}
+
+// ErrDependencyNotReady 表示表达式依赖的某个变量尚未被提取到（常见于流式早期帧），
+// 调用方应据此跳过本次输出，而非视为真正的错误。
+var ErrDependencyNotReady = errors.New("dependency v not yet extracted")
+
+// EvaluateFromVars 基于已提取的变量集求值表达式，并转换为目标类型。
+// 当表达式引用的任一变量在 vars 中尚未提取到时，返回 ErrDependencyNotReady 以跳过本次求值，
+// 避免在流式场景中因依赖变量还未出现而提前写出错误（如 0）的派生值。
+func (e *ExpressionExtractor) EvaluateFromVars(vars map[string]interface{}) (interface{}, error) {
+	params := make(map[string]interface{}, len(e.expr.Vars()))
+	for _, v := range e.expr.Vars() {
+		val, ok := vars[v]
+		if !ok {
+			return nil, ErrDependencyNotReady
+		}
+		params[v] = val
+	}
+	result, err := e.expr.Evaluate(params)
+	if err != nil {
+		return nil, err
+	}
+	return convertRawType(result, e.varType)
+}
+
 // convertGjsonType 将 gjson.Result 结果转换为配置所需的目标强类型。
 func convertGjsonType(res gjson.Result, targetType string) (interface{}, error) {
 	switch targetType {
@@ -257,37 +354,64 @@ func convertRawType(val interface{}, targetType string) (interface{}, error) {
 
 // VariablesExtractor 是一个聚合提取器，内部包含配置中指定的所有自定义变量的提取逻辑。
 type VariablesExtractor struct {
-	extractors map[string]IVariableExtractor // 变量名称与具体提取器的映射表
+	extractors     map[string]IVariableExtractor   // 变量名称与具体提取器的映射表
+	exprExtractors map[string]*ExpressionExtractor // 表达式派生变量（依赖其它变量计算）
 }
 
 // NewVariablesExtractor 根据配置中的变量定义字典，初始化一个多变量提取调度器。
-func NewVariablesExtractor(vars map[string]*Variable) (*VariablesExtractor, error) {
+func NewVariablesExtractor(vars map[string]*Variable) (IExtractor, error) {
+	if len(vars) < 1 {
+		return nil, nil
+	}
 	extractors := make(map[string]IVariableExtractor, len(vars))
+	exprExtractors := make(map[string]*ExpressionExtractor)
 	for name, v := range vars {
 		switch v.Source {
 		case "request_body":
 			ex, err := NewBodyExtractor(v.Path, true, v.Type)
 			if err != nil {
-				return nil, fmt.Errorf("variable %s error: %w", name, err)
+				return nil, fmt.Errorf("v %s error: %w", name, err)
 			}
 			extractors[name] = ex
 		case "response_body":
 			ex, err := NewBodyExtractor(v.Path, false, v.Type)
 			if err != nil {
-				return nil, fmt.Errorf("variable %s error: %w", name, err)
+				return nil, fmt.Errorf("v %s error: %w", name, err)
 			}
 			extractors[name] = ex
 		case "response_status":
 			extractors[name] = NewStatusExtractor(v.Type)
+		case "expression":
+			ex, err := NewExpressionExtractor(v.Path, v.Type)
+			if err != nil {
+				return nil, fmt.Errorf("v %s error: %w", name, err)
+			}
+			exprExtractors[name] = ex
 		default:
-			return nil, fmt.Errorf("unsupported source %s for variable %s", v.Source, name)
+			return nil, fmt.Errorf("unsupported source %s for v %s", v.Source, name)
 		}
 	}
-	return &VariablesExtractor{extractors: extractors}, nil
+	return &VariablesExtractor{extractors: extractors, exprExtractors: exprExtractors}, nil
+}
+
+// evalExpressions 基于已提取的常规变量集，计算所有表达式派生变量并写回结果集与上下文。
+func (ve *VariablesExtractor) evalExpressions(ctx eoscContext.EoContext, res map[string]interface{}) {
+	for name, ex := range ve.exprExtractors {
+		val, err := ex.EvaluateFromVars(res)
+		if err != nil {
+			// 依赖未就绪属于正常情况（如流式早期帧），静默跳过不输出
+			if !errors.Is(err, ErrDependencyNotReady) {
+				log.Errorf("expression v extractor error for %s: %v", name, err)
+			}
+			continue
+		}
+		res[name] = val
+		context_label.SetPriceVariable(ctx, name, val)
+	}
 }
 
 // ExtractAll 驱动执行所有已配置的提取器，返回包含所有提取成功变量的 map 数据集。
-func (ve *VariablesExtractor) ExtractAll(ctx eoscContext.EoContext, extenderVariable ...string) map[string]interface{} {
+func (ve *VariablesExtractor) ExtractAll(ctx eoscContext.EoContext) map[string]interface{} {
 	res := make(map[string]interface{}, len(ve.extractors))
 	for name, ex := range ve.extractors {
 		val, err := ex.Extract(ctx)
@@ -296,13 +420,8 @@ func (ve *VariablesExtractor) ExtractAll(ctx eoscContext.EoContext, extenderVari
 			context_label.SetPriceVariable(ctx, name, val)
 		}
 	}
-	for _, name := range extenderVariable {
-		_, ok := res[name]
-		if !ok {
-			res[name] = 0
-			context_label.SetPriceVariable(ctx, name, 0)
-		}
-	}
+	// 常规变量提取完成后，再计算依赖它们的表达式派生变量
+	ve.evalExpressions(ctx, res)
 	return res
 }
 
@@ -315,7 +434,31 @@ func (ve *VariablesExtractor) ExtractAllFromChunk(ctx eoscContext.EoContext, chu
 			if err == nil {
 				res[name] = val
 				context_label.SetPriceVariable(ctx, name, val)
+			} else {
+				log.Errorf("stream v extractor error for %s: %v", name, err)
 			}
+		}
+	}
+	// 基于本 chunk 提取出的常规变量与上下文已累积的变量，计算表达式派生变量
+	if len(ve.exprExtractors) > 0 {
+		merged := context_label.GetPriceVariables(ctx)
+		if merged == nil {
+			merged = make(map[string]interface{}, len(res))
+		}
+		for k, v := range res {
+			merged[k] = v
+		}
+		for name, ex := range ve.exprExtractors {
+			val, err := ex.EvaluateFromVars(merged)
+			if err != nil {
+				// 依赖未就绪属于正常情况（如流式早期帧），静默跳过不输出
+				if !errors.Is(err, ErrDependencyNotReady) {
+					log.Errorf("expression v extractor error for %s: %v", name, err)
+				}
+				continue
+			}
+			res[name] = val
+			context_label.SetPriceVariable(ctx, name, val)
 		}
 	}
 	return res

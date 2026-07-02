@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	ai_convert "github.com/eolinker/apinto/ai-convert"
-	context_label "github.com/eolinker/apinto/utils/context-label"
+	context_label2 "github.com/eolinker/apinto/common/context-label"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"net/url"
@@ -80,8 +80,8 @@ func (v *VideoTaskCommit) RequestConvert(ctx eoscContext.EoContext, extender map
 	if v.balanceHandler != nil {
 		ctx.SetBalance(v.balanceHandler)
 	}
-	context_label.SetBillingMode(ctx, context_label.BillingModeTaskCreate)
-	context_label.SetTaskIDSetFunc(ctx, func(ctx eoscContext.EoContext) error {
+	context_label2.SetBillingMode(ctx, context_label2.BillingModeTaskCreate)
+	context_label2.SetTaskIDSetFunc(ctx, func(ctx eoscContext.EoContext) error {
 		httpContext, err := http_service.Assert(ctx)
 		if err != nil {
 			return err
@@ -92,7 +92,7 @@ func (v *VideoTaskCommit) RequestConvert(ctx eoscContext.EoContext, extender map
 		if err != nil {
 			return err
 		}
-		context_label.SetTaskID(ctx, resp.Id)
+		context_label2.SetTaskID(ctx, resp.Id)
 		return nil
 	})
 	return nil
@@ -151,14 +151,14 @@ func (v *VideoTaskQuery) RequestConvert(ctx eoscContext.EoContext, extender map[
 	if err != nil {
 		return err
 	}
-	taskId := context_label.GetTaskID(ctx)
+	taskId := context_label2.GetTaskID(ctx)
 	httpContext.Proxy().Header().SetHeader("Authorization", "Bearer "+v.apikey)
 	httpContext.Proxy().URI().SetPath(fmt.Sprintf("%s/%s", v.path, taskId))
 	if v.balanceHandler != nil {
 		ctx.SetBalance(v.balanceHandler)
 	}
-	context_label.SetBillingMode(ctx, context_label.BillingModeTaskQuery)
-	context_label.SetTaskStatusParseFunc(ctx, func(ctx eoscContext.EoContext) (string, error) {
+	context_label2.SetBillingMode(ctx, context_label2.BillingModeTaskQuery)
+	context_label2.SetTaskStatusParseFunc(ctx, func(ctx eoscContext.EoContext) (string, error) {
 		httpContext, err := http_service.Assert(ctx)
 		if err != nil {
 			return "", err
@@ -171,13 +171,13 @@ func (v *VideoTaskQuery) RequestConvert(ctx eoscContext.EoContext, extender map[
 		}
 		switch resp.Status {
 		case "succeeded":
-			return context_label.TaskStatusSuccess, nil
+			return context_label2.TaskStatusSuccess, nil
 		case "failed":
-			return context_label.TaskStatusFailed, nil
+			return context_label2.TaskStatusFailed, nil
 		case "running":
-			return context_label.TaskStatusRunning, nil
+			return context_label2.TaskStatusRunning, nil
 		}
-		return context_label.TaskStatusRunning, nil
+		return context_label2.TaskStatusRunning, nil
 	})
 	return nil
 }

@@ -1,8 +1,8 @@
 package access_relation_redis
 
 import (
+	"github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/drivers"
-	context_label "github.com/eolinker/apinto/utils/context-label"
 	"github.com/eolinker/apinto/utils/response"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"

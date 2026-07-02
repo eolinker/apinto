@@ -9,13 +9,19 @@ import (
 )
 
 type Config struct {
-	Url       string               `json:"url" yaml:"url" label:"请求地址"`
-	Method    string               `json:"method" label:"请求方法" enum:"POST,PUT" default:"POST"`
-	Scopes    []string             `json:"scopes" label:"作用域"`
-	Headers   map[string]string    `json:"headers" yaml:"headers" label:"请求头"`
-	Labels    map[string]string    `json:"labels" label:"标签"`
-	Type      string               `json:"type" yaml:"type" enum:"json,line" label:"输出格式"`
-	Formatter eosc.FormatterConfig `json:"formatter" yaml:"formatter" label:"格式化配置"`
+	Url           string               `json:"url" yaml:"url" label:"请求地址"`
+	Method        string               `json:"method" label:"请求方法" enum:"POST,PUT" default:"POST"`
+	Scopes        []string             `json:"scopes" label:"作用域"`
+	Headers       map[string]string    `json:"headers" yaml:"headers" label:"请求头"`
+	Labels        map[string]string    `json:"labels" label:"标签"`
+	Type          string               `json:"type" yaml:"type" enum:"json,line" label:"输出格式"`
+	ContentResize []ContentResize      `json:"content_resize" yaml:"content_resize" label:"内容截断配置" switch:"type===json"`
+	Formatter     eosc.FormatterConfig `json:"formatter" yaml:"formatter" label:"格式化配置"`
+}
+
+type ContentResize struct {
+	Size   int    `json:"size" label:"内容截断大小" description:"单位：字节，超过该长度的字段将被截断，0 表示不限制" minimum:"0"`
+	Suffix string `json:"suffix" label:"匹配字段名后缀" description:"字段名以此后缀结尾时应用截断，例如 body 可匹配 request_body/response_body 等"`
 }
 
 func check(conf interface{}) (*Config, error) {

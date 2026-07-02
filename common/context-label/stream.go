@@ -2,6 +2,7 @@ package context_label
 
 import (
 	"github.com/eolinker/eosc/eocontext"
+	http_service "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 const (
@@ -48,4 +49,29 @@ func SetDisableStream(ctx eocontext.EoContext, disable bool) {
 func IsDisableStream(ctx eocontext.EoContext) bool {
 	value := ctx.GetLabel(LabelDisableStream)
 	return value == "true"
+}
+
+const (
+	LabelResponseChunkFunc = "response_chunk_func"
+)
+
+type ResponseChunkFunc = func(ctx eocontext.EoContext) ([]byte, error)
+
+func SetResponseChunkFunc(ctx eocontext.EoContext, fn ResponseChunkFunc) {
+	ctx.WithValue(LabelResponseChunkFunc, fn)
+}
+
+func GetResponseChunkFunc(ctx http_service.IHttpContext) ResponseChunkFunc {
+	if ctx == nil {
+		return nil
+	}
+	value := ctx.Value(LabelResponseChunkFunc)
+	if value == nil {
+		return nil
+	}
+	finishFunc, ok := value.(ResponseChunkFunc)
+	if !ok {
+		return nil
+	}
+	return finishFunc
 }

@@ -1,37 +1,47 @@
-package pricing_policy
+package price_calcular
 
 import (
 	"errors"
 	"fmt"
-	context_label "github.com/eolinker/apinto/utils/context-label"
-	"regexp"
+	context_label "github.com/eolinker/apinto/common/context-label"
 	"strconv"
 	"strings"
 
 	"github.com/Knetic/govaluate"
-	eoscContext "github.com/eolinker/eosc/eocontext"
+	"github.com/eolinker/eosc/eocontext"
 )
 
-// exprRegex 正则表达式用于匹配类似 #cost.per_second, #sale.input_token 价格属性前缀。
-// 在传入 govaluate 前需要将前缀及点 "#cost." 整体替换为合法的变量命名（如 "cost_"），使其兼容 govaluate 词法。
-var exprRegex = regexp.MustCompile(`#([a-zA-Z0-9]+)\.([a-zA-Z0-9_]+)`)
+const (
+	LabelICalculator = "i_calculator"
+)
 
-// preProcessExpression 将表达式中的 "#prefix.field" 替换为 "prefix_field" 格式，使其兼容 govaluate 词法。
-func preProcessExpression(expr string) string {
-	return exprRegex.ReplaceAllString(expr, "${1}_${2}")
+func SetICalculator(ctx eocontext.EoContext, value ICalculator) {
+	ctx.WithValue(LabelICalculator, value)
+}
+
+func GetICalculator(ctx eocontext.EoContext) ICalculator {
+	v, ok := ctx.Value(LabelICalculator).(ICalculator)
+	if !ok {
+		return nil
+	}
+	return v
+}
+
+type ICalculator interface {
+	Currency() string
+	VariablesExtractor() IExtractor
+	Calculate(ctx eocontext.EoContext, enableBalance bool, pricingData *PricingData) (*CalculateResult, error)
+	CalculateFromChunk(ctx eocontext.EoContext, enableBalance bool, chunk []byte, pricingData *PricingData) (*CalculateResult, error)
 }
 
 // ProcessedRule 描述一个经过预编译及性能优化的高级定价规则实例。
 type ProcessedRule struct {
-	id              string                         // 规则 ID
-	name            string                         // 规则名称
-	conditions      *Condition                     // 规则的递归触发条件树
-	costOrgExpr     string                         // 进货价计算表达式
-	saleOrgExpr     string                         // 销售价计算表达式
-	officialOrgExpr string                         // 官方价计算表达式
-	costExpr        *govaluate.EvaluableExpression // 预编译后的进货价（成本）计算表达式
-	saleExpr        *govaluate.EvaluableExpression // 预编译后的销售价（计费）计算表达式
-	officialExpr    *govaluate.EvaluableExpression // 预编译后的官方参考价计算表达式
+	id           string      // 规则 ID
+	name         string      // 规则名称
+	conditions   *Condition  // 规则的递归触发条件树
+	costExpr     IExpression // 预编译后的进货价（成本）计算表达式
+	saleExpr     IExpression // 预编译后的销售价（计费）计算表达式
+	officialExpr IExpression // 预编译后的官方参考价计算表达式
 }
 
 // CalculateResult 代表高级规则计算后输出的价格评估结果。
@@ -43,27 +53,26 @@ type CalculateResult struct {
 
 // Calculator 高性能定价计算器，其计算所依赖的全部上下文计量属性均通过配置的变量动态提取。
 type Calculator struct {
-	currency           string              // 扣减所采用的的货币类型（USD, CNY）
-	variablesExtractor *VariablesExtractor // 该计算器关联的上下文变量提取调度器
-	rules              []*ProcessedRule    // 按顺序配置的 ProcessedRule 定价规则链
+	currency           string           // 扣减所采用的的货币类型（USD, CNY）
+	variablesExtractor IExtractor       // 该计算器关联的上下文变量提取调度器
+	rules              []*ProcessedRule // 按顺序配置的 ProcessedRule 定价规则链
 }
 
 // NewCalculator 根据传入的基础 Config 数据，初始化并预编译一套高性能的定价计算器。
-func NewCalculator(conf *Config) (*Calculator, error) {
+func NewCalculator(currency string, variables Variables, rules []*Rule) (ICalculator, error) {
 	// 初始化自定义变量提取器
-	extractor, err := NewVariablesExtractor(conf.ContextVariables)
+	extractor, err := NewVariablesExtractor(variables)
 	if err != nil {
 		return nil, fmt.Errorf("create variables extractor error: %w", err)
 	}
 
-	processedRules := make([]*ProcessedRule, 0, len(conf.AdvancedRules))
-	for _, rule := range conf.AdvancedRules {
-		var costExpr, saleExpr, officialExpr *govaluate.EvaluableExpression
+	processedRules := make([]*ProcessedRule, 0, len(rules))
+	for _, rule := range rules {
+		var costExpr, saleExpr, officialExpr IExpression
 
 		// 预编译进货价计算公式
 		if rule.CostExpression != "" {
-			processed := preProcessExpression(rule.CostExpression)
-			expr, err := govaluate.NewEvaluableExpression(processed)
+			expr, err := NewExpression(rule.CostExpression)
 			if err != nil {
 				return nil, fmt.Errorf("compile cost_expression '%s' error: %w", rule.CostExpression, err)
 			}
@@ -72,8 +81,7 @@ func NewCalculator(conf *Config) (*Calculator, error) {
 
 		// 预编译销售价计算公式
 		if rule.SaleExpression != "" {
-			processed := preProcessExpression(rule.SaleExpression)
-			expr, err := govaluate.NewEvaluableExpression(processed)
+			expr, err := NewExpression(rule.SaleExpression)
 			if err != nil {
 				return nil, fmt.Errorf("compile sale_expression '%s' error: %w", rule.SaleExpression, err)
 			}
@@ -82,8 +90,7 @@ func NewCalculator(conf *Config) (*Calculator, error) {
 
 		// 预编译官方价计算公式
 		if rule.OfficialExpression != "" {
-			processed := preProcessExpression(rule.OfficialExpression)
-			expr, err := govaluate.NewEvaluableExpression(processed)
+			expr, err := NewExpression(rule.SaleExpression)
 			if err != nil {
 				return nil, fmt.Errorf("compile official_expression '%s' error: %w", rule.OfficialExpression, err)
 			}
@@ -91,20 +98,17 @@ func NewCalculator(conf *Config) (*Calculator, error) {
 		}
 
 		processedRules = append(processedRules, &ProcessedRule{
-			id:              rule.ID,
-			name:            rule.Name,
-			conditions:      rule.Conditions,
-			costOrgExpr:     rule.CostExpression,
-			saleOrgExpr:     rule.SaleExpression,
-			officialOrgExpr: rule.OfficialExpression,
-			costExpr:        costExpr,
-			saleExpr:        saleExpr,
-			officialExpr:    officialExpr,
+			id:           rule.ID,
+			name:         rule.Name,
+			conditions:   rule.Conditions,
+			costExpr:     costExpr,
+			saleExpr:     saleExpr,
+			officialExpr: officialExpr,
 		})
 	}
 
 	return &Calculator{
-		currency:           conf.Currency,
+		currency:           currency,
 		variablesExtractor: extractor,
 		rules:              processedRules,
 	}, nil
@@ -116,15 +120,22 @@ func (c *Calculator) Currency() string {
 }
 
 // VariablesExtractor 获取关联的变量提取调度器实例。
-func (c *Calculator) VariablesExtractor() *VariablesExtractor {
+func (c *Calculator) VariablesExtractor() IExtractor {
 	return c.variablesExtractor
 }
 
 // Calculate 根据 EoContext 进行自定义属性抽取，结合从 Redis 获取的最新的资源定价内容执行公式计费。
-func (c *Calculator) Calculate(ctx eoscContext.EoContext, enableBalance bool, pricingData *PricingData, extendKeys ...string) (*CalculateResult, error) {
-
+func (c *Calculator) Calculate(ctx eocontext.EoContext, enableBalance bool, pricingData *PricingData) (*CalculateResult, error) {
+	extractor := c.VariablesExtractor()
+	if extractor == nil {
+		calculator := GetICalculator(ctx)
+		if calculator == nil {
+			return nil, fmt.Errorf("calculator is nil")
+		}
+		extractor = calculator.VariablesExtractor()
+	}
 	// 动态抓取当前 EoContext 下的所有已配置变量集
-	vars := c.variablesExtractor.ExtractAll(ctx, extendKeys...)
+	vars := extractor.ExtractAll(ctx)
 	if len(vars) < 1 {
 		return nil, errors.New("no context variables extracted")
 	}
@@ -160,9 +171,9 @@ func (c *Calculator) Calculate(ctx eoscContext.EoContext, enableBalance bool, pr
 	}
 
 	context_label.SetChargeRule(ctx, matchedRule.id)
-	context_label.SetExprCost(ctx, matchedRule.costOrgExpr)
-	context_label.SetExprSale(ctx, matchedRule.saleOrgExpr)
-	context_label.SetExprOfficial(ctx, matchedRule.officialOrgExpr)
+	context_label.SetExprCost(ctx, matchedRule.costExpr.String())
+	context_label.SetExprSale(ctx, matchedRule.costExpr.String())
+	context_label.SetExprOfficial(ctx, matchedRule.costExpr.String())
 	context_label.SetPriceMatchRule(ctx, matchedRule)
 	context_label.SetPriceMatchCondition(ctx, matchedRule.conditions)
 	context_label.SetPriceCurrency(ctx, c.Currency())
@@ -174,12 +185,20 @@ func (c *Calculator) Calculate(ctx eoscContext.EoContext, enableBalance bool, pr
 }
 
 // CalculateFromChunk 根据流式的单个响应原始字节块进行提取转换，结合从 Redis 获取的最新的资源定价内容执行公式计费。
-func (c *Calculator) CalculateFromChunk(ctx eoscContext.EoContext, enableBalance bool, chunk []byte, pricingData *PricingData) (*CalculateResult, error) {
+func (c *Calculator) CalculateFromChunk(ctx eocontext.EoContext, enableBalance bool, chunk []byte, pricingData *PricingData) (*CalculateResult, error) {
+	extractor := c.VariablesExtractor()
+	if extractor == nil {
+		calculator := GetICalculator(ctx)
+		if calculator == nil {
+			return nil, fmt.Errorf("calculator is nil")
+		}
+		extractor = calculator.VariablesExtractor()
+	}
 
 	// 从流式 Chunk 里解包和转换出最新的计量参数变量集
-	newVars := c.variablesExtractor.ExtractAllFromChunk(ctx, chunk)
+	newVars := extractor.ExtractAllFromChunk(ctx, chunk)
 	if len(newVars) < 1 {
-		return &CalculateResult{}, nil
+		return nil, nil
 	}
 	vars := context_label.GetPriceVariables(ctx)
 	if vars == nil {
@@ -190,7 +209,7 @@ func (c *Calculator) CalculateFromChunk(ctx eoscContext.EoContext, enableBalance
 	}
 	context_label.SetPriceVariables(ctx, vars)
 	if !enableBalance {
-		return &CalculateResult{}, nil
+		return nil, nil
 	}
 	if pricingData == nil {
 		return nil, errors.New("redis pricing data is required but got nil")
@@ -209,9 +228,9 @@ func (c *Calculator) CalculateFromChunk(ctx eoscContext.EoContext, enableBalance
 		}
 		mr = matchedRule.(*ProcessedRule)
 		context_label.SetChargeRule(ctx, mr.id)
-		context_label.SetExprCost(ctx, mr.costOrgExpr)
-		context_label.SetExprSale(ctx, mr.saleOrgExpr)
-		context_label.SetExprOfficial(ctx, mr.officialOrgExpr)
+		context_label.SetExprCost(ctx, mr.costExpr.String())
+		context_label.SetExprSale(ctx, mr.saleExpr.String())
+		context_label.SetExprOfficial(ctx, mr.officialExpr.String())
 		context_label.SetPriceMatchCondition(ctx, mr.conditions)
 		context_label.SetPriceMatchRule(ctx, matchedRule)
 	} else {
@@ -226,7 +245,7 @@ func (c *Calculator) CalculateFromChunk(ctx eoscContext.EoContext, enableBalance
 }
 
 // 生成计费参数
-func (c *Calculator) generateParams(ctx eoscContext.EoContext, vars map[string]interface{}, pricingData *PricingData, matchedRule *ProcessedRule) (map[string]interface{}, error) {
+func (c *Calculator) generateParams(ctx eocontext.EoContext, vars map[string]interface{}, pricingData *PricingData, matchedRule *ProcessedRule) (map[string]interface{}, error) {
 	var plan *PricePlan
 	if matchedRule.id != "" {
 		// 从缓存中获取对应的价格包
@@ -260,13 +279,13 @@ func (c *Calculator) generateParams(ctx eoscContext.EoContext, vars map[string]i
 // 执行高级规则链条的条件评估匹配，绑定价格并进行表达式最终计费计算。
 func (c *Calculator) CalculateFromVariables(params map[string]interface{}, matchedRule *ProcessedRule) (*CalculateResult, error) {
 	// 计算成本价
-	costPrice, err := evaluateExpression(matchedRule.costExpr, params)
+	costPrice, err := evaluateExpression(matchedRule.costExpr.Expr(), params)
 	if err != nil {
 		return nil, fmt.Errorf("evaluate cost_expression failed: %w", err)
 	}
 
 	// 计算销售价
-	salePrice, err := evaluateExpression(matchedRule.saleExpr, params)
+	salePrice, err := evaluateExpression(matchedRule.saleExpr.Expr(), params)
 	if err != nil {
 		return nil, fmt.Errorf("evaluate sale_expression failed: %w", err)
 	}
@@ -274,7 +293,7 @@ func (c *Calculator) CalculateFromVariables(params map[string]interface{}, match
 	// 6. 计算官方建议售价
 	officialPrice := salePrice
 	if matchedRule.officialExpr != nil {
-		op, err := evaluateExpression(matchedRule.officialExpr, params)
+		op, err := evaluateExpression(matchedRule.officialExpr.Expr(), params)
 		if err == nil {
 			officialPrice = op
 		}
@@ -291,6 +310,11 @@ func (c *Calculator) CalculateFromVariables(params map[string]interface{}, match
 func evaluateExpression(expr *govaluate.EvaluableExpression, params map[string]interface{}) (float64, error) {
 	if expr == nil {
 		return 0, nil
+	}
+	for _, v := range expr.Vars() {
+		if _, ok := params[v]; !ok {
+			params[v] = 0
+		}
 	}
 	result, err := expr.Evaluate(params)
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	ai_proxy "github.com/eolinker/apinto/drivers/plugins/ai-proxy"
 	"github.com/eolinker/apinto/drivers/plugins/app"
 	auto_redirect "github.com/eolinker/apinto/drivers/plugins/auto-redirect"
+	pricing_policy_base "github.com/eolinker/apinto/drivers/plugins/pricing-policy-base"
 	variable_relation "github.com/eolinker/apinto/drivers/plugins/variable-relation"
 
 	// "github.com/eolinker/apinto/drivers/plugins/billing"
@@ -144,6 +145,7 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	// billing.Register(extenderRegister)
 
 	// 动态计费插件
+	pricing_policy_base.Register(extenderRegister)
 	dynamic_billing.Register(extenderRegister)
 
 	script_handler.Register(extenderRegister)

@@ -2,64 +2,18 @@ package pricing_policy
 
 import (
 	"fmt"
-
-	"github.com/Knetic/govaluate"
 	"github.com/eolinker/apinto/drivers"
+	"github.com/eolinker/apinto/price-calcular"
 	"github.com/eolinker/eosc"
 )
 
 type Config struct {
-	Currency         string               `json:"currency" label:"货币类型" enum:"USD,CNY",default:"USD"`
-	ContextVariables map[string]*Variable `json:"context_variables" label:"上下文变量"`
-	AdvancedRules    []*Rule              `json:"advanced_rules" label:"高级规则,有顺序"`
-}
-
-type Variable struct {
-	Source string `json:"source" label:"来源" enum:"request_body,response_body,response_status" default:"response_body"`
-	Type   string `json:"type" label:"类型" enum:"string,integer,float,boolean,array" default:"integer"`
-	Path   string `json:"path" label:"Json Path"`
-}
-
-type Rule struct {
-	ID                 string            `json:"id" label:"规则ID"`
-	Name               string            `json:"name" label:"规则名称"`
-	Conditions         *Condition        `json:"conditions" label:"条件"`
-	Price              map[string]string `json:"price" label:"价格"`
-	CostExpression     string            `json:"cost_expression" label:"进货价计算表达式"`
-	SaleExpression     string            `json:"sale_expression" label:"销售价计算表达式"`
-	OfficialExpression string            `json:"official_expression" label:"官方价计算表达式"`
-}
-
-type Condition struct {
-	AllOf []*BasicRule `json:"all_of" label:"满足全部条件，只能二选一"`
-	OneOf []*BasicRule `json:"one_of" label:"满足任意条件，只能二选一"`
-}
-
-type BasicRule struct {
-	Key   string `json:"key" label:"变量key"`
-	Op    string `json:"op" label:"运算符" enum:">,>=,==,<,<=,!=,in"`
-	Value string `json:"value" label:"值"`
-	Type  string `json:"type" label:"类型" enum:"string,integer,float,boolean"`
+	Currency         string                   `json:"currency" label:"货币类型" enum:"USD,CNY",default:"USD"`
+	ContextVariables price_calcular.Variables `json:"context_variables" label:"上下文变量"`
+	AdvancedRules    []*price_calcular.Rule   `json:"advanced_rules" label:"高级规则,有顺序"`
 }
 
 // PricingData 描述了从 Redis 缓存中获取的动态资源定价内容的数据结构
-type PricingData struct {
-	BasicInfo *BasicInfo            `json:"basic_info"`
-	Strategy  map[string]*PricePlan `json:"strategy"`
-}
-
-type BasicInfo struct {
-	Version         string `json:"version"`
-	Rely            string `json:"rely"`
-	ResourceGroupID string `json:"resource_group_id"`
-	TenantID        string `json:"tenant_id"`
-}
-
-type PricePlan struct {
-	Cost     map[string]float64 `json:"cost"`
-	Sale     map[string]float64 `json:"sale"`
-	Official map[string]float64 `json:"official"`
-}
 
 func checkConfig(v interface{}) (*Config, error) {
 	conf, ok := v.(*Config)
@@ -73,27 +27,10 @@ func checkConfig(v interface{}) (*Config, error) {
 		return nil, fmt.Errorf("unsupported currency: %s", conf.Currency)
 	}
 
-	// 1. 验证上下文变量配置
-	for name, variable := range conf.ContextVariables {
-		if name == "" {
-			return nil, fmt.Errorf("variable name cannot be empty")
-		}
-		switch variable.Source {
-		case "request_body", "response_body":
-			if variable.Path == "" {
-				return nil, fmt.Errorf("path cannot be empty for variable %s with source %s", name, variable.Source)
-			}
-		case "response_status":
-			// 状态码提取器不需要配置 json path
-		default:
-			return nil, fmt.Errorf("unsupported source %s for variable %s", variable.Source, name)
-		}
-
-		switch variable.Type {
-		case "string", "integer", "float", "boolean", "array":
-			// 合法的目标类型
-		default:
-			return nil, fmt.Errorf("unsupported type %s for variable %s", variable.Type, name)
+	if conf.ContextVariables != nil {
+		err := conf.ContextVariables.Check()
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -113,20 +50,20 @@ func checkConfig(v interface{}) (*Config, error) {
 		}
 
 		// 提前校验进货价表达式语法
-		processedCost := preProcessExpression(rule.CostExpression)
-		if _, err := govaluate.NewEvaluableExpression(processedCost); err != nil {
+		_, err := price_calcular.NewExpression(rule.CostExpression)
+		if err != nil {
 			return nil, fmt.Errorf("invalid cost_expression '%s' in rule %s: %w", rule.CostExpression, rule.ID, err)
 		}
 
 		// 提前校验销售价表达式语法
-		processedSale := preProcessExpression(rule.SaleExpression)
-		if _, err := govaluate.NewEvaluableExpression(processedSale); err != nil {
+		_, err = price_calcular.NewExpression(rule.SaleExpression)
+		if err != nil {
 			return nil, fmt.Errorf("invalid sale_expression '%s' in rule %s: %w", rule.SaleExpression, rule.ID, err)
 		}
 
 		// 提前校验官方参考售价表达式语法
-		processedOfficial := preProcessExpression(rule.OfficialExpression)
-		if _, err := govaluate.NewEvaluableExpression(processedOfficial); err != nil {
+		_, err = price_calcular.NewExpression(rule.OfficialExpression)
+		if err != nil {
 			return nil, fmt.Errorf("invalid official_expression '%s' in rule %s: %w", rule.OfficialExpression, rule.ID, err)
 		}
 	}

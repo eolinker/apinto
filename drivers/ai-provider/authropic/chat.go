@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	context_label "github.com/eolinker/apinto/utils/context-label"
 	"net/url"
 	"strings"
 	"time"
@@ -13,16 +12,14 @@ import (
 	anthropic "github.com/anthropics/anthropic-sdk-go"
 	ai_convert "github.com/eolinker/apinto/ai-convert"
 	"github.com/eolinker/apinto/encoder"
-	"github.com/eolinker/eosc"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
-	"github.com/sashabaranov/go-openai"
 )
 
 func init() {
 	driverCreate.Set(ai_convert.ModelTypeChat, func(mt ai_convert.ModelType, c *Config) (ai_convert.IConverterDriver, error) {
-		return NewChat(provider, c.APIKey, c.Base, mt, 0)
+		return NewChat(provider, c.APIKey, c.Base, mt, 10*time.Minute)
 	})
 }
 
@@ -80,29 +77,30 @@ func (c *Chat) RequestConvert(ctx eoscContext.EoContext, extender map[string]int
 	if err != nil {
 		return err
 	}
-	body, err := httpContext.Proxy().Body().RawBody()
-	if err != nil {
-		return err
-	}
-	chatRequest := eosc.NewBase[anthropic.MessageNewParams](extender)
-	err = json.Unmarshal(body, chatRequest)
-	if err != nil {
-		return fmt.Errorf("unmarshal body error: %v, body: %s", err, string(body))
-	}
-	if chatRequest.Config.Model == "" {
-		chatRequest.Config.Model = ai_convert.GetAIModel(ctx)
-	}
+	//body, err := httpContext.Proxy().Body().RawBody()
+	//if err != nil {
+	//	return err
+	//}
+	//chatRequest := eosc.NewBase[anthropic.MessageNewParams](extender)
+	//err = json.Unmarshal(body, chatRequest)
+	//if err != nil {
+	//	return fmt.Errorf("unmarshal body error: %v, body: %s", err, string(body))
+	//}
+	//if chatRequest.Config.Model == "" {
+	//	chatRequest.Config.Model = ai_convert.GetAIModel(ctx)
+	//}
 
 	//SetAIModelInputToken(httpContext, promptToken)
-	httpContext.Proxy().Header().SetHeader("anthropic-version", "2023-06-01")
+	httpContext.Proxy().Header().SetHeader("anthropic-version", defaultVersion)
 	httpContext.Proxy().Header().SetHeader("x-api-key", c.apikey)
+	httpContext.Proxy().Header().DelHeader("authorization")
 	httpContext.Proxy().URI().SetPath(c.path)
-	body, _ = json.Marshal(chatRequest)
-	httpContext.Proxy().Body().SetRaw("application/json", body)
+	//body, _ = json.Marshal(chatRequest)
+	//httpContext.Proxy().Body().SetRaw("application/json", body)
 	if c.balanceHandler != nil {
 		ctx.SetBalance(c.balanceHandler)
 	}
-	httpContext.Proxy().AppendBodyFinish(c.bodyFinish)
+	//httpContext.Proxy().AppendBodyFinish(c.bodyFinish)
 
 	return nil
 }
@@ -190,41 +188,41 @@ func calculateAnthropicStreamUsage(body []byte) (input, output int) {
 	return
 }
 
-func (c *Chat) bodyFinish(ctx http_service.IHttpContext) {
-	body := ctx.Response().GetBody()
-	defer func() {
-		ai_convert.SetAIProviderStatuses(ctx, ai_convert.GetAIStatus(ctx))
-	}()
-
-	encoding := ctx.Response().Headers().Get("content-encoding")
-	if encoding != "utf-8" && encoding != "" {
-		tmp, err := encoder.ToUTF8(encoding, body)
-		if err != nil {
-			log.Errorf("convert to utf-8 error: %v, body: %s", err, string(body))
-			return
-		}
-		body = tmp
-	}
-	if context_label.IsStreamRunning(ctx) {
-		input, output := calculateAnthropicStreamUsage(body)
-
-		if input == 0 {
-			input = ai_convert.GetAIModelInputToken(ctx)
-		}
-		total := input + output
-		ai_convert.SetAIModelInputToken(ctx, input)
-		ai_convert.SetAIModelOutputToken(ctx, output)
-		ai_convert.SetAIModelTotalToken(ctx, total)
-	} else {
-		var resp openai.ChatCompletionResponse
-		err := json.Unmarshal(body, &resp)
-		if err != nil {
-			log.Errorf("unmarshal body error: %v, body: %s", err, string(body))
-			return
-		}
-		ai_convert.SetAIModelInputToken(ctx, resp.Usage.PromptTokens)
-		ai_convert.SetAIModelOutputToken(ctx, resp.Usage.CompletionTokens)
-		ai_convert.SetAIModelTotalToken(ctx, resp.Usage.TotalTokens)
-	}
-	ai_convert.SetAIStatusNormal(ctx)
-}
+//func (c *Chat) bodyFinish(ctx http_service.IHttpContext) {
+//	body := ctx.Response().GetBody()
+//	defer func() {
+//		ai_convert.SetAIProviderStatuses(ctx, ai_convert.GetAIStatus(ctx))
+//	}()
+//
+//	encoding := ctx.Response().Headers().Get("content-encoding")
+//	if encoding != "utf-8" && encoding != "" {
+//		tmp, err := encoder.ToUTF8(encoding, body)
+//		if err != nil {
+//			log.Errorf("convert to utf-8 error: %v, body: %s", err, string(body))
+//			return
+//		}
+//		body = tmp
+//	}
+//	if context_label.IsStreamRunning(ctx) {
+//		input, output := calculateAnthropicStreamUsage(body)
+//
+//		if input == 0 {
+//			input = ai_convert.GetAIModelInputToken(ctx)
+//		}
+//		total := input + output
+//		ai_convert.SetAIModelInputToken(ctx, input)
+//		ai_convert.SetAIModelOutputToken(ctx, output)
+//		ai_convert.SetAIModelTotalToken(ctx, total)
+//	} else {
+//		var resp openai.ChatCompletionResponse
+//		err := json.Unmarshal(body, &resp)
+//		if err != nil {
+//			log.Errorf("unmarshal body error: %v, body: %s", err, string(body))
+//			return
+//		}
+//		ai_convert.SetAIModelInputToken(ctx, resp.Usage.PromptTokens)
+//		ai_convert.SetAIModelOutputToken(ctx, resp.Usage.CompletionTokens)
+//		ai_convert.SetAIModelTotalToken(ctx, resp.Usage.TotalTokens)
+//	}
+//	ai_convert.SetAIStatusNormal(ctx)
+//}

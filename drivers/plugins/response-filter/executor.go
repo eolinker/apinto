@@ -1,8 +1,8 @@
 package response_filter
 
 import (
+	"github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/drivers"
-	context_label "github.com/eolinker/apinto/utils/context-label"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"

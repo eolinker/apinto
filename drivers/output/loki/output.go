@@ -78,7 +78,11 @@ func (o *Output) reset(conf *Config) error {
 	if !has {
 		return fmt.Errorf("formatter %s not found", conf.Type)
 	}
-	fm, err := factory.Create(conf.Formatter)
+	var extendCfg []byte
+	if conf.Type == "json" {
+		extendCfg, _ = json.Marshal(conf.ContentResize)
+	}
+	fm, err := factory.Create(conf.Formatter, extendCfg)
 	if err != nil {
 		return fmt.Errorf("create formatter error: %v", err)
 	}
@@ -160,7 +164,7 @@ func (o *Output) doLoop() {
 				return
 			}
 			data, _ := json.Marshal(entry)
-			log.Infof("send data to loki: %s", string(data))
+			//log.Infof("send data to loki: %s", string(data))
 			req, err := o.genRequest(data)
 			if err != nil {
 				log.Errorf("gen request error: %v,data is %s", err, string(data))

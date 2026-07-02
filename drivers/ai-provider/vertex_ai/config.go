@@ -37,7 +37,7 @@ func checkConfig(conf *Config) error {
 		tmpBase = strings.ReplaceAll(tmpBase, "{PROJECT_ID}", conf.ProjectID)
 		u, err := url.Parse(tmpBase)
 		if err != nil {
-			// Return an error if the Base URL cannot be parsed.
+			// Return an error if the BaseUrl URL cannot be parsed.
 			return fmt.Errorf("base url is invalid")
 		}
 		// Ensure the parsed URL contains both a scheme and a host.

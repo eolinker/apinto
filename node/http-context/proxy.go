@@ -43,8 +43,9 @@ func (r *ProxyRequest) StreamBodyHandles(ctx http_service.IHttpContext, body []b
 	tmp := make([]byte, len(body))
 	copy(tmp, body)
 	var err error
-	for _, fn := range r.streamHandler {
-		tmp, err = fn(ctx, tmp)
+	// 倒序执行
+	for i := len(r.streamHandler) - 1; i >= 0; i-- {
+		tmp, err = r.streamHandler[i](ctx, tmp)
 		if err != nil {
 			return nil, err
 		}

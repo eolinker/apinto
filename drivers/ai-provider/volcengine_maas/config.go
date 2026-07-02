@@ -10,7 +10,7 @@ type Config struct {
 }
 
 // checkConfig validates the provided configuration.
-// It ensures the required fields are set and checks the validity of the Base URL if provided.
+// It ensures the required fields are set and checks the validity of the BaseUrl URL if provided.
 //
 // Parameters:
 //   - v: An interface{} expected to be a pointer to a Config struct.

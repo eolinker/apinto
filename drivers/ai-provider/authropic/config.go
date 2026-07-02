@@ -8,9 +8,8 @@ import (
 const defaultVersion = "2023-06-01"
 
 type Config struct {
-	APIKey  string `json:"anthropic_api_key"`
-	Base    string `json:"anthropic_api_url"`
-	Version string `json:"anthropic_api_version"`
+	APIKey string `json:"api_key"`
+	Base   string `json:"base_url"`
 }
 
 func checkConfig(conf *Config) error {
@@ -26,9 +25,6 @@ func checkConfig(conf *Config) error {
 		if u.Scheme == "" || u.Host == "" {
 			return fmt.Errorf("base url is invalid")
 		}
-	}
-	if conf.Version == "" {
-		conf.Version = defaultVersion
 	}
 	return nil
 }

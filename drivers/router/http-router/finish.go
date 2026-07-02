@@ -1,7 +1,7 @@
 package http_router
 
 import (
-	context_label "github.com/eolinker/apinto/utils/context-label"
+	"github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )

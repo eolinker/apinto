@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	context_label "github.com/eolinker/apinto/utils/context-label"
+	"github.com/eolinker/apinto/common/context-label"
 	"io"
 	"net"
 	"runtime"

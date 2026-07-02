@@ -2,6 +2,7 @@ package apikey
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/eolinker/apinto/application"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -63,6 +64,14 @@ func (a *apikey) GetUser(ctx http_service.IHttpContext) (*application.UserInfo, 
 		return nil, false
 	}
 	user, has := a.users.Get(token)
+	if has {
+		return user, true
+	}
+
+	if strings.HasPrefix(token, "Bearer ") {
+		token = strings.Replace(token, "Bearer ", "", 1)
+	}
+	user, has = a.users.Get(token)
 	if has {
 		return user, true
 	}

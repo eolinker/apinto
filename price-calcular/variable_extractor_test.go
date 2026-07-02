@@ -1,6 +1,7 @@
-package pricing_policy
+package price_calcular
 
 import (
+	"github.com/eolinker/apinto/drivers/pricing-policy"
 	"testing"
 
 	"github.com/tidwall/gjson"
@@ -50,7 +51,7 @@ func TestConvertType(t *testing.T) {
 
 // TestNewVariablesExtractor_ConfigErrors 测试错误或不支持的配置源的校验能力
 func TestNewVariablesExtractor_ConfigErrors(t *testing.T) {
-	invalidVars := map[string]*Variable{
+	invalidVars := map[string]*pricing_policy.Variable{
 		"my_var": {
 			Source: "invalid_source", // 错误配置
 			Type:   "integer",
@@ -174,14 +175,14 @@ func TestBodyExtractor_ArrayType(t *testing.T) {
 }
 
 func TestMatchBasicRule_Array(t *testing.T) {
-	rule1 := &BasicRule{
+	rule1 := &pricing_policy.BasicRule{
 		Key:   "roles",
 		Op:    "in",
 		Value: "reference_video,admin",
 		Type:  "array",
 	}
 
-	rule2 := &BasicRule{
+	rule2 := &pricing_policy.BasicRule{
 		Key:   "roles",
 		Op:    "==",
 		Value: "admin",
@@ -192,11 +193,58 @@ func TestMatchBasicRule_Array(t *testing.T) {
 		"roles": []interface{}{"user", "reference_video"},
 	}
 
-	if !matchBasicRule(rule1, params) {
+	if !pricing_policy.matchBasicRule(rule1, params) {
 		t.Error("expected rule1 (in) to match")
 	}
 
-	if matchBasicRule(rule2, params) {
+	if pricing_policy.matchBasicRule(rule2, params) {
 		t.Error("expected rule2 (== admin) not to match")
+	}
+}
+
+func TestBodyExtractor_CandidatesTokensDetails(t *testing.T) {
+	// 1. 验证 JSONPath 转换
+	inputPath := `$.usageMetadata.candidatesTokensDetails[?(@.modality=="IMAGE")].tokenCount`
+	expectedConverted := `usageMetadata.candidatesTokensDetails.#(modality=="IMAGE").tokenCount`
+	actualConverted := convertJSONPathToGjson(inputPath)
+	if actualConverted != expectedConverted {
+		t.Errorf("convertJSONPathToGjson(%q) = %q, expected %q", inputPath, actualConverted, expectedConverted)
+	}
+
+	// 2. 验证提取器是否能正确提取目标数据
+	extractor, err := NewBodyExtractor(inputPath, false, "integer")
+	if err != nil {
+		t.Fatalf("failed to create body extractor: %v", err)
+	}
+
+	rawJsonChunk := []byte(`{
+		"usageMetadata": { 
+			"promptTokenCount": 16, 
+			"candidatesTokenCount": 1541, 
+			"totalTokenCount": 1557, 
+			"promptTokensDetails": [ 
+				{ 
+					"modality": "TEXT", 
+					"tokenCount": 16 
+				} 
+			], 
+			"candidatesTokensDetails": [ 
+				{ 
+					"modality": "IMAGE", 
+					"tokenCount": 1120 
+				} 
+			], 
+			"serviceTier": "standard" 
+		}
+	}`)
+
+	val, err := extractor.ExtractFromChunk(rawJsonChunk)
+	if err != nil {
+		t.Fatalf("extract chunk failed: %v", err)
+	}
+
+	expectedVal := int64(1120)
+	if val.(int64) != expectedVal {
+		t.Errorf("expected extracted integer %v, got %v", expectedVal, val)
 	}
 }

@@ -3,9 +3,9 @@ package ai_proxy
 import (
 	"errors"
 	"fmt"
+	context_label2 "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/resources"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
-	context_label "github.com/eolinker/apinto/utils/context-label"
 	"github.com/redis/go-redis/v9"
 	"regexp"
 	"strings"
@@ -32,20 +32,19 @@ var (
 var (
 	taskCommit       = "task-commit"
 	taskQuery        = "task-query"
-	taskKeyGenerator = context_label.NewKeyGenerator("{product}:model:task")
+	taskKeyGenerator = context_label2.NewKeyGenerator("{product}:model:task")
 )
 
 type executor struct {
 	drivers.WorkerBase
-	redisID         string
-	modelType       ai_convert.ModelType
-	labels          map[string]string
-	modelIdFrom     string
-	modelIdKey      string
-	bodyExpr        jp.Expr
-	defaultProvider string
-	config          string
-	taskMode        string
+	redisID     string
+	modelType   ai_convert.ModelType
+	labels      map[string]string
+	modelIdFrom string
+	modelIdKey  string
+	bodyExpr    jp.Expr
+	config      string
+	taskMode    string
 }
 
 func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
@@ -55,11 +54,6 @@ func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err
 func (e *executor) extractModelID(ctx http_context.IHttpContext) (string, error) {
 	if e.modelIdFrom == "path" {
 		path := ctx.Request().URI().Path()
-
-		//// 去除 Google/gRPC 转 HTTP 常用的自定义动作后缀（如 :generateContent）
-		//if idx := strings.Index(path, ":"); idx != -1 {
-		//	path = path[:idx]
-		//}
 
 		if e.modelIdKey != "" {
 			reg, err := regexp.Compile(e.modelIdKey)
@@ -148,7 +142,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		}
 
 		if e.taskMode == taskQuery {
-			context_label.SetTaskID(ctx, extractedModelID)
+			context_label2.SetTaskID(ctx, extractedModelID)
 			taskKey := fmt.Sprintf("%s:%s", taskKeyGenerator.Key(ctx), extractedModelID)
 			extractedModelID, err = cache.Get(ctx.Context(), taskKey).Result()
 			if err != nil && !errors.Is(err, redis.Nil) {
@@ -172,11 +166,11 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 				break
 			}
 		}
-		// 若未匹配到，使用配置的默认供应商作为兜底
-		if provider == "" && e.defaultProvider != "" {
-			provider = e.defaultProvider
-			model = extractedModelID
-		}
+		//// 若未匹配到，使用配置的默认供应商作为兜底
+		//if provider == "" && e.defaultProvider != "" {
+		//	provider = e.defaultProvider
+		//	model = extractedModelID
+		//}
 
 		if provider == "" || model == "" {
 			return e.handleError(ctx, fmt.Errorf("extracted model_id '%s' has no provider. Please use '{provider_id}/{model_id}' format, configure default_provider, or register the model in gateway", extractedModelID))
@@ -186,6 +180,9 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	ctx.SetLabel("model", model)
 	ai_convert.SetAIProvider(ctx, provider)
 	ai_convert.SetAIModel(ctx, model)
+	for k, v := range e.labels {
+		ctx.SetLabel(k, v)
+	}
 
 	// 4. 修改并替换请求体中转发的模型 ID 参数
 	if e.modelIdFrom == "body" && e.bodyExpr != nil {
@@ -235,7 +232,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 
 	switch e.taskMode {
 	case taskCommit:
-		taskId := context_label.GetTaskID(ctx)
+		taskId := context_label2.GetTaskID(ctx)
 		taskKey := fmt.Sprintf("%s:%s", taskKeyGenerator.Key(ctx), taskId)
 
 		ok, err := cache.SetNX(ctx.Context(), taskKey, []byte(extractedModelID), 24*time.Hour).Result()
@@ -422,7 +419,6 @@ func (e *executor) reset(cfg *Config) error {
 	e.labels = cfg.Labels
 	e.modelIdFrom = cfg.ModelIdFrom
 	e.modelIdKey = cfg.ModelIdKey
-	e.defaultProvider = cfg.DefaultProvider
 	if e.modelIdFrom == "body" {
 		expr, err := jp.ParseString(cfg.ModelIdKey)
 		if err != nil {

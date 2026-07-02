@@ -20,6 +20,8 @@ import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 )
 
+type fieldType string
+
 var _ output.IEntryOutput = (*Output)(nil)
 var _ eosc.IWorker = (*Output)(nil)
 
@@ -177,6 +179,24 @@ func (o *Output) Output(entry eosc.IEntry) error {
 	for k, v := range o.conf.Fields {
 		if strings.HasPrefix(v, "$") {
 			fields[k] = entry.Read(v[1:])
+		} else if strings.HasPrefix(v, "#") {
+			val := entry.Read(v[1:])
+			switch vv := val.(type) {
+			case string:
+				target, _ := strconv.ParseFloat(vv, 64)
+				fields[k] = target
+			case int:
+				fields[k] = float64(vv)
+			case int64:
+				fields[k] = float64(vv)
+			case float64:
+				fields[k] = vv
+			case float32:
+				fields[k] = float64(vv)
+			default:
+				fields[k] = val
+			}
+
 		} else {
 			fields[k] = v
 		}

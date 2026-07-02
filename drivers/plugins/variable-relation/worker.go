@@ -1,10 +1,10 @@
 package variable_relation
 
 import (
+	"github.com/eolinker/apinto/common/context-label"
 	"net/http"
 
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/utils/context-label"
 	"github.com/eolinker/apinto/utils/response"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"

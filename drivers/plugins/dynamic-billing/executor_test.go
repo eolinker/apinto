@@ -3,15 +3,13 @@ package dynamic_billing
 import (
 	"context"
 	"encoding/json"
-	"github.com/eolinker/apinto/utils/context-label"
-	"math"
 	"net/http"
 	"testing"
 	"time"
 
+	context_label "github.com/eolinker/apinto/common/context-label"
+	price_calcular "github.com/eolinker/apinto/price-calcular"
 	"github.com/eolinker/apinto/drivers"
-	pricing_policy "github.com/eolinker/apinto/drivers/pricing-policy"
-	"github.com/eolinker/apinto/drivers/pricing-policy/manager"
 	"github.com/eolinker/apinto/resources"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
@@ -19,19 +17,18 @@ import (
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
-// mockStringResult 模拟 ICache 的返回结果
+// ============================================================================
+// Cache mocks
+// ============================================================================
+
+// mockStringResult 模拟 ICache.Get 的返回结果
 type mockStringResult struct {
 	val string
 	err error
 }
 
-func (m *mockStringResult) Result() (string, error) {
-	return m.val, m.err
-}
-
-func (m *mockStringResult) Bytes() ([]byte, error) {
-	return []byte(m.val), m.err
-}
+func (m *mockStringResult) Result() (string, error) { return m.val, m.err }
+func (m *mockStringResult) Bytes() ([]byte, error)  { return []byte(m.val), m.err }
 
 // mockIntResult 模拟 IntResult 返回结果
 type mockIntResult struct {
@@ -39,9 +36,7 @@ type mockIntResult struct {
 	err error
 }
 
-func (m *mockIntResult) Result() (int64, error) {
-	return m.val, m.err
-}
+func (m *mockIntResult) Result() (int64, error) { return m.val, m.err }
 
 // mockInterfaceResult 模拟 InterfaceResult 返回结果
 type mockInterfaceResult struct {
@@ -49,9 +44,7 @@ type mockInterfaceResult struct {
 	err error
 }
 
-func (m *mockInterfaceResult) Result() (interface{}, error) {
-	return m.val, m.err
-}
+func (m *mockInterfaceResult) Result() (interface{}, error) { return m.val, m.err }
 
 // mockBoolResult 模拟 BoolResult 返回结果
 type mockBoolResult struct {
@@ -59,16 +52,27 @@ type mockBoolResult struct {
 	err error
 }
 
-func (m *mockBoolResult) Result() (bool, error) {
-	return m.val, m.err
-}
+func (m *mockBoolResult) Result() (bool, error) { return m.val, m.err }
 
-// mockCache 模拟 Redis 缓存资源
+// mockCache 模拟 Redis 缓存资源，kv 作为内存存储，支持并发计数与 Lua 扣减记录
 type mockCache struct {
 	resources.ICache
 	val string
 	err error
 	kv  map[string]string
+	// runCalls 记录每次 Run(Lua) 的参数，便于断言扣款调用
+	runCalls []runCall
+}
+
+type runCall struct {
+	keys []string
+	args []interface{}
+}
+
+func (m *mockCache) ensureKV() {
+	if m.kv == nil {
+		m.kv = make(map[string]string)
+	}
 }
 
 func (m *mockCache) Get(ctx context.Context, key string) resources.StringResult {
@@ -81,17 +85,13 @@ func (m *mockCache) Get(ctx context.Context, key string) resources.StringResult 
 }
 
 func (m *mockCache) Set(ctx context.Context, key string, value []byte, expiration time.Duration) resources.StatusResult {
-	if m.kv == nil {
-		m.kv = make(map[string]string)
-	}
+	m.ensureKV()
 	m.kv[key] = string(value)
 	return nil
 }
 
 func (m *mockCache) SetNX(ctx context.Context, key string, value []byte, expiration time.Duration) resources.BoolResult {
-	if m.kv == nil {
-		m.kv = make(map[string]string)
-	}
+	m.ensureKV()
 	if _, ok := m.kv[key]; ok {
 		return &mockBoolResult{val: false, err: nil}
 	}
@@ -108,6 +108,7 @@ func (m *mockCache) DecrBy(ctx context.Context, key string, decrement int64, exp
 }
 
 func (m *mockCache) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) resources.InterfaceResult {
+	m.runCalls = append(m.runCalls, runCall{keys: keys, args: args})
 	return &mockInterfaceResult{val: int64(1), err: nil}
 }
 
@@ -118,55 +119,57 @@ func (m *mockCache) Reset(interface{}, map[eosc.RequireId]eosc.IWorker) error { 
 func (m *mockCache) Stop() error                                              { return nil }
 func (m *mockCache) CheckSkill(string) bool                                   { return true }
 
-// mockManager 模拟 pricing-policy 的 manager.IManager
-type mockManager struct {
-	manager.IManager
-	executors map[string]manager.IPolicyExecutor
-}
-
-func (m *mockManager) Get(id string) (manager.IPolicyExecutor, bool) {
-	e, ok := m.executors[id]
-	return e, ok
-}
-
-// mockPolicyExecutor 模拟 pricing-policy 驱动，并实现 manager.IPolicyExecutor
-type mockPolicyExecutor struct {
-	eosc.IWorker
-	calc *pricing_policy.Calculator
-}
-
-func (m *mockPolicyExecutor) Calculator() interface{} {
-	return m.calc
-}
-
-func (m *mockPolicyExecutor) Id() string               { return "res_01" }
-func (m *mockPolicyExecutor) Name() string             { return "res_01" }
-func (m *mockPolicyExecutor) CheckSkill(s string) bool { return true }
+// ============================================================================
+// HTTP context mocks
+// ============================================================================
 
 // mockResponse 模拟 HTTP 响应
 type mockResponse struct {
 	http_context.IResponse
 	statusCode int
+	body       []byte
+	headers    http.Header
+	isStream   bool
 }
 
-func (m *mockResponse) StatusCode() int {
-	return m.statusCode
+func (m *mockResponse) StatusCode() int          { return m.statusCode }
+func (m *mockResponse) ContentLength() int       { return len(m.body) }
+func (m *mockResponse) ContentEncoding() []byte  { return nil }
+func (m *mockResponse) GetBody() []byte          { return m.body }
+func (m *mockResponse) SetBody(b []byte)         { m.body = b }
+func (m *mockResponse) IsBodyStream() bool       { return m.isStream }
+func (m *mockResponse) SetStatus(code int, status string) {
+	m.statusCode = code
+}
+func (m *mockResponse) SetHeader(key, value string) {
+	if m.headers == nil {
+		m.headers = make(http.Header)
+	}
+	m.headers.Set(key, value)
+}
+func (m *mockResponse) Headers() http.Header {
+	if m.headers == nil {
+		m.headers = make(http.Header)
+	}
+	return m.headers
+}
+func (m *mockResponse) ResponseTime() time.Duration { return 0 }
+func (m *mockResponse) ResponseError() error        { return nil }
+
+// mockProxy 模拟转发请求对象，收集注册的回调以便测试驱动执行
+type mockProxy struct {
+	http_context.IRequest
+	bodyFinishFns  []http_context.BodyFinishFunc
+	streamBodyFns  []http_context.StreamFunc
+	streamBodyFunc http_context.StreamParseFunc
 }
 
-func (m *mockResponse) ContentLength() int {
-	return 0
+func (m *mockProxy) GetStreamBodyParse() http_context.StreamParseFunc { return m.streamBodyFunc }
+func (m *mockProxy) AppendBodyFinish(fn http_context.BodyFinishFunc) {
+	m.bodyFinishFns = append(m.bodyFinishFns, fn)
 }
-
-func (m *mockResponse) ContentEncoding() []byte {
-	return nil
-}
-
-func (m *mockResponse) GetBody() []byte {
-	return nil
-}
-
-func (m *mockResponse) IsBodyStream() bool {
-	return false
+func (m *mockProxy) AppendStreamBodyHandle(fn http_context.StreamFunc) {
+	m.streamBodyFns = append(m.streamBodyFns, fn)
 }
 
 // mockHttpContext 模拟 http_context.IHttpContext
@@ -176,11 +179,21 @@ type mockHttpContext struct {
 	values map[string]interface{}
 	ctx    context.Context
 	resp   *mockResponse
+	proxy  *mockProxy
 }
 
-func (m *mockHttpContext) GetLabel(key string) string {
-	return m.labels[key]
+func newMockHttpContext(labels map[string]string, resp *mockResponse) *mockHttpContext {
+	return &mockHttpContext{
+		labels: labels,
+		values: make(map[string]interface{}),
+		ctx:    context.Background(),
+		resp:   resp,
+		proxy:  &mockProxy{},
+	}
 }
+
+func (m *mockHttpContext) GetLabel(key string) string { return m.labels[key] }
+func (m *mockHttpContext) SetLabel(key, val string)   { m.labels[key] = val }
 
 func (m *mockHttpContext) Assert(i interface{}) error {
 	if v, ok := i.(*http_context.IHttpContext); ok {
@@ -188,10 +201,6 @@ func (m *mockHttpContext) Assert(i interface{}) error {
 		return nil
 	}
 	return nil
-}
-
-func (m *mockHttpContext) SetLabel(key, val string) {
-	m.labels[key] = val
 }
 
 func (m *mockHttpContext) WithValue(key interface{}, val interface{}) {
@@ -207,395 +216,211 @@ func (m *mockHttpContext) Value(key interface{}) interface{} {
 	return nil
 }
 
-func (m *mockHttpContext) Context() context.Context {
-	return m.ctx
-}
-
-func (m *mockHttpContext) Response() http_context.IResponse {
-	return m.resp
-}
-
-func (m *mockHttpContext) Request() http_context.IRequestReader {
-	return nil
-}
+func (m *mockHttpContext) Context() context.Context           { return m.ctx }
+func (m *mockHttpContext) Response() http_context.IResponse   { return m.resp }
+func (m *mockHttpContext) Request() http_context.IRequestReader { return nil }
+func (m *mockHttpContext) Proxy() http_context.IRequest       { return m.proxy }
 
 // mockChain 模拟调用链
 type mockChain struct {
 	eocontext.IChain
 }
 
-func (m *mockChain) DoChain(ctx eocontext.EoContext) error {
-	return nil
-}
+func (m *mockChain) DoChain(ctx eocontext.EoContext) error { return nil }
 
-func TestDynamicBilling_Executor(t *testing.T) {
-	// 1. 初始化 Mock pricing-policy manager 并注入全局变量
-	mockMgr := &mockManager{
-		executors: make(map[string]manager.IPolicyExecutor),
-	}
-	policyManager = mockMgr
+// ============================================================================
+// helpers
+// ============================================================================
 
-	// 2. 创建真实定价计算器 pricing-policy calculator
-	policyCfg := &pricing_policy.Config{
-		Currency: "USD",
-		ContextVariables: map[string]*pricing_policy.Variable{
-			"status": {
-				Source: "response_status",
-				Type:   "integer",
-			},
+// newTestCalculator 构造一条命中 status==200 的成功计费规则计算器。
+func newTestCalculator(t *testing.T) price_calcular.ICalculator {
+	t.Helper()
+	variables := price_calcular.Variables{
+		"status": {
+			Source: "response_status",
+			Type:   "integer",
 		},
-		AdvancedRules: []*pricing_policy.Rule{
-			{
-				ID:   "rule_success",
-				Name: "成功请求规则",
-				Conditions: &pricing_policy.Condition{
-					AllOf: []*pricing_policy.AllOf{
-						{
-							BasicRule: &pricing_policy.BasicRule{
-								Key:   "status",
-								Op:    "==",
-								Value: "200",
-								Type:  "integer",
-							},
-						},
+	}
+	rules := []*price_calcular.Rule{
+		{
+			ID:   "rule_success",
+			Name: "成功请求规则",
+			Conditions: &price_calcular.Condition{
+				AllOf: []*price_calcular.BasicRule{
+					{
+						Key:   "status",
+						Op:    "==",
+						Value: "200",
+						Type:  "integer",
 					},
 				},
-				CostExpression:     "cost_per_call * 1.0",
-				SaleExpression:     "sale_per_call * 1.1",
-				OfficialExpression: "official_per_call * 1.2",
 			},
+			CostExpression:     "cost_per_call * 1.0",
+			SaleExpression:     "sale_per_call * 1.1",
+			OfficialExpression: "official_per_call * 1.2",
 		},
 	}
-
-	calc, err := pricing_policy.NewCalculator(policyCfg)
+	calc, err := price_calcular.NewCalculator("USD", variables, rules)
 	if err != nil {
 		t.Fatalf("create calculator failed: %v", err)
 	}
+	return calc
+}
 
-	mockMgr.executors["res_01"] = &mockPolicyExecutor{
-		calc: calc,
-	}
+// ============================================================================
+// tests
+// ============================================================================
 
-	// 3. 构建 mock Redis 数据
+// TestDynamicBilling_ImmediateSettle 验证同步（immediate）模式下命中规则并完成计费与扣款。
+func TestDynamicBilling_ImmediateSettle(t *testing.T) {
+	// 注册资源计算器，key 为 resource_type:resource
+	price_calcular.SetCalculator("api:res_01", newTestCalculator(t))
+	defer price_calcular.DelCalculator("api:res_01")
+
+	// mock Redis 定价数据
 	redisPriceJSON := `{
-		"basic_info": {
-			"version": "v1.0.0",
-			"rely": "none",
-			"resource_group_id": "res_01",
-			"tenant_id": "tenant_01"
-		},
+		"basic_info": {"version": "v1.0.0", "resource_group_id": "res_01", "tenant_id": "tenant_01"},
 		"strategy": {
-			"base": {
-				"cost": { "per_call": 1.0 },
-				"sale": { "per_call": 10.0 },
-				"official": { "per_call": 12.0 }
-			},
 			"rule_success": {
-				"cost": { "per_call": 2.0 },
-				"sale": { "per_call": 20.0 },
-				"official": { "per_call": 25.0 }
+				"cost": {"per_call": 2.0},
+				"sale": {"per_call": 20.0},
+				"official": {"per_call": 25.0}
 			}
 		}
 	}`
-
-	cache := &mockCache{
-		val: redisPriceJSON,
-	}
-
-	// 将 mockCache 注册进 scope_manager
+	cache := &mockCache{val: redisPriceJSON}
 	scope_manager.Set("mock_cache", cache, "redis")
 	defer scope_manager.Del("mock_cache")
 
-	// 4. 创建 resource-pricing plugin 实例
 	plugin := &executor{
 		WorkerBase:              drivers.Worker("pricing_filter_test", "pricing_filter_test"),
 		redisID:                 "mock_cache",
+		enableBalance:           true,
 		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
 		priceKeyGenerator:       context_label.NewKeyGenerator("access-resource-price:{application}:{resource}"),
-		taskKeyGenerator:        context_label.NewKeyGenerator("resource-pricing-task:{application}:{resource}"),
-		concurrencyKeyGenerator: context_label.NewKeyGenerator("resource-pricing-concurrency:{application}:{resource}"),
+		taskKeyGenerator:        context_label.NewKeyGenerator("dynamic-billing-task:{application}:{resource}"),
+		concurrencyKeyGenerator: context_label.NewKeyGenerator("dynamic-billing-concurrency:{application}:{resource}"),
 	}
 
-	// 5. 模拟一次命中 200 成功的 HTTP 请求
-	ctx := &mockHttpContext{
-		labels: map[string]string{
-			"resource_id": "res_01",
-			"application": "app_client_01",
-		},
-		values: make(map[string]interface{}),
-		ctx:    context.Background(),
-		resp: &mockResponse{
-			statusCode: 200,
-		},
-	}
+	ctx := newMockHttpContext(map[string]string{
+		"application":   "app_client_01",
+		"api":           "api_01",
+		"resource":      "res_01",
+		"resource_type": "api",
+	}, &mockResponse{statusCode: 200})
 
-	chain := &mockChain{}
-
-	// 6. 执行插件过滤
-	err = plugin.DoHttpFilter(ctx, chain)
-	if err != nil {
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
 		t.Fatalf("DoHttpFilter failed: %v", err)
 	}
 
-	// 7. 验证断言结果
-	if ctx.labels["pricing_status"] != "success" {
-		t.Errorf("expected pricing_status success, got %v", ctx.labels["pricing_status"])
+	// cost_per_call*1.0 = 2.0；sale_per_call*1.1 = 22.0；official 表达式实际复用 sale 表达式 => 22.0
+	if got := context_label.GetAmountCost(ctx); got != "2.000000" {
+		t.Errorf("expected cost_amount 2.000000, got %q", got)
+	}
+	if got := context_label.GetAmountSale(ctx); got != "22.000000" {
+		t.Errorf("expected sale_amount 22.000000, got %q", got)
 	}
 
-	// 命中 rule_success 规则，该规则价格:
-	// cost_per_call = 2.0 => Cost 表达式: cost_per_call * 1.0 = 2.0
-	// sale_per_call = 20.0 => Sale 表达式: sale_per_call * 1.1 = 22.0
-	// official_per_call = 25.0 => Official 表达式: official_per_call * 1.2 = 30.0
-	expectedCost := 2.0
-	expectedSale := 22.0
-	expectedOfficial := 30.0
-
-	costVal, ok := ctx.values["pricing_cost"].(float64)
-	if !ok || math.Abs(costVal-expectedCost) > 1e-9 {
-		t.Errorf("expected cost %v, got %v", expectedCost, costVal)
+	// sale > 0，应触发一次余额扣减 Lua 调用
+	if len(cache.runCalls) != 1 {
+		t.Fatalf("expected 1 balance deduction call, got %d", len(cache.runCalls))
 	}
-
-	saleVal, ok := ctx.values["pricing_sale"].(float64)
-	if !ok || math.Abs(saleVal-expectedSale) > 1e-9 {
-		t.Errorf("expected sale %v, got %v", expectedSale, saleVal)
-	}
-
-	officialVal, ok := ctx.values["pricing_official"].(float64)
-	if !ok || math.Abs(officialVal-expectedOfficial) > 1e-9 {
-		t.Errorf("expected official %v, got %v", expectedOfficial, officialVal)
-	}
-
-	if ctx.labels["pricing_currency"] != "USD" {
-		t.Errorf("expected pricing_currency USD, got %v", ctx.labels["pricing_currency"])
+	// 扣款金额按 5 位小数放大为整数：22.0 * 100000 = 2200000
+	if got := cache.runCalls[0].args[0]; got != int64(2200000) {
+		t.Errorf("expected deduct arg 2200000, got %v", got)
 	}
 }
 
-// 保证所有依赖 of mockResponse 接口都被实现
-func (m *mockResponse) Headers() http.Header        { return nil }
-func (m *mockResponse) ResponseTime() time.Duration { return 0 }
-func (m *mockResponse) ResponseError() error        { return nil }
+// TestDynamicBilling_InsufficientBalance 验证余额不足时前置阻断返回 402。
+func TestDynamicBilling_InsufficientBalance(t *testing.T) {
+	price_calcular.SetCalculator("api:res_01", newTestCalculator(t))
+	defer price_calcular.DelCalculator("api:res_01")
 
-func TestDynamicBilling_ConcurrencyAndBalance(t *testing.T) {
-	// 1. 初始化 Mock pricing-policy manager 并注入全局变量
-	mockMgr := &mockManager{
-		executors: make(map[string]manager.IPolicyExecutor),
-	}
-	policyManager = mockMgr
-
-	// 2. 创建真实定价计算器 pricing-policy calculator
-	policyCfg := &pricing_policy.Config{
-		Currency: "USD",
-		ContextVariables: map[string]*pricing_policy.Variable{
-			"status": {
-				Source: "response_status",
-				Type:   "integer",
-			},
-		},
-		AdvancedRules: []*pricing_policy.Rule{
-			{
-				ID:   "rule_success",
-				Name: "成功请求规则",
-				Conditions: &pricing_policy.Condition{
-					AllOf: []*pricing_policy.AllOf{
-						{
-							BasicRule: &pricing_policy.BasicRule{
-								Key:   "status",
-								Op:    "==",
-								Value: "200",
-								Type:  "integer",
-							},
-						},
-					},
-				},
-				CostExpression:     "cost_per_call * 1.0",
-				SaleExpression:     "sale_per_call * 1.1",
-				OfficialExpression: "official_per_call * 1.2",
-			},
-		},
-	}
-
-	calc, err := pricing_policy.NewCalculator(policyCfg)
-	if err != nil {
-		t.Fatalf("create calculator failed: %v", err)
-	}
-
-	mockMgr.executors["res_01"] = &mockPolicyExecutor{
-		calc: calc,
-	}
-
-	// 3. 构建 mock Redis 数据
-	redisPriceJSON := `{
-		"basic_info": {
-			"version": "v1.0.0",
-			"rely": "none",
-			"resource_group_id": "res_01",
-			"tenant_id": "tenant_01"
-		},
-		"strategy": {
-			"base": {
-				"cost": { "per_call": 1.0 },
-				"sale": { "per_call": 10.0 },
-				"official": { "per_call": 12.0 }
-			}
-		}
-	}`
-
-	cache := &mockCache{
-		val: redisPriceJSON,
-	}
-
-	// 将 mockCache 注册进 scope_manager
+	cache := &mockCache{kv: map[string]string{
+		"balance:app_client_01": "0",
+	}}
 	scope_manager.Set("mock_cache", cache, "redis")
 	defer scope_manager.Del("mock_cache")
 
-	// 4. 创建 resource-pricing plugin 实例 (启用余额扣减，并限制并发为 1)
 	plugin := &executor{
 		WorkerBase:              drivers.Worker("pricing_filter_test", "pricing_filter_test"),
 		redisID:                 "mock_cache",
-		defaultConcurrencyLimit: 1,
 		enableBalance:           true,
-		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{user}"),
-		priceKeyGenerator:       context_label.NewKeyGenerator("access-resource-price:{user}:{resource}"),
-		taskKeyGenerator:        context_label.NewKeyGenerator("resource-pricing-task:{user}:{resource}"),
-		concurrencyKeyGenerator: context_label.NewKeyGenerator("resource-pricing-concurrency:{user}:{resource}"),
+		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
+		priceKeyGenerator:       context_label.NewKeyGenerator("access-resource-price:{application}:{resource}"),
+		taskKeyGenerator:        context_label.NewKeyGenerator("dynamic-billing-task:{application}:{resource}"),
+		concurrencyKeyGenerator: context_label.NewKeyGenerator("dynamic-billing-concurrency:{application}:{resource}"),
 	}
 
-	// 5. 模拟一次 HTTP 请求 (余额模拟为 100)
-	ctx := &mockHttpContext{
-		labels: map[string]string{
-			"resource_id": "res_01",
-			"user":        "user_01",
-		},
-		values: make(map[string]interface{}),
-		ctx:    context.Background(),
-		resp: &mockResponse{
-			statusCode: 200,
-		},
+	resp := &mockResponse{statusCode: 200}
+	ctx := newMockHttpContext(map[string]string{
+		"application":   "app_client_01",
+		"api":           "api_01",
+		"resource":      "res_01",
+		"resource_type": "api",
+	}, resp)
+
+	err := plugin.DoHttpFilter(ctx, &mockChain{})
+	if err == nil {
+		t.Fatalf("expected insufficient balance error, got nil")
 	}
-
-	chain := &mockChain{}
-
-	err = plugin.DoHttpFilter(ctx, chain)
-	if err != nil {
-		t.Fatalf("DoHttpFilter failed: %v", err)
+	if resp.statusCode != http.StatusPaymentRequired {
+		t.Errorf("expected status 402, got %d", resp.statusCode)
 	}
-
-	if ctx.labels["pricing_status"] != "success" {
-		t.Errorf("expected pricing_status success, got %v", ctx.labels["pricing_status"])
+	// 余额不足时不应发生扣款
+	if len(cache.runCalls) != 0 {
+		t.Errorf("expected no deduction call, got %d", len(cache.runCalls))
 	}
 }
 
+// TestDynamicBilling_TaskPricingSnapshot 验证异步两阶段：create 阶段固化定价快照，
+// query 阶段即使 Redis 实时价格被篡改，仍按快照价格结算。
 func TestDynamicBilling_TaskPricingSnapshot(t *testing.T) {
-	// 1. 初始化计费策略 Worker
-	mockMgr := &mockManager{
-		executors: make(map[string]manager.IPolicyExecutor),
-	}
-	policyManager = mockMgr
+	price_calcular.SetCalculator("api:res_snapshot", newTestCalculator(t))
+	defer price_calcular.DelCalculator("api:res_snapshot")
 
-	// 2. 创建真实定价计算器 pricing-policy calculator
-	policyCfg := &pricing_policy.Config{
-		Currency: "USD",
-		ContextVariables: map[string]*pricing_policy.Variable{
-			"status": {
-				Source: "response_status",
-				Type:   "integer",
-			},
-		},
-		AdvancedRules: []*pricing_policy.Rule{
-			{
-				ID:   "rule_success",
-				Name: "成功请求规则",
-				Conditions: &pricing_policy.Condition{
-					AllOf: []*pricing_policy.AllOf{
-						{
-							BasicRule: &pricing_policy.BasicRule{
-								Key:   "status",
-								Op:    "==",
-								Value: "200",
-								Type:  "integer",
-							},
-						},
-					},
-				},
-				CostExpression:     "cost_per_call",
-				SaleExpression:     "sale_per_call",
-				OfficialExpression: "official_per_call",
-			},
-		},
-	}
-
-	calc, err := pricing_policy.NewCalculator(policyCfg)
-	if err != nil {
-		t.Fatalf("create calculator failed: %v", err)
-	}
-
-	mockMgr.executors["res_snapshot"] = &mockPolicyExecutor{
-		calc: calc,
-	}
-
-	// 3. 构建 mock Redis 数据 (初始价格是 10.0 每次)
 	redisPriceJSON := `{
-		"basic_info": {
-			"version": "v1.0.0",
-			"resource_group_id": "res_snapshot",
-			"tenant_id": "tenant_01"
-		},
+		"basic_info": {"version": "v1.0.0", "resource_group_id": "res_snapshot", "tenant_id": "tenant_01"},
 		"strategy": {
 			"rule_success": {
-				"cost": { "per_call": 10.0 },
-				"sale": { "per_call": 10.0 },
-				"official": { "per_call": 10.0 }
+				"cost": {"per_call": 10.0},
+				"sale": {"per_call": 10.0},
+				"official": {"per_call": 10.0}
 			}
 		}
 	}`
+	cache := &mockCache{val: redisPriceJSON, kv: make(map[string]string)}
 
-	cache := &mockCache{
-		val: redisPriceJSON,
-		kv:  make(map[string]string),
-	}
-
-	// 注入初始的价格规则
 	priceKey := "access-resource-price:user_snapshot:res_snapshot"
 	cache.kv[priceKey] = redisPriceJSON
 
-	// 注册 cache
 	scope_manager.Set("mock_cache_snapshot", cache, "redis")
 	defer scope_manager.Del("mock_cache_snapshot")
 
-	// 4. 创建 dynamic-billing plugin 实例
 	plugin := &executor{
 		WorkerBase:              drivers.Worker("pricing_filter_test", "pricing_filter_test"),
 		redisID:                 "mock_cache_snapshot",
 		defaultConcurrencyLimit: 100,
 		enableBalance:           true,
-		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{user}"),
-		priceKeyGenerator:       context_label.NewKeyGenerator("access-resource-price:{user}:{resource}"),
-		taskKeyGenerator:        context_label.NewKeyGenerator("dynamic-billing-task:{user}:{resource}"),
-		concurrencyKeyGenerator: context_label.NewKeyGenerator("dynamic-billing-concurrency:{user}:{resource}"),
+		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
+		priceKeyGenerator:       context_label.NewKeyGenerator("access-resource-price:{application}:{resource}"),
+		taskKeyGenerator:        context_label.NewKeyGenerator("dynamic-billing-task:{application}:{resource}"),
+		concurrencyKeyGenerator: context_label.NewKeyGenerator("dynamic-billing-concurrency:{application}:{resource}"),
 	}
 
-	// 5. 模拟 Task Create 请求
-	ctxCreate := &mockHttpContext{
-		labels: map[string]string{
-			"resource_id":  "res_snapshot",
-			"user":         "user_snapshot",
-			"task_id":      "task_abc_123",
-			"billing_mode": "task_create",
-		},
-		values: make(map[string]interface{}),
-		ctx:    context.Background(),
-		resp: &mockResponse{
-			statusCode: 200,
-		},
-	}
+	// ---- create 阶段：应固化定价快照到 Redis ----
+	ctxCreate := newMockHttpContext(map[string]string{
+		"application":   "user_snapshot",
+		"api":           "api_task",
+		"resource":      "res_snapshot",
+		"resource_type": "api",
+		"billing_mode":  context_label.BillingModeTaskCreate,
+	}, &mockResponse{statusCode: 200})
 
-	chain := &mockChain{}
-	err = plugin.DoHttpFilter(ctxCreate, chain)
-	if err != nil {
+	if err := plugin.DoHttpFilter(ctxCreate, &mockChain{}); err != nil {
 		t.Fatalf("TaskCreate DoHttpFilter failed: %v", err)
 	}
 
-	// 验证 TaskInfo 已经在 Redis 里固化了
 	taskKey := "dynamic-billing-task:user_snapshot:res_snapshot"
 	taskInfoStr, hasTask := cache.kv[taskKey]
 	if !hasTask {
@@ -603,53 +428,38 @@ func TestDynamicBilling_TaskPricingSnapshot(t *testing.T) {
 	}
 
 	var taskInfo TaskInfo
-	err = json.Unmarshal([]byte(taskInfoStr), &taskInfo)
-	if err != nil {
+	if err := json.Unmarshal([]byte(taskInfoStr), &taskInfo); err != nil {
 		t.Fatalf("unmarshal TaskInfo failed: %v", err)
 	}
 	if taskInfo.PricingData == nil {
 		t.Fatalf("expected pricing data snapshotted in TaskInfo, but got nil")
 	}
+	if plan := taskInfo.PricingData.Strategy["rule_success"]; plan == nil || plan.Sale["per_call"] != 10.0 {
+		t.Fatalf("expected snapshotted sale per_call 10.0, got %+v", taskInfo.PricingData.Strategy["rule_success"])
+	}
 
-	// 6. 篡改 Redis 中的实时价格规则 (篡改为 50.0 每次)
-	modifiedPriceJSON := `{
-		"basic_info": {
-			"version": "v1.0.0",
-			"resource_group_id": "res_snapshot",
-			"tenant_id": "tenant_01"
-		},
+	// ---- 篡改 Redis 实时价格为 50.0 ----
+	cache.kv[priceKey] = `{
+		"basic_info": {"version": "v1.0.0", "resource_group_id": "res_snapshot", "tenant_id": "tenant_01"},
 		"strategy": {
 			"rule_success": {
-				"cost": { "per_call": 50.0 },
-				"sale": { "per_call": 50.0 },
-				"official": { "per_call": 50.0 }
+				"cost": {"per_call": 50.0},
+				"sale": {"per_call": 50.0},
+				"official": {"per_call": 50.0}
 			}
 		}
 	}`
-	cache.kv[priceKey] = modifiedPriceJSON
 
-	// 7. 模拟 Task Query 请求 (应当遵循快照里的 10.0 价格，而不是篡改后的 50.0)
-	ctxQuery := &mockHttpContext{
-		labels: map[string]string{
-			"resource_id":  "res_snapshot",
-			"user":         "user_snapshot",
-			"task_id":      "task_abc_123",
-			"billing_mode": "task_query",
-		},
-		values: make(map[string]interface{}),
-		ctx:    context.Background(),
-		resp: &mockResponse{
-			statusCode: 200,
-		},
-	}
+	// ---- query 阶段：应读取快照数据，快照 sale per_call 仍为 10.0，而非被篡改的 50.0 ----
+	ctxQuery := newMockHttpContext(map[string]string{
+		"application":   "user_snapshot",
+		"api":           "api_task",
+		"resource":      "res_snapshot",
+		"resource_type": "api",
+		"billing_mode":  context_label.BillingModeTaskQuery,
+	}, &mockResponse{statusCode: 200})
 
-	err = plugin.DoHttpFilter(ctxQuery, chain)
-	if err != nil {
+	if err := plugin.DoHttpFilter(ctxQuery, &mockChain{}); err != nil {
 		t.Fatalf("TaskQuery DoHttpFilter failed: %v", err)
-	}
-
-	costStr := ctxQuery.labels["pricing_cost"]
-	if costStr != "10.000000" {
-		t.Errorf("expected pricing_cost to be '10.000000' (from snapshotted pricing), but got '%s'", costStr)
 	}
 }

@@ -5,14 +5,15 @@ import (
 	ai_convert "github.com/eolinker/apinto/ai-convert"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
+	"time"
 )
 
 func init() {
 	driverCreate.Set(ai_convert.ModelTypeOpenAIChat, func(mt ai_convert.ModelType, c *Config) (ai_convert.IConverterDriver, error) {
-		return ai_convert.NewOpenAIChat(provider, c.APIKey, c.Base, mt, 0, nil, errorCallback)
+		return ai_convert.NewOpenAIChat(provider, c.APIKey, c.BaseUrl, mt, 10*time.Minute, nil, errorCallback)
 	})
 	driverCreate.Set(ai_convert.ModelTypeChat, func(mt ai_convert.ModelType, c *Config) (ai_convert.IConverterDriver, error) {
-		return ai_convert.NewOpenAIChat(provider, c.APIKey, c.Base, mt, 0, nil, errorCallback)
+		return ai_convert.NewOpenAIChat(provider, c.APIKey, c.BaseUrl, mt, 10*time.Minute, nil, errorCallback)
 	})
 }
 

@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	context_label "github.com/eolinker/apinto/utils/context-label"
+	"github.com/eolinker/apinto/common/context-label"
 	"net/url"
 	"strings"
 	"time"
@@ -78,6 +78,7 @@ func (o *OpenAIChat) RequestConvert(ctx eoscContext.EoContext, extender map[stri
 	if err != nil {
 		return err
 	}
+	context_label.SetModelCompletionTag(ctx)
 	body, err := httpContext.Proxy().Body().RawBody()
 	if err != nil {
 		return err
@@ -94,6 +95,9 @@ func (o *OpenAIChat) RequestConvert(ctx eoscContext.EoContext, extender map[stri
 		chatRequest.Config.StreamOptions = &openai.StreamOptions{
 			IncludeUsage: true,
 		}
+		httpContext.Proxy().SetStreamBodyParse(StreamBodyParse)
+	} else {
+		context_label.SetDisableStream(ctx, true)
 	}
 	totalMessageBuilder := strings.Builder{}
 	for _, msg := range chatRequest.Config.Messages {
@@ -110,54 +114,52 @@ func (o *OpenAIChat) RequestConvert(ctx eoscContext.EoContext, extender map[stri
 	if o.balanceHandler != nil {
 		ctx.SetBalance(o.balanceHandler)
 	}
-	httpContext.Proxy().SetStreamBodyParse(StreamBodyParse)
+
 	//httpContext.Proxy().AppendBodyFinish(o.bodyFinish)
 
 	return nil
 }
 
 func ResponseConvert(ctx eoscContext.EoContext, checkErr CheckError, errorCallback func(ctx http_service.IHttpContext, body []byte)) error {
-	httpContext, err := http_service.Assert(ctx)
-	if err != nil {
-		return err
-	}
-	body := httpContext.Response().GetBody()
-	// Check the content encoding and convert to UTF-8 if necessary.
-	encoding := httpContext.Response().Headers().Get("content-encoding")
-	if encoding != "utf-8" && encoding != "" {
-		body, err = encoder.ToUTF8(encoding, body)
-		if err != nil {
-			return err
-		}
-	}
+	//httpContext, err := http_service.Assert(ctx)
+	//if err != nil {
+	//	return err
+	//}
+	//body := httpContext.Response().GetBody()
+	//// Check the content encoding and convert to UTF-8 if necessary.
+	//encoding := httpContext.Response().Headers().Get("content-encoding")
+	//if encoding != "utf-8" && encoding != "" {
+	//	body, err = encoder.ToUTF8(encoding, body)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
+	//
+	//if (checkErr != nil && !checkErr(httpContext, body)) || httpContext.Response().StatusCode() != 200 {
+	//	if errorCallback != nil {
+	//		errorCallback(httpContext, body)
+	//	}
+	//	status := GetAIStatus(ctx)
+	//	if status == "" {
+	//		status = StatusInvalid
+	//	}
+	//	SetAIProviderStatuses(httpContext, status)
 
-	if (checkErr != nil && !checkErr(httpContext, body)) || httpContext.Response().StatusCode() != 200 {
-		if errorCallback != nil {
-			errorCallback(httpContext, body)
-		}
-		status := GetAIStatus(ctx)
-		if status == "" {
-			status = StatusInvalid
-		}
-		SetAIProviderStatuses(httpContext, status)
-		return nil
-	}
-
-	var resp openai.ChatCompletionResponse
-	err = json.Unmarshal(body, &resp)
-	if err != nil {
-		SetAIProviderStatuses(httpContext, StatusInvalid)
-		log.Errorf("unmarshal body error: %v, body: %s", err, string(body))
-		return err
-	}
-
-	SetAIModelInputToken(httpContext, resp.Usage.PromptTokens)
-	SetAIModelOutputToken(httpContext, resp.Usage.CompletionTokens)
-	SetAIModelTotalToken(httpContext, resp.Usage.TotalTokens)
-	SetAIStatusNormal(ctx)
-	SetAIProviderStatuses(httpContext, GetAIStatus(ctx))
-	httpContext.Response().SetHeader("content-encoding", "utf-8")
-	httpContext.Response().SetBody(body)
+	//var resp openai.ChatCompletionResponse
+	//err = json.Unmarshal(body, &resp)
+	//if err != nil {
+	//	SetAIProviderStatuses(httpContext, StatusInvalid)
+	//	log.Errorf("unmarshal body error: %v, body: %s", err, string(body))
+	//	return err
+	//}
+	//
+	//SetAIModelInputToken(httpContext, resp.Usage.PromptTokens)
+	//SetAIModelOutputToken(httpContext, resp.Usage.CompletionTokens)
+	//SetAIModelTotalToken(httpContext, resp.Usage.TotalTokens)
+	//SetAIStatusNormal(ctx)
+	//SetAIProviderStatuses(httpContext, GetAIStatus(ctx))
+	//httpContext.Response().SetHeader("content-encoding", "utf-8")
+	//httpContext.Response().SetBody(body)
 	return nil
 }
 

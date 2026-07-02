@@ -43,6 +43,9 @@ func (w *VariableRelation) DoHttpFilter(ctx http_context.IHttpContext, next eoco
 			}
 		}
 		if !matched {
+			if w.response != nil {
+				w.response.Response(ctx)
+			}
 			return fmt.Errorf("variable relation: no pattern matched for key '%s'", key)
 		}
 	}
