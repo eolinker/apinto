@@ -14,5 +14,5 @@ func Register(register eosc.IExtenderDriverRegister) {
 }
 
 func NewFactory() eosc.IExtenderDriverFactory {
-	return drivers.NewFactory[Config](Create)
+	return drivers.NewFactory[Config](Create, check)
 }

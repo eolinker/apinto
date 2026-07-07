@@ -31,7 +31,7 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 		// 对请求体做转换
 		body, _ := ctx.Proxy().Body().RawBody()
 		contentType, _, _ := mime.ParseMediaType(ctx.Request().ContentType())
-		if strings.Contains(contentType, "/json") {
+		if strings.Contains(contentType, "json") {
 			result, err := json2xml(body, b.conf.XMLRootTag, b.conf.XMLDeclaration)
 			if err != nil {
 				errInfo := "fail to transform request json to xml"
@@ -40,8 +40,8 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 				log.Errorf("%s,body is %s", errInfo, string(body))
 				return err
 			}
-			ctx.Proxy().Body().SetRaw("application/xml", result)
-		} else if strings.Contains(contentType, "/xml") {
+			ctx.Proxy().Body().SetRaw(b.conf.TargetRequestXMLType, result)
+		} else if strings.Contains(contentType, "xml") {
 			result, err := xml2json(body, b.conf.XMLDeclaration)
 			if err != nil {
 				errInfo := "fail to transform request xml to json"
@@ -50,7 +50,7 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 				log.Errorf("%s,body is %s", errInfo, string(body))
 				return err
 			}
-			ctx.Proxy().Body().SetRaw("application/json", result)
+			ctx.Proxy().Body().SetRaw(b.conf.TargetRequestJsonType, result)
 		}
 	}
 	err := next.DoChain(ctx)
@@ -61,7 +61,7 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 		// 对请求体做转换
 		body := ctx.Response().GetBody()
 		contentType, _, _ := mime.ParseMediaType(ctx.Response().ContentType())
-		if strings.Contains(contentType, "/json") {
+		if strings.Contains(contentType, "json") {
 			result, err := json2xml(body, b.conf.XMLRootTag, b.conf.XMLDeclaration)
 			if err != nil {
 				errInfo := "fail to transform response json to xml"
@@ -71,8 +71,8 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 				return err
 			}
 			ctx.Response().SetBody(result)
-			ctx.Response().Headers().Set("Content-Type", "application/xml")
-		} else if strings.Contains(contentType, "/xml") {
+			ctx.Response().Headers().Set("Content-Type", b.conf.TargetResponseXMLType)
+		} else if strings.Contains(contentType, "xml") {
 			result, err := xml2json(body, b.conf.XMLDeclaration)
 			if err != nil {
 				errInfo := "fail to transform response xml to json"
@@ -82,7 +82,7 @@ func (b *executor) DoHttpFilter(ctx http_service.IHttpContext, next eocontext.IC
 				return err
 			}
 			ctx.Response().SetBody(result)
-			ctx.Response().Headers().Set("Content-Type", "application/json")
+			ctx.Response().Headers().Set("Content-Type", b.conf.TargetResponseJsonType)
 		}
 	}
 	return nil
