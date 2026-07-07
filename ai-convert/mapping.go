@@ -18,6 +18,9 @@ type MappingRule map[string]*ValueRule
 func TransformData(inputJSON string, mappingRule MappingRule) (map[string]interface{}, error) {
 	// 1. 解析输入的JSON字符串到map
 	var inputMap map[string]interface{}
+	if inputJSON == "" {
+		inputJSON = "{}"
+	}
 	if err := json.Unmarshal([]byte(inputJSON), &inputMap); err != nil {
 		return nil, fmt.Errorf("解析输入JSON失败: %v", err)
 	}

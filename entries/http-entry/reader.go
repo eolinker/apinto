@@ -145,7 +145,35 @@ var (
 			return ctx.Request().Header().GetCookie(name), false
 		}),
 		"msec": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
-			return ctx.AcceptTime().UnixMilli(), true
+			t := ctx.AcceptTime().UnixMilli()
+			if t > 0 {
+				return t, true
+			}
+			rt := ctx.Value("request_time")
+			if rt == nil {
+				return time.Now().UnixMilli(), true
+			}
+			v, ok := rt.(time.Time)
+			if !ok {
+				return time.Now().UnixMilli(), true
+			}
+			return v.UnixMilli(), true
+		}),
+		"msec_nano": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			t := ctx.AcceptTime().UnixNano()
+			if t > 0 {
+				return t, true
+			}
+			rt := ctx.Value("request_time")
+			if rt == nil {
+				return time.Now().UnixNano(), true
+			}
+			v, ok := rt.(time.Time)
+			if !ok {
+				return time.Now().UnixNano(), true
+			}
+			return v.UnixNano(), true
+
 		}),
 		"apinto_version": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return version.Version, true

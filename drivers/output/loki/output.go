@@ -5,14 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/eolinker/eosc/formatter"
 	"io"
 	"net/http"
 	"reflect"
-	"strconv"
 	"strings"
-	"time"
-
-	"github.com/eolinker/eosc/formatter"
 
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 
@@ -120,8 +117,9 @@ func (o *Output) Output(entry eosc.IEntry) error {
 		return nil
 	}
 	data := o.formatter.Format(entry)
-	msec := eosc.ReadStringFromEntry(entry, "msec")
-	msecInt, _ := strconv.ParseInt(msec, 10, 64)
+	msecNano := eosc.ReadStringFromEntry(entry, "msec_nano")
+
+	//msecInt, _ := strconv.ParseInt(msec, 10, 64)
 	labels := make(map[string]string)
 	for k, v := range o.labels {
 		if strings.HasPrefix(v, "$") {
@@ -135,7 +133,7 @@ func (o *Output) Output(entry eosc.IEntry) error {
 			{
 				Stream: labels,
 				Values: [][]interface{}{
-					{strconv.FormatInt(time.UnixMilli(msecInt).UnixNano(), 10), string(data)},
+					{msecNano, string(data)},
 				},
 			},
 		},

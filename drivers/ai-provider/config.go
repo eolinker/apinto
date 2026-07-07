@@ -39,9 +39,9 @@ func checkConfig(v interface{}) (*Config, error) {
 		return nil, fmt.Errorf("provider is required")
 	}
 
-	if conf.Model == "" {
-		return nil, fmt.Errorf("model is required")
-	}
+	//if conf.Model == "" {
+	//	return nil, fmt.Errorf("model is required")
+	//}
 
 	return conf, nil
 }
