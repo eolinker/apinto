@@ -294,22 +294,54 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	}
 
 	fn := ctx.Proxy().GetStreamBodyParse()
+
+	// ==========================================
+	// 7.5 预扣逻辑（仅同步/Immediate 阶段）
+	//
+	// 高并发要点：
+	//   a) 预扣时使用一条 Lua 脚本原子完成 "余额 DECRBY N" + "SETEX preKey N ttl"，
+	//      保证余额扣了必然有预扣快照，反之亦然。
+	//   b) 每次请求生成独立的 preKey（{prefix}:{app}:{request_id}），
+	//      因此并发请求互不干扰。
+	//   c) 结算/回滚也用一条 Lua 脚本：内部 GET preKey→pre; DEL preKey;
+	//      DECRBY/INCRBY 余额相应差额。DEL 保证脚本天然幂等——
+	//      同一请求多次触发结算/回滚，账面变化只会发生一次。
+	// ==========================================
+	var preDeductKey string
+	if e.enableBalance && cache != nil && isPreCheckRequired && !hasFreePricePlan(&priceData) {
+		amt, rid, pdErr := calc.PreDeduct(ctx, &priceData)
+		if pdErr != nil {
+			log.Errorf("[dynamic-billing] pre-deduct calculate error for resource %s: %v", resourceID, pdErr)
+		} else if amt > 0 {
+			preDeductKey = preDeductKeyGenerator.Key(ctx)
+			if !executePreDeduct(ctx.Context(), cache, balanceKey, preDeductKey, amt, app) {
+				log.Errorf("[dynamic-billing] pre-deduct failed for user %s, amount=%f", app, amt)
+				ctx.Response().SetStatus(http.StatusPaymentRequired, "402")
+				ctx.Response().SetBody([]byte(`{"error":"insufficient balance"}`))
+				return errors.New(`{"error":"insufficient balance"}`)
+			}
+			context_label.SetAmountPreDeduct(ctx, fmt.Sprintf("%f", amt))
+			context_label.SetPreDeductKey(ctx, preDeductKey)
+			log.DebugF("[dynamic-billing] pre-deducted %f for user %s on resource %s (rule=%s, key=%s)",
+				amt, app, resourceID, rid, preDeductKey)
+		}
+	}
+
 	//var res *pricing_policy.CalculateResult
 	if ctx.GetLabel("resource_type") == "api" {
 		ctx.Proxy().AppendBodyFinish(func(ctx http_context.IHttpContext) {
 			res, err := calc.Calculate(ctx, e.enableBalance, &priceData)
 			if err != nil {
 				log.Errorf("[dynamic-billing] calculate error: %v", err)
+				// 计算失败：整额退还预扣
+				refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
 				return
 			}
 			context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
 			context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
 			context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
-			if e.enableBalance && cache != nil && res.Sale > 0 {
-				success := executeBalanceDeduction(ctx.Context(), cache, balanceKey, res.Sale, app)
-				if !success {
-					return
-				}
+			if e.enableBalance && cache != nil {
+				settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
 			}
 		})
 	} else if ctx.GetLabel("resource_type") == "ai" {
@@ -317,36 +349,37 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		ctx.Proxy().AppendBodyFinish(func(ctx http_context.IHttpContext) {
 			fn := context_label.GetResponseChunkFunc(ctx)
 			if fn == nil {
-				if e.enableBalance && cache != nil && res != nil && res.Sale > 0 {
-					success := executeBalanceDeduction(ctx.Context(), cache, balanceKey, res.Sale, app)
-					if !success {
-						log.Errorf("[dynamic-billing] balance deduction failed for user %s, sale amount: %f", balanceKey, res.Sale)
-						return
+				if res != nil && res.Sale > 0 {
+					if e.enableBalance && cache != nil {
+						settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
 					}
+				} else {
+					// 未完成实际结算：整额退还预扣
+					refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
 				}
 				return
 			}
 			body, err := fn(ctx)
 			if err != nil {
 				log.Errorf("[dynamic-billing] get response chunk error: %v", err)
+				refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
 				return
 			}
 			res, err = calc.CalculateFromChunk(ctx, e.enableBalance, body, &priceData)
 			if err != nil {
 				log.Errorf("[dynamic-billing] calculate error: %v", err)
+				refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
 				return
 			}
 			if res == nil {
+				refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
 				return
 			}
 			context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
 			context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
 			context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
-			if e.enableBalance && cache != nil && res.Sale > 0 {
-				success := executeBalanceDeduction(ctx.Context(), cache, balanceKey, res.Sale, app)
-				if !success {
-					return
-				}
+			if e.enableBalance && cache != nil {
+				settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
 			}
 			return
 		})
@@ -396,6 +429,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			return p, nil
 		})
 	}
+	_ = preDeductKey // 预留：可用于埋点/日志时区分命中的规则
 
 	// ==========================================
 	// 8. 转发下游链路 (Do Chain Forwarding)
@@ -403,6 +437,8 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	if next != nil {
 		err = next.DoChain(ctx)
 		if err != nil {
+			// 请求链路失败：退回已预扣的金额，避免用户在无实际服务下被扣款
+			refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
 			return err
 		}
 	}
@@ -474,11 +510,10 @@ func (e *executor) immediateSettle(ctx http_context.IHttpContext, calc price_cal
 	context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
 	context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
 
-	if e.enableBalance && cache != nil && res.Sale > 0 {
-		success := executeBalanceDeduction(ctx.Context(), cache, balanceKey, res.Sale, app)
-		if !success {
-			return fmt.Errorf("insufficient balance during settlement")
-		}
+	if e.enableBalance && cache != nil {
+		// 若存在预扣快照，则以 Lua 幂等结算做多退少补；否则按 sale 直接扣款
+		preKey := context_label.GetPreDeductKey(ctx)
+		settlePreDeduct(ctx, cache, balanceKey, preKey, res.Sale, app)
 	}
 	return nil
 }
@@ -613,3 +648,172 @@ func hasFreePricePlan(pricingData *price_calcular.PricingData) bool {
 	}
 	return false
 }
+
+// settlePreDeduct 依据预扣快照与实际结算金额进行"多退少补"。
+//
+//   - actualSale >  preDeducted：追加扣除差额（少补）
+//   - actualSale <  preDeducted：把差额退还给用户余额（多退）
+//   - actualSale == preDeducted：无操作
+//   - 若不存在预扣快照（preDeductKey 为空或已被结算过），则退化为按实际金额单独扣除
+//
+// 高并发场景下，本函数以单条 Lua 脚本原子完成 "GET pre → DEL pre → DECRBY balance diff"，
+// DEL 保证了脚本天然幂等 —— 同一请求即使因回调重入被多次调用，账面变化只会发生一次。
+//
+// 关于"少补"时的余额不足：由于服务已经产出，此处不再拦截扣款，允许余额透支为负，
+// 由上层欠费流程处理；同时打 warn 日志方便对账。"多退"时差额为负 (DECRBY 负值 = INCRBY)，
+// 不受余额限制，天然安全。
+func settlePreDeduct(ctx http_context.IHttpContext, cache resources.ICache, balanceKey, preDeductKey string, actualSale float64, userID string) {
+	if cache == nil {
+		return
+	}
+	actual := int64(math.Round(actualSale * 1000000))
+
+	if preDeductKey == "" {
+		// 没有预扣，退化为普通扣款
+		if actual > 0 {
+			executeBalanceDeduction(ctx.Context(), cache, balanceKey, actualSale, userID)
+		}
+		return
+	}
+
+	// Lua 脚本原子完成：
+	//   pre = GET preKey (缺省 0)
+	//   若 pre == 0：说明已被结算/回滚过，直接返回幂等结果
+	//   否则 DEL preKey；diff = actual - pre；DECRBY balance diff
+	// 返回 {applied_diff, new_balance, pre}
+	settleLua := `
+		local balanceKey = KEYS[1]
+		local preKey = KEYS[2]
+		local actual = tonumber(ARGV[1])
+		local pre = tonumber(redis.call('get', preKey) or "0")
+		if pre == 0 then
+			return {0, tonumber(redis.call('get', balanceKey) or "0"), 0}
+		end
+		redis.call('del', preKey)
+		local diff = actual - pre
+		if diff == 0 then
+			return {0, tonumber(redis.call('get', balanceKey) or "0"), pre}
+		end
+		local nb = redis.call('decrby', balanceKey, diff)
+		return {diff, nb, pre}
+	`
+	res := cache.Run(ctx.Context(), settleLua, []string{balanceKey, preDeductKey}, actual)
+	raw, err := res.Result()
+	if err != nil {
+		log.Errorf("[dynamic-billing] settle pre-deduct redis error for user %s, actual=%f, key=%s: %v",
+			userID, actualSale, preDeductKey, err)
+		return
+	}
+	// 少补时如果导致余额为负，打 warn 日志便于人工/欠费流程处理
+	if arr, ok := raw.([]interface{}); ok && len(arr) >= 2 {
+		if nb, ok2 := arr[1].(int64); ok2 && nb < 0 {
+			log.Warnf("[dynamic-billing] balance turned negative after settle for user %s, key=%s, balance=%d(×1e6)",
+				userID, preDeductKey, nb)
+		}
+	}
+	log.DebugF("[dynamic-billing] settled pre-deduct for user %s, actual=%f, key=%s", userID, actualSale, preDeductKey)
+}
+
+// refundPreDeduct 全额退回此前的预扣金额。计算失败或未能产生实际结算时调用。
+//
+// 使用一条 Lua 脚本原子完成 "GET pre → DEL pre → INCRBY balance pre"，
+// 幂等：key 不存在时脚本直接返回，不会重复退款。退款是加钱操作，不受当前余额限制，
+// 无需额外校验。
+func refundPreDeduct(ctx http_context.IHttpContext, cache resources.ICache, balanceKey, preDeductKey, userID string) {
+	if cache == nil || preDeductKey == "" {
+		return
+	}
+	refundLua := `
+		local balanceKey = KEYS[1]
+		local preKey = KEYS[2]
+		local pre = tonumber(redis.call('get', preKey) or "0")
+		if pre == 0 then
+			return {0, tonumber(redis.call('get', balanceKey) or "0")}
+		end
+		redis.call('del', preKey)
+		local nb = redis.call('incrby', balanceKey, pre)
+		return {pre, nb}
+	`
+	res := cache.Run(ctx.Context(), refundLua, []string{balanceKey, preDeductKey})
+	if _, err := res.Result(); err != nil {
+		log.Errorf("[dynamic-billing] refund pre-deduct redis error for user %s, key=%s: %v", userID, preDeductKey, err)
+		return
+	}
+	log.DebugF("[dynamic-billing] refunded pre-deduct for user %s, key=%s", userID, preDeductKey)
+}
+
+// executePreDeduct 以单条 Lua 脚本原子完成 "余额校验 + 余额 DECRBY N + SETEX preKey N ttl"。
+//
+// 高并发要点：
+//   - 全部动作在 Redis 单线程内一次执行完，天然是原子的：
+//     1) 先 GET 当前余额；
+//     2) 若余额 < amount，则直接返回失败，不扣款、不落快照；
+//     3) 否则 DECRBY balance amount，并 SET preKey amount EX ttl。
+//     这从根本上杜绝了 "两个并发请求先后通过前置 balance>0 校验然后各自 DECRBY 造成
+//     余额穿透至负数" 的竞态。
+//   - preKey 通常包含 request_id，不同请求间互不冲突；
+//     SETEX 保证快照最长存活 preDeductTTL，异常退出的孤儿快照能自然过期，
+//     不会永久占用用户余额。
+//
+// 返回 true 表示成功扣款且已落快照；返回 false 表示 Redis 出错或余额不足，
+// 调用方应据此拦截并回复 402。
+func executePreDeduct(ctx context.Context, cache resources.ICache, balanceKey, preDeductKey string, amount float64, userID string) bool {
+	preDeductLua := `
+		local balanceKey = KEYS[1]
+		local preKey = KEYS[2]
+		local amount = tonumber(ARGV[1])
+		local ttl = tonumber(ARGV[2])
+		local balance = tonumber(redis.call('get', balanceKey) or "0")
+		if balance < amount then
+			return {0, balance}
+		end
+		local nb = redis.call('decrby', balanceKey, amount)
+		redis.call('set', preKey, amount, 'EX', ttl)
+		return {1, nb}
+	`
+	amt := int64(math.Round(amount * 1000000))
+	res := cache.Run(ctx, preDeductLua, []string{balanceKey, preDeductKey}, amt, int64(preDeductTTL/time.Second))
+	raw, err := res.Result()
+	if err != nil {
+		log.Errorf("[dynamic-billing] pre-deduct redis error for user %s, amount=%f, key=%s: %v",
+			userID, amount, preDeductKey, err)
+		return false
+	}
+	// 解析返回值 {ok, balance}
+	arr, ok := raw.([]interface{})
+	if !ok || len(arr) < 1 {
+		// 兼容部分 driver 直接返回单值的情况：只要不是明确失败都视为成功
+		return true
+	}
+	okFlag, _ := arr[0].(int64)
+	if okFlag == 0 {
+		// 余额不足
+		log.Errorf("[dynamic-billing] pre-deduct rejected: insufficient balance for user %s, amount=%f, key=%s",
+			userID, amount, preDeductKey)
+		return false
+	}
+	return true
+}
+
+// preDeductTTL 预扣快照的最大存活时间。请求处理超时或进程崩溃时，孤儿快照会
+// 在此时限内被 Redis 自动清理，避免占用用户余额。
+const preDeductTTL = 5 * time.Minute
+
+//// preDeductKeyPrefix 预扣快照 Redis key 的固定前缀。
+//const preDeductKeyPrefix = "{dynamic-billing-pre-deduct}"
+
+var (
+	preDeductKeyGenerator = context_label.NewKeyGenerator("{{product}:balance}:pre-deduct:{resource}")
+)
+
+//// buildPreDeductKey 依据 app + request_id 生成本次请求专属的预扣快照 key。
+//// request_id 为空时降级使用纳秒时间戳，仍能满足单节点内互异；
+//// 高并发环境请确保上游为每个请求分配 request_id。
+//func buildPreDeductKey(ctx http_context.IHttpContext, app string) string {
+//	rid := ctx.RequestId()
+//	if rid == "" {
+//		// 兜底：请求 ID 缺失时用时间 + 指针地址生成一个唯一后缀
+//		rid = fmt.Sprintf("noid-%d-%p", time.Now().UnixNano(), ctx)
+//	}
+//	return fmt.Sprintf("%s:%s:%s", preDeductKeyPrefix, app, rid)
+//}

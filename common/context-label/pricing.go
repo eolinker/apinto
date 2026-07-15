@@ -12,6 +12,8 @@ const (
 	LabelAmountCost          = "cost_amount"
 	LabelAmountSale          = "sale_amount"
 	LabelAmountOfficial      = "official_amount"
+	LabelAmountPreDeduct     = "pre_deduct_amount"
+	LabelPreDeductKey        = "pre_deduct_key"
 	LabelChargeRule          = "charge_rule" // 计费规则ID
 	LabelPriceVariable       = "price_variable"
 	LabelPriceVariables      = "price_variables"
@@ -171,4 +173,22 @@ func SetAmountOfficial(ctx eocontext.EoContext, value string) {
 
 func GetAmountOfficial(ctx eocontext.EoContext) string {
 	return GetAmount(ctx, LabelAmountOfficial)
+}
+
+func SetAmountPreDeduct(ctx eocontext.EoContext, value string) {
+	SetAmount(ctx, LabelAmountPreDeduct, value)
+}
+
+func GetAmountPreDeduct(ctx eocontext.EoContext) string {
+	return GetAmount(ctx, LabelAmountPreDeduct)
+}
+
+// SetPreDeductKey 记录本次请求所使用的预扣快照 Redis key，供后置结算/回滚阶段读取。
+func SetPreDeductKey(ctx eocontext.EoContext, value string) {
+	SetAmount(ctx, LabelPreDeductKey, value)
+}
+
+// GetPreDeductKey 获取当前请求关联的预扣快照 Redis key，未设置时返回空串。
+func GetPreDeductKey(ctx eocontext.EoContext) string {
+	return GetAmount(ctx, LabelPreDeductKey)
 }

@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	context_label "github.com/eolinker/apinto/common/context-label"
+	"github.com/eolinker/eosc"
 	"net/url"
 	"strings"
 	"time"
@@ -89,6 +91,21 @@ func (c *Chat) RequestConvert(ctx eoscContext.EoContext, extender map[string]int
 	//if chatRequest.Config.Model == "" {
 	//	chatRequest.Config.Model = ai_convert.GetAIModel(ctx)
 	//}
+	body, err := httpContext.Proxy().Body().RawBody()
+	if err != nil {
+		return err
+	}
+	type ReqBody struct {
+		Stream bool `json:"stream"`
+	}
+	chatRequest := eosc.NewBase[ReqBody](extender)
+	err = json.Unmarshal(body, chatRequest)
+	if err != nil {
+		return fmt.Errorf("unmarshal body error: %v, body: %s", err, string(body))
+	}
+	if !chatRequest.Config.Stream {
+		context_label.SetDisableStream(ctx, true)
+	}
 
 	//SetAIModelInputToken(httpContext, promptToken)
 	httpContext.Proxy().Header().SetHeader("anthropic-version", defaultVersion)

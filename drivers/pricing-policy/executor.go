@@ -2,7 +2,7 @@ package pricing_policy
 
 import (
 	"github.com/eolinker/apinto/drivers"
-	"github.com/eolinker/apinto/price-calcular"
+	price_calcular "github.com/eolinker/apinto/price-calcular"
 	"github.com/eolinker/eosc"
 )
 

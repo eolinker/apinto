@@ -9,6 +9,7 @@ import (
 
 	"github.com/Knetic/govaluate"
 	"github.com/eolinker/eosc/eocontext"
+	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
 const (
@@ -32,6 +33,8 @@ type ICalculator interface {
 	VariablesExtractor() IExtractor
 	Calculate(ctx eocontext.EoContext, enableBalance bool, pricingData *PricingData) (*CalculateResult, error)
 	CalculateFromChunk(ctx eocontext.EoContext, enableBalance bool, chunk []byte, pricingData *PricingData) (*CalculateResult, error)
+	// PreDeduct 计算预扣金额。返回预估扣款销售额与命中的规则 ID；命中免费策略或规则匹配失败时返回 0。
+	PreDeduct(ctx eocontext.EoContext, pricingData *PricingData) (float64, string, error)
 }
 
 // ProcessedRule 描述一个经过预编译及性能优化的高级定价规则实例。
@@ -42,6 +45,7 @@ type ProcessedRule struct {
 	costExpr     IExpression // 预编译后的进货价（成本）计算表达式
 	saleExpr     IExpression // 预编译后的销售价（计费）计算表达式
 	officialExpr IExpression // 预编译后的官方参考价计算表达式
+	billingMode  string      // 从 saleExpr 中自动推断的计费模式：per_call / per_second / token
 }
 
 // CalculateResult 代表高级规则计算后输出的价格评估结果。
@@ -59,6 +63,10 @@ type Calculator struct {
 }
 
 // NewCalculator 根据传入的基础 Config 数据，初始化并预编译一套高性能的定价计算器。
+// 每条规则的计费模式会从 SaleExpression 中自动推断：
+//   - 表达式引用了 #sale.per_call 视为按次计费
+//   - 表达式引用了 #sale.per_second 视为按秒计费
+//   - 其余（含 #sale.input_token / #sale.output_token）视为按 token 计费
 func NewCalculator(currency string, variables Variables, rules []*Rule) (ICalculator, error) {
 	// 初始化自定义变量提取器
 	extractor, err := NewVariablesExtractor(variables)
@@ -104,6 +112,7 @@ func NewCalculator(currency string, variables Variables, rules []*Rule) (ICalcul
 			costExpr:     costExpr,
 			saleExpr:     saleExpr,
 			officialExpr: officialExpr,
+			billingMode:  detectBillingMode(rule.SaleExpression),
 		})
 	}
 
@@ -112,6 +121,21 @@ func NewCalculator(currency string, variables Variables, rules []*Rule) (ICalcul
 		variablesExtractor: extractor,
 		rules:              processedRules,
 	}, nil
+}
+
+// detectBillingMode 通过原始 sale 表达式中引用的价格字段，推断该条规则的计费模式。
+// 优先级：per_call > per_second > token。
+func detectBillingMode(saleExpr string) string {
+	if saleExpr == "" {
+		return BillingModeToken
+	}
+	if strings.Contains(saleExpr, "#sale.per_call") {
+		return BillingModePerCall
+	}
+	if strings.Contains(saleExpr, "#sale.per_second") {
+		return BillingModePerSecond
+	}
+	return BillingModeToken
 }
 
 // Currency 获取计算器币种类型。
@@ -304,6 +328,138 @@ func (c *Calculator) CalculateFromVariables(params map[string]interface{}, match
 		Sale:     salePrice,
 		Official: officialPrice,
 	}, nil
+}
+
+// PreDeduct 计算预扣金额。返回预估扣款销售额与命中的规则 ID；命中免费策略或规则匹配失败时返回 0。
+func (c *Calculator) PreDeduct(ctx eocontext.EoContext, pricingData *PricingData) (float64, string, error) {
+	extractor := c.VariablesExtractor()
+	if extractor == nil {
+		calculator := GetICalculator(ctx)
+		if calculator == nil {
+			return 0, "", fmt.Errorf("calculator is nil")
+		}
+		extractor = calculator.VariablesExtractor()
+	}
+	vars := extractor.ExtractAll(ctx)
+	if vars == nil {
+		vars = make(map[string]interface{})
+	}
+	oldVar := context_label.GetPriceVariables(ctx)
+	for k, v := range oldVar {
+		if _, ok := vars[k]; ok {
+			continue
+		}
+		vars[k] = v
+	}
+	context_label.SetPriceVariables(ctx, vars)
+
+	if pricingData == nil {
+		return 0, "", errors.New("redis pricing data is required but got nil")
+	}
+
+	// 匹配规则
+	var matchedRule *ProcessedRule
+	for _, rule := range c.rules {
+		if matchCondition(rule.conditions, vars) {
+			matchedRule = rule
+			break
+		}
+	}
+	if matchedRule == nil {
+		return 0, "", nil
+	}
+
+	plan := pricingData.Strategy[matchedRule.id]
+	if plan == nil {
+		return 0, matchedRule.id, nil
+	}
+
+	switch matchedRule.billingMode {
+	case BillingModePerCall:
+		// 按次计费：直接取 per_call 销售价
+		if v, ok := plan.Sale["per_call"]; ok {
+			return v, matchedRule.id, nil
+		}
+		return 0, matchedRule.id, nil
+	case BillingModePerSecond:
+		// 按秒计费：预扣 PreDeductSecondsForPerSecond 秒的销售价
+		if v, ok := plan.Sale["per_second"]; ok {
+			return v * float64(PreDeductSecondsForPerSecond), matchedRule.id, nil
+		}
+		return 0, matchedRule.id, nil
+	case BillingModeToken:
+		// 按 token 计费：
+		//   - 优先从上下文变量中读取 input_token 作为预估请求 token 数
+		//   - 预扣 = input_token 成本 + 预估输出成本 * 安全系数
+		//   - 预估输出成本：图片/视频模型固定按 1M token 单价扣除；
+		//                  文本模型按 10K token 单价（即百万 token 单价 1%）
+		//   - 单价表按百万 token 单价配置，实际扣款需除以 PriceTokenScale (1M)
+		//   - 模型类型从上下文 label "model_type" 中读取，默认视为 text 模型
+		inputPrice := plan.Sale["input_token"]
+		outputPrice := plan.Sale["output_token"]
+
+		// 读取上下文中的 input_token label / 变量作为预估请求 token 数
+		var inputTokens float64
+		if v, ok := vars[LabelInputToken]; ok {
+			inputTokens = toFloat64(v)
+		}
+		if inputTokens <= 0 {
+			if s := ctxLabel(ctx, LabelInputToken); s != "" {
+				if f, err := strconv.ParseFloat(s, 64); err == nil {
+					inputTokens = f
+				}
+			}
+		}
+
+		// 请求 token 成本
+		inputCost := inputTokens * inputPrice / float64(PriceTokenScale)
+
+		// 预估输出 token 数：根据上下文 label "model_type" 分配
+		modelType := ctxLabel(ctx, LabelModelType)
+		var estimatedOutputTokens float64
+		switch modelType {
+		case ModelTypeImage, ModelTypeVideo:
+			estimatedOutputTokens = float64(PreDeductTokensImageVideo)
+		default:
+			// text 或未指定：按 10K token 计
+			estimatedOutputTokens = float64(PreDeductTokensText)
+		}
+		outputCost := estimatedOutputTokens * outputPrice / float64(PriceTokenScale)
+
+		estimated := inputCost + outputCost*DefaultSafetyFactor
+		return estimated, matchedRule.id, nil
+	}
+	return 0, matchedRule.id, nil
+}
+
+// toFloat64 尝试将任意常见的数值/字符串类型转为 float64，转换失败返回 0。
+func toFloat64(v interface{}) float64 {
+	switch t := v.(type) {
+	case float64:
+		return t
+	case float32:
+		return float64(t)
+	case int:
+		return float64(t)
+	case int32:
+		return float64(t)
+	case int64:
+		return float64(t)
+	case string:
+		if f, err := strconv.ParseFloat(t, 64); err == nil {
+			return f
+		}
+	}
+	return 0
+}
+
+// ctxLabel 尝试从 http_context 的 label 中读取字符串值，非 http 上下文返回空串。
+func ctxLabel(ctx eocontext.EoContext, key string) string {
+	httpCtx, err := http_context.Assert(ctx)
+	if err != nil {
+		return ""
+	}
+	return httpCtx.GetLabel(key)
 }
 
 // evaluateExpression 使用 govaluate 执行浮点数公式计算。
