@@ -1,0 +1,163 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    k8s.kuboard.cn/name: apinto-gateway-stateful
+  name: apinto-gateway-stateful
+  namespace: apinto
+spec:
+  ports:
+    - name: admin
+      port: 9400
+      protocol: TCP
+      targetPort: 9400
+    - name: cluster
+      port: 9401
+      protocol: TCP
+      targetPort: 9401
+  selector:
+    k8s.kuboard.cn/name: apinto-gateway-stateful
+  sessionAffinity: None
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    k8s.kuboard.cn/name: apinto-gateway
+  name: apinto-gateway
+  namespace: apinto
+spec:
+  ports:
+    - name: http
+      nodePort: 31189
+      port: 8099
+      protocol: TCP
+      targetPort: 8099
+  type: NodePort
+
+---
+# leave.sh 需要通过该 ServiceAccount 实时查询 StatefulSet 的 spec.replicas，以兼容 HPA / 自动扩缩容。
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: apinto-gateway
+  namespace: apinto
+
+---
+# 仅授予「读取本命名空间 statefulsets 及其 scale 子资源」的最小权限。
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: apinto-gateway-replicas-reader
+  namespace: apinto
+rules:
+  - apiGroups: ["apps"]
+    resources: ["statefulsets", "statefulsets/scale"]
+    verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: apinto-gateway-replicas-reader
+  namespace: apinto
+subjects:
+  - kind: ServiceAccount
+    name: apinto-gateway
+    namespace: apinto
+roleRef:
+  kind: Role
+  name: apinto-gateway-replicas-reader
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations: {}
+  labels:
+    k8s.kuboard.cn/name: apinto-gateway-stateful
+  name: apinto-gateway-stateful
+  namespace: apinto
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  # 缩容时一次只删一个 Pod（从高序号往低序号），保证 etcd 每次只移除一个成员、始终能重新达成多数派。
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      k8s.kuboard.cn/name: apinto-gateway-stateful
+  serviceName: apinto-gateway-stateful
+  template:
+    metadata:
+      labels:
+        k8s.kuboard.cn/name: apinto-gateway-stateful
+    spec:
+      # 挂载具备读取 spec.replicas 权限的 ServiceAccount，供 leave.sh 实时查询期望副本数。
+      serviceAccountName: apinto-gateway
+      # 给 preStop 的 leave/stop 留足执行时间（缩容时 etcd member remove + 优雅停止）
+      terminationGracePeriodSeconds: 60
+      containers:
+        - env:
+            - name: SERVICE
+              value: apinto-gateway-stateful
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            # StatefulSet 名称，leave.sh 用它查询 spec.replicas；与本 StatefulSet 的 metadata.name 一致。
+            - name: STS_NAME
+              value: apinto-gateway-stateful
+            # 兜底副本数：仅当 leave.sh 查询 K8s API 失败时使用。正常情况下以 API 实时值为准，
+            # 因此使用 HPA 自动扩缩容时无需每次手工同步此值（建议填与常态副本数一致）。
+            - name: REPLICAS
+              value: '3'
+          image: 'docker.eolinker.com/apinto/apinto-gateway'
+          imagePullPolicy: Always
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - bash
+                  - '-c'
+                  - nohup /apinto/auto-join.sh > nohup.out 2>&1 &
+            preStop:
+              exec:
+                command:
+                  - /bin/bash
+                  - '-c'
+                  - bash /apinto/leave.sh
+
+          name: apinto-gateway-stateful
+          volumeMounts:
+            - mountPath: /var/lib/apinto
+              name: apinto-gateway-app
+              subPath: data/
+            - mountPath: /var/log/apinto
+              name: apinto-gateway-app
+              subPath: log/
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: eolink-hub-secret
+
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        annotations:
+          k8s.kuboard.cn/pvcType: Dynamic
+        name: apinto-gateway-app
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5G
+        storageClassName: {storageClassName}
+        volumeMode: Filesystem
