@@ -8,8 +8,8 @@ import (
 	"time"
 
 	context_label "github.com/eolinker/apinto/common/context-label"
-	price_calcular "github.com/eolinker/apinto/price-calcular"
 	"github.com/eolinker/apinto/drivers"
+	price_calcular "github.com/eolinker/apinto/price-calcular"
 	"github.com/eolinker/apinto/resources"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
@@ -132,12 +132,12 @@ type mockResponse struct {
 	isStream   bool
 }
 
-func (m *mockResponse) StatusCode() int          { return m.statusCode }
-func (m *mockResponse) ContentLength() int       { return len(m.body) }
-func (m *mockResponse) ContentEncoding() []byte  { return nil }
-func (m *mockResponse) GetBody() []byte          { return m.body }
-func (m *mockResponse) SetBody(b []byte)         { m.body = b }
-func (m *mockResponse) IsBodyStream() bool       { return m.isStream }
+func (m *mockResponse) StatusCode() int         { return m.statusCode }
+func (m *mockResponse) ContentLength() int      { return len(m.body) }
+func (m *mockResponse) ContentEncoding() []byte { return nil }
+func (m *mockResponse) GetBody() []byte         { return m.body }
+func (m *mockResponse) SetBody(b []byte)        { m.body = b }
+func (m *mockResponse) IsBodyStream() bool      { return m.isStream }
 func (m *mockResponse) SetStatus(code int, status string) {
 	m.statusCode = code
 }
@@ -216,10 +216,10 @@ func (m *mockHttpContext) Value(key interface{}) interface{} {
 	return nil
 }
 
-func (m *mockHttpContext) Context() context.Context           { return m.ctx }
-func (m *mockHttpContext) Response() http_context.IResponse   { return m.resp }
+func (m *mockHttpContext) Context() context.Context             { return m.ctx }
+func (m *mockHttpContext) Response() http_context.IResponse     { return m.resp }
 func (m *mockHttpContext) Request() http_context.IRequestReader { return nil }
-func (m *mockHttpContext) Proxy() http_context.IRequest       { return m.proxy }
+func (m *mockHttpContext) Proxy() http_context.IRequest         { return m.proxy }
 
 // mockChain 模拟调用链
 type mockChain struct {
@@ -325,9 +325,9 @@ func TestDynamicBilling_ImmediateSettle(t *testing.T) {
 	if len(cache.runCalls) != 1 {
 		t.Fatalf("expected 1 balance deduction call, got %d", len(cache.runCalls))
 	}
-	// 扣款金额按 5 位小数放大为整数：22.0 * 100000 = 2200000
-	if got := cache.runCalls[0].args[0]; got != int64(2200000) {
-		t.Errorf("expected deduct arg 2200000, got %v", got)
+	// 扣款金额按 6 位放大为整数：22.0 * 1000000 = 22000000
+	if got := cache.runCalls[0].args[0]; got != int64(22000000) {
+		t.Errorf("expected deduct arg 22000000, got %v", got)
 	}
 }
 
@@ -336,8 +336,20 @@ func TestDynamicBilling_InsufficientBalance(t *testing.T) {
 	price_calcular.SetCalculator("api:res_01", newTestCalculator(t))
 	defer price_calcular.DelCalculator("api:res_01")
 
+	// 需要同时提供 balance 与 price 两个 key：balance=0 触发余额不足，price 用于反序列化定价数据
+	priceJSON := `{
+		"basic_info": {"version": "v1.0.0", "resource_group_id": "res_01", "tenant_id": "tenant_01"},
+		"strategy": {
+			"rule_success": {
+				"cost": {"per_call": 2.0},
+				"sale": {"per_call": 20.0},
+				"official": {"per_call": 25.0}
+			}
+		}
+	}`
 	cache := &mockCache{kv: map[string]string{
-		"balance:app_client_01": "0",
+		"balance:app_client_01":                      "0",
+		"access-resource-price:app_client_01:res_01": priceJSON,
 	}}
 	scope_manager.Set("mock_cache", cache, "redis")
 	defer scope_manager.Del("mock_cache")
@@ -461,5 +473,280 @@ func TestDynamicBilling_TaskPricingSnapshot(t *testing.T) {
 
 	if err := plugin.DoHttpFilter(ctxQuery, &mockChain{}); err != nil {
 		t.Fatalf("TaskQuery DoHttpFilter failed: %v", err)
+	}
+}
+
+// ============================================================================
+// 纯函数/配置/工厂相关单测
+// ============================================================================
+
+// TestCheckConfig_Defaults 校验缺省值补齐逻辑
+func TestCheckConfig_Defaults(t *testing.T) {
+	cfg := &Config{}
+	if err := checkConfig(cfg, nil); err != nil {
+		t.Fatalf("checkConfig error: %v", err)
+	}
+	if cfg.BalanceKey != "balance:{balance_target}" {
+		t.Errorf("BalanceKey default wrong: %q", cfg.BalanceKey)
+	}
+	if cfg.PriceKey != "access-resource-price:{application}:{resource}" {
+		t.Errorf("PriceKey default wrong: %q", cfg.PriceKey)
+	}
+	if cfg.TaskKey != "resource-pricing-task:{application}:{resource}" {
+		t.Errorf("TaskKey default wrong: %q", cfg.TaskKey)
+	}
+	if cfg.ConcurrencyKey != "resource-pricing-concurrency:{application}:{resource}" {
+		t.Errorf("ConcurrencyKey default wrong: %q", cfg.ConcurrencyKey)
+	}
+}
+
+// TestCheckConfig_KeepsCustom 已配置的字段不应被默认值覆盖
+func TestCheckConfig_KeepsCustom(t *testing.T) {
+	cfg := &Config{
+		BalanceKey:     "custom-balance:{application}",
+		PriceKey:       "custom-price:{resource}",
+		TaskKey:        "custom-task:{application}",
+		ConcurrencyKey: "custom-concurrency:{resource}",
+	}
+	if err := checkConfig(cfg, nil); err != nil {
+		t.Fatalf("checkConfig error: %v", err)
+	}
+	if cfg.BalanceKey != "custom-balance:{application}" ||
+		cfg.PriceKey != "custom-price:{resource}" ||
+		cfg.TaskKey != "custom-task:{application}" ||
+		cfg.ConcurrencyKey != "custom-concurrency:{resource}" {
+		t.Errorf("checkConfig unexpectedly overwrote custom values: %+v", cfg)
+	}
+}
+
+// TestHasFreePricePlan 覆盖免费策略识别的各种边界
+func TestHasFreePricePlan(t *testing.T) {
+	cases := []struct {
+		name string
+		data *price_calcular.PricingData
+		want bool
+	}{
+		{name: "nil pricing data", data: nil, want: false},
+		{name: "empty strategy", data: &price_calcular.PricingData{Strategy: nil}, want: false},
+		{
+			name: "single free plan",
+			data: &price_calcular.PricingData{Strategy: map[string]*price_calcular.PricePlan{
+				"r1": {Sale: map[string]float64{"per_call": 0}},
+			}},
+			want: true,
+		},
+		{
+			name: "paid plan only",
+			data: &price_calcular.PricingData{Strategy: map[string]*price_calcular.PricePlan{
+				"r1": {Sale: map[string]float64{"per_call": 1.5}},
+			}},
+			want: false,
+		},
+		{
+			name: "mixed plans",
+			data: &price_calcular.PricingData{Strategy: map[string]*price_calcular.PricePlan{
+				"r1": {Sale: map[string]float64{"per_call": 1.5}},
+				"r2": {Sale: map[string]float64{"per_call": 0, "per_token": 0}},
+			}},
+			want: true,
+		},
+		{
+			name: "nil plan and empty sale skipped",
+			data: &price_calcular.PricingData{Strategy: map[string]*price_calcular.PricePlan{
+				"r1": nil,
+				"r2": {Sale: map[string]float64{}},
+				"r3": {Sale: map[string]float64{"per_call": 2.0}},
+			}},
+			want: false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := hasFreePricePlan(c.data); got != c.want {
+				t.Errorf("hasFreePricePlan(%s) = %v, want %v", c.name, got, c.want)
+			}
+		})
+	}
+}
+
+// TestExecutor_ResetTypeCheck Reset 方法应校验入参类型
+func TestExecutor_ResetTypeCheck(t *testing.T) {
+	e := &executor{WorkerBase: drivers.Worker("id", "name")}
+	if err := e.Reset("not a config", nil); err == nil {
+		t.Errorf("expected type error for invalid config type, got nil")
+	}
+	cfg := &Config{Cache: "cache_id", ConcurrencyLimit: 200, EnableBalance: true}
+	_ = checkConfig(cfg, nil)
+	if err := e.Reset(cfg, nil); err != nil {
+		t.Fatalf("Reset with valid Config returned error: %v", err)
+	}
+	if e.redisID != "cache_id" || e.defaultConcurrencyLimit != 200 || !e.enableBalance {
+		t.Errorf("Reset did not apply config: %+v", e)
+	}
+	if e.balanceKeyGenerator == nil || e.priceKeyGenerator == nil ||
+		e.taskKeyGenerator == nil || e.concurrencyKeyGenerator == nil {
+		t.Errorf("Reset did not initialize key generators")
+	}
+}
+
+// TestCreate 工厂函数应成功创建 executor 并完成基础初始化
+func TestCreate(t *testing.T) {
+	cfg := &Config{Cache: "cache_id", ConcurrencyLimit: 10, EnableBalance: false}
+	_ = checkConfig(cfg, nil)
+	w, err := Create("id_x", "name_x", cfg, nil)
+	if err != nil {
+		t.Fatalf("Create returned error: %v", err)
+	}
+	e, ok := w.(*executor)
+	if !ok {
+		t.Fatalf("expected *executor, got %T", w)
+	}
+	if e.redisID != "cache_id" || e.defaultConcurrencyLimit != 10 || e.enableBalance {
+		t.Errorf("Create did not apply config: %+v", e)
+	}
+}
+
+// TestExecutor_LifecycleAndSkill 覆盖 Start/Stop/Destroy/CheckSkill
+func TestExecutor_LifecycleAndSkill(t *testing.T) {
+	e := &executor{WorkerBase: drivers.Worker("id", "name")}
+	if err := e.Start(); err != nil {
+		t.Errorf("Start error: %v", err)
+	}
+	if err := e.Stop(); err != nil {
+		t.Errorf("Stop error: %v", err)
+	}
+	e.Destroy() // 无返回值，仅确保不 panic
+
+	if !e.CheckSkill(http_context.FilterSkillName) {
+		t.Errorf("CheckSkill(%q) should be true", http_context.FilterSkillName)
+	}
+	if e.CheckSkill("unknown-skill") {
+		t.Errorf("CheckSkill(unknown) should be false")
+	}
+}
+
+// TestDoHttpFilter_MissingLabels 缺少 application/api 标签时应直接放行
+func TestDoHttpFilter_MissingLabels(t *testing.T) {
+	plugin := &executor{
+		WorkerBase:              drivers.Worker("id", "name"),
+		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
+		priceKeyGenerator:       context_label.NewKeyGenerator("price:{application}"),
+		taskKeyGenerator:        context_label.NewKeyGenerator("task:{application}"),
+		concurrencyKeyGenerator: context_label.NewKeyGenerator("concurrency:{application}"),
+	}
+
+	// application 缺失
+	ctx := newMockHttpContext(map[string]string{"api": "api_1"}, &mockResponse{})
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
+		t.Errorf("expected nil error when application missing, got %v", err)
+	}
+	// api 缺失
+	ctx = newMockHttpContext(map[string]string{"application": "app_1"}, &mockResponse{})
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
+		t.Errorf("expected nil error when api missing, got %v", err)
+	}
+}
+
+// TestDoHttpFilter_NoResource 缺少 resource 标签时应跳过计费并走链路
+func TestDoHttpFilter_NoResource(t *testing.T) {
+	cache := &mockCache{kv: map[string]string{}}
+	scope_manager.Set("mock_cache_noresource", cache, "redis")
+	defer scope_manager.Del("mock_cache_noresource")
+
+	plugin := &executor{
+		WorkerBase:              drivers.Worker("id", "name"),
+		redisID:                 "mock_cache_noresource",
+		enableBalance:           false,
+		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
+		priceKeyGenerator:       context_label.NewKeyGenerator("price:{application}"),
+		taskKeyGenerator:        context_label.NewKeyGenerator("task:{application}"),
+		concurrencyKeyGenerator: context_label.NewKeyGenerator("concurrency:{application}"),
+	}
+	ctx := newMockHttpContext(map[string]string{
+		"application": "app_1",
+		"api":         "api_1",
+	}, &mockResponse{})
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
+		t.Errorf("expected nil error when resource missing, got %v", err)
+	}
+	// 未命中 resource 时不应产生任何扣款 Lua 调用
+	if len(cache.runCalls) != 0 {
+		t.Errorf("expected no run calls, got %d", len(cache.runCalls))
+	}
+}
+
+// TestDoHttpFilter_CalculatorNotFound 计算器缺失时应放行链路且不扣费
+func TestDoHttpFilter_CalculatorNotFound(t *testing.T) {
+	cache := &mockCache{kv: map[string]string{}}
+	scope_manager.Set("mock_cache_nocalc", cache, "redis")
+	defer scope_manager.Del("mock_cache_nocalc")
+
+	plugin := &executor{
+		WorkerBase:              drivers.Worker("id", "name"),
+		redisID:                 "mock_cache_nocalc",
+		enableBalance:           false,
+		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
+		priceKeyGenerator:       context_label.NewKeyGenerator("price:{application}"),
+		taskKeyGenerator:        context_label.NewKeyGenerator("task:{application}"),
+		concurrencyKeyGenerator: context_label.NewKeyGenerator("concurrency:{application}"),
+	}
+	ctx := newMockHttpContext(map[string]string{
+		"application":   "app_1",
+		"api":           "api_1",
+		"resource":      "not_registered_res",
+		"resource_type": "api",
+	}, &mockResponse{})
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
+		t.Errorf("expected nil error when calculator missing, got %v", err)
+	}
+	if len(cache.runCalls) != 0 {
+		t.Errorf("expected no run calls, got %d", len(cache.runCalls))
+	}
+}
+
+// concurrencyCache 在 IncrBy 时始终返回超出阈值的计数，模拟并发触顶
+type concurrencyCache struct {
+	mockCache
+	incrVal int64
+}
+
+func (c *concurrencyCache) IncrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
+	return &mockIntResult{val: c.incrVal, err: nil}
+}
+
+// TestDoHttpFilter_ConcurrencyLimitExceeded 并发上限触顶应返回 429 且不进入计费
+func TestDoHttpFilter_ConcurrencyLimitExceeded(t *testing.T) {
+	price_calcular.SetCalculator("api:res_conc", newTestCalculator(t))
+	defer price_calcular.DelCalculator("api:res_conc")
+
+	cache := &concurrencyCache{
+		mockCache: mockCache{kv: map[string]string{}},
+		incrVal:   999, // 显著超过默认 1
+	}
+	scope_manager.Set("mock_cache_conc", cache, "redis")
+	defer scope_manager.Del("mock_cache_conc")
+
+	plugin := &executor{
+		WorkerBase:              drivers.Worker("id", "name"),
+		redisID:                 "mock_cache_conc",
+		defaultConcurrencyLimit: 1,
+		enableBalance:           false,
+		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
+		priceKeyGenerator:       context_label.NewKeyGenerator("price:{application}"),
+		taskKeyGenerator:        context_label.NewKeyGenerator("task:{application}"),
+		concurrencyKeyGenerator: context_label.NewKeyGenerator("concurrency:{application}:{resource}"),
+	}
+	resp := &mockResponse{}
+	ctx := newMockHttpContext(map[string]string{
+		"application":   "app_1",
+		"api":           "api_1",
+		"resource":      "res_conc",
+		"resource_type": "api",
+	}, resp)
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
+		t.Errorf("expected nil error when concurrency limit exceeded, got %v", err)
+	}
+	if resp.statusCode != http.StatusTooManyRequests {
+		t.Errorf("expected status 429, got %d", resp.statusCode)
 	}
 }

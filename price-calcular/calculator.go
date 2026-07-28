@@ -96,9 +96,15 @@ func NewCalculator(currency string, variables Variables, rules []*Rule) (ICalcul
 			saleExpr = expr
 		}
 
-		// 预编译官方价计算公式
-		if rule.OfficialExpression != "" {
+		if rule.OfficialExpression == "" {
 			expr, err := NewExpression(rule.SaleExpression)
+			if err != nil {
+				return nil, fmt.Errorf("compile official_expression '%s' error: %w", rule.OfficialExpression, err)
+			}
+			officialExpr = expr
+		} else {
+			// 预编译官方价计算公式
+			expr, err := NewExpression(rule.OfficialExpression)
 			if err != nil {
 				return nil, fmt.Errorf("compile official_expression '%s' error: %w", rule.OfficialExpression, err)
 			}
@@ -155,6 +161,9 @@ func (c *Calculator) Calculate(ctx eocontext.EoContext, enableBalance bool, pric
 		calculator := GetICalculator(ctx)
 		if calculator == nil {
 			return nil, fmt.Errorf("calculator is nil")
+		}
+		if len(c.rules) == 0 {
+			return calculator.Calculate(ctx, enableBalance, pricingData)
 		}
 		extractor = calculator.VariablesExtractor()
 	}
@@ -215,6 +224,9 @@ func (c *Calculator) CalculateFromChunk(ctx eocontext.EoContext, enableBalance b
 		calculator := GetICalculator(ctx)
 		if calculator == nil {
 			return nil, fmt.Errorf("calculator is nil")
+		}
+		if len(c.rules) == 0 {
+			return calculator.CalculateFromChunk(ctx, enableBalance, chunk, pricingData)
 		}
 		extractor = calculator.VariablesExtractor()
 	}
@@ -338,6 +350,10 @@ func (c *Calculator) PreDeduct(ctx eocontext.EoContext, pricingData *PricingData
 		if calculator == nil {
 			return 0, "", fmt.Errorf("calculator is nil")
 		}
+		if len(c.rules) == 0 {
+			return calculator.PreDeduct(ctx, pricingData)
+		}
+
 		extractor = calculator.VariablesExtractor()
 	}
 	vars := extractor.ExtractAll(ctx)

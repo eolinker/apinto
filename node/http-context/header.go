@@ -139,9 +139,9 @@ func (r *ResponseHeader) refresh() {
 		tmp[vs[0]] = []string{strings.TrimSpace(vs[1])}
 	}
 	r.cache = tmp
-	for _, ac := range r.actions {
-		ac.Action(r, ac.Key, ac.Value)
-	}
+	//for _, ac := range r.actions {
+	//	ac.Action(r, ac.Key, ac.Value)
+	//}
 	r.afterProxy = true
 	r.actions = nil
 

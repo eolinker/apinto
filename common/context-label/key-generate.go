@@ -29,7 +29,7 @@ func parseVariables(template string) map[string]struct{} {
 	return vars
 }
 
-type GetLabelFunc func(ctx http_context.IHttpContext) string
+type GetLabelFunc func(ctx http_context.IHttpContext, label string) string
 
 type IKeyGenerator interface {
 	Key(ctx http_context.IHttpContext, fns ...GetLabelFunc) string
@@ -85,14 +85,16 @@ func (k *keyGenerator) Key(ctx http_context.IHttpContext, fns ...GetLabelFunc) s
 		// Process from right to left to keep left indices valid
 		for i := len(placeholders) - 1; i >= 0; i-- {
 			p := placeholders[i]
-			value := ctx.GetLabel(p.name)
-			if value == "" {
-				for _, fn := range fns {
-					value = fn(ctx)
-					if value != "" {
-						break
-					}
+			value := ""
+			for _, fn := range fns {
+				value = fn(ctx, p.name)
+				if value != "" {
+					break
 				}
+			}
+
+			if value == "" {
+				value = ctx.GetLabel(p.name)
 			}
 			if value != "" {
 				valueRunes := []rune(value)

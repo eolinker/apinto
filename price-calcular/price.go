@@ -53,3 +53,46 @@ type PricePlan struct {
 	Sale     map[string]float64 `json:"sale"`
 	Official map[string]float64 `json:"official"`
 }
+
+// MinSalePricingData 从 []*PricingData 中挑选 Sale 总和最小的一个。
+// Sale 总和 = 遍历所有 Strategy 下 PricePlan.Sale 里的所有数值累加。
+// 若入参为空或全部无有效 Sale 数据，返回 nil。
+func MinSalePricingData(list []*PricingData) *PricingData {
+	var (
+		minData *PricingData
+		minSum  float64
+	)
+	for _, data := range list {
+		if data == nil {
+			continue
+		}
+		sum, ok := sumSale(data)
+		if !ok {
+			continue
+		}
+		if minData == nil || sum < minSum {
+			minData = data
+			minSum = sum
+		}
+	}
+	return minData
+}
+
+// sumSale 计算单个 PricingData 中所有 Strategy 下 Sale 的累加值。
+// 返回值 ok 为 false 表示没有任何有效的 Sale 数据。
+func sumSale(data *PricingData) (float64, bool) {
+	var (
+		sum float64
+		has bool
+	)
+	for _, plan := range data.Strategy {
+		if plan == nil {
+			continue
+		}
+		for _, v := range plan.Sale {
+			sum += v
+			has = true
+		}
+	}
+	return sum, has
+}

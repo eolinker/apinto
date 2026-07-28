@@ -15,6 +15,7 @@ const (
 
 var (
 	policyManager price_calcular.IManager
+	customerVar   eosc.ICustomerVar
 	once          sync.Once
 )
 
@@ -36,6 +37,7 @@ func NewFactory() *Factory {
 func (f *Factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
 	once.Do(func() {
 		bean.Autowired(&policyManager)
+		bean.Autowired(&customerVar)
 	})
 
 	return f.IExtenderDriverFactory.Create(profession, name, label, desc, params)

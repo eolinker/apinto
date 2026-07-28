@@ -49,10 +49,10 @@ function buildApp(){
            -X 'github.com/eolinker/apinto/utils/version.buildUser=gitlab'
            -X 'github.com/eolinker/apinto/utils/version.goVersion=$(go version)'
            -X 'github.com/eolinker/apinto/utils/version.eoscVersion=${EOSC_VERSION}'"
-    echo -e "build $APP:go build -ldflags "-w -s $flags" -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
+    echo -e "build $APP:go build -gcflags="all=-N -l" -ldflags "-w -s $flags" -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
 
-    echo "CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -ldflags \"-w -s $flags\" -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
-    CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -ldflags "-w -s $flags" -o ${OUTPATH}/$APP ${BasePath}/app/$APP
+    echo "CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -gcflags=\"all=-N -l\" -ldflags \"-w -s $flags\" -o ${OUTPATH}/$APP ${BasePath}/app/$APP"
+    CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build -gcflags="all=-N -l" -ldflags "-w -s $flags" -o ${OUTPATH}/$APP ${BasePath}/app/$APP
 #    echo "build $APP:${buildCMD}"
 
 #    echo `${buildCMD}`
