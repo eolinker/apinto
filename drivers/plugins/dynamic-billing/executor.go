@@ -323,43 +323,43 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		})
 	} else if ctx.GetLabel("resource_type") == "ai" {
 		var res *price_calcular.CalculateResult
-		ctx.Proxy().AppendBodyFinish(func(ctx http_context.IHttpContext) {
-			fn := context_label.GetResponseChunkFunc(ctx)
-			if fn == nil {
-				if res != nil && res.Sale > 0 {
-					if e.enableBalance && cache != nil {
-						settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
-					}
-				} else {
-					// 未完成实际结算：整额退还预扣
-					refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
-				}
-				return
-			}
-			body, err := fn(ctx)
-			if err != nil {
-				log.Errorf("[dynamic-billing] get response chunk error: %v", err)
-				refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
-				return
-			}
-			res, err = calc.CalculateFromChunk(ctx, e.enableBalance, body, priceData)
-			if err != nil {
-				log.Errorf("[dynamic-billing] calculate error: %v", err)
-				refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
-				return
-			}
-			if res == nil {
-				refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
-				return
-			}
-			context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
-			context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
-			context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
-			if e.enableBalance && cache != nil {
-				settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
-			}
-			return
-		})
+		//ctx.Proxy().AppendBodyFinish(func(ctx http_context.IHttpContext) {
+		//	fn := context_label.GetResponseChunkFunc(ctx)
+		//	if fn == nil {
+		//		if res != nil && res.Sale > 0 {
+		//			if e.enableBalance && cache != nil {
+		//				settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
+		//			}
+		//		} else {
+		//			// 未完成实际结算：整额退还预扣
+		//			refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
+		//		}
+		//		return
+		//	}
+		//	body, err := fn(ctx)
+		//	if err != nil {
+		//		log.Errorf("[dynamic-billing] get response chunk error: %v", err)
+		//		refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
+		//		return
+		//	}
+		//	res, err = calc.CalculateFromChunk(ctx, e.enableBalance, body, priceData)
+		//	if err != nil {
+		//		log.Errorf("[dynamic-billing] calculate error: %v", err)
+		//		refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
+		//		return
+		//	}
+		//	if res == nil {
+		//		refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
+		//		return
+		//	}
+		//	context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
+		//	context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
+		//	context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
+		//	if e.enableBalance && cache != nil {
+		//		settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
+		//	}
+		//	return
+		//})
 		// 只有文本模型需要异步
 		ctx.Proxy().AppendStreamBodyHandle(func(ctx http_context.IHttpContext, p []byte) ([]byte, error) {
 			var body []byte

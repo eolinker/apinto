@@ -102,40 +102,18 @@ func (c *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string
 		httpContext.Proxy().Header().SetHeader("Authorization", "Bearer "+c.apikey)
 	}
 	httpContext.Proxy().URI().SetPath(c.path)
+	context_label.SetModelCompletionTag(ctx)
 	httpContext.Proxy().Body().SetRaw("application/json", newBody)
 	if chatRequest.Config.Stream {
 		httpContext.Proxy().Header().SetHeader("X-DashScope-SSE", "enable")
 		httpContext.Proxy().AppendStreamBodyHandle(c.streamHandler)
-		context_label.SetModelCompletionStreamTag(ctx)
-		ctx.SetLabel("response-content-type", "text/event-stream")
+		httpContext.Proxy().SetStreamBodyParse(StreamBodyParse)
 	} else {
 		context_label.SetDisableStream(ctx, true)
-		context_label.SetModelCompletionTag(ctx)
 	}
 	if c.balanceHandler != nil {
 		ctx.SetBalance(c.balanceHandler)
 	}
-	context_label.SetResponseChunkFunc(ctx, func(ctx eocontext.EoContext) ([]byte, error) {
-		hCtx, err := http_service.Assert(ctx)
-		if err != nil {
-			return nil, err
-		}
-		body := hCtx.Response().GetBody()
-		encoding := hCtx.Response().Headers().Get("content-encoding")
-		if encoding != "utf-8" && encoding != "" {
-			body, err = encoder.ToUTF8(encoding, body)
-			if err != nil {
-				log.Errorf("[dynamic-billing] failed to convert response body to UTF-8: %v", err)
-			}
-		}
-		if hCtx.Response().StatusCode() == 200 && !context_label.IsStreamRunning(ctx) {
-			if converted, err := convertDashScopeToOpenAI(hCtx, body); err == nil {
-				body = converted
-			}
-		}
-
-		return body, nil
-	})
 	return nil
 }
 
@@ -493,4 +471,33 @@ func (c *OpenAIChat) convertErrorResponse(httpContext http_service.IHttpContext,
 		return
 	}
 	httpContext.Response().SetBody(newBody)
+}
+
+func StreamBodyParse(ctx http_service.IHttpContext, body []byte) []byte {
+	encoding := ctx.Response().Headers().Get("content-encoding")
+	target := body
+	if encoding != "utf-8" && encoding != "" {
+		tmp, err := encoder.ToUTF8(encoding, body)
+		if err != nil {
+			log.Errorf("convert to utf-8 error: %v, body: %s", err, string(body))
+			return body
+		}
+		target = tmp
+	}
+	builder := strings.Builder{}
+	scanner := bufio.NewScanner(bytes.NewReader(target))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if len(line) < 1 {
+			continue
+		}
+		if strings.HasPrefix(line, "data:") {
+			line = strings.TrimSpace(strings.TrimPrefix(line, "data:"))
+			if line[0] == '{' && line[len(line)-1] == '}' {
+				builder.WriteString(line)
+				builder.WriteString("\n")
+			}
+		}
+	}
+	return []byte(builder.String())
 }
