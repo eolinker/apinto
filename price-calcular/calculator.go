@@ -374,16 +374,14 @@ func (c *Calculator) PreDeduct(ctx eocontext.EoContext, pricingData *PricingData
 	}
 
 	// 匹配规则
-	var matchedRule *ProcessedRule
-	for _, rule := range c.rules {
-		if matchCondition(rule.conditions, vars) {
-			matchedRule = rule
-			break
-		}
-	}
-	if matchedRule == nil {
-		return 0, "", nil
-	}
+	//var matchedRule *ProcessedRule
+	//for _, rule := range c.rules {
+	//	if matchCondition(rule.conditions, vars) {
+	//		matchedRule = rule
+	//		break
+	//	}
+	//}
+	matchedRule := c.rules[0]
 
 	plan := pricingData.Strategy[matchedRule.id]
 	if plan == nil {

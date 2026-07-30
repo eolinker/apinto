@@ -42,12 +42,13 @@ type executor struct {
 
 // TaskInfo 描述了异步任务生成的元数据，用于二次状态查询时反查账户和资源组
 type TaskInfo struct {
-	ResourceID  string                      `json:"resource"`
-	App         string                      `json:"app"`
-	IsCharged   bool                        `json:"is_charged"`
-	Variables   map[string]interface{}      `json:"variables,omitempty"`
-	PricingData *price_calcular.PricingData `json:"pricing_data,omitempty"`
-	Cache       struct {
+	ResourceID   string                      `json:"resource"`
+	App          string                      `json:"app"`
+	IsCharged    bool                        `json:"is_charged"`
+	PreDeductKey string                      `json:"pre_deduct_key,omitempty"`
+	Variables    map[string]interface{}      `json:"variables,omitempty"`
+	PricingData  *price_calcular.PricingData `json:"pricing_data,omitempty"`
+	Cache        struct {
 		Body string `json:"body"`
 	} `json:"cache"`
 }
@@ -138,6 +139,11 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 				}
 				context_label.SetPriceVariables(ctx, info.Variables)
 
+				// 还原预扣快照 key，供本次 query 阶段结算/回滚使用
+				if info.PreDeductKey != "" {
+					context_label.SetPreDeductKey(ctx, info.PreDeductKey)
+				}
+
 				isCharged = info.IsCharged
 				// 若已有成功计费并落盘缓存的响应，则直接写回响应体阻断拦截，防范重复调用与二次扣费
 				if isCharged && info.Cache.Body != "" {
@@ -147,14 +153,6 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 					ctx.Response().SetStatus(http.StatusOK, "200")
 					ctx.Response().SetHeader("Content-Type", "application/json")
 					ctx.Response().SetBody([]byte(info.Cache.Body))
-					//calc, ok := w.Calculator().(*pricing_policy.Calculator)
-					//_, calcErr := calc.Calculate(ctx, e.enableBalance, info.PricingData, e.extenderKeys...)
-					//if calcErr != nil {
-					//	log.Errorf("[dynamic-billing] calculate failed for resource %s: %v", resourceID, calcErr)
-					//	ctx.SetLabel("pricing_status", "failed")
-					//	ctx.SetLabel("pricing_error", calcErr.Error())
-					//	return calcErr
-					//}
 					return nil
 				}
 			}
@@ -290,8 +288,21 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		if pdErr != nil {
 			log.Errorf("[dynamic-billing] pre-deduct calculate error for resource %s: %v", resourceID, pdErr)
 		} else if amt > 0 {
-			preDeductKey = preDeductKeyGenerator.Key(ctx)
-			if !executePreDeduct(ctx.Context(), cache, balanceKey, preDeductKey, amt, app) {
+			// preDeductKey 模板中的 {request_id} 由 KeyGenerator 通过下方 GetLabelFunc 解析成
+			// ctx.RequestId()，保证每次请求（含并发异步任务）都有独立的预扣快照 key。
+			preDeductKey = preDeductKeyGenerator.Key(ctx, func(c http_context.IHttpContext, label string) string {
+				if label == "request_id" {
+					return c.RequestId()
+				}
+				return ""
+			})
+			// 异步 TaskCreate 阶段：预扣快照需与 TaskInfo 缓存同寿（24h），
+			// 避免 query 阶段到来时预扣快照已过期导致无法结算/回滚。
+			ttl := preDeductTTL
+			if billingMode == context_label.BillingModeTaskCreate {
+				ttl = 24 * time.Hour
+			}
+			if !executePreDeduct(ctx.Context(), cache, balanceKey, preDeductKey, amt, ttl, app) {
 				log.Errorf("[dynamic-billing] pre-deduct failed for user %s, amount=%f", app, amt)
 				ctx.Response().SetStatus(http.StatusPaymentRequired, "402")
 				ctx.Response().SetBody([]byte(`{"error":"insufficient balance"}`))
@@ -305,7 +316,12 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	}
 
 	//var res *pricing_policy.CalculateResult
-	if ctx.GetLabel("resource_type") == "api" {
+	// 结算回调仅对 Immediate（同步）模式注册：
+	//   - TaskCreate 阶段的响应体是任务创建结果，此时用它计算实际用量是错误的；
+	//     真正的用量在 TaskQuery 阶段通过 settleBilling 结算。
+	//   - TaskQuery 阶段的结算已经统一走 settleBilling → settlePreDeduct/refundPreDeduct，
+	//     若此处再注册 AppendBodyFinish 会造成双重扣款。
+	if billingMode == context_label.BillingModeImmediate && ctx.GetLabel("resource_type") == "api" {
 		ctx.Proxy().AppendBodyFinish(func(ctx http_context.IHttpContext) {
 			res, err := calc.Calculate(ctx, e.enableBalance, priceData)
 			if err != nil {
@@ -321,45 +337,9 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 				settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
 			}
 		})
-	} else if ctx.GetLabel("resource_type") == "ai" {
+	} else if billingMode == context_label.BillingModeImmediate && ctx.GetLabel("resource_type") == "ai" {
 		var res *price_calcular.CalculateResult
-		//ctx.Proxy().AppendBodyFinish(func(ctx http_context.IHttpContext) {
-		//	fn := context_label.GetResponseChunkFunc(ctx)
-		//	if fn == nil {
-		//		if res != nil && res.Sale > 0 {
-		//			if e.enableBalance && cache != nil {
-		//				settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
-		//			}
-		//		} else {
-		//			// 未完成实际结算：整额退还预扣
-		//			refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
-		//		}
-		//		return
-		//	}
-		//	body, err := fn(ctx)
-		//	if err != nil {
-		//		log.Errorf("[dynamic-billing] get response chunk error: %v", err)
-		//		refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
-		//		return
-		//	}
-		//	res, err = calc.CalculateFromChunk(ctx, e.enableBalance, body, priceData)
-		//	if err != nil {
-		//		log.Errorf("[dynamic-billing] calculate error: %v", err)
-		//		refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
-		//		return
-		//	}
-		//	if res == nil {
-		//		refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
-		//		return
-		//	}
-		//	context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
-		//	context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
-		//	context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
-		//	if e.enableBalance && cache != nil {
-		//		settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
-		//	}
-		//	return
-		//})
+
 		// 只有文本模型需要异步
 		ctx.Proxy().AppendStreamBodyHandle(func(ctx http_context.IHttpContext, p []byte) ([]byte, error) {
 			var body []byte
@@ -444,9 +424,10 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		}
 		taskInfoKey := e.taskKeyGenerator.Key(ctx)
 		info := TaskInfo{
-			ResourceID: resourceID,
-			App:        app,
-			Variables:  extractor.ExtractAll(ctx),
+			ResourceID:   resourceID,
+			App:          app,
+			PreDeductKey: preDeductKey,
+			Variables:    extractor.ExtractAll(ctx),
 		}
 
 		// 获取并固化当前的定价配置数据，确保 query 阶段计费的一致性，防止中途价格配置变更
@@ -574,6 +555,9 @@ func (e *executor) settleBilling(ctx http_context.IHttpContext, calc price_calcu
 		if err != nil {
 			return err
 		}
+		// TaskQuery 阶段结算/回滚 都需要 TaskCreate 阶段落下的预扣快照 key。
+		// 它已在 DoHttpFilter 反查 TaskInfo 时被写回上下文，这里直接读取即可。
+		preDeductKey := context_label.GetPreDeductKey(ctx)
 		switch taskStatus {
 		case context_label.TaskStatusRunning:
 		case context_label.TaskStatusSuccess:
@@ -589,20 +573,26 @@ func (e *executor) settleBilling(ctx http_context.IHttpContext, calc price_calcu
 			context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
 			context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
 			context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
-			if e.enableBalance && cache != nil && res.Cost > 0 {
-				success := executeBalanceDeduction(ctx.Context(), cache, balanceKey, res.Sale, app)
-				if !success {
-					return fmt.Errorf("insufficient balance during settlement")
-				}
+			if e.enableBalance && cache != nil {
+				// 任务执行成功：以预扣快照做多退少补结算；
+				// 若无预扣快照（例如免费策略或 TaskCreate 阶段未预扣），
+				// settlePreDeduct 会退化为按 res.Sale 直接扣款。
+				settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
 			}
 		case context_label.TaskStatusFailed:
 			isCharged = true
+			// 任务执行失败：整额退回 TaskCreate 阶段的预扣金额。
+			if e.enableBalance && cache != nil {
+				refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
+			}
 		}
 		taskKey := e.taskKeyGenerator.Key(ctx)
 		taskInfo := TaskInfo{
 			ResourceID: resourceID,
 			App:        app,
 			IsCharged:  isCharged,
+			// 结算/回滚已完成后，预扣快照已被 DEL；清空 PreDeductKey，
+			// 避免后续幂等重入的 query 请求误用一个已失效的 key。
 			Cache: struct {
 				Body string `json:"body"`
 			}(struct{ Body string }{
@@ -796,7 +786,11 @@ func refundPreDeduct(ctx http_context.IHttpContext, cache resources.ICache, bala
 //
 // 返回 true 表示成功扣款且已落快照；返回 false 表示 Redis 出错或余额不足，
 // 调用方应据此拦截并回复 402。
-func executePreDeduct(ctx context.Context, cache resources.ICache, balanceKey, preDeductKey string, amount float64, userID string) bool {
+//
+// ttl 由调用方传入：同步 immediate 场景用 preDeductTTL（分钟级），
+// 异步 TaskCreate 场景需与 TaskInfo 缓存同寿（24h），
+// 否则 query 阶段到来时预扣快照可能已经过期导致无法结算/回滚。
+func executePreDeduct(ctx context.Context, cache resources.ICache, balanceKey, preDeductKey string, amount float64, ttl time.Duration, userID string) bool {
 	preDeductLua := `
 		local balanceKey = KEYS[1]
 		local preKey = KEYS[2]
@@ -811,7 +805,10 @@ func executePreDeduct(ctx context.Context, cache resources.ICache, balanceKey, p
 		return {1, nb}
 	`
 	amt := int64(math.Round(amount * 1000000))
-	res := cache.Run(ctx, preDeductLua, []string{balanceKey, preDeductKey}, amt, int64(preDeductTTL/time.Second))
+	if ttl <= 0 {
+		ttl = preDeductTTL
+	}
+	res := cache.Run(ctx, preDeductLua, []string{balanceKey, preDeductKey}, amt, int64(ttl/time.Second))
 	raw, err := res.Result()
 	if err != nil {
 		log.Errorf("[dynamic-billing] pre-deduct redis error for user %s, amount=%f, key=%s: %v",
@@ -839,5 +836,5 @@ func executePreDeduct(ctx context.Context, cache resources.ICache, balanceKey, p
 const preDeductTTL = 5 * time.Minute
 
 var (
-	preDeductKeyGenerator = context_label.NewKeyGenerator("{{product}:balance}:pre-deduct:{resource}")
+	preDeductKeyGenerator = context_label.NewKeyGenerator("{{product}:balance}:pre-deduct:{request_id}")
 )

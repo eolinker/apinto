@@ -14,7 +14,7 @@ import (
 
 const (
 	videoTaskCommitPath = "/services/aigc/video-generation/video-synthesis"
-	videoTaskQueryPath  = "/tasks/{task_id}"
+	videoTaskQueryPath  = "/tasks"
 )
 
 func init() {
@@ -82,6 +82,7 @@ func (v *VideoTaskCommit) RequestConvert(ctx eoscContext.EoContext, extender map
 		ctx.SetBalance(v.balanceHandler)
 	}
 	context_label.SetBillingMode(ctx, context_label.BillingModeTaskCreate)
+	context_label.SetDisableStream(ctx, true)
 	context_label.SetTaskIDSetFunc(ctx, func(ctx eoscContext.EoContext) error {
 		httpContext, err := http_service.Assert(ctx)
 		if err != nil {
@@ -152,12 +153,13 @@ func (v *VideoTaskQuery) RequestConvert(ctx eoscContext.EoContext, extender map[
 	if err != nil {
 		return err
 	}
-	// TODO: 提取task_id，判断是否已经存在，如果存在，则直接返回，不转发
+	taskId := context_label.GetTaskID(ctx)
 	httpContext.Proxy().Header().SetHeader("Authorization", v.apikey)
-	httpContext.Proxy().URI().SetPath(v.path)
+	httpContext.Proxy().URI().SetPath(fmt.Sprintf("%s/%s", v.path, taskId))
 	if v.balanceHandler != nil {
 		ctx.SetBalance(v.balanceHandler)
 	}
+	context_label.SetDisableStream(ctx, true)
 	context_label.SetBillingMode(ctx, context_label.BillingModeTaskQuery)
 	context_label.SetTaskStatusParseFunc(ctx, func(ctx eoscContext.EoContext) (string, error) {
 		httpContext, err := http_service.Assert(ctx)
@@ -184,8 +186,7 @@ func (v *VideoTaskQuery) RequestConvert(ctx eoscContext.EoContext, extender map[
 }
 
 func (v *VideoTaskQuery) ResponseConvert(ctx eoscContext.EoContext) error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 type TaskCommitResponse struct {
