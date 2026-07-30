@@ -160,7 +160,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	}
 
 	if resourceID == "" {
-		log.Debug("[dynamic-billing] resource_id not found, skipping pricing calculation.")
+		log.Error("[dynamic-billing] resource_id not found, skipping pricing calculation.")
 		if next != nil {
 			return next.DoChain(ctx)
 		}
@@ -168,15 +168,8 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	}
 
 	id := fmt.Sprintf("%s:%s", ctx.GetLabel("resource_type"), resourceID)
-	//// 4. 定位计费计算器
-	//w, has := policyManager.Get(id)
-	//if !has {
-	//	if next != nil {
-	//		return next.DoChain(ctx)
-	//	}
-	//	return nil
-	//}
 
+	//// 4. 定位计费计算器
 	calc, ok := price_calcular.GetCalculator(id)
 	if !ok || calc == nil {
 		log.Errorf("[dynamic-billing] pricing-policy calculator is nil or invalid for worker %s", resourceID)
@@ -205,15 +198,20 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	if concurrencyLimit > 0 && cache != nil {
 		resCmd := cache.IncrBy(ctx.Context(), concurrencyKey, 1, 60*time.Second)
 		val, cmdErr := resCmd.Result()
-		if cmdErr == nil {
-			acquired = true
-			if int(val) > concurrencyLimit {
-				_ = cache.DecrBy(ctx.Context(), concurrencyKey, 1, 60*time.Second)
-				log.Errorf("[resource-pricing] concurrency limit exceeded for user %s on resource %s: current=%d, limit=%d", app, resourceID, val, concurrencyLimit)
-				ctx.Response().SetStatus(http.StatusTooManyRequests, "429")
-				ctx.Response().SetBody([]byte(`{"error":"concurrency limit exceeded"}`))
-				return nil
-			}
+		if cmdErr != nil {
+			// Redis 出错时 fail-closed：拒绝请求，避免并发限制被绕过导致资源被刷爆。
+			log.Errorf("[resource-pricing] concurrency IncrBy redis error for user %s on resource %s: %v", app, resourceID, cmdErr)
+			ctx.Response().SetStatus(http.StatusServiceUnavailable, "503")
+			ctx.Response().SetBody([]byte(`{"error":"concurrency check unavailable"}`))
+			return nil
+		}
+		acquired = true
+		if int(val) > concurrencyLimit {
+			_ = cache.DecrBy(ctx.Context(), concurrencyKey, 1, 60*time.Second)
+			log.Errorf("[resource-pricing] concurrency limit exceeded for user %s on resource %s: current=%d, limit=%d", app, resourceID, val, concurrencyLimit)
+			ctx.Response().SetStatus(http.StatusTooManyRequests, "429")
+			ctx.Response().SetBody([]byte(`{"error":"concurrency limit exceeded"}`))
+			return nil
 		}
 	}
 
@@ -248,7 +246,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		if err == nil {
 			if balanceInt, parseErr := strconv.ParseInt(balanceStr, 10, 64); parseErr == nil {
 				if balanceInt <= 0 {
-					balance := float64(balanceInt) / 100000.0
+					balance := float64(balanceInt) / 1000000.0
 					log.Errorf("[resource-pricing] insufficient balance for user %s: %f", app, balance)
 					err = errors.New(`{"error":"insufficient balance"}`)
 					ctx.Response().SetStatus(http.StatusPaymentRequired, "402")
@@ -335,11 +333,59 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
 			if e.enableBalance && cache != nil {
 				settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
+			} else {
+				log.DebugF("[dynamic-billing] balance settlement skipped for user %s on resource %s (rule=%s, key=%s)",
+					app, resourceID, preDeductKey)
 			}
 		})
 	} else if billingMode == context_label.BillingModeImmediate && ctx.GetLabel("resource_type") == "ai" {
 		var res *price_calcular.CalculateResult
-
+		ctx.Proxy().AppendBodyFinish(func(ctx http_context.IHttpContext) {
+			if res != nil && res.Sale > 0 {
+				if e.enableBalance && cache != nil {
+					settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
+				}
+			} else {
+				// 未完成实际结算：整额退还预扣
+				refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
+			}
+			return
+			//fn := context_label.GetResponseChunkFunc(ctx)
+			//if fn == nil {
+			//	if res != nil && res.Sale > 0 {
+			//		if e.enableBalance && cache != nil {
+			//			settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
+			//		}
+			//	} else {
+			//		// 未完成实际结算：整额退还预扣
+			//		refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
+			//	}
+			//	return
+			//}
+			//body, err := fn(ctx)
+			//if err != nil {
+			//	log.Errorf("[dynamic-billing] get response chunk error: %v", err)
+			//	refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
+			//	return
+			//}
+			//res, err = calc.CalculateFromChunk(ctx, e.enableBalance, body, priceData)
+			//if err != nil {
+			//	log.Errorf("[dynamic-billing] calculate error: %v", err)
+			//	refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
+			//	return
+			//}
+			//if res == nil {
+			//	refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
+			//	return
+			//}
+			//context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
+			//context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
+			//context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
+			//if e.enableBalance && cache != nil {
+			//	settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
+			//}
+			//return
+		})
 		// 只有文本模型需要异步
 		ctx.Proxy().AppendStreamBodyHandle(func(ctx http_context.IHttpContext, p []byte) ([]byte, error) {
 			var body []byte
@@ -394,6 +440,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	if next != nil {
 		err = next.DoChain(ctx)
 		if err != nil {
+			log.Errorf("[dynamic-billing] downstream chain forwarding error: %v", err)
 			// 请求链路失败：退回已预扣的金额，避免用户在无实际服务下被扣款
 			refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
 			return err
@@ -633,8 +680,8 @@ func (e *executor) Stop() error {
 // 逐步损坏，最终可能被写成 0。DECRBY 全程整数运算，不产生浮点/科学计数法，
 // 且天然允许结果为负值。
 func executeBalanceDeduction(ctx context.Context, cache resources.ICache, balanceKey string, cost float64, userID string) bool {
-	// 余额与扣减金额统一以「元 × 100000」的整数存储（与前置校验的 /100000.0 保持一致），
-	// 保留 5 位小数精度。先四舍五入消除浮点误差后转为整数，避免向 Redis 传入浮点。
+	// 余额与扣减金额统一以「元 × 1000000」的整数存储（与前置校验的 /1000000.0 保持一致），
+	// 保留 6 位小数精度。先四舍五入消除浮点误差后转为整数，避免向 Redis 传入浮点。
 	deductLua := `
 		local balanceKey = KEYS[1]
 		local deductAmount = tonumber(ARGV[1])
@@ -693,6 +740,7 @@ func hasFreePricePlan(pricingData *price_calcular.PricingData) bool {
 // 不受余额限制，天然安全。
 func settlePreDeduct(ctx http_context.IHttpContext, cache resources.ICache, balanceKey, preDeductKey string, actualSale float64, userID string) {
 	if cache == nil {
+		log.Errorf("[resource-pricing] settlePreDeduct failed: cache is nil for user %s", userID)
 		return
 	}
 	actual := int64(math.Round(actualSale * 1000000))
@@ -815,11 +863,13 @@ func executePreDeduct(ctx context.Context, cache resources.ICache, balanceKey, p
 			userID, amount, preDeductKey, err)
 		return false
 	}
-	// 解析返回值 {ok, balance}
+	// 解析返回值 {ok, balance}：Lua 脚本明确返回 {1, nb}（成功）或 {0, balance}（余额不足）。
+	// 返回值类型不符合预期时视为失败（fail-closed），避免没扣钱却放行请求导致账面错乱。
 	arr, ok := raw.([]interface{})
-	if !ok || len(arr) < 1 {
-		// 兼容部分 driver 直接返回单值的情况：只要不是明确失败都视为成功
-		return true
+	if !ok || len(arr) < 2 {
+		log.Errorf("[dynamic-billing] pre-deduct unexpected redis return for user %s, amount=%f, key=%s, raw=%v",
+			userID, amount, preDeductKey, raw)
+		return false
 	}
 	okFlag, _ := arr[0].(int64)
 	if okFlag == 0 {

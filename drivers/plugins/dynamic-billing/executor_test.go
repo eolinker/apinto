@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -220,6 +222,7 @@ func (m *mockHttpContext) Context() context.Context             { return m.ctx }
 func (m *mockHttpContext) Response() http_context.IResponse     { return m.resp }
 func (m *mockHttpContext) Request() http_context.IRequestReader { return nil }
 func (m *mockHttpContext) Proxy() http_context.IRequest         { return m.proxy }
+func (m *mockHttpContext) RequestId() string                    { return "test-req-id" }
 
 // mockChain 模拟调用链
 type mockChain struct {
@@ -748,5 +751,500 @@ func TestDoHttpFilter_ConcurrencyLimitExceeded(t *testing.T) {
 	}
 	if resp.statusCode != http.StatusTooManyRequests {
 		t.Errorf("expected status 429, got %d", resp.statusCode)
+	}
+}
+
+// ============================================================================
+// 扣款金额验证测试：验证传给 Redis 的金额、放大倍数、以及跑完整流程后的账户余额
+//
+// 分两类：
+//  1. 纯函数级（captureCache）：捕获 Run 的参数，断言传给 Redis 的金额正确。
+//  2. 端到端（luaCache）：用内存 map 模拟 Redis 的 DECRBY/INCRBY/GET/SET/DEL/EX 语义，
+//     跑完整 DoHttpFilter 流程后断言账户真实余额，验证"扣的钱到底对不对"。
+// ============================================================================
+
+// testRedisError 模拟 Redis 不可用错误。
+type testRedisError struct{ msg string }
+
+func (e *testRedisError) Error() string { return e.msg }
+
+var (
+	errRedisDown = &testRedisError{"redis unavailable"}
+	errNil       = &testRedisError{"redis nil"}
+)
+
+// --- captureCache：只捕获 Run 参数，不执行任何 Lua 逻辑 ---
+
+type captureCache struct {
+	resources.ICache
+	returns []interface{}
+	runs    []runCall
+	err     error
+	idx     int
+}
+
+func (c *captureCache) Get(ctx context.Context, key string) resources.StringResult {
+	return &mockStringResult{val: "", err: errNil}
+}
+
+func (c *captureCache) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) resources.InterfaceResult {
+	c.runs = append(c.runs, runCall{keys: keys, args: args})
+	if c.err != nil {
+		return &mockInterfaceResult{val: nil, err: c.err}
+	}
+	if c.idx < len(c.returns) {
+		v := c.returns[c.idx]
+		c.idx++
+		return &mockInterfaceResult{val: v, err: nil}
+	}
+	return &mockInterfaceResult{val: nil, err: nil}
+}
+
+// --- luaCache：用内存 map 真实模拟 Redis 语义 ---
+
+type luaCache struct {
+	resources.ICache
+	mu   sync.Mutex
+	kv   map[string]string
+	runs int
+}
+
+func newLuaCache(balance map[string]string) *luaCache {
+	m := make(map[string]string)
+	for k, v := range balance {
+		m[k] = v
+	}
+	return &luaCache{kv: m}
+}
+
+func (c *luaCache) Get(ctx context.Context, key string) resources.StringResult {
+	c.mu.Lock()
+	v, ok := c.kv[key]
+	c.mu.Unlock()
+	if !ok {
+		return &mockStringResult{val: "", err: errNil}
+	}
+	return &mockStringResult{val: v, err: nil}
+}
+
+func (c *luaCache) Set(ctx context.Context, key string, value []byte, expiration time.Duration) resources.StatusResult {
+	c.mu.Lock()
+	c.kv[key] = string(value)
+	c.mu.Unlock()
+	return nil
+}
+
+func (c *luaCache) IncrBy(ctx context.Context, key string, incr int64, expiration time.Duration) resources.IntResult {
+	c.mu.Lock()
+	cur := int64(0)
+	if v, ok := c.kv[key]; ok {
+		cur, _ = strconv.ParseInt(v, 10, 64)
+	}
+	cur += incr
+	c.kv[key] = strconv.FormatInt(cur, 10)
+	c.mu.Unlock()
+	return &mockIntResult{val: cur, err: nil}
+}
+
+func (c *luaCache) DecrBy(ctx context.Context, key string, decr int64, expiration time.Duration) resources.IntResult {
+	return c.IncrBy(ctx, key, -decr, expiration)
+}
+
+func (c *luaCache) Del(ctx context.Context, keys ...string) resources.IntResult {
+	c.mu.Lock()
+	var n int64
+	for _, k := range keys {
+		if _, ok := c.kv[k]; ok {
+			delete(c.kv, k)
+			n++
+		}
+	}
+	c.mu.Unlock()
+	return &mockIntResult{val: n, err: nil}
+}
+
+// Run 模拟 executor.go 中用到的 4 种 Lua 脚本语义。
+// 通过 keys 数量与 args 数量区分分支（与生产代码的调用约定一致）。
+func (c *luaCache) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) resources.InterfaceResult {
+	c.mu.Lock()
+	c.runs++
+	bal := keys[0]
+	getInt := func(k string) int64 {
+		v, ok := c.kv[k]
+		if !ok {
+			return 0
+		}
+		n, _ := strconv.ParseInt(v, 10, 64)
+		return n
+	}
+	set := func(k string, n int64) { c.kv[k] = strconv.FormatInt(n, 10) }
+	var ret interface{}
+	switch {
+	case len(keys) == 1 && len(args) == 1:
+		// executeBalanceDeduction: decrby balance amt
+		nb := getInt(bal) - args[0].(int64)
+		set(bal, nb)
+		ret = nb
+	case len(keys) == 2 && len(args) == 2:
+		// executePreDeduct: 余额校验 + decrby + setex pre
+		amt := args[0].(int64)
+		b := getInt(bal)
+		if b < amt {
+			ret = []interface{}{int64(0), b}
+		} else {
+			nb := b - amt
+			set(bal, nb)
+			c.kv[keys[1]] = strconv.FormatInt(amt, 10)
+			ret = []interface{}{int64(1), nb}
+		}
+	case len(keys) == 2 && len(args) == 1:
+		// settlePreDeduct: get pre / del pre / decrby diff
+		actual := args[0].(int64)
+		pre := getInt(keys[1])
+		if pre == 0 {
+			ret = []interface{}{int64(0), getInt(bal), int64(0)}
+		} else {
+			delete(c.kv, keys[1])
+			diff := actual - pre
+			nb := getInt(bal) - diff
+			if diff != 0 {
+				set(bal, nb)
+			}
+			ret = []interface{}{diff, nb, pre}
+		}
+	case len(keys) == 2 && len(args) == 0:
+		// refundPreDeduct: get pre / del pre / incrby pre
+		pre := getInt(keys[1])
+		if pre == 0 {
+			ret = []interface{}{int64(0), getInt(bal)}
+		} else {
+			delete(c.kv, keys[1])
+			nb := getInt(bal) + pre
+			set(bal, nb)
+			ret = []interface{}{pre, nb}
+		}
+	}
+	c.mu.Unlock()
+	return &mockInterfaceResult{val: ret, err: nil}
+}
+
+func (c *luaCache) balanceInt(key string) int64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	v, ok := c.kv[key]
+	if !ok {
+		return 0
+	}
+	n, _ := strconv.ParseInt(v, 10, 64)
+	return n
+}
+
+// --- errIncrCache：让 IncrBy 始终返回 error，其它走 mockCache ---
+
+type errIncrCache struct {
+	mockCache
+}
+
+func (c *errIncrCache) IncrBy(ctx context.Context, key string, incr int64, exp time.Duration) resources.IntResult {
+	return &mockIntResult{val: 0, err: errRedisDown}
+}
+
+// --- errChain：始终返回 error 的调用链 ---
+
+type errChain struct{}
+
+func (e *errChain) DoChain(ctx eocontext.EoContext) error {
+	return errRedisDown
+}
+
+func (e *errChain) Destroy() {}
+
+// --- 纯函数级测试 ---
+
+// TestExecuteBalanceDeduction_Scale_6Digits 验证扣款金额按 1e6 放大。
+func TestExecuteBalanceDeduction_Scale_6Digits(t *testing.T) {
+	// cost=12.345678（元）按 6 位放大 -> 12345678
+	c := &captureCache{}
+	ok := executeBalanceDeduction(context.Background(), c, "bal", 12.345678, "u1")
+	if !ok {
+		t.Fatalf("expected success, got false")
+	}
+	if len(c.runs) != 1 {
+		t.Fatalf("expected 1 run call, got %d", len(c.runs))
+	}
+	got := c.runs[0].args[0].(int64)
+	if got != 12345678 {
+		t.Errorf("deduct arg = %d, want 12345678 (12.345678 * 1e6)", got)
+	}
+}
+
+// TestExecutePreDeduct_Scale_6Digits 验证预扣金额与 TTL 按 1e6 / 秒 传入。
+func TestExecutePreDeduct_Scale_6Digits(t *testing.T) {
+	// amount=5.5 元 -> 5500000
+	c := &captureCache{returns: []interface{}{[]interface{}{int64(1), int64(94500000)}}}
+	ok := executePreDeduct(context.Background(), c, "bal", "pre:1", 5.5, 5*time.Minute, "u1")
+	if !ok {
+		t.Fatalf("expected success, got false")
+	}
+	if len(c.runs) != 1 {
+		t.Fatalf("expected 1 run call, got %d", len(c.runs))
+	}
+	if got := c.runs[0].args[0].(int64); got != 5500000 {
+		t.Errorf("pre-deduct amount = %d, want 5500000 (5.5 * 1e6)", got)
+	}
+	// ttl 应为 300 秒
+	if got := c.runs[0].args[1].(int64); got != 300 {
+		t.Errorf("pre-deduct ttl = %d, want 300", got)
+	}
+}
+
+// TestExecutePreDeduct_InsufficientBalance_ReturnsFalse 余额不足时应返回 false。
+func TestExecutePreDeduct_InsufficientBalance_ReturnsFalse(t *testing.T) {
+	c := &captureCache{returns: []interface{}{[]interface{}{int64(0), int64(1000000)}}}
+	ok := executePreDeduct(context.Background(), c, "bal", "pre:1", 5.5, 5*time.Minute, "u1")
+	if ok {
+		t.Fatalf("expected false for insufficient balance")
+	}
+}
+
+// TestExecutePreDeduct_UnexpectedReturn_FailClosed 返回值类型不符时 fail-closed。
+func TestExecutePreDeduct_UnexpectedReturn_FailClosed(t *testing.T) {
+	c := &captureCache{returns: []interface{}{int64(1)}}
+	ok := executePreDeduct(context.Background(), c, "bal", "pre:1", 5.5, 5*time.Minute, "u1")
+	if ok {
+		t.Fatalf("expected false for unexpected return type")
+	}
+}
+
+// TestExecutePreDeduct_RedisError_FailClosed Redis 出错时 fail-closed。
+func TestExecutePreDeduct_RedisError_FailClosed(t *testing.T) {
+	c := &captureCache{err: errRedisDown}
+	ok := executePreDeduct(context.Background(), c, "bal", "pre:1", 5.5, 5*time.Minute, "u1")
+	if ok {
+		t.Fatalf("expected false for redis error")
+	}
+}
+
+// TestSettlePreDeduct_NoPreKey_DegradesToDirectDeduct 无 preKey 时退化为直接扣款。
+func TestSettlePreDeduct_NoPreKey_DegradesToDirectDeduct(t *testing.T) {
+	c := &captureCache{returns: []interface{}{int64(1)}}
+	ctx := newMockHttpContext(nil, &mockResponse{})
+	settlePreDeduct(ctx, c, "bal", "", 8.8, "u1")
+	if len(c.runs) != 1 {
+		t.Fatalf("expected 1 run call, got %d", len(c.runs))
+	}
+	// 8.8 * 1e6 = 8800000
+	if got := c.runs[0].args[0].(int64); got != 8800000 {
+		t.Errorf("settle direct-deduct arg = %d, want 8800000", got)
+	}
+}
+
+// TestSettlePreDeduct_WithPreKey_PassesActualArg 有 preKey 时传给 Redis 的是 actualSale。
+func TestSettlePreDeduct_WithPreKey_PassesActualArg(t *testing.T) {
+	c := &captureCache{returns: []interface{}{[]interface{}{int64(2000000), int64(98000000), int64(10000000)}}}
+	ctx := newMockHttpContext(nil, &mockResponse{})
+	settlePreDeduct(ctx, c, "bal", "pre:1", 12.0, "u1")
+	// actualSale=12.0 -> 12000000
+	if got := c.runs[0].args[0].(int64); got != 12000000 {
+		t.Errorf("settle actual arg = %d, want 12000000", got)
+	}
+}
+
+// TestRefundPreDeduct_NoKey_Noop preKey 为空时不调用 Redis。
+func TestRefundPreDeduct_NoKey_Noop(t *testing.T) {
+	c := &captureCache{}
+	ctx := newMockHttpContext(nil, &mockResponse{})
+	refundPreDeduct(ctx, c, "bal", "", "u1")
+	if len(c.runs) != 0 {
+		t.Errorf("expected no run call when preDeductKey empty, got %d", len(c.runs))
+	}
+}
+
+// --- 端到端测试 ---
+
+// newBillingTestEnv 构造可复用的端到端测试环境。
+// balanceYuan 单位为元，会被转成 1e6 存入 luaCache。
+// 定价：cost_per_call=2, sale_per_call=20，规则系数 sale*1.1 => sale=22 元。
+func newBillingTestEnv(t *testing.T, balanceYuan float64) (*executor, *luaCache, *mockHttpContext) {
+	t.Helper()
+	price_calcular.SetCalculator("api:res_billing", newTestCalculator(t))
+	t.Cleanup(func() { price_calcular.DelCalculator("api:res_billing") })
+
+	balanceKey := "balance:app_billing"
+	priceKey := "access-resource-price:app_billing:res_billing"
+	priceJSON := `{
+		"basic_info": {"version": "v1.0.0", "resource_group_id": "res_billing", "tenant_id": "t1"},
+		"strategy": {
+			"rule_success": {
+				"cost": {"per_call": 2.0},
+				"sale": {"per_call": 20.0},
+				"official": {"per_call": 25.0}
+			}
+		}
+	}`
+	cache := newLuaCache(map[string]string{
+		balanceKey: strconv.FormatInt(int64(balanceYuan*1000000), 10),
+		priceKey:   priceJSON,
+	})
+	scope_manager.Set("lua_cache_billing", cache, "redis")
+	t.Cleanup(func() { scope_manager.Del("lua_cache_billing") })
+
+	plugin := &executor{
+		WorkerBase:              drivers.Worker("billing_test", "billing_test"),
+		redisID:                 "lua_cache_billing",
+		enableBalance:           true,
+		balanceKeyGenerator:     context_label.NewKeyGenerator(balanceKey),
+		priceKeyGenerator:       context_label.NewKeyGenerator(priceKey),
+		taskKeyGenerator:        context_label.NewKeyGenerator("task:{application}:{resource}"),
+		concurrencyKeyGenerator: context_label.NewKeyGenerator("conc:{application}:{resource}"),
+	}
+
+	resp := &mockResponse{statusCode: 200}
+	ctx := newMockHttpContext(map[string]string{
+		"application":   "app_billing",
+		"api":           "api_billing",
+		"resource":      "res_billing",
+		"resource_type": "api",
+	}, resp)
+	return plugin, cache, ctx
+}
+
+// triggerSettle 触发 immediate 模式注册的 AppendBodyFinish 回调（执行结算）。
+func triggerSettle(ctx *mockHttpContext) {
+	proxy := ctx.Proxy().(*mockProxy)
+	for _, fn := range proxy.bodyFinishFns {
+		fn(ctx)
+	}
+}
+
+// TestEndToEnd_ImmediateSettle_BalanceChange immediate 模式跑完后余额应扣 22 元。
+// 初始 100 元 => 期望 78 元。
+func TestEndToEnd_ImmediateSettle_BalanceChange(t *testing.T) {
+	plugin, cache, ctx := newBillingTestEnv(t, 100.0)
+	balanceKey := "balance:app_billing"
+
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
+		t.Fatalf("DoHttpFilter failed: %v", err)
+	}
+	triggerSettle(ctx)
+
+	got := cache.balanceInt(balanceKey)
+	want := int64(78 * 1000000)
+	if got != want {
+		t.Errorf("balance after immediate settle = %d (=%.6f元), want %d (78元)", got, float64(got)/1e6, want)
+	}
+}
+
+// TestEndToEnd_PreDeductThenSettle_NoExtraDeduction 预扣 22 + 结算 diff=0 => 只扣一次。
+func TestEndToEnd_PreDeductThenSettle_NoExtraDeduction(t *testing.T) {
+	plugin, cache, ctx := newBillingTestEnv(t, 100.0)
+	balanceKey := "balance:app_billing"
+
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
+		t.Fatalf("DoHttpFilter failed: %v", err)
+	}
+	triggerSettle(ctx)
+
+	got := cache.balanceInt(balanceKey)
+	want := int64(78 * 1000000)
+	if got != want {
+		t.Errorf("balance = %d (=%.6f元), want %d (78元). 预扣+结算应只扣一次", got, float64(got)/1e6, want)
+	}
+}
+
+// TestEndToEnd_DownstreamError_RefundPreDeduct 下游失败时全额退回预扣，余额不变。
+func TestEndToEnd_DownstreamError_RefundPreDeduct(t *testing.T) {
+	plugin, cache, ctx := newBillingTestEnv(t, 100.0)
+	balanceKey := "balance:app_billing"
+
+	if err := plugin.DoHttpFilter(ctx, &errChain{}); err == nil {
+		t.Fatalf("expected error from chain, got nil")
+	}
+
+	got := cache.balanceInt(balanceKey)
+	want := int64(100 * 1000000)
+	if got != want {
+		t.Errorf("balance after refund = %d (=%.6f元), want %d (100元). 下游失败应全额退回预扣", got, float64(got)/1e6, want)
+	}
+}
+
+// TestEndToEnd_SettleIdempotent_MultipleCalls 结算幂等：多次结算只扣一次。
+func TestEndToEnd_SettleIdempotent_MultipleCalls(t *testing.T) {
+	plugin, cache, ctx := newBillingTestEnv(t, 100.0)
+	balanceKey := "balance:app_billing"
+
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
+		t.Fatalf("DoHttpFilter failed: %v", err)
+	}
+	// 故意触发结算回调 3 次，模拟重入
+	proxy := ctx.Proxy().(*mockProxy)
+	for i := 0; i < 3; i++ {
+		for _, fn := range proxy.bodyFinishFns {
+			fn(ctx)
+		}
+	}
+	got := cache.balanceInt(balanceKey)
+	want := int64(78 * 1000000)
+	if got != want {
+		t.Errorf("balance after 3x settle = %d (=%.6f元), want %d (78元). 结算应幂等", got, float64(got)/1e6, want)
+	}
+}
+
+// TestEndToEnd_PreDeductInsufficientBalance_Block402 余额不足时预扣失败返回 402 且不扣款。
+func TestEndToEnd_PreDeductInsufficientBalance_Block402(t *testing.T) {
+	// 余额只有 1 元，但预扣需要 22 元
+	plugin, cache, ctx := newBillingTestEnv(t, 1.0)
+	balanceKey := "balance:app_billing"
+
+	err := plugin.DoHttpFilter(ctx, &mockChain{})
+	if err == nil {
+		t.Fatalf("expected insufficient balance error, got nil")
+	}
+	resp := ctx.Response().(*mockResponse)
+	if resp.statusCode != http.StatusPaymentRequired {
+		t.Errorf("expected 402, got %d", resp.statusCode)
+	}
+	got := cache.balanceInt(balanceKey)
+	want := int64(1 * 1000000)
+	if got != want {
+		t.Errorf("balance = %d (=%.6f元), want %d (1元). 预扣失败不应扣款", got, float64(got)/1e6, want)
+	}
+}
+
+// TestEndToEnd_BalanceUnitConsistency 回归测试：前置校验与扣款使用同一放大倍数（1e6）。
+// 余额 0.000001 元 = 1（最小单位），>0 通过前置校验，但预扣 22 元必然失败。
+func TestEndToEnd_BalanceUnitConsistency(t *testing.T) {
+	plugin, cache, ctx := newBillingTestEnv(t, 0.000001)
+	balanceKey := "balance:app_billing"
+
+	_ = plugin.DoHttpFilter(ctx, &mockChain{})
+	resp := ctx.Response().(*mockResponse)
+	if resp.statusCode != http.StatusPaymentRequired {
+		t.Errorf("expected 402 for balance 0.000001元 (1 unit) which is < pre-deduct, got %d", resp.statusCode)
+	}
+	if got := cache.balanceInt(balanceKey); got != 1 {
+		t.Errorf("balance unit mismatch: got %d, want 1 (0.000001元 * 1e6). 前置校验与扣款倍数不一致", got)
+	}
+}
+
+// TestEndToEnd_ConcurrencyRedisError_FailClosed 并发计数 Redis 出错时 fail-closed 返回 503。
+func TestEndToEnd_ConcurrencyRedisError_FailClosed(t *testing.T) {
+	plugin, cache, ctx := newBillingTestEnv(t, 100.0)
+	// 用 IncrBy 返回 error 的 cache 包装，复用 luaCache 的 kv
+	plugin.redisID = "err_cache_conc"
+	errCache := &errIncrCache{mockCache: mockCache{kv: cache.kv}}
+	scope_manager.Set("err_cache_conc", errCache, "redis")
+	defer scope_manager.Del("err_cache_conc")
+
+	plugin.defaultConcurrencyLimit = 10
+	ctx.SetLabel("concurrency_limit", "10")
+
+	err := plugin.DoHttpFilter(ctx, &mockChain{})
+	if err != nil {
+		t.Fatalf("expected nil error (503 returned, not propagated), got %v", err)
+	}
+	resp := ctx.Response().(*mockResponse)
+	if resp.statusCode != http.StatusServiceUnavailable {
+		t.Errorf("expected 503 when concurrency redis errors, got %d", resp.statusCode)
 	}
 }
