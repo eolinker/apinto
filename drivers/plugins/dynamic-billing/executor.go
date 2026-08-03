@@ -556,7 +556,7 @@ func (e *executor) getPricingData(ctx http_context.IHttpContext, cache resources
 	if priceData != nil {
 		if priceData.BasicInfo != nil {
 			context_label.SetPriceVersion(ctx, priceData.BasicInfo.Version)
-			context_label.SetPriceVersion(ctx, priceData.BasicInfo.Rely)
+			context_label.SetPriceRelyVersion(ctx, priceData.BasicInfo.Rely)
 		}
 	} else if e.enableBalance && priceData == nil {
 		return nil, fmt.Errorf("{\"error\":\"pricing data not found\"}")

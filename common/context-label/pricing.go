@@ -24,7 +24,7 @@ const (
 	LabelPriceMatchCondition = "price_conditions"
 	LabelPriceCurrency       = "price_currency"
 	LabelPriceVersion        = "price_version"
-	LabelPriceRelyVersion    = "price_rely_version"
+	LabelPriceRelyVersion    = "price_rely"
 )
 
 func SetPriceVersion(ctx eocontext.EoContext, value string) {
