@@ -170,6 +170,55 @@ func TestConvertSchemaToGemini(t *testing.T) {
 	}
 }
 
+// TestConvertSchemaToGeminiAnyOf 验证 anyOf / allOf / oneOf 组合关键字内
+// 嵌套的不被 Gemini 支持的字段（additionalProperties / propertyNames / const 等）
+// 也会被递归移除。
+func TestConvertSchemaToGeminiAnyOf(t *testing.T) {
+	schema := map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"flex": map[string]interface{}{
+				"anyOf": []interface{}{
+					map[string]interface{}{
+						"type":                 "object",
+						"additionalProperties": false,
+						"properties": map[string]interface{}{
+							"k": map[string]interface{}{
+								"type": "string",
+								"const": "fixed",
+							},
+						},
+					},
+					map[string]interface{}{
+						"type":          "object",
+						"propertyNames": map[string]interface{}{"pattern": "^[a-z]+$"},
+					},
+				},
+			},
+		},
+	}
+
+	convertSchemaToGemini(schema)
+
+	flex := schema["properties"].(map[string]interface{})["flex"].(map[string]interface{})
+	anyOf := flex["anyOf"].([]interface{})
+	first := anyOf[0].(map[string]interface{})
+	if _, ok := first["additionalProperties"]; ok {
+		t.Errorf("additionalProperties inside anyOf[0] should be removed")
+	}
+	kProp := first["properties"].(map[string]interface{})["k"].(map[string]interface{})
+	if _, ok := kProp["const"]; ok {
+		t.Errorf("const inside anyOf[0].properties.k should be removed")
+	}
+	second := anyOf[1].(map[string]interface{})
+	if _, ok := second["propertyNames"]; ok {
+		t.Errorf("propertyNames inside anyOf[1] should be removed")
+	}
+	if first["type"] != "OBJECT" || second["type"] != "OBJECT" {
+		t.Errorf("types inside anyOf should be uppercased")
+	}
+}
+
 func TestExtractExtraContentSignatures(t *testing.T) {
 	body := []byte(`{
 		"messages": [

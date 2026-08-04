@@ -271,6 +271,8 @@ func convertSchemaToGemini(schema map[string]interface{}) {
 	delete(schema, "additionalProperties")
 	delete(schema, "exclusiveMinimum")
 	delete(schema, "exclusiveMaximum")
+	delete(schema, "propertyNames")
+	delete(schema, "const")
 	if t, ok := schema["type"].(string); ok {
 		schema["type"] = strings.ToUpper(t)
 	}
@@ -283,6 +285,17 @@ func convertSchemaToGemini(schema map[string]interface{}) {
 	}
 	if items, ok := schema["items"].(map[string]interface{}); ok {
 		convertSchemaToGemini(items)
+	}
+	// Recurse into composition keywords (anyOf / allOf / oneOf) so that
+	// unsupported fields nested inside their member schemas are also removed.
+	for _, key := range []string{"anyOf", "allOf", "oneOf"} {
+		if arr, ok := schema[key].([]interface{}); ok {
+			for _, elem := range arr {
+				if elemMap, ok := elem.(map[string]interface{}); ok {
+					convertSchemaToGemini(elemMap)
+				}
+			}
+		}
 	}
 }
 
