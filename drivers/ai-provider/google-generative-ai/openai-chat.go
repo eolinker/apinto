@@ -7,12 +7,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	context_label2 "github.com/eolinker/apinto/common/context-label"
 	"net/url"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	context_label2 "github.com/eolinker/apinto/common/context-label"
 
 	ai_convert "github.com/eolinker/apinto/ai-convert"
 	"github.com/eolinker/eosc"
@@ -261,12 +262,15 @@ type GeminiUsageMetadata struct {
 }
 
 // convertSchemaToGemini recursively changes lowercase parameter types (like "string", "object") to Gemini uppercase (like "STRING", "OBJECT")
-// and removes fields not supported by Gemini (like "additionalProperties")
+// and removes JSON Schema fields not supported by Gemini.
 func convertSchemaToGemini(schema map[string]interface{}) {
 	if schema == nil {
 		return
 	}
+	delete(schema, "$schema")
 	delete(schema, "additionalProperties")
+	delete(schema, "exclusiveMinimum")
+	delete(schema, "exclusiveMaximum")
 	if t, ok := schema["type"].(string); ok {
 		schema["type"] = strings.ToUpper(t)
 	}

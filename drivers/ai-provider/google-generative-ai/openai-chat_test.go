@@ -113,11 +113,13 @@ func TestThoughtSignatureCache(t *testing.T) {
 
 func TestConvertSchemaToGemini(t *testing.T) {
 	schema := map[string]interface{}{
+		"$schema":              "https://json-schema.org/draft/2020-12/schema",
 		"type":                 "object",
 		"additionalProperties": false,
 		"properties": map[string]interface{}{
 			"name": map[string]interface{}{
-				"type": "string",
+				"type":             "string",
+				"exclusiveMinimum": 1,
 			},
 			"items": map[string]interface{}{
 				"type": "array",
@@ -135,7 +137,10 @@ func TestConvertSchemaToGemini(t *testing.T) {
 
 	convertSchemaToGemini(schema)
 
-	// 验证 "additionalProperties" 是否被移除
+	// 验证 Gemini 不支持的 schema 字段是否被移除
+	if _, ok := schema["$schema"]; ok {
+		t.Errorf("$schema should be removed")
+	}
 	if _, ok := schema["additionalProperties"]; ok {
 		t.Errorf("additionalProperties should be removed")
 	}
@@ -149,6 +154,9 @@ func TestConvertSchemaToGemini(t *testing.T) {
 	nameProp := props["name"].(map[string]interface{})
 	if nameProp["type"] != "STRING" {
 		t.Errorf("expected property type to be STRING, got %v", nameProp["type"])
+	}
+	if _, ok := nameProp["exclusiveMinimum"]; ok {
+		t.Errorf("exclusiveMinimum should be removed")
 	}
 
 	itemsProp := props["items"].(map[string]interface{})
@@ -711,7 +719,7 @@ func TestStreamHandler(t *testing.T) {
 
 	mCtx := &mockHttpContext{
 		requestId: "req-stream-456",
-		labels:    map[string]string{labelIncludeUsage: "true"},
+		labels:    map[string]string{},
 	}
 	ai_convert.SetAIModel(mCtx, "gemini-1.5-pro")
 
