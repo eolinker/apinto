@@ -299,6 +299,60 @@ func convertSchemaToGemini(schema map[string]interface{}) {
 	}
 }
 
+// sanitizeFunctionResponse recursively walks a function-response object and removes
+// any key whose name starts with "$" (e.g. "$ref", "$schema"). Gemini treats these
+// as JSON Schema references inside functionResponse.response and tries to resolve
+// them against parts carrying a matching display_name. When no such part exists
+// (the common case for tool results that happen to contain "$ref"), the API
+// rejects the request with a 400. Stripping these keys (or converting the whole
+// sub-object to its JSON string when it only contains $-keys) keeps the response
+// shape intact for the model while avoiding the reference-resolution path.
+func sanitizeFunctionResponse(v interface{}) interface{} {
+	switch val := v.(type) {
+	case map[string]interface{}:
+		// Check if every key in this map starts with "$". If so, this entire
+		// object is a schema fragment (like {"$ref": "#/foo"}) and the safest
+		// representation is its JSON string, which Gemini will treat as plain
+		// text rather than trying to resolve references.
+		allDollar := len(val) > 0
+		hasDollar := false
+		for k := range val {
+			if !strings.HasPrefix(k, "$") {
+				allDollar = false
+			} else {
+				hasDollar = true
+			}
+		}
+		if allDollar {
+			b, _ := json.Marshal(val)
+			return string(b)
+		}
+		result := make(map[string]interface{}, len(val))
+		for k, sub := range val {
+			if strings.HasPrefix(k, "$") {
+				// Drop $-prefixed keys entirely; they are schema metadata that
+				// Gemini cannot resolve inside a function response.
+				continue
+			}
+			result[k] = sanitizeFunctionResponse(sub)
+		}
+		// If sanitization left us with nothing (e.g. input was {"$ref": "..."}),
+		// fall back to the original JSON string so the model still sees the data.
+		if len(result) == 0 && hasDollar {
+			b, _ := json.Marshal(val)
+			return string(b)
+		}
+		return result
+	case []interface{}:
+		for i, item := range val {
+			val[i] = sanitizeFunctionResponse(item)
+		}
+		return val
+	default:
+		return v
+	}
+}
+
 // extractExtraContentSignatures parses the raw request body and extracts thought
 // signatures carried by the client via tool_calls[].extra_content.google.thought_signature.
 // It returns a map: message index -> (tool_call index -> signature).
@@ -485,6 +539,24 @@ func (o *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string
 			if err != nil {
 				responseObj = map[string]interface{}{"result": msg.Content}
 			}
+
+			// Sanitize $-prefixed keys (e.g. "$ref") from the response. Gemini
+			// interprets these as JSON Schema references inside functionResponse
+			// and rejects the request with a 400 when the reference target is
+			// not found among the parts. See sanitizeFunctionResponse for details.
+			sanitized := make(map[string]interface{}, len(responseObj))
+			for k, v := range responseObj {
+				if strings.HasPrefix(k, "$") {
+					continue
+				}
+				sanitized[k] = sanitizeFunctionResponse(v)
+			}
+			if len(sanitized) == 0 && len(responseObj) > 0 {
+				// All keys were $-prefixed; preserve the raw content as a string
+				// so the model still sees the data.
+				sanitized["result"] = msg.Content
+			}
+			responseObj = sanitized
 
 			funcName := msg.Name
 			if funcName == "" && msg.ToolCallID != "" {
