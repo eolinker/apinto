@@ -1,7 +1,7 @@
 package context_label
 
 import (
-	http_context "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/eolinker/eosc/eocontext"
 )
 
 // parseVariables 提前解析出模板中所有的变量名占位符列表
@@ -29,10 +29,10 @@ func parseVariables(template string) map[string]struct{} {
 	return vars
 }
 
-type GetLabelFunc func(ctx http_context.IHttpContext, label string) string
+type GetLabelFunc func(ctx eocontext.EoContext, label string) string
 
 type IKeyGenerator interface {
-	Key(ctx http_context.IHttpContext, fns ...GetLabelFunc) string
+	Key(ctx eocontext.EoContext, fns ...GetLabelFunc) string
 }
 
 func NewKeyGenerator(org string) IKeyGenerator {
@@ -74,7 +74,7 @@ func findInnermostPlaceholders(runes []rune) []placeholder {
 	return list
 }
 
-func (k *keyGenerator) Key(ctx http_context.IHttpContext, fns ...GetLabelFunc) string {
+func (k *keyGenerator) Key(ctx eocontext.EoContext, fns ...GetLabelFunc) string {
 	runes := []rune(k.org)
 	for {
 		placeholders := findInnermostPlaceholders(runes)
@@ -92,7 +92,7 @@ func (k *keyGenerator) Key(ctx http_context.IHttpContext, fns ...GetLabelFunc) s
 					break
 				}
 			}
-
+			
 			if value == "" {
 				value = ctx.GetLabel(p.name)
 			}

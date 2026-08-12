@@ -56,7 +56,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 				}
 			}
 		}
-
+		
 	}
 	if next != nil {
 		return next.DoChain(ctx)
@@ -69,7 +69,7 @@ func (e *executor) reset(conf *Config) error {
 		e.defaultKey = context_label.NewKeyGenerator(conf.DefaultCalculatorKey)
 	}
 	if conf.Currency != "" && conf.ContextVariables != nil && conf.AdvancedRules != nil {
-		cal, err := price_calcular.NewCalculator(conf.Currency, conf.ContextVariables, conf.AdvancedRules)
+		cal, err := price_calcular.NewCalculator(e.Id(), conf.Currency, conf.ContextVariables, conf.AdvancedRules)
 		if err != nil {
 			return err
 		}
@@ -79,7 +79,7 @@ func (e *executor) reset(conf *Config) error {
 		}
 	}
 	e.cacheKey = conf.CacheKey
-
+	
 	return nil
 }
 

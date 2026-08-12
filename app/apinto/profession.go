@@ -176,6 +176,12 @@ func Profession() []*eosc.ProfessionConfig {
 					Label: "数据脱敏策略",
 					Desc:  "数据脱敏策略",
 				},
+				{
+					Id:    "eolinker.com:apinto:strategy-quota-limiting",
+					Name:  "quota-limiting",
+					Label: "配额限流策略",
+					Desc:  "配额限流策略",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
@@ -249,7 +255,7 @@ func Profession() []*eosc.ProfessionConfig {
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
-
+		
 		{
 			Name:         "certificate",
 			Label:        "证书",
@@ -288,7 +294,7 @@ func Profession() []*eosc.ProfessionConfig {
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
-
+		
 		{
 			Name:         "ai-resource",
 			Label:        "AI资源",

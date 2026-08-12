@@ -23,13 +23,15 @@ const (
 	DefaultSafetyFactor = 1.2
 	// PreDeductSecondsForPerSecond 按秒计费时，预扣默认按 5 秒计价
 	PreDeductSecondsForPerSecond = 5
-	// PreDeductTokensText 文本模型预扣输出估算 token 数（10K，即 1% 百万 token 单价）
-	PreDeductTokensText = 10000
+	// PreDeductInputTokensText 文本模型预扣输入估算 token 数（10K，即 1% 百万 token 单价）
+	PreDeductInputTokensText = 10000
+	// PreDeductOutputTokensText 文本模型预扣输出估算 token 数（1K，即 0.11% 百万 token 单价）
+	PreDeductOutputTokensText = 1000
 	// PreDeductTokensImageVideo 图片/视频模型预扣输出估算 token 数（1M，即 100% 百万 token 单价）
 	PreDeductTokensImageVideo = 1000000
 	// PriceTokenScale token 单价除数（价格表按百万 token 单价配置）
 	PriceTokenScale = 1000000
-
+	
 	// LabelInputToken 上下文中传递预估 input_token 的标签名
 	LabelInputToken = "input_token"
 	// LabelModelType 上下文中传递模型类型的标签名（text/image/video）

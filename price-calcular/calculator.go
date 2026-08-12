@@ -29,12 +29,16 @@ func GetICalculator(ctx eocontext.EoContext) ICalculator {
 }
 
 type ICalculator interface {
+	ID() string
 	Currency() string
 	VariablesExtractor() IExtractor
 	Calculate(ctx eocontext.EoContext, enableBalance bool, pricingData *PricingData) (*CalculateResult, error)
 	CalculateFromChunk(ctx eocontext.EoContext, enableBalance bool, chunk []byte, pricingData *PricingData) (*CalculateResult, error)
 	// PreDeduct 计算预扣金额。返回预估扣款销售额与命中的规则 ID；命中免费策略或规则匹配失败时返回 0。
 	PreDeduct(ctx eocontext.EoContext, pricingData *PricingData) (float64, string, error)
+	// CalculateByRule 根据已知的规则 ID、变量字典与计费规则价格数据，直接计算计费金额结果
+	CalculateByRule(ctx eocontext.EoContext, pricingData *PricingData) (*CalculateResult, error)
+	Rules(ctx eocontext.EoContext) ([]*ProcessedRule, error)
 }
 
 // ProcessedRule 描述一个经过预编译及性能优化的高级定价规则实例。
@@ -57,6 +61,7 @@ type CalculateResult struct {
 
 // Calculator 高性能定价计算器，其计算所依赖的全部上下文计量属性均通过配置的变量动态提取。
 type Calculator struct {
+	id                 string
 	currency           string           // 扣减所采用的的货币类型（USD, CNY）
 	variablesExtractor IExtractor       // 该计算器关联的上下文变量提取调度器
 	rules              []*ProcessedRule // 按顺序配置的 ProcessedRule 定价规则链
@@ -67,7 +72,7 @@ type Calculator struct {
 //   - 表达式引用了 #sale.per_call 视为按次计费
 //   - 表达式引用了 #sale.per_second 视为按秒计费
 //   - 其余（含 #sale.input_token / #sale.output_token）视为按 token 计费
-func NewCalculator(currency string, variables Variables, rules []*Rule) (ICalculator, error) {
+func NewCalculator(id string, currency string, variables Variables, rules []*Rule) (ICalculator, error) {
 	// 初始化自定义变量提取器
 	extractor, err := NewVariablesExtractor(variables)
 	if err != nil {
@@ -123,6 +128,7 @@ func NewCalculator(currency string, variables Variables, rules []*Rule) (ICalcul
 	}
 	
 	return &Calculator{
+		id:                 id,
 		currency:           currency,
 		variablesExtractor: extractor,
 		rules:              processedRules,
@@ -144,6 +150,10 @@ func detectBillingMode(saleExpr string) string {
 	return BillingModeToken
 }
 
+func (c *Calculator) ID() string {
+	return c.id
+}
+
 // Currency 获取计算器币种类型。
 func (c *Calculator) Currency() string {
 	return c.currency
@@ -161,6 +171,9 @@ func (c *Calculator) Calculate(ctx eocontext.EoContext, enableBalance bool, pric
 		calculator := GetICalculator(ctx)
 		if calculator == nil {
 			return nil, fmt.Errorf("calculator is nil")
+		}
+		if calculator.ID() == c.id {
+			return nil, fmt.Errorf("not found calculator for id: %s", c.id)
 		}
 		if len(c.rules) == 0 {
 			return calculator.Calculate(ctx, enableBalance, pricingData)
@@ -224,6 +237,9 @@ func (c *Calculator) CalculateFromChunk(ctx eocontext.EoContext, enableBalance b
 		calculator := GetICalculator(ctx)
 		if calculator == nil {
 			return nil, fmt.Errorf("calculator is nil")
+		}
+		if calculator.ID() == c.id {
+			return nil, fmt.Errorf("not found calculator for id: %s", c.id)
 		}
 		if len(c.rules) == 0 {
 			return calculator.CalculateFromChunk(ctx, enableBalance, chunk, pricingData)
@@ -342,6 +358,58 @@ func (c *Calculator) CalculateFromVariables(params map[string]interface{}, match
 	}, nil
 }
 
+// CalculateByRule 根据已知的规则 ID、提取出的变量字典与租户计费价格数据，直接计算出新金额结果。
+func (c *Calculator) CalculateByRule(ctx eocontext.EoContext, pricingData *PricingData) (*CalculateResult, error) {
+	if pricingData == nil {
+		return nil, errors.New("pricing data is required but got nil")
+	}
+	vars := context_label.GetPriceVariables(ctx)
+	
+	matchedRuleVal := context_label.GetPriceMatchRule(ctx)
+	matchedRule, ok := matchedRuleVal.(*ProcessedRule)
+	if !ok {
+		return nil, errors.New("matched rule is not of type *ProcessedRule")
+	}
+	
+	// 2. 从 pricingData 中获取对应的价格包 Plan
+	plan := pricingData.Strategy[matchedRule.id]
+	if plan == nil {
+		return nil, fmt.Errorf("neither price plan for rule '%s' configured in strategy", matchedRule.id)
+	}
+	
+	// 3. 构建公式运行所需的上下文变量 map
+	params := make(map[string]interface{}, len(vars)+len(plan.Cost)+len(plan.Sale)+len(plan.Official))
+	for k, v := range vars {
+		params[k] = v
+	}
+	for k, v := range plan.Cost {
+		params["cost_"+k] = v
+	}
+	for k, v := range plan.Sale {
+		params["sale_"+k] = v
+	}
+	for k, v := range plan.Official {
+		params["official_"+k] = v
+	}
+	
+	// 4. 执行公式计算
+	return c.CalculateFromVariables(params, matchedRule)
+}
+
+func (c *Calculator) Rules(ctx eocontext.EoContext) ([]*ProcessedRule, error) {
+	if len(c.rules) == 0 {
+		calculator := GetICalculator(ctx)
+		if calculator == nil {
+			return nil, fmt.Errorf("calculator is nil")
+		}
+		if calculator.ID() == c.id {
+			return nil, fmt.Errorf("not found calculator for id: %s", c.id)
+		}
+		return calculator.Rules(ctx)
+	}
+	return c.rules, nil
+}
+
 // PreDeduct 计算预扣金额。返回预估扣款销售额与命中的规则 ID；命中免费策略或规则匹配失败时返回 0。
 func (c *Calculator) PreDeduct(ctx eocontext.EoContext, pricingData *PricingData) (float64, string, error) {
 	extractor := c.VariablesExtractor()
@@ -373,14 +441,6 @@ func (c *Calculator) PreDeduct(ctx eocontext.EoContext, pricingData *PricingData
 		return 0, "", errors.New("redis pricing data is required but got nil")
 	}
 	
-	// 匹配规则
-	//var matchedRule *ProcessedRule
-	//for _, rule := range c.rules {
-	//	if matchCondition(rule.conditions, vars) {
-	//		matchedRule = rule
-	//		break
-	//	}
-	//}
 	matchedRule := c.rules[0]
 	
 	plan := pricingData.Strategy[matchedRule.id]
@@ -436,7 +496,7 @@ func (c *Calculator) PreDeduct(ctx eocontext.EoContext, pricingData *PricingData
 			estimatedOutputTokens = float64(PreDeductTokensImageVideo)
 		default:
 			// text 或未指定：按 10K token 计
-			estimatedOutputTokens = float64(PreDeductTokensText)
+			estimatedOutputTokens = float64(PreDeductOutputTokensText)
 		}
 		outputCost := estimatedOutputTokens * outputPrice / float64(PriceTokenScale)
 		

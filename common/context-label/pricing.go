@@ -2,6 +2,7 @@ package context_label
 
 import (
 	"fmt"
+	
 	"github.com/eolinker/eosc/eocontext"
 )
 
@@ -25,10 +26,27 @@ const (
 	LabelPriceCurrency       = "price_currency"
 	LabelPriceVersion        = "price_version"
 	LabelPriceRelyVersion    = "price_rely"
+	LabelCalculatorID        = "calculator_id"
 )
+
+//func SetCalculatorID(ctx eocontext.EoContext, id string) {
+//	ctx.SetLabel(LabelCalculatorID, id)
+//}
+//
+//func GetCalculatorID(ctx eocontext.EoContext) string {
+//	return ctx.GetLabel(LabelCalculatorID)
+//}
+
+func GetPriceVersion(ctx eocontext.EoContext) string {
+	return ctx.GetLabel(LabelPriceVersion)
+}
 
 func SetPriceVersion(ctx eocontext.EoContext, value string) {
 	ctx.WithValue(LabelPriceVersion, value)
+}
+
+func GetPriceRelyVersion(ctx eocontext.EoContext) string {
+	return ctx.GetLabel(LabelPriceRelyVersion)
 }
 
 func SetPriceRelyVersion(ctx eocontext.EoContext, value string) {

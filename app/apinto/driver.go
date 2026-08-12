@@ -14,7 +14,11 @@ import (
 	influxdb_v2 "github.com/eolinker/apinto/drivers/output/influxdb-v2"
 	"github.com/eolinker/apinto/drivers/output/loki"
 	auth_interceptor "github.com/eolinker/apinto/drivers/plugins/auth-interceptor"
+	quota_limiting_amount "github.com/eolinker/apinto/drivers/plugins/strategy/quota-limiting/amount"
+	quota_limiting_request "github.com/eolinker/apinto/drivers/plugins/strategy/quota-limiting/request"
+	quota_limiting_total_token "github.com/eolinker/apinto/drivers/plugins/strategy/quota-limiting/total_token"
 	data_mask_strategy "github.com/eolinker/apinto/drivers/strategy/data-mask-strategy"
+	quota_limiting_strategy "github.com/eolinker/apinto/drivers/strategy/quota-limiting-strategy"
 
 	"github.com/eolinker/apinto/application/auth"
 	"github.com/eolinker/apinto/drivers/discovery/polaris"
@@ -83,6 +87,10 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 
 	// 服务治理-策略
 	limiting_strategy.Register(extenderRegister)
+	quota_limiting_strategy.Register(extenderRegister)
+	quota_limiting_request.Register(extenderRegister)
+	quota_limiting_total_token.Register(extenderRegister)
+	quota_limiting_amount.Register(extenderRegister)
 	cache_strategy.Register(extenderRegister)
 	grey_strategy.Register(extenderRegister)
 	visit_strategy.Register(extenderRegister)

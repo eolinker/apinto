@@ -1,7 +1,6 @@
 package price_calcular
 
 import (
-	"github.com/eolinker/apinto/drivers/pricing-policy"
 	"testing"
 
 	"github.com/tidwall/gjson"
@@ -51,7 +50,7 @@ func TestConvertType(t *testing.T) {
 
 // TestNewVariablesExtractor_ConfigErrors 测试错误或不支持的配置源的校验能力
 func TestNewVariablesExtractor_ConfigErrors(t *testing.T) {
-	invalidVars := map[string]*pricing_policy.Variable{
+	invalidVars := map[string]*Variable{
 		"my_var": {
 			Source: "invalid_source", // 错误配置
 			Type:   "integer",
@@ -175,14 +174,14 @@ func TestBodyExtractor_ArrayType(t *testing.T) {
 }
 
 func TestMatchBasicRule_Array(t *testing.T) {
-	rule1 := &pricing_policy.BasicRule{
+	rule1 := &BasicRule{
 		Key:   "roles",
 		Op:    "in",
 		Value: "reference_video,admin",
 		Type:  "array",
 	}
 
-	rule2 := &pricing_policy.BasicRule{
+	rule2 := &BasicRule{
 		Key:   "roles",
 		Op:    "==",
 		Value: "admin",
@@ -193,11 +192,11 @@ func TestMatchBasicRule_Array(t *testing.T) {
 		"roles": []interface{}{"user", "reference_video"},
 	}
 
-	if !pricing_policy.matchBasicRule(rule1, params) {
+	if !matchBasicRule(rule1, params) {
 		t.Error("expected rule1 (in) to match")
 	}
 
-	if pricing_policy.matchBasicRule(rule2, params) {
+	if matchBasicRule(rule2, params) {
 		t.Error("expected rule2 (== admin) not to match")
 	}
 }

@@ -34,7 +34,7 @@ func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWork
 }
 
 func (e *executor) reset(conf *Config) error {
-	pc, err := price_calcular.NewCalculator(conf.Currency, conf.ContextVariables, conf.AdvancedRules)
+	pc, err := price_calcular.NewCalculator(e.Id(), conf.Currency, conf.ContextVariables, conf.AdvancedRules)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func (e *executor) reset(conf *Config) error {
 }
 
 func (e *executor) Stop() error {
-
+	
 	price_calcular.DelCalculator(e.Name())
 	e.calculator = nil
 	return nil
