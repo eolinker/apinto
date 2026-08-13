@@ -92,7 +92,7 @@ Apinto网关不受云平台限制，也能在Kubernetes运行。
 
 ### Star历史
 
-[![Star History Chart](https://api.star-history.com/svg?repos=eolinker/apinto&type=Date)](https://star-history.com/#eolinker/apinto&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=eolinker/apinto&type=Date)](https://star-history.dera.page/#eolinker/apinto&Date)
 
 
 ## 基准测试

@@ -36,7 +36,7 @@ In a word, Apinto API gateway enables the business development team to focus mor
 
 ### Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=eolinker/apinto&type=Date)](https://star-history.com/#eolinker/apinto&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=eolinker/apinto&type=Date)](https://star-history.dera.page/#eolinker/apinto&Date)
 
 
 ### Feture
