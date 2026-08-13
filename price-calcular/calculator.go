@@ -168,18 +168,30 @@ func (c *Calculator) VariablesExtractor() IExtractor {
 func (c *Calculator) Calculate(ctx eocontext.EoContext, enableBalance bool, pricingData *PricingData) (*CalculateResult, error) {
 	extractor := c.VariablesExtractor()
 	if extractor == nil {
-		calculator := GetICalculator(ctx)
-		if calculator == nil {
-			return nil, fmt.Errorf("calculator is nil")
+		tmp := GetICalculator(ctx)
+		if tmp == nil {
+			return nil, fmt.Errorf("tmp is nil")
 		}
-		if calculator.ID() == c.id {
-			return nil, fmt.Errorf("not found calculator for id: %s", c.id)
+		if tmp.ID() == c.id {
+			return nil, fmt.Errorf("not found tmp for id: %s", c.id)
 		}
-		if len(c.rules) == 0 {
-			return calculator.Calculate(ctx, enableBalance, pricingData)
-		}
-		extractor = calculator.VariablesExtractor()
+		extractor = tmp.VariablesExtractor()
 	}
+	rules := c.rules
+	if len(rules) == 0 {
+		tmp := GetICalculator(ctx)
+		if tmp == nil {
+			return nil, fmt.Errorf("tmp is nil")
+		}
+		if tmp.ID() == c.id {
+			return nil, fmt.Errorf("not found tmp for id: %s", c.id)
+		}
+		rules = c.rules
+	}
+	if len(rules) < 1 {
+		return nil, errors.New("no pricing rules configured")
+	}
+	
 	// 动态抓取当前 EoContext 下的所有已配置变量集
 	vars := extractor.ExtractAll(ctx)
 	if len(vars) < 1 {

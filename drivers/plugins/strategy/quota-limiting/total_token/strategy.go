@@ -3,6 +3,7 @@ package total_token
 import (
 	"errors"
 	"fmt"
+	quota_limiting "github.com/eolinker/apinto/drivers/plugins/strategy/quota-limiting"
 	price_calcular "github.com/eolinker/apinto/price-calcular"
 	"time"
 	
@@ -95,7 +96,7 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 				continue
 			}
 			
-			key, ttl := s.buildQuotaKeyAndTTL(ctx, st, now)
+			key, ttl := quota_limiting.BuildQuotaKeyAndTTL(ctx, s.key, st, now)
 			
 			// 原子执行预扣 (IncrBy estimateToken)
 			val, incrErr := cache.IncrBy(ctx.Context(), key, estimateToken, ttl).Result()
@@ -109,7 +110,7 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 			})
 			
 			// 检查超限：如果预扣后的累计 Token 超过配额阈值 threshold
-			if val > threshold {
+			if val > int64(threshold)*1000000 {
 				// 【回滚阶段 Rollback】：退还前面已对其他策略预扣的 Token 数量
 				for _, k := range items {
 					_, decrErr := cache.DecrBy(ctx.Context(), k.key, estimateToken, k.ttl).Result()
@@ -120,6 +121,12 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 				
 				// 进行 HTTP 拦截处理并返回 429
 				if httpContext, httpErr := http_service.Assert(ctx); httpErr == nil {
+					// 将限制的信息写在header
+					ctx.Response().SetHeader("X-Quota-Limiting-Strategy-Id", st.Name())
+					ctx.Response().SetHeader("X-Quota-Limiting-Strategy-Type", "total_token")
+					ctx.Response().SetHeader("X-Quota-Limiting-Strategy-Period", st.Period().String())
+					ctx.Response().SetHeader("X-Quota-Limiting-Strategy-Threshold", fmt.Sprintf("%f", st.Threshold()))
+					
 					ctx.WithValue("is_block", true)
 					ctx.SetLabel("handler", "quota-limiting-total-token")
 					if st.Response() != nil {
@@ -135,6 +142,9 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 			}
 		}
 	}
+	ctx.Proxy().AppendBodyFinish(func(ctx http_service.IHttpContext) {
+		settle(ctx, cache, items, estimateToken)
+	})
 	
 	// 4. 执行后续处理链
 	if next != nil {
@@ -142,6 +152,9 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 		if err != nil {
 			return err
 		}
+	}
+	if ctx.Response().IsBodyStream() {
+		return nil
 	}
 	settle(ctx, cache, items, estimateToken)
 	return nil
@@ -187,51 +200,6 @@ func settle(ctx http_service.IHttpContext, cache resources.ICache, items []*exec
 			}
 		}
 	}
-}
-
-// buildQuotaKeyAndTTL 按照技术方案构造标准 Key 结构及 TTL
-// 规范 Key 结构: {product}:quota-limiting:{策略uuid}:{调用方类型}:{调用方uuid}:{配额维度}:{时间}
-func (s *Strategy) buildQuotaKeyAndTTL(ctx eoscContext.EoContext, st quota_limiting_strategy.IStrategy, now time.Time) (string, time.Duration) {
-	var ttl time.Duration
-	
-	return s.key.Key(ctx, func(ctx eoscContext.EoContext, label string) string {
-		switch label {
-		case "target_type":
-			return st.TargetType()
-		case "strategy":
-			return st.ID()
-		case "period":
-			return st.Period().String()
-		case "time_format":
-			var timeStr string
-			switch st.Period() {
-			case quota_limiting_strategy.PeriodSecond:
-				timeStr = now.Format("20060102150405")
-				ttl = 2 * time.Second
-			case quota_limiting_strategy.PeriodMinute:
-				timeStr = now.Format("200601021504")
-				ttl = time.Duration(60-now.Second())*time.Second + 10*time.Second
-			case quota_limiting_strategy.PeriodHour:
-				timeStr = now.Format("2006010215")
-				ttl = time.Duration(3600-now.Minute()*60-now.Second())*time.Second + 60*time.Second
-			case quota_limiting_strategy.PeriodDay:
-				timeStr = now.Format("20060102")
-				ttl = time.Duration(86400-now.Hour()*3600-now.Minute()*60-now.Second())*time.Second + 300*time.Second
-			case quota_limiting_strategy.PeriodMonth:
-				timeStr = now.Format("200601")
-				nextMonth := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location())
-				ttl = nextMonth.Sub(now) + 3600*time.Second
-			case quota_limiting_strategy.PeriodTotal:
-				timeStr = "total"
-				ttl = -1
-			default:
-				timeStr = now.Format("20060102150405")
-				ttl = 2 * time.Second
-			}
-			return timeStr
-		}
-		return ctx.GetLabel(Name)
-	}), ttl
 }
 
 func (s *Strategy) Destroy() {

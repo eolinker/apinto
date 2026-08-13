@@ -1,6 +1,7 @@
 package request
 
 import (
+	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 )
@@ -15,6 +16,7 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 	return &Strategy{
 		
 		WorkerBase: drivers.Worker(id, name),
+		key:        context_label.NewKeyGenerator(cfg.Key),
 		redisID:    string(cfg.Cache),
 	}, nil
 }

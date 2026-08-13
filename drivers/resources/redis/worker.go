@@ -2,7 +2,7 @@ package redis
 
 import (
 	"reflect"
-
+	
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/resources"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
@@ -25,7 +25,7 @@ type Worker struct {
 	resources.IVectors
 	config *Config
 	client redis.UniversalClient
-
+	
 	isRunning bool
 }
 
@@ -59,7 +59,7 @@ func (w *Worker) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 		return err
 	}
 	if w.config == nil || !reflect.DeepEqual(w.config, cfg) {
-
+		
 		w.config = cfg
 		client, err := cfg.connect()
 		if err != nil {
@@ -79,10 +79,10 @@ func (w *Worker) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 		} else {
 			client.Close()
 		}
-
+		
 	}
 	return nil
-
+	
 }
 
 func (w *Worker) Stop() error {
@@ -95,7 +95,7 @@ func (w *Worker) Stop() error {
 		w.ICache = &Empty{}
 		e := w.client.Close()
 		w.client = nil
-
+		
 		return e
 	}
 	return nil

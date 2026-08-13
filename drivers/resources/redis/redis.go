@@ -3,30 +3,15 @@ package redis
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
-
+	
 	"github.com/eolinker/eosc/log"
-
+	
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/eolinker/apinto/resources"
 	"github.com/redis/go-redis/v9"
 )
-
-func newBoolResult(ok bool, err error) resources.BoolResult {
-	return &boolResult{
-		ok:  ok,
-		err: err,
-	}
-}
-
-type boolResult struct {
-	ok  bool
-	err error
-}
-
-func (b *boolResult) Result() (bool, error) {
-	return b.ok, b.err
-}
 
 type statusResult struct {
 	err error
@@ -41,23 +26,23 @@ type CmdAble struct {
 }
 
 func (r *CmdAble) BuildVector(name string, uni, step time.Duration) (resources.Vector, error) {
-
+	
 	if uni < time.Second {
 		uni = time.Second
 	}
 	if step < 500*time.Millisecond {
 		step = 500 * time.Millisecond
 	}
-
+	
 	size := uni / step
 	if size > 20 {
 		size = 20
 	}
 	step = uni / size
-
+	
 	key := fmt.Sprintf("%s:%d:%d", name, uni, step)
 	vector := resources.LocalVector()
-
+	
 	localVector, _ := vector.BuildVector(name, uni, step)
 	return newVector(key, int64(uni), int64(step), r.cmdAble, localVector), nil
 }
@@ -84,7 +69,7 @@ func acquireLockWithBackoff(ctx context.Context, rdb redis.Cmdable, key, value s
 		}
 		return backoff.Permanent(fmt.Errorf("锁已被占用")) // 加锁失败，但非永久错误（继续重试）
 	}
-
+	
 	// 配置指数退避：初始 100ms，乘数 2，最大间隔 5s，最大时长 30s，抖动 0.5
 	b := backoff.NewExponentialBackOff()
 	b.InitialInterval = 100 * time.Millisecond
@@ -92,7 +77,7 @@ func acquireLockWithBackoff(ctx context.Context, rdb redis.Cmdable, key, value s
 	b.MaxInterval = 5 * time.Second
 	b.MaxElapsedTime = 30 * time.Second
 	b.RandomizationFactor = 0.5 // 抖动：间隔 ±50%
-
+	
 	err := backoff.Retry(operation, backoff.WithContext(b, ctx))
 	if err != nil {
 		return false, err
@@ -102,7 +87,7 @@ func acquireLockWithBackoff(ctx context.Context, rdb redis.Cmdable, key, value s
 
 func (r *CmdAble) AcquireLock(ctx context.Context, key string, value string, ttl int) resources.BoolResult {
 	ok, err := acquireLockWithBackoff(ctx, r.cmdAble, key, value, ttl)
-	return newBoolResult(ok, err)
+	return resources.NewBoolResult(ok, err)
 }
 
 // Lua 解锁脚本
@@ -119,12 +104,12 @@ func (r *CmdAble) ReleaseLock(ctx context.Context, key string, value string) res
 }
 
 func (r *CmdAble) Set(ctx context.Context, key string, value []byte, expiration time.Duration) resources.StatusResult {
-
+	
 	return &statusResult{err: r.cmdAble.Set(ctx, key, value, expiration).Err()}
 }
 
 func (r *CmdAble) SetNX(ctx context.Context, key string, value []byte, expiration time.Duration) resources.BoolResult {
-
+	
 	return r.cmdAble.SetNX(ctx, key, value, expiration)
 }
 
@@ -139,7 +124,7 @@ func (r *CmdAble) DecrBy(ctx context.Context, key string, decrement int64, expir
 		return nil
 	}
 	return result
-
+	
 }
 
 func (r *CmdAble) IncrBy(ctx context.Context, key string, decrement int64, expiration time.Duration) resources.IntResult {
@@ -148,7 +133,7 @@ func (r *CmdAble) IncrBy(ctx context.Context, key string, decrement int64, expir
 	if expiration > 0 {
 		pipeline.Expire(ctx, key, expiration)
 	}
-
+	
 	_, err := pipeline.Exec(ctx)
 	if err != nil {
 		return nil
@@ -157,17 +142,34 @@ func (r *CmdAble) IncrBy(ctx context.Context, key string, decrement int64, expir
 }
 
 func (r *CmdAble) Keys(ctx context.Context, key string) resources.StringSliceResult {
-	return r.cmdAble.Keys(ctx, key)
+	cluster, ok := r.cmdAble.(*redis.ClusterClient)
+	if !ok {
+		return r.cmdAble.Keys(ctx, key)
+	}
+	var (
+		mu   sync.Mutex
+		keys []string
+	)
+	err := cluster.ForEachMaster(ctx, func(ctx context.Context, client *redis.Client) error {
+		iter := client.Scan(ctx, 0, key, 1000).Iterator()
+		for iter.Next(ctx) {
+			mu.Lock()
+			keys = append(keys, iter.Val())
+			mu.Unlock()
+		}
+		return iter.Err()
+	})
+	return resources.NewStringSliceResult(keys, err)
 }
 
 func (r *CmdAble) Get(ctx context.Context, key string) resources.StringResult {
 	return r.cmdAble.Get(ctx, key)
-
+	
 }
 
 func (r *CmdAble) GetDel(ctx context.Context, key string) resources.StringResult {
 	return r.cmdAble.GetDel(ctx, key)
-
+	
 }
 
 func (r *CmdAble) HMSetN(ctx context.Context, key string, fields map[string]interface{}, expiration time.Duration) resources.BoolResult {
@@ -189,7 +191,28 @@ func (r *CmdAble) HMGet(ctx context.Context, key string, fields ...string) resou
 }
 
 func (r *CmdAble) Del(ctx context.Context, keys ...string) resources.IntResult {
-	return r.cmdAble.Del(ctx, keys...)
+	cluster, ok := r.cmdAble.(*redis.ClusterClient)
+	if !ok {
+		return r.cmdAble.Del(ctx, keys...)
+	}
+	// 按 slot 分组
+	slotKeys := make(map[int][]string)
+	for _, key := range keys {
+		slot := cluster.ClusterKeySlot(ctx, key).Val() // 或自己算 CRC16
+		slotKeys[int(slot)] = append(slotKeys[int(slot)], key)
+	}
+	total := 0
+	// 每个 slot 的 key 可以一次 DEL
+	for _, ks := range slotKeys {
+		if len(ks) == 0 {
+			continue
+		}
+		if err := cluster.Del(ctx, ks...).Err(); err != nil {
+			return resources.NewIntResult(0, err)
+		}
+		total += len(ks)
+	}
+	return resources.NewIntResult(int64(total), nil)
 }
 
 func (r *CmdAble) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) resources.InterfaceResult {
@@ -216,7 +239,7 @@ func (tx *TxPipeline) Tx() resources.TX {
 }
 func (tx *TxPipeline) Exec(ctx context.Context) error {
 	_, err := tx.p.Exec(ctx)
-
+	
 	return err
-
+	
 }

@@ -40,6 +40,7 @@ type Config struct {
 	Quota    QuotaConfig        `json:"quota"`
 	Filters  FiltersConfig      `json:"filters"`
 	Response *response.Response `json:"response"` // 拦截超额时的响应配置
+	PreKey   string             `json:"pre_key"`
 }
 
 func (c *Config) Name() string {

@@ -1,6 +1,7 @@
 package quota_limiting_strategy
 
 import (
+	"fmt"
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
 )
@@ -16,6 +17,7 @@ func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker)
 	
 	q := &executor{
 		WorkerBase: drivers.Worker(id, name),
+		keys:       fmt.Sprintf("%s:%s:*", v.PreKey, name),
 	}
 	
 	err := q.Reset(v, workers)

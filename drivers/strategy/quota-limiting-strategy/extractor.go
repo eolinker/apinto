@@ -2,10 +2,11 @@ package quota_limiting_strategy
 
 import (
 	"sort"
+	"strings"
 	"sync"
-
+	
 	"github.com/eolinker/apinto/utils/response"
-
+	
 	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
@@ -59,19 +60,20 @@ const (
 
 // QuotaRule 单维度的配额规则
 type QuotaRule struct {
-	Second int64 `json:"second"` // 每秒配额
-	Minute int64 `json:"minute"` // 每分钟配额
-	Hour   int64 `json:"hour"`   // 每小时配额
-	Day    int64 `json:"day"`    // 每天配额
-	Month  int64 `json:"month"`  // 每月配额
-	Total  int64 `json:"total"`  // 总配额
+	Second float64 `json:"second"` // 每秒配额
+	Minute float64 `json:"minute"` // 每分钟配额
+	Hour   float64 `json:"hour"`   // 每小时配额
+	Day    float64 `json:"day"`    // 每天配额
+	Month  float64 `json:"month"`  // 每月配额
+	Total  float64 `json:"total"`  // 总配额
 }
 
 type IStrategy interface {
 	ID() string
+	Name() string
 	TargetType() string
 	Period() Period
-	Threshold() int64
+	Threshold() float64
 	Response() response.IResponse
 }
 
@@ -79,10 +81,15 @@ var _ IStrategy = (*Strategy)(nil)
 
 type Strategy struct {
 	id         string
+	name       string
 	targetType string
 	period     Period
-	threshold  int64
+	threshold  float64
 	response   response.IResponse
+}
+
+func (s *Strategy) Name() string {
+	return s.name
 }
 
 func (s *Strategy) Response() response.IResponse {
@@ -96,7 +103,7 @@ func (s *Strategy) TargetType() string {
 func NewStrategies(id string, targetType string, rule QuotaRule, resp response.IResponse) []IStrategy {
 	periods := []struct {
 		period Period
-		val    int64
+		val    float64
 	}{
 		{PeriodSecond, rule.Second},
 		{PeriodMinute, rule.Minute},
@@ -105,12 +112,13 @@ func NewStrategies(id string, targetType string, rule QuotaRule, resp response.I
 		{PeriodMonth, rule.Month},
 		{PeriodTotal, rule.Total},
 	}
-	
+	name := strings.TrimSuffix(id, "@strategy")
 	result := make([]IStrategy, 0, len(periods))
 	for _, p := range periods {
 		if p.val > 0 {
 			result = append(result, &Strategy{
 				id:         id,
+				name:       name,
 				targetType: targetType,
 				period:     p.period,
 				threshold:  p.val,
@@ -129,7 +137,7 @@ func (s *Strategy) Period() Period {
 	return s.period
 }
 
-func (s *Strategy) Threshold() int64 {
+func (s *Strategy) Threshold() float64 {
 	return s.threshold
 }
 
@@ -160,8 +168,9 @@ func (t *tenantStrategy) Strategies() []IStrategy {
 type Extractor interface {
 	IExtractor
 	AddStrategy(id string, config *Config)
-	RemoveStrategy(id string)
+	RemoveStrategy(id string) [][]string
 	GetStrategy(id string) (*Config, bool)
+	//GetDimensionPaths(id string) ([][]string, bool)
 }
 
 // GenericDimensionTree 通用多维索引树，支持深层 N 维决策索引
@@ -198,15 +207,15 @@ func (t *GenericDimensionTree[T]) Insert(keys []string, item T) {
 	curr.items = append(curr.items, item)
 }
 
-func (t *GenericDimensionTree[T]) Remove(keys []string, matchFunc func(item T) bool) {
+func (t *GenericDimensionTree[T]) Remove(keys []string, matchFunc func(item T) bool) int {
 	curr := t.root
 	for _, key := range keys {
 		if curr.children == nil {
-			return
+			return -1
 		}
 		child, ok := curr.children[key]
 		if !ok {
-			return
+			return -1
 		}
 		curr = child
 	}
@@ -218,6 +227,7 @@ func (t *GenericDimensionTree[T]) Remove(keys []string, matchFunc func(item T) b
 		}
 	}
 	curr.items = newItems
+	return len(curr.items)
 }
 
 func (t *GenericDimensionTree[T]) Search(queryKeys [][]string) []T {
@@ -300,10 +310,11 @@ func (m *multiQuotaExtractor) AddStrategy(id string, config *Config) {
 	m.amountExtractor.AddStrategy(id, config)
 }
 
-func (m *multiQuotaExtractor) RemoveStrategy(id string) {
+func (m *multiQuotaExtractor) RemoveStrategy(id string) [][]string {
 	m.requestExtractor.RemoveStrategy(id)
 	m.totalTokenExtractor.RemoveStrategy(id)
 	m.amountExtractor.RemoveStrategy(id)
+	return nil
 }
 
 func (m *multiQuotaExtractor) GetStrategy(id string) (*Config, bool) {
@@ -315,6 +326,16 @@ func (m *multiQuotaExtractor) GetStrategy(id string) (*Config, bool) {
 	}
 	return m.amountExtractor.GetStrategy(id)
 }
+
+//func (m *multiQuotaExtractor) GetDimensionPaths(id string) ([][]string, bool) {
+//	if paths, ok := m.requestExtractor.GetDimensionPaths(id); ok {
+//		return paths, true
+//	}
+//	if paths, ok := m.totalTokenExtractor.GetDimensionPaths(id); ok {
+//		return paths, true
+//	}
+//	return m.amountExtractor.GetDimensionPaths(id)
+//}
 
 func (m *multiQuotaExtractor) GetStrategies(ctx eocontext.EoContext, quotaType ...int) ([]ITenantStrategy, bool) {
 	if len(quotaType) == 0 {
@@ -430,7 +451,7 @@ func generateDimensionPaths(filter FiltersConfig) [][]string {
 	} else {
 		targetTypeKeys = normalizeKeys([]string{filter.Target.Type})
 	}
-
+	
 	// Depth 2: TargetItem
 	var targetItemKeys []string
 	if filter.Target.Type == "channel" || filter.Target.All || len(filter.Target.Items) == 0 {
@@ -438,7 +459,7 @@ func generateDimensionPaths(filter FiltersConfig) [][]string {
 	} else {
 		targetItemKeys = normalizeKeys(filter.Target.Items)
 	}
-
+	
 	// Depth 3: ResourceType
 	var resTypeKeys []string
 	if filter.Resource.Type == "" || filter.Resource.Type == "all" {
@@ -446,7 +467,7 @@ func generateDimensionPaths(filter FiltersConfig) [][]string {
 	} else {
 		resTypeKeys = normalizeKeys([]string{filter.Resource.Type})
 	}
-
+	
 	// Depth 4: ResourceParent
 	var resParentKeys []string
 	if filter.Resource.All || len(filter.Resource.Parents) == 0 {
@@ -454,7 +475,7 @@ func generateDimensionPaths(filter FiltersConfig) [][]string {
 	} else {
 		resParentKeys = normalizeKeys(filter.Resource.Parents)
 	}
-
+	
 	// Depth 5: ResourceItem
 	var resItemKeys []string
 	if filter.Resource.All || len(filter.Resource.Parents) > 0 || len(filter.Resource.Items) == 0 {
@@ -535,22 +556,28 @@ func (e *strategyExtractor) AddStrategy(id string, config *Config) {
 	}
 }
 
-func (e *strategyExtractor) RemoveStrategy(id string) {
+func (e *strategyExtractor) RemoveStrategy(id string) [][]string {
 	if id == "" {
-		return
+		return nil
 	}
 	
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	
 	if indexed, exists := e.strategies[id]; exists {
+		clearedPath := make([][]string, 0, len(indexed.DimensionPaths))
 		for _, path := range indexed.DimensionPaths {
-			e.tree.Remove(path, func(item *IndexedStrategy) bool {
+			remain := e.tree.Remove(path, func(item *IndexedStrategy) bool {
 				return item.ID == id
 			})
+			if remain == 0 {
+				clearedPath = append(clearedPath, path)
+			}
 		}
 		delete(e.strategies, id)
+		return clearedPath
 	}
+	return nil
 }
 
 func (e *strategyExtractor) GetStrategy(id string) (*Config, bool) {
@@ -562,6 +589,16 @@ func (e *strategyExtractor) GetStrategy(id string) (*Config, bool) {
 	}
 	return nil, false
 }
+
+//func (e *strategyExtractor) GetDimensionPaths(id string) ([][]string, bool) {
+//	e.mu.RLock()
+//	defer e.mu.RUnlock()
+//
+//	if indexed, exists := e.strategies[id]; exists {
+//		return indexed.DimensionPaths, true
+//	}
+//	return nil, false
+//}
 
 func (e *strategyExtractor) GetStrategies(ctx eocontext.EoContext, quotaType ...int) ([]ITenantStrategy, bool) {
 	e.mu.RLock()
@@ -772,6 +809,6 @@ func addStrategy(id string, config *Config) {
 	extractorManager.AddStrategy(id, config)
 }
 
-func removeStrategy(id string) {
-	extractorManager.RemoveStrategy(id)
+func removeStrategy(id string) [][]string {
+	return extractorManager.RemoveStrategy(id)
 }
