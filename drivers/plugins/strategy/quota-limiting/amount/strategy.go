@@ -31,7 +31,6 @@ type Strategy struct {
 	redisID              string
 	priceKey             context_label.IKeyGenerator
 	bindResourceGroupKey context_label.IKeyGenerator
-	enableBalance        bool
 }
 
 func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) (err error) {
@@ -43,12 +42,7 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 	if api == "" {
 		return nil
 	}
-	if !s.enableBalance {
-		if next != nil {
-			return next.DoChain(ctx)
-		}
-		return nil
-	}
+	
 	calcId := fmt.Sprintf("%s:%s", ctx.GetLabel("resource_type"), ctx.GetLabel("resource"))
 	if calcId == "" {
 		ctx.Response().SetStatus(500, "Internal Server Error")
@@ -323,57 +317,55 @@ func getPricingDataMap(ctx eoscContext.EoContext, cache resources.ICache, priceK
 
 func (s *Strategy) getPricingData(ctx http_service.IHttpContext, cache resources.ICache) (*price_calcular.PricingData, error) {
 	var priceData *price_calcular.PricingData
-	if s.enableBalance {
-		isUser := context_label.IsUserConsumer(ctx)
-		if !isUser {
-			priceKey := s.priceKey.Key(ctx)
-			
+	isUser := context_label.IsUserConsumer(ctx)
+	if !isUser {
+		priceKey := s.priceKey.Key(ctx)
+		
+		strResult := cache.Get(ctx.Context(), priceKey)
+		val, err := strResult.Result()
+		if err != nil {
+			log.Errorf("[dynamic-billing] get redis price for key %s error: %v", priceKey, err)
+			return nil, fmt.Errorf("{\"error\":\"pricing(%s) data not found\"}", priceKey)
+		}
+		var pd price_calcular.PricingData
+		if err := json.Unmarshal([]byte(val), &pd); err != nil {
+			log.Errorf("[dynamic-billing] unmarshal redis pricing data error: %v, raw data: %s", err, val)
+			return nil, fmt.Errorf("{\"error\":\"invalid pricing(%s) data\"}", priceKey)
+		}
+		priceData = &pd
+	} else {
+		key := s.bindResourceGroupKey.Key(ctx)
+		rgs, ok := customerVar.GetAll(key)
+		if !ok {
+			return nil, fmt.Errorf("{\"error\":\"no resource group found\"}")
+		}
+		pds := make([]*price_calcular.PricingData, 0, len(rgs))
+		for key := range rgs {
+			priceKey := s.priceKey.Key(ctx, func(ctx eoscContext.EoContext, label string) string {
+				if label == "application" {
+					return key
+				}
+				return ""
+			})
 			strResult := cache.Get(ctx.Context(), priceKey)
 			val, err := strResult.Result()
 			if err != nil {
-				log.Errorf("[dynamic-billing] get redis price for key %s error: %v", priceKey, err)
-				return nil, fmt.Errorf("{\"error\":\"pricing(%s) data not found\"}", priceKey)
+				continue
 			}
 			var pd price_calcular.PricingData
-			if err := json.Unmarshal([]byte(val), &pd); err != nil {
-				log.Errorf("[dynamic-billing] unmarshal redis pricing data error: %v, raw data: %s", err, val)
-				return nil, fmt.Errorf("{\"error\":\"invalid pricing(%s) data\"}", priceKey)
+			if err = json.Unmarshal([]byte(val), &pd); err != nil {
+				continue
 			}
-			priceData = &pd
-		} else {
-			key := s.bindResourceGroupKey.Key(ctx)
-			rgs, ok := customerVar.GetAll(key)
-			if !ok {
-				return nil, fmt.Errorf("{\"error\":\"no resource group found\"}")
-			}
-			pds := make([]*price_calcular.PricingData, 0, len(rgs))
-			for key := range rgs {
-				priceKey := s.priceKey.Key(ctx, func(ctx eoscContext.EoContext, label string) string {
-					if label == "application" {
-						return key
-					}
-					return ""
-				})
-				strResult := cache.Get(ctx.Context(), priceKey)
-				val, err := strResult.Result()
-				if err != nil {
-					continue
-				}
-				var pd price_calcular.PricingData
-				if err = json.Unmarshal([]byte(val), &pd); err != nil {
-					continue
-				}
-				pds = append(pds, &pd)
-			}
-			priceData = price_calcular.MinSalePricingData(pds)
+			pds = append(pds, &pd)
 		}
+		priceData = price_calcular.MinSalePricingData(pds)
 	}
 	if priceData != nil {
 		if priceData.BasicInfo != nil {
 			context_label.SetPriceVersion(ctx, priceData.BasicInfo.Version)
 			context_label.SetPriceRelyVersion(ctx, priceData.BasicInfo.Rely)
 		}
-	} else if s.enableBalance && priceData == nil {
+	} else {
 		return nil, fmt.Errorf("{\"error\":\"pricing data not found\"}")
 	}
 	return priceData, nil

@@ -23,6 +23,8 @@ func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker)
 		return nil, err
 	}
 	
-	controller.Store(id)
+	if controller != nil {
+		controller.Store(id)
+	}
 	return q, nil
 }

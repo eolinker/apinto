@@ -1,10 +1,11 @@
 package quota_limiting_strategy
 
 import (
-	"github.com/eolinker/apinto/utils/response"
 	"sort"
 	"sync"
-	
+
+	"github.com/eolinker/apinto/utils/response"
+
 	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
@@ -424,34 +425,39 @@ func generateDimensionPaths(filter FiltersConfig) [][]string {
 	var targetTypeKeys []string
 	if filter.Target.Type == "channel" {
 		targetTypeKeys = []string{"all"}
+	} else if filter.Target.Type == "" || filter.Target.Type == "all" {
+		targetTypeKeys = []string{"all"}
 	} else {
 		targetTypeKeys = normalizeKeys([]string{filter.Target.Type})
 	}
-	
+
 	// Depth 2: TargetItem
 	var targetItemKeys []string
-	if filter.Target.All {
+	if filter.Target.Type == "channel" || filter.Target.All || len(filter.Target.Items) == 0 {
 		targetItemKeys = []string{"all"}
 	} else {
 		targetItemKeys = normalizeKeys(filter.Target.Items)
 	}
-	
+
 	// Depth 3: ResourceType
 	var resTypeKeys []string
-	
-	resTypeKeys = normalizeKeys([]string{filter.Resource.Type})
-	
+	if filter.Resource.Type == "" || filter.Resource.Type == "all" {
+		resTypeKeys = []string{"all"}
+	} else {
+		resTypeKeys = normalizeKeys([]string{filter.Resource.Type})
+	}
+
 	// Depth 4: ResourceParent
 	var resParentKeys []string
-	if filter.Resource.All {
+	if filter.Resource.All || len(filter.Resource.Parents) == 0 {
 		resParentKeys = []string{"all"}
 	} else {
 		resParentKeys = normalizeKeys(filter.Resource.Parents)
 	}
-	
+
 	// Depth 5: ResourceItem
 	var resItemKeys []string
-	if filter.Resource.All || len(filter.Resource.Parents) > 0 {
+	if filter.Resource.All || len(filter.Resource.Parents) > 0 || len(filter.Resource.Items) == 0 {
 		resItemKeys = []string{"all"}
 	} else {
 		resItemKeys = normalizeKeys(filter.Resource.Items)

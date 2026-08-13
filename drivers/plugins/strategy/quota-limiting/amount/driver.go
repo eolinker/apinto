@@ -11,7 +11,6 @@ type Config struct {
 	Key                  string         `json:"key"`
 	PriceKey             string         `json:"price_key"`
 	BindResourceGroupKey string         `json:"bind_resource_group_key"`
-	EnableBalance        bool           `json:"enable_balance"`
 }
 
 func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
@@ -21,7 +20,6 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 		key:                  context_label.NewKeyGenerator(cfg.Key),
 		priceKey:             context_label.NewKeyGenerator(cfg.PriceKey),
 		bindResourceGroupKey: context_label.NewKeyGenerator(cfg.BindResourceGroupKey),
-		enableBalance:        cfg.EnableBalance,
 	}, nil
 }
 
@@ -31,6 +29,9 @@ func CheckConfig(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 	}
 	if cfg.PriceKey == "" {
 		cfg.PriceKey = "{product}:version:access-resource-price:{resource}:{version}"
+	}
+	if cfg.BindResourceGroupKey == "" {
+		cfg.BindResourceGroupKey = "user_bind_resource_group:{application}"
 	}
 	return nil
 }

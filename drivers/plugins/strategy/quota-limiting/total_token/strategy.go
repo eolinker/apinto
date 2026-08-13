@@ -165,6 +165,7 @@ func settle(ctx http_service.IHttpContext, cache resources.ICache, items []*exec
 				log.Errorf("total token quota limiting refund pre-deduct error: %v, key: %s", decrErr, k)
 			}
 		}
+		return
 	}
 	
 	// 请求正常成功且计算出实际 Token 消费数，进行补扣/多退少补结算 (diff = actualToken - estimateToken)
