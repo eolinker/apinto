@@ -27,7 +27,7 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 
 func CheckConfig(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 	if cfg.Key == "" {
-		cfg.Key = "{product}:quota-limiting:{strategy}:{target_type}:{application}:{period}:{time_format}"
+		cfg.Key = "{product}:quota-limiting:{strategy}:{target_type}:{application}:{dimension}:{time_format}"
 	}
 	if cfg.PriceKey == "" {
 		cfg.PriceKey = "{product}:access-resource-price:{application}:{resource}"

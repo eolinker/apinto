@@ -238,15 +238,15 @@ func (o *Output) doLoop() {
 			//	}
 			log.Debug("table: ", p.Measurement, " tags: ", p.Tags, " fields: ", p.Fields, " time: ", p.Time)
 
-			o.client.WritePoint(influxdb2.NewPoint(
+			err := o.client.WritePoint(o.ctx, influxdb2.NewPoint(
 				p.Measurement,
 				p.Tags,
 				p.Fields,
 				p.Time,
 			))
-			o.client.WriteAPI.Flush()
-		case err := <-o.client.WriteAPI.Errors():
-			log.Error("influxdbv2 write error: ", err)
+			if err != nil {
+				log.Errorf("write point to influxdb err:%s", err.Error())
+			}
 		case <-o.ctx.Done():
 			return
 		}

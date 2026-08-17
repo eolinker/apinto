@@ -7,17 +7,28 @@ import (
 	"time"
 )
 
-func BuildQuotaKeyAndTTL(ctx eoscContext.EoContext, key context_label.IKeyGenerator, st quota_limiting_strategy.IStrategy, now time.Time) (string, time.Duration) {
+func BuildQuotaKeyAndTTL(ctx eoscContext.EoContext, key context_label.IKeyGenerator, st quota_limiting_strategy.IPathStrategy, now time.Time, dimension string) (string, time.Duration) {
 	var ttl time.Duration
-	
+
 	return key.Key(ctx, func(ctx eoscContext.EoContext, label string) string {
 		switch label {
+		case "application":
+			if st.TargetType() == quota_limiting_strategy.TargetTypeAll || st.TargetType() == quota_limiting_strategy.TargetTypeChannel {
+				if len(st.Paths()) > 1 {
+					return st.Paths()[0]
+				}
+			} else if st.TargetType() == quota_limiting_strategy.TargetTypeUserOfResourceGroup {
+				if len(st.Paths()) > 3 {
+					return st.Paths()[2]
+				}
+			}
+			return ctx.GetLabel("application")
 		case "target_type":
 			return st.TargetType()
 		case "strategy":
 			return st.Name()
-		case "period":
-			return st.Period().String()
+		case "dimension":
+			return dimension
 		case "time_format":
 			var timeStr string
 			switch st.Period() {

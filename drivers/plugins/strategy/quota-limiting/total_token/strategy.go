@@ -6,7 +6,7 @@ import (
 	quota_limiting "github.com/eolinker/apinto/drivers/plugins/strategy/quota-limiting"
 	price_calcular "github.com/eolinker/apinto/price-calcular"
 	"time"
-	
+
 	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/drivers"
 	quota_limiting_strategy "github.com/eolinker/apinto/drivers/strategy/quota-limiting-strategy"
@@ -72,7 +72,7 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 		}
 		return nil
 	}
-	
+
 	// 2. 获取 Cache 存储引擎（Redis 或 本地 Cache）
 	var cache resources.ICache
 	if s.redisID != "" {
@@ -84,20 +84,23 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 	if cache == nil {
 		cache = resources.LocalCache()
 	}
-	
+
 	now := time.Now()
 	items := make([]*executedItem, 0, len(tenantStrategies))
-	
+	isProviderTenant := ctx.GetLabel("tenant") == ctx.GetLabel("provider_tenant")
 	// 3. 【预扣阶段 Pre-deduct】：按策略预先增加 Token 计数并检查是否超出阈值
 	for _, tss := range tenantStrategies {
 		for _, st := range tss.Strategies() {
+			if st.TargetType() == "channel" && isProviderTenant {
+				continue
+			}
 			threshold := st.Threshold()
 			if threshold <= 0 {
 				continue
 			}
-			
-			key, ttl := quota_limiting.BuildQuotaKeyAndTTL(ctx, s.key, st, now)
-			
+
+			key, ttl := quota_limiting.BuildQuotaKeyAndTTL(ctx, s.key, st, now, "total_token")
+
 			// 原子执行预扣 (IncrBy estimateToken)
 			val, incrErr := cache.IncrBy(ctx.Context(), key, estimateToken, ttl).Result()
 			if incrErr != nil {
@@ -108,9 +111,9 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 				key: key,
 				ttl: ttl,
 			})
-			
+
 			// 检查超限：如果预扣后的累计 Token 超过配额阈值 threshold
-			if val > int64(threshold)*1000000 {
+			if val > int64(threshold) {
 				// 【回滚阶段 Rollback】：退还前面已对其他策略预扣的 Token 数量
 				for _, k := range items {
 					_, decrErr := cache.DecrBy(ctx.Context(), k.key, estimateToken, k.ttl).Result()
@@ -118,7 +121,7 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 						log.Errorf("total token quota limiting rollback error: %v, key: %s", decrErr, k)
 					}
 				}
-				
+
 				// 进行 HTTP 拦截处理并返回 429
 				if httpContext, httpErr := http_service.Assert(ctx); httpErr == nil {
 					// 将限制的信息写在header
@@ -126,7 +129,7 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 					ctx.Response().SetHeader("X-Quota-Limiting-Strategy-Type", "total_token")
 					ctx.Response().SetHeader("X-Quota-Limiting-Strategy-Period", st.Period().String())
 					ctx.Response().SetHeader("X-Quota-Limiting-Strategy-Threshold", fmt.Sprintf("%f", st.Threshold()))
-					
+
 					ctx.WithValue("is_block", true)
 					ctx.SetLabel("handler", "quota-limiting-total-token")
 					if st.Response() != nil {
@@ -136,7 +139,7 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 					resp := httpContext.Response()
 					resp.SetStatus(429, "429")
 					resp.SetHeader("Content-Type", "application/json; charset=utf-8")
-					resp.SetBody([]byte(`{"code":429,"message":"Total token quota limit exceeded"}`))
+					resp.SetBody([]byte(`{"code":429,"message":"The 'total_token' quota strategy has been triggered. Please check the 'total_token' quota list in the call statistics of the console."}`))
 				}
 				return ErrQuotaExceeded
 			}
@@ -145,11 +148,12 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 	ctx.Proxy().AppendBodyFinish(func(ctx http_service.IHttpContext) {
 		settle(ctx, cache, items, estimateToken)
 	})
-	
+
 	// 4. 执行后续处理链
 	if next != nil {
 		err = next.DoChain(ctx)
 		if err != nil {
+			settle(ctx, cache, items, estimateToken)
 			return err
 		}
 	}
@@ -169,7 +173,7 @@ func settle(ctx http_service.IHttpContext, cache resources.ICache, items []*exec
 	// 5. 【补扣与结算阶段 Post-settle / Rollback】
 	// 通过 context_label 统一接口获取请求完成后实际消耗的总 Token 数量
 	actualToken := context_label.GetActualTotalToken(ctx)
-	
+
 	// 如果请求执行发生异常/报错，或者未产生有效 Token，则退还（回滚）预扣额度
 	if actualToken <= 0 {
 		for _, k := range items {
@@ -180,7 +184,7 @@ func settle(ctx http_service.IHttpContext, cache resources.ICache, items []*exec
 		}
 		return
 	}
-	
+
 	// 请求正常成功且计算出实际 Token 消费数，进行补扣/多退少补结算 (diff = actualToken - estimateToken)
 	diff := int64(actualToken) - estimateToken
 	if diff != 0 {

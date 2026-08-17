@@ -7,15 +7,14 @@ import (
 
 type Client struct {
 	influxdb2.Client
-	api.WriteAPI
+	api.WriteAPIBlocking
 }
 
 func NewClient(cfg *Config) *Client {
 	client := influxdb2.NewClient(cfg.Url, cfg.Token)
-	writeAPI := client.WriteAPI(cfg.Org, cfg.Bucket)
 	return &Client{
 		client,
-		writeAPI,
+		client.WriteAPIBlocking(cfg.Org, cfg.Bucket),
 	}
 }
 

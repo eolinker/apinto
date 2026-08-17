@@ -2,7 +2,7 @@ package context_label
 
 import (
 	"fmt"
-	
+
 	"github.com/eolinker/eosc/eocontext"
 )
 
@@ -42,7 +42,7 @@ func GetPriceVersion(ctx eocontext.EoContext) string {
 }
 
 func SetPriceVersion(ctx eocontext.EoContext, value string) {
-	ctx.WithValue(LabelPriceVersion, value)
+	ctx.SetLabel(LabelPriceVersion, value)
 }
 
 func GetPriceRelyVersion(ctx eocontext.EoContext) string {

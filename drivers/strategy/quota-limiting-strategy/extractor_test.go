@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 	"testing"
-
+	
 	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/utils/response"
 	"github.com/eolinker/eosc"
@@ -53,7 +53,7 @@ func TestConfigCheck(t *testing.T) {
 		Na:   "test_name",
 		Desc: "test_desc",
 	}
-
+	
 	if cfg.Name() != "test_name" {
 		t.Errorf("expected test_name, got %s", cfg.Name())
 	}
@@ -63,7 +63,7 @@ func TestConfigCheck(t *testing.T) {
 	if err := cfg.Check(); err != nil {
 		t.Errorf("expected nil error for valid config, got %v", err)
 	}
-
+	
 	if err := checkConfig(nil); err == nil {
 		t.Error("expected error when checking nil config, got nil")
 	}
@@ -81,13 +81,13 @@ func TestPeriodAndStrategySorting(t *testing.T) {
 		PeriodTotal:  "total",
 		Period(99):   "second", // default
 	}
-
+	
 	for p, expected := range periods {
 		if p.String() != expected {
 			t.Errorf("Period(%d).String() = %s, expected %s", p, p.String(), expected)
 		}
 	}
-
+	
 	// 2.2 NewStrategies 生成 6 维策略
 	rule := QuotaRule{
 		Second: 10,
@@ -102,17 +102,17 @@ func TestPeriodAndStrategySorting(t *testing.T) {
 	if len(strats) != 6 {
 		t.Fatalf("expected 6 strategies, got %d", len(strats))
 	}
-
+	
 	// 2.3 sortStrategies 排序测试
-	unsorted := []IStrategy{
+	unsorted := []IPathStrategy{
 		&Strategy{period: PeriodHour, threshold: 500},
 		&Strategy{period: PeriodSecond, threshold: 20},
 		&Strategy{period: PeriodSecond, threshold: 10},
 		&Strategy{period: PeriodMinute, threshold: 100},
 	}
-
+	
 	sortStrategies(unsorted)
-
+	
 	if unsorted[0].Period() != PeriodSecond || unsorted[0].Threshold() != 10 {
 		t.Errorf("expected 1st strategy PeriodSecond threshold 10, got period=%v, threshold=%d", unsorted[0].Period(), unsorted[0].Threshold())
 	}
@@ -135,7 +135,7 @@ func TestExtractorCRUDAndMultiDimensionDFSMatch(t *testing.T) {
 		},
 	}
 	extractor := NewExtractor()
-
+	
 	cfg1 := &Config{
 		Na: "strategy_api_1",
 		Quota: QuotaConfig{
@@ -153,15 +153,15 @@ func TestExtractorCRUDAndMultiDimensionDFSMatch(t *testing.T) {
 			},
 		},
 	}
-
+	
 	// 1. 测试增加 (Add)
 	extractor.AddStrategy(cfg1.Na, cfg1)
-
+	
 	gotCfg, ok := extractor.GetStrategy("strategy_api_1")
 	if !ok || gotCfg.Na != "strategy_api_1" {
 		t.Fatalf("expected strategy_api_1 to be added, got ok=%v", ok)
 	}
-
+	
 	// 2. 测试 5 维多维树 DFS 一步精准匹配成功
 	ctxMatch := &dummyContext{
 		labels: map[string]string{
@@ -172,7 +172,7 @@ func TestExtractorCRUDAndMultiDimensionDFSMatch(t *testing.T) {
 			context_label.LabelConsumerType: "user",
 		},
 	}
-
+	
 	tenantStrats, has := extractor.GetStrategies(ctxMatch)
 	if !has || len(tenantStrats) == 0 {
 		t.Fatalf("expected strategy to be matched via full 5-dimension tree DFS")
@@ -181,7 +181,7 @@ func TestExtractorCRUDAndMultiDimensionDFSMatch(t *testing.T) {
 	if len(strats) == 0 || strats[0].Threshold() != 100 {
 		t.Fatalf("expected threshold 100, got %v", strats)
 	}
-
+	
 	// 3. 测试维不匹配的情况 (DFS 深度切断)
 	ctxMismatch := &dummyContext{
 		labels: map[string]string{
@@ -191,12 +191,12 @@ func TestExtractorCRUDAndMultiDimensionDFSMatch(t *testing.T) {
 			"consumer":      "user_888",
 		},
 	}
-
+	
 	_, has = extractor.GetStrategies(ctxMismatch)
 	if has {
 		t.Fatalf("expected strategy NOT to match when resource item differs")
 	}
-
+	
 	// 4. 测试更新 (Update)
 	cfg1Updated := &Config{
 		Na: "strategy_api_1",
@@ -216,7 +216,7 @@ func TestExtractorCRUDAndMultiDimensionDFSMatch(t *testing.T) {
 		},
 	}
 	extractor.AddStrategy("strategy_api_1", cfg1Updated)
-
+	
 	tenantStrats, has = extractor.GetStrategies(ctxMatch)
 	if !has || len(tenantStrats) == 0 {
 		t.Fatalf("expected updated strategy")
@@ -225,14 +225,14 @@ func TestExtractorCRUDAndMultiDimensionDFSMatch(t *testing.T) {
 	if len(strats) == 0 || strats[0].Threshold() != 200 {
 		t.Fatalf("expected threshold 200, got %v", strats)
 	}
-
+	
 	// 5. 测试删除 (Remove)
 	extractor.RemoveStrategy("strategy_api_1")
 	_, ok = extractor.GetStrategy("strategy_api_1")
 	if ok {
 		t.Fatalf("expected strategy_api_1 to be removed")
 	}
-
+	
 	_, has = extractor.GetStrategies(ctxMatch)
 	if has {
 		t.Fatalf("expected no strategies to match after removal")
@@ -242,7 +242,7 @@ func TestExtractorCRUDAndMultiDimensionDFSMatch(t *testing.T) {
 // 4. Channel 模式 Target 匹配测试
 func TestChannelTargetFilter(t *testing.T) {
 	extractor := NewExtractor()
-
+	
 	cfgChannel := &Config{
 		Na: "strategy_channel",
 		Quota: QuotaConfig{
@@ -260,9 +260,9 @@ func TestChannelTargetFilter(t *testing.T) {
 			},
 		},
 	}
-
+	
 	extractor.AddStrategy(cfgChannel.Na, cfgChannel)
-
+	
 	// 测试匹配 channel_app_1
 	ctx1 := &dummyContext{
 		labels: map[string]string{
@@ -274,7 +274,7 @@ func TestChannelTargetFilter(t *testing.T) {
 	if !has || len(tenantStrats) == 0 {
 		t.Fatalf("expected channel_app_1 strategy matched")
 	}
-
+	
 	// 测试未包含的 channel_app_3
 	ctx3 := &dummyContext{
 		labels: map[string]string{
@@ -285,7 +285,7 @@ func TestChannelTargetFilter(t *testing.T) {
 	if has {
 		t.Fatalf("expected channel_app_3 NOT matched")
 	}
-
+	
 	// 测试 channel Items 为空的情况（无法生成路径）
 	cfgChannelEmpty := &Config{
 		Na: "strategy_channel_empty",
@@ -310,7 +310,7 @@ func TestChannelTargetFilter(t *testing.T) {
 // 5. 无效 Tenant 及边界测试
 func TestInvalidTenantAndBoundary(t *testing.T) {
 	extractor := NewExtractor()
-
+	
 	// 5.1 无效 tenant (空, "all", "*")
 	invalidTenants := []string{"", "all", "*"}
 	for i, tenant := range invalidTenants {
@@ -329,14 +329,14 @@ func TestInvalidTenantAndBoundary(t *testing.T) {
 			t.Errorf("strategy with invalid tenant %q should not be added", tenant)
 		}
 	}
-
+	
 	// 5.2 AddStrategy nil/空配置防护
 	extractor.AddStrategy("", nil)
 	extractor.AddStrategy("some_id", nil)
-
+	
 	// 5.3 RemoveStrategy 空 ID 防护
 	extractor.RemoveStrategy("")
-
+	
 	// 5.4 GetStrategies 传入空 Context 或无 Tenant
 	ctxNoTenant := &dummyContext{labels: map[string]string{}}
 	if _, has := extractor.GetStrategies(ctxNoTenant); has {
@@ -347,7 +347,7 @@ func TestInvalidTenantAndBoundary(t *testing.T) {
 // 6. 父租户策略获取测试
 func TestGetParentStrategies(t *testing.T) {
 	extractor := NewExtractor()
-
+	
 	// 1. Target 为 All 的父租户策略
 	cfgParentAll := &Config{
 		Na: "strategy_parent_all",
@@ -365,16 +365,16 @@ func TestGetParentStrategies(t *testing.T) {
 			},
 		},
 	}
-
+	
 	extractor.AddStrategy(cfgParentAll.Na, cfgParentAll)
-
+	
 	ctx := &dummyContext{
 		labels: map[string]string{
 			LabelParentTenant: "parent_tenant_1",
 			"tenant":          "child_tenant_1",
 		},
 	}
-
+	
 	tenantStrats, has := extractor.GetParentStrategies(ctx)
 	if !has || len(tenantStrats) != 1 {
 		t.Fatalf("expected 1 parent strategy with target=all, got has=%v, len=%d", has, len(tenantStrats))
@@ -383,7 +383,7 @@ func TestGetParentStrategies(t *testing.T) {
 	if len(strats) == 0 || strats[0].Threshold() != 300 {
 		t.Fatalf("expected threshold 300 for parent strategy, got %v", strats)
 	}
-
+	
 	// 测试未指定 parentTenant 的情况
 	ctxNoParent := &dummyContext{
 		labels: map[string]string{
@@ -405,10 +405,10 @@ func TestGetParentStrategiesRecursive(t *testing.T) {
 			"parent_2":    "parent_3",
 		},
 	}
-
+	
 	customerVar = cv
 	extractor := NewExtractor()
-
+	
 	cfgP1 := &Config{
 		Na: "strat_p1",
 		Quota: QuotaConfig{
@@ -442,22 +442,22 @@ func TestGetParentStrategiesRecursive(t *testing.T) {
 			Target:   Filter{Type: "all", All: true},
 		},
 	}
-
+	
 	extractor.AddStrategy(cfgP1.Na, cfgP1)
 	extractor.AddStrategy(cfgP2.Na, cfgP2)
 	extractor.AddStrategy(cfgP3.Na, cfgP3)
-
+	
 	ctx := &dummyContext{
 		labels: map[string]string{
 			"tenant": "curr_tenant",
 		},
 	}
-
+	
 	tenantStrats, has := extractor.GetParentStrategies(ctx)
 	if !has {
 		t.Fatalf("expected to find recursive parent strategies")
 	}
-
+	
 	// 所有属于该租户链的策略会按层次追加合并
 	var thresholds []int64
 	for _, ts := range tenantStrats {
@@ -465,11 +465,11 @@ func TestGetParentStrategiesRecursive(t *testing.T) {
 			thresholds = append(thresholds, s.Threshold())
 		}
 	}
-
+	
 	if len(thresholds) != 3 {
 		t.Fatalf("expected 3 recursive parent strategies, got %d", len(thresholds))
 	}
-
+	
 	// 从根租户 parent_3(300) -> parent_2(200) -> parent_1(100)
 	if thresholds[0] != 300 || thresholds[1] != 200 || thresholds[2] != 100 {
 		t.Fatalf("expected thresholds [300, 200, 100] (from top root parent to direct parent), got %v", thresholds)
@@ -479,7 +479,7 @@ func TestGetParentStrategiesRecursive(t *testing.T) {
 // 8. 多额度类型 (Request, TotalToken, Amount) 关联查询测试及全局函数
 func TestGetExtractorByQuotaTypeAndGlobalHelpers(t *testing.T) {
 	extractorManager = NewExtractor()
-
+	
 	cfg := &Config{
 		Na: "strat_multi_quota",
 		Quota: QuotaConfig{
@@ -493,31 +493,31 @@ func TestGetExtractorByQuotaTypeAndGlobalHelpers(t *testing.T) {
 			Target:   Filter{Type: "all", All: true},
 		},
 	}
-
+	
 	extractorManager.AddStrategy(cfg.Na, cfg)
-
+	
 	ctx := &dummyContext{
 		labels: map[string]string{
 			"tenant": "tenant_x",
 		},
 	}
-
+	
 	// 1. 通过全局帮助函数验证
 	reqStrats, hasReq := GetRequestStrategies(ctx)
 	if !hasReq || reqStrats[0].Strategies()[0].Threshold() != 10 {
 		t.Fatalf("expected request threshold 10, got has=%v", hasReq)
 	}
-
+	
 	tokStrats, hasTok := GetTotalTokenStrategies(ctx)
 	if !hasTok || tokStrats[0].Strategies()[0].Threshold() != 1000 {
 		t.Fatalf("expected total_token threshold 1000, got has=%v", hasTok)
 	}
-
+	
 	amtStrats, hasAmt := GetAmountStrategies(ctx)
 	if !hasAmt || amtStrats[0].Strategies()[0].Threshold() != 50 {
 		t.Fatalf("expected amount threshold 50, got has=%v", hasAmt)
 	}
-
+	
 	// 清理
 	removeStrategy(cfg.Na)
 }
@@ -525,11 +525,11 @@ func TestGetExtractorByQuotaTypeAndGlobalHelpers(t *testing.T) {
 // 9. 并发读写测试
 func TestConcurrentAccess(t *testing.T) {
 	extractor := NewExtractor()
-
+	
 	var wg sync.WaitGroup
 	workers := 10
 	iterations := 50
-
+	
 	// 并发写
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
@@ -550,20 +550,20 @@ func TestConcurrentAccess(t *testing.T) {
 				}
 				extractor.AddStrategy(id, cfg)
 				extractor.GetStrategy(id)
-
+				
 				ctx := &dummyContext{
 					labels: map[string]string{
 						"tenant": fmt.Sprintf("tenant_%d", workerID),
 					},
 				}
 				extractor.GetStrategies(ctx)
-
+				
 				if j%2 == 0 {
 					extractor.RemoveStrategy(id)
 				}
 			}
 		}(i)
 	}
-
+	
 	wg.Wait()
 }

@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	quota_limiting "github.com/eolinker/apinto/drivers/plugins/strategy/quota-limiting"
-	price_calcular "github.com/eolinker/apinto/price-calcular"
 	"math"
 	"time"
-	
+
+	quota_limiting "github.com/eolinker/apinto/drivers/plugins/strategy/quota-limiting"
+	price_calcular "github.com/eolinker/apinto/price-calcular"
+
 	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/drivers"
 	quota_limiting_strategy "github.com/eolinker/apinto/drivers/strategy/quota-limiting-strategy"
@@ -40,11 +41,15 @@ func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) 
 }
 
 func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.IChain) error {
+	start := time.Now()
+	defer func() {
+		log.Info("quota-limiting spend time: ", time.Now().Sub(start))
+	}()
 	api := ctx.GetLabel("api")
 	if api == "" {
 		return nil
 	}
-	
+
 	calcId := fmt.Sprintf("%s:%s", ctx.GetLabel("resource_type"), ctx.GetLabel("resource"))
 	if calcId == "" {
 		ctx.Response().SetStatus(500, "Internal Server Error")
@@ -57,7 +62,7 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 		ctx.Response().SetBody([]byte("calculator not found"))
 		return fmt.Errorf("calculator not found, api: %s, calculator id: %s", api, calcId)
 	}
-	
+
 	// 2. 获取 Cache 存储引擎（Redis 或 本地 Cache）
 	var cache resources.ICache
 	if s.redisID != "" {
@@ -73,61 +78,77 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 		}
 		return nil
 	}
-	// 1. 获取针对当前 Context 匹配的金额配额策略列表
-	tenantStrategies, has := quota_limiting_strategy.GetAmountStrategies(ctx)
-	if !has || len(tenantStrategies) == 0 {
-		if next != nil {
-			return next.DoChain(ctx)
-		}
-		return nil
-	}
+
+	getPricingDataStart := time.Now()
 	pricingData, err := s.getPricingData(ctx, cache)
+	log.Info("get pricing data time: ", time.Since(getPricingDataStart))
 	if err != nil || pricingData == nil {
 		if next != nil {
 			return next.DoChain(ctx)
 		}
 		return nil
 	}
-	
+	context_label.SetPriceVersion(ctx, pricingData.BasicInfo.Version)
+	quota_limiting_strategy.SetUserOfResourceGroup(ctx, pricingData.BasicInfo.ResourceGroupID)
+	getStrategiesStart := time.Now()
+	// 1. 获取针对当前 Context 匹配的金额配额策略列表
+	tenantStrategies, has := quota_limiting_strategy.GetAmountStrategies(ctx)
+	log.Info("get strategies time: ", time.Since(getStrategiesStart))
+	if !has || len(tenantStrategies) == 0 {
+		if next != nil {
+			return next.DoChain(ctx)
+		}
+		return nil
+	}
+
+	getPricingDataMapStart := time.Now()
 	pm, err := getPricingDataMap(ctx, cache, s.versionKey)
+	log.Info("get pricing data map time: ", time.Since(getPricingDataMapStart))
 	if err != nil {
 		log.Errorf("get pricing data map error: %v", err)
 		if next != nil {
 			return next.DoChain(ctx)
 		}
 		return nil
-		
 	}
+
 	pm[ctx.GetLabel("tenant")] = pricingData
 	now := time.Now()
-	
+
 	executedItems := make([]*executedItem, 0, len(tenantStrategies))
-	
-	//estimateAmountInt := int64(math.Round(estimateAmount * amountUnit))
-	
+	isProviderTenant := ctx.GetLabel("tenant") == ctx.GetLabel("provider_tenant")
 	// 3. 【预扣阶段 Pre-deduct】：按策略预先增加金额计数并检查是否超出阈值
 	for _, tss := range tenantStrategies {
 		p, ok := pm[tss.Tenant()]
 		if !ok {
 			continue
 		}
+		preDeductStart := time.Now()
 		amount, _, err := calc.PreDeduct(ctx, p)
+		log.Info("pre deduct calculation time: ", time.Since(preDeductStart))
 		if err != nil {
 			log.Errorf("amount quota limiting pre-deduct error: %v, tenant: %s", err, tss.Tenant())
 			continue
 		}
+
+		traversalStrategyStart := time.Now()
 		amountInt := int64(math.Round(amount * amountUnit))
 		for _, st := range tss.Strategies() {
+			if st.TargetType() == "channel" && isProviderTenant {
+				continue
+			}
 			threshold := st.Threshold()
 			if threshold <= 0 {
 				continue
 			}
 			thresholdInt := int64(math.Round(threshold * amountUnit))
-			
-			key, ttl := quota_limiting.BuildQuotaKeyAndTTL(ctx, s.key, st, now)
-			
+
+			key, ttl := quota_limiting.BuildQuotaKeyAndTTL(ctx, s.key, st, now, "amount")
+
 			// 原子执行预扣 (IncrBy estimateAmountInt)
+			incrStart := time.Now()
 			val, incrErr := cache.IncrBy(ctx.Context(), key, amountInt, ttl).Result()
+			log.Info("redis pre-deduct incr time: ", time.Since(incrStart))
 			if incrErr != nil {
 				log.Errorf("amount quota limiting pre-deduct incr error: %v, key: %s", incrErr, key)
 				continue
@@ -138,17 +159,19 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 				preDecrAmount: amountInt,
 				ttl:           ttl,
 			})
-			
+
 			// 检查超限：如果预扣后的累计金额超过配额阈值 thresholdInt
 			if val > thresholdInt {
 				// 【回滚阶段 Rollback】：退还前面已对其他策略预扣的金额数量
+				rollbackStart := time.Now()
 				for _, k := range executedItems {
 					_, decrErr := cache.DecrBy(ctx.Context(), k.key, k.preDecrAmount, k.ttl).Result()
 					if decrErr != nil {
 						log.Errorf("amount quota limiting rollback error: %v, key: %s", decrErr, k.key)
 					}
 				}
-				
+				log.Info("rollback time: ", time.Since(rollbackStart))
+
 				// 进行 HTTP 拦截处理并返回 429
 				if httpContext, httpErr := http_service.Assert(ctx); httpErr == nil {
 					ctx.Response().SetHeader("X-Quota-Limiting-Strategy-Id", st.Name())
@@ -164,20 +187,26 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 					resp := httpContext.Response()
 					resp.SetStatus(429, "429")
 					resp.SetHeader("Content-Type", "application/json; charset=utf-8")
-					resp.SetBody([]byte(`{"code":429,"message":"Amount quota limit exceeded"}`))
+					resp.SetBody([]byte(`{"code":429,"The 'amount' quota strategy has been triggered. Please check the 'amount' quota list in the call statistics of the console."}`))
 				}
 				return ErrQuotaExceeded
 			}
 		}
+		log.Infof("finish traversal strategy: %s, time: %v", tss.Tenant(), time.Since(traversalStrategyStart))
 	}
 	ctx.Proxy().AppendBodyFinish(func(ctx http_service.IHttpContext) {
+		settleStart := time.Now()
 		settle(ctx, cache, calc, executedItems)
+		log.Info("settle body finish time: ", time.Since(settleStart))
 	})
-	
+
 	// 4. 执行后续处理链
 	if next != nil {
+		doChainStart := time.Now()
 		err = next.DoChain(ctx)
+		log.Info("do chain (next filters and proxy) time: ", time.Since(doChainStart))
 		if err != nil {
+			settle(ctx, cache, calc, executedItems)
 			return err
 		}
 	}
@@ -185,7 +214,9 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 		// 如果是流式，则直接返回
 		return nil
 	}
+	settleStart := time.Now()
 	settle(ctx, cache, calc, executedItems)
+	log.Info("settle time: ", time.Since(settleStart))
 	return nil
 }
 
@@ -204,9 +235,9 @@ func settle(ctx http_service.IHttpContext, cache resources.ICache, calc price_ca
 			log.Errorf("amount quota limiting post-settle calculate error: %v, key: %s", err, s.key)
 			continue
 		}
-		
+
 		actualAmountInt := int64(math.Round(result.Sale * amountUnit))
-		
+
 		// 请求正常成功且计算出实际金额消费数，进行补扣/多退少补结算 (diff = actualAmountInt - preDecrAmount[i])
 		diff := actualAmountInt - s.preDecrAmount
 		if diff != 0 {
@@ -280,8 +311,8 @@ func (s *Strategy) getPricingData(ctx http_service.IHttpContext, cache resources
 	var priceData *price_calcular.PricingData
 	isUser := context_label.IsUserConsumer(ctx)
 	if !isUser {
-		priceKey := s.versionKey.Key(ctx)
-		
+		priceKey := s.priceKey.Key(ctx)
+
 		strResult := cache.Get(ctx.Context(), priceKey)
 		val, err := strResult.Result()
 		if err != nil {

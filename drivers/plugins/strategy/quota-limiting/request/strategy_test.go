@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
-
+	
 	context_label "github.com/eolinker/apinto/common/context-label"
 	quota_limiting_strategy "github.com/eolinker/apinto/drivers/strategy/quota-limiting-strategy"
 	"github.com/eolinker/apinto/resources"
@@ -87,24 +87,24 @@ func (r *dummyHttpResponse) ContentType() string {
 	return r.header.Get("Content-Type")
 }
 
-func (r *dummyHttpResponse) ClearError() {}
-func (r *dummyHttpResponse) HeaderReset() { r.header = make(http.Header) }
-func (r *dummyHttpResponse) HeadersString() string { return "" }
-func (r *dummyHttpResponse) IsBodyStream() bool { return false }
-func (r *dummyHttpResponse) RemoteIP() string { return "127.0.0.1" }
-func (r *dummyHttpResponse) RemoteAddr() string { return "127.0.0.1:8080" }
-func (r *dummyHttpResponse) RemotePort() int { return 8080 }
-func (r *dummyHttpResponse) ResponseError() error { return nil }
+func (r *dummyHttpResponse) ClearError()                 {}
+func (r *dummyHttpResponse) HeaderReset()                { r.header = make(http.Header) }
+func (r *dummyHttpResponse) HeadersString() string       { return "" }
+func (r *dummyHttpResponse) IsBodyStream() bool          { return false }
+func (r *dummyHttpResponse) RemoteIP() string            { return "127.0.0.1" }
+func (r *dummyHttpResponse) RemoteAddr() string          { return "127.0.0.1:8080" }
+func (r *dummyHttpResponse) RemotePort() int             { return 8080 }
+func (r *dummyHttpResponse) ResponseError() error        { return nil }
 func (r *dummyHttpResponse) ResponseTime() time.Duration { return 0 }
 
 // 补全 http_service.IResponse 其他未用到的接口空实现
-func (r *dummyHttpResponse) Headers() http.Header                    { return r.header }
-func (r *dummyHttpResponse) AddHeader(key, value string)             {}
-func (r *dummyHttpResponse) DelHeader(key string)                    {}
-func (r *dummyHttpResponse) Response()                               {}
-func (r *dummyHttpResponse) ContentLength() int                      { return len(r.body) }
-func (r *dummyHttpResponse) GetHeader(key string) string             { return r.header.Get(key) }
-func (r *dummyHttpResponse) String() string                          { return string(r.body) }
+func (r *dummyHttpResponse) Headers() http.Header                   { return r.header }
+func (r *dummyHttpResponse) AddHeader(key, value string)            {}
+func (r *dummyHttpResponse) DelHeader(key string)                   {}
+func (r *dummyHttpResponse) Response()                              {}
+func (r *dummyHttpResponse) ContentLength() int                     { return len(r.body) }
+func (r *dummyHttpResponse) GetHeader(key string) string            { return r.header.Get(key) }
+func (r *dummyHttpResponse) String() string                         { return string(r.body) }
 func (r *dummyHttpResponse) SetResponseTime(duration time.Duration) {}
 func (r *dummyHttpResponse) GetResponseTime() time.Duration         { return 0 }
 
@@ -177,10 +177,10 @@ func (d *dummyHttpContext) Proxies() []http_service.IProxy {
 	return nil
 }
 
-func (d *dummyHttpContext) ProxyClone() http_service.IRequest { return nil }
+func (d *dummyHttpContext) ProxyClone() http_service.IRequest    { return nil }
 func (d *dummyHttpContext) SetProxy(proxy http_service.IRequest) {}
-func (d *dummyHttpContext) AcceptTime() time.Time { return time.Now() }
-func (d *dummyHttpContext) Scheme() string { return "http" }
+func (d *dummyHttpContext) AcceptTime() time.Time                { return time.Now() }
+func (d *dummyHttpContext) Scheme() string                       { return "http" }
 func (d *dummyHttpContext) Assert(i interface{}) error {
 	if p, ok := i.(**dummyHttpContext); ok {
 		*p = d
@@ -196,30 +196,32 @@ func (d *dummyHttpContext) Assert(i interface{}) error {
 	}
 	return errors.New("not support")
 }
-func (d *dummyHttpContext) Labels() map[string]string { return d.labels }
-func (d *dummyHttpContext) GetComplete() eocontext.CompleteHandler { return nil }
-func (d *dummyHttpContext) SetCompleteHandler(handler eocontext.CompleteHandler) {}
-func (d *dummyHttpContext) GetFinish() eocontext.FinishHandler { return nil }
-func (d *dummyHttpContext) SetFinish(handler eocontext.FinishHandler) {}
-func (d *dummyHttpContext) GetBalance() eocontext.BalanceHandler { return nil }
-func (d *dummyHttpContext) SetBalance(handler eocontext.BalanceHandler) {}
-func (d *dummyHttpContext) GetUpstreamHostHandler() eocontext.UpstreamHostHandler { return nil }
+func (d *dummyHttpContext) Labels() map[string]string                                    { return d.labels }
+func (d *dummyHttpContext) GetComplete() eocontext.CompleteHandler                       { return nil }
+func (d *dummyHttpContext) SetCompleteHandler(handler eocontext.CompleteHandler)         {}
+func (d *dummyHttpContext) GetFinish() eocontext.FinishHandler                           { return nil }
+func (d *dummyHttpContext) SetFinish(handler eocontext.FinishHandler)                    {}
+func (d *dummyHttpContext) GetBalance() eocontext.BalanceHandler                         { return nil }
+func (d *dummyHttpContext) SetBalance(handler eocontext.BalanceHandler)                  {}
+func (d *dummyHttpContext) GetUpstreamHostHandler() eocontext.UpstreamHostHandler        { return nil }
 func (d *dummyHttpContext) SetUpstreamHostHandler(handler eocontext.UpstreamHostHandler) {}
-func (d *dummyHttpContext) RealIP() string { return "127.0.0.1" }
-func (d *dummyHttpContext) LocalIP() net.IP { return net.ParseIP("127.0.0.1") }
-func (d *dummyHttpContext) LocalAddr() net.Addr { return nil }
-func (d *dummyHttpContext) LocalPort() int { return 80 }
-func (d *dummyHttpContext) IsCloneable() bool { return false }
-func (d *dummyHttpContext) Clone() (eocontext.EoContext, error) { return d, nil }
-func (d *dummyHttpContext) SendTo(scheme string, node eocontext.INode, timeout time.Duration) error { return nil }
+func (d *dummyHttpContext) RealIP() string                                               { return "127.0.0.1" }
+func (d *dummyHttpContext) LocalIP() net.IP                                              { return net.ParseIP("127.0.0.1") }
+func (d *dummyHttpContext) LocalAddr() net.Addr                                          { return nil }
+func (d *dummyHttpContext) LocalPort() int                                               { return 80 }
+func (d *dummyHttpContext) IsCloneable() bool                                            { return false }
+func (d *dummyHttpContext) Clone() (eocontext.EoContext, error)                          { return d, nil }
+func (d *dummyHttpContext) SendTo(scheme string, node eocontext.INode, timeout time.Duration) error {
+	return nil
+}
 
 // 补全 http_service.IHttpContext 其他接口的空实现
 func (d *dummyHttpContext) Request() http_service.IRequestReader { return nil }
-func (d *dummyHttpContext) Proxy() http_service.IRequest       { return nil }
-func (d *dummyHttpContext) RequestId() string                  { return "req-123" }
-func (d *dummyHttpContext) IsAccept() bool                     { return true }
-func (d *dummyHttpContext) SetAccept(accept bool)              {}
-func (d *dummyHttpContext) FastFinish()                        {}
+func (d *dummyHttpContext) Proxy() http_service.IRequest         { return nil }
+func (d *dummyHttpContext) RequestId() string                    { return "req-123" }
+func (d *dummyHttpContext) IsAccept() bool                       { return true }
+func (d *dummyHttpContext) SetAccept(accept bool)                {}
+func (d *dummyHttpContext) FastFinish()                          {}
 
 // dummyChain 模拟责任链
 type dummyChain struct {
@@ -242,7 +244,7 @@ func (r *dummyCustomResponse) Response(ctx eocontext.EoContext) {
 	r.called = true
 }
 
-// dummyStrategy 模拟单个 IStrategy
+// dummyStrategy 模拟单个 IPathStrategy
 type dummyStrategy struct {
 	id         string
 	targetType string
@@ -334,7 +336,7 @@ func TestCheckConfigAndDriver(t *testing.T) {
 	if cfgEmpty.Key != expectedDefaultKey {
 		t.Fatalf("expected key %s, got %s", expectedDefaultKey, cfgEmpty.Key)
 	}
-
+	
 	cfgCustom := &Config{Key: "custom_key"}
 	if err := CheckConfig(cfgCustom, nil); err != nil {
 		t.Fatalf("CheckConfig error: %v", err)
@@ -342,7 +344,7 @@ func TestCheckConfigAndDriver(t *testing.T) {
 	if cfgCustom.Key != "custom_key" {
 		t.Fatalf("expected custom_key, got %s", cfgCustom.Key)
 	}
-
+	
 	// Test Create
 	worker, err := Create("id1", "name1", &Config{Cache: "cache_id"}, nil)
 	if err != nil {
@@ -355,7 +357,7 @@ func TestCheckConfigAndDriver(t *testing.T) {
 	if st.redisID != "cache_id" {
 		t.Fatalf("expected redisID cache_id, got %s", st.redisID)
 	}
-
+	
 	// Test Reset & Lifecycle
 	if err := st.Reset(&Config{Cache: "new_cache_id"}, nil); err != nil {
 		t.Fatalf("Reset error: %v", err)
@@ -363,7 +365,7 @@ func TestCheckConfigAndDriver(t *testing.T) {
 	if st.redisID != "new_cache_id" {
 		t.Fatalf("expected new_cache_id, got %s", st.redisID)
 	}
-
+	
 	if err := st.Start(); err != nil {
 		t.Errorf("Start returned error: %v", err)
 	}
@@ -371,7 +373,7 @@ func TestCheckConfigAndDriver(t *testing.T) {
 		t.Errorf("Stop returned error: %v", err)
 	}
 	st.Destroy()
-
+	
 	if !st.CheckSkill(eocontext.FilterSkillName) {
 		t.Errorf("CheckSkill should return true for %s", eocontext.FilterSkillName)
 	}
@@ -381,12 +383,12 @@ func TestBuildQuotaKeyAndTTL(t *testing.T) {
 	ctx := newDummyHttpContext()
 	ctx.SetLabel("product", "apinto")
 	ctx.SetLabel("application", "app1")
-
+	
 	keyGen := context_label.NewKeyGenerator("{product}:quota-limiting:{strategy}:{target_type}:{application}:{period}:{time_format}")
 	s := &Strategy{key: keyGen}
-
+	
 	now := time.Date(2026, 8, 13, 10, 30, 45, 0, time.UTC)
-
+	
 	tests := []struct {
 		name            string
 		period          quota_limiting_strategy.Period
@@ -466,7 +468,7 @@ func TestBuildQuotaKeyAndTTL(t *testing.T) {
 			},
 		},
 	}
-
+	
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dummySt := &dummyStrategy{
@@ -486,7 +488,7 @@ func TestBuildQuotaKeyAndTTL(t *testing.T) {
 func TestDoHttpFilter(t *testing.T) {
 	keyGen := context_label.NewKeyGenerator("{product}:quota-limiting:{strategy}:{target_type}:{application}:{period}:{time_format}")
 	s := &Strategy{key: keyGen}
-
+	
 	t.Run("Scenario 1: No API label", func(t *testing.T) {
 		ctx := newDummyHttpContext()
 		chain := &dummyChain{}
@@ -498,12 +500,12 @@ func TestDoHttpFilter(t *testing.T) {
 			t.Fatalf("chain should not be called when API label is empty")
 		}
 	})
-
+	
 	t.Run("Scenario 2: No strategies matched", func(t *testing.T) {
 		ctx := newDummyHttpContext()
 		ctx.SetLabel("api", "api_test")
 		chain := &dummyChain{}
-
+		
 		err := s.DoHttpFilter(ctx, chain)
 		if err != nil {
 			t.Fatalf("expected nil error, got %v", err)
@@ -512,7 +514,7 @@ func TestDoHttpFilter(t *testing.T) {
 			t.Fatalf("chain should be called when no strategies matched")
 		}
 	})
-
+	
 	t.Run("Scenario 3: Strategy threshold <= 0", func(t *testing.T) {
 		tenant := "tenant_zero"
 		config := &quota_limiting_strategy.Config{
@@ -530,12 +532,12 @@ func TestDoHttpFilter(t *testing.T) {
 			t.Fatalf("create strategy error: %v", err)
 		}
 		defer worker.Stop()
-
+		
 		ctx := newDummyHttpContext()
 		ctx.SetLabel("api", "api_test")
 		ctx.SetLabel("tenant", tenant)
 		chain := &dummyChain{}
-
+		
 		err = s.DoHttpFilter(ctx, chain)
 		if err != nil {
 			t.Fatalf("expected nil error, got %v", err)
@@ -544,7 +546,7 @@ func TestDoHttpFilter(t *testing.T) {
 			t.Fatalf("chain should be called when threshold <= 0")
 		}
 	})
-
+	
 	t.Run("Scenario 4: Request within quota (Allowed)", func(t *testing.T) {
 		tenant := "tenant_allow"
 		config := &quota_limiting_strategy.Config{
@@ -562,15 +564,15 @@ func TestDoHttpFilter(t *testing.T) {
 			t.Fatalf("create strategy error: %v", err)
 		}
 		defer worker.Stop()
-
+		
 		ctx := newDummyHttpContext()
 		ctx.SetLabel("api", "api_test")
 		ctx.SetLabel("tenant", tenant)
 		ctx.SetLabel("product", "apinto")
 		ctx.SetLabel("application", "app1")
-
+		
 		chain := &dummyChain{}
-
+		
 		err = s.DoHttpFilter(ctx, chain)
 		if err != nil {
 			t.Fatalf("expected nil error, got %v", err)
@@ -579,7 +581,7 @@ func TestDoHttpFilter(t *testing.T) {
 			t.Fatalf("chain should be executed when within quota")
 		}
 	})
-
+	
 	t.Run("Scenario 5: Request limit exceeded (Blocked & Default 429 Response)", func(t *testing.T) {
 		tenant := "tenant_block"
 		config := &quota_limiting_strategy.Config{
@@ -597,21 +599,21 @@ func TestDoHttpFilter(t *testing.T) {
 			t.Fatalf("create strategy error: %v", err)
 		}
 		defer worker.Stop()
-
+		
 		ctx := newDummyHttpContext()
 		ctx.SetLabel("api", "api_test")
 		ctx.SetLabel("tenant", tenant)
 		ctx.SetLabel("product", "apinto")
 		ctx.SetLabel("application", "app1")
-
+		
 		chain := &dummyChain{}
-
+		
 		// 第一次调用：递增到 1 (允许)
 		err1 := s.DoHttpFilter(ctx, chain)
 		if err1 != nil {
 			t.Fatalf("first request should succeed, got %v", err1)
 		}
-
+		
 		// 第二次调用：递增到 2，超过阈值 1 (应该拦截)
 		chain2 := &dummyChain{}
 		ctx2 := newDummyHttpContext()
@@ -619,7 +621,7 @@ func TestDoHttpFilter(t *testing.T) {
 		ctx2.SetLabel("tenant", tenant)
 		ctx2.SetLabel("product", "apinto")
 		ctx2.SetLabel("application", "app1")
-
+		
 		err2 := s.DoHttpFilter(ctx2, chain2)
 		if !errors.Is(err2, ErrQuotaExceeded) {
 			t.Fatalf("expected ErrQuotaExceeded, got %v", err2)
@@ -627,7 +629,7 @@ func TestDoHttpFilter(t *testing.T) {
 		if chain2.called {
 			t.Fatalf("chain should not be called when blocked")
 		}
-
+		
 		// 验证上下文属性
 		if isBlock, _ := ctx2.Value("is_block").(bool); !isBlock {
 			t.Errorf("is_block should be true")
@@ -635,7 +637,7 @@ func TestDoHttpFilter(t *testing.T) {
 		if handler := ctx2.GetLabel("handler"); handler != "quota-limiting-request" {
 			t.Errorf("handler label expected 'quota-limiting-request', got '%s'", handler)
 		}
-
+		
 		// 验证 HTTP 响应状态和 Body
 		resp, ok := ctx2.Response().(*dummyHttpResponse)
 		if !ok {
@@ -649,7 +651,7 @@ func TestDoHttpFilter(t *testing.T) {
 			t.Errorf("expected body %s, got %s", expectedBody, string(resp.GetBody()))
 		}
 	})
-
+	
 	t.Run("Scenario 6: Custom Response on Blocked", func(t *testing.T) {
 		customResp := &dummyCustomResponse{}
 		st1 := &dummyStrategy{
@@ -659,42 +661,42 @@ func TestDoHttpFilter(t *testing.T) {
 			threshold:  1,
 			resp:       customResp,
 		}
-
+		
 		ctx := newDummyHttpContext()
 		ctx.SetLabel("api", "api_test")
 		ctx.SetLabel("product", "apinto")
 		ctx.SetLabel("application", "app1")
-
+		
 		now := time.Now()
 		key, ttl := s.buildQuotaKeyAndTTL(ctx, st1, now)
-
+		
 		cache := resources.LocalCache()
 		cache.IncrBy(ctx.Context(), key, 1, ttl)
-
+		
 		val, _ := cache.IncrBy(ctx.Context(), key, 1, ttl).Result()
 		if val > st1.Threshold() {
 			st1.Response().Response(ctx)
 		}
-
+		
 		if !customResp.called {
 			t.Fatalf("custom response should be called")
 		}
 	})
-
+	
 	t.Run("Scenario 7: Cache IncrBy Error handling", func(t *testing.T) {
 		mc := newMockCache()
 		mc.incrErr = errors.New("redis connection reset")
-
+		
 		st1 := &dummyStrategy{
 			id:        "st_err",
 			period:    quota_limiting_strategy.PeriodMinute,
 			threshold: 10,
 		}
-
+		
 		ctx := newDummyHttpContext()
 		now := time.Now()
 		key, ttl := s.buildQuotaKeyAndTTL(ctx, st1, now)
-
+		
 		val, err := mc.IncrBy(ctx.Context(), key, 1, ttl).Result()
 		if err == nil {
 			t.Fatalf("expected error from mock cache")
@@ -708,10 +710,10 @@ func TestDoHttpFilter(t *testing.T) {
 func TestDoFilter(t *testing.T) {
 	keyGen := context_label.NewKeyGenerator("{product}:quota-limiting:{strategy}:{target_type}:{application}:{period}:{time_format}")
 	s := &Strategy{key: keyGen}
-
+	
 	ctx := newDummyHttpContext()
 	chain := &dummyChain{}
-
+	
 	err := s.DoFilter(ctx, chain)
 	if err != nil {
 		t.Fatalf("DoFilter returned error: %v", err)
@@ -725,23 +727,23 @@ func TestDoFilter(t *testing.T) {
 func BenchmarkBuildQuotaKeyAndTTL(b *testing.B) {
 	keyGen := context_label.NewKeyGenerator("{product}:quota-limiting:{strategy}:{target_type}:{application}:{period}:{time_format}")
 	s := &Strategy{key: keyGen}
-
+	
 	ctx := newDummyHttpContext()
 	ctx.SetLabel("product", "apinto_benchmark")
 	ctx.SetLabel("application", "app_bench_123")
-
+	
 	st := &dummyStrategy{
 		id:         "strat_bench_999",
 		targetType: "user",
 		period:     quota_limiting_strategy.PeriodMinute,
 		threshold:  10000,
 	}
-
+	
 	now := time.Date(2026, 8, 13, 12, 0, 0, 0, time.UTC)
-
+	
 	b.ResetTimer()
 	b.ReportAllocs()
-
+	
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			_, _ = s.buildQuotaKeyAndTTL(ctx, st, now)
@@ -766,22 +768,22 @@ func BenchmarkDoHttpFilter_Allowed(b *testing.B) {
 		b.Fatalf("create strategy error: %v", err)
 	}
 	defer worker.Stop()
-
+	
 	keyGen := context_label.NewKeyGenerator("{product}:quota-limiting:{strategy}:{target_type}:{application}:{period}:{time_format}")
 	s := &Strategy{key: keyGen}
-
+	
 	chain := &dummyChain{}
-
+	
 	b.ResetTimer()
 	b.ReportAllocs()
-
+	
 	for i := 0; i < b.N; i++ {
 		ctx := newDummyHttpContext()
 		ctx.SetLabel("api", "api_bench")
 		ctx.SetLabel("tenant", tenant)
 		ctx.SetLabel("product", "apinto")
 		ctx.SetLabel("application", "app1")
-
+		
 		_ = s.DoHttpFilter(ctx, chain)
 	}
 }
@@ -803,10 +805,10 @@ func BenchmarkDoHttpFilter_Blocked(b *testing.B) {
 		b.Fatalf("create strategy error: %v", err)
 	}
 	defer worker.Stop()
-
+	
 	keyGen := context_label.NewKeyGenerator("{product}:quota-limiting:{strategy}:{target_type}:{application}:{period}:{time_format}")
 	s := &Strategy{key: keyGen}
-
+	
 	// 先请求 1 次将其占满
 	ctxInit := newDummyHttpContext()
 	ctxInit.SetLabel("api", "api_bench")
@@ -815,17 +817,17 @@ func BenchmarkDoHttpFilter_Blocked(b *testing.B) {
 	ctxInit.SetLabel("application", "app1")
 	chain := &dummyChain{}
 	_ = s.DoHttpFilter(ctxInit, chain)
-
+	
 	b.ResetTimer()
 	b.ReportAllocs()
-
+	
 	for i := 0; i < b.N; i++ {
 		ctx := newDummyHttpContext()
 		ctx.SetLabel("api", "api_bench")
 		ctx.SetLabel("tenant", tenant)
 		ctx.SetLabel("product", "apinto")
 		ctx.SetLabel("application", "app1")
-
+		
 		_ = s.DoHttpFilter(ctx, chain)
 	}
 }
@@ -847,17 +849,17 @@ func BenchmarkDoHttpFilter_Parallel(b *testing.B) {
 		b.Fatalf("create strategy error: %v", err)
 	}
 	defer worker.Stop()
-
+	
 	keyGen := context_label.NewKeyGenerator("{product}:quota-limiting:{strategy}:{target_type}:{application}:{period}:{time_format}")
 	s := &Strategy{key: keyGen}
-
+	
 	chain := &dummyChain{}
-
+	
 	var seq int64
-
+	
 	b.ResetTimer()
 	b.ReportAllocs()
-
+	
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			id := atomic.AddInt64(&seq, 1)
@@ -866,7 +868,7 @@ func BenchmarkDoHttpFilter_Parallel(b *testing.B) {
 			ctx.SetLabel("tenant", tenant)
 			ctx.SetLabel("product", "apinto")
 			ctx.SetLabel("application", "app_"+string(rune(id%10)))
-
+			
 			_ = s.DoHttpFilter(ctx, chain)
 		}
 	})

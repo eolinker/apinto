@@ -2,13 +2,10 @@ package quota_limiting_strategy
 
 import (
 	"fmt"
-	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/drivers/strategy"
 	
 	"github.com/eolinker/apinto/utils/response"
 )
-
-var quotaKeyPre = context_label.NewKeyGenerator("{product}:quota-limiting:{strategy}:{target_type}:{application}")
 
 // QuotaConfig 配额配置集合
 type QuotaConfig struct {

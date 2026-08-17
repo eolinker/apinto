@@ -6,7 +6,7 @@ import (
 	context_label "github.com/eolinker/apinto/common/context-label"
 	"strconv"
 	"strings"
-	
+
 	"github.com/Knetic/govaluate"
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
@@ -78,11 +78,11 @@ func NewCalculator(id string, currency string, variables Variables, rules []*Rul
 	if err != nil {
 		return nil, fmt.Errorf("create variables extractor error: %w", err)
 	}
-	
+
 	processedRules := make([]*ProcessedRule, 0, len(rules))
 	for _, rule := range rules {
 		var costExpr, saleExpr, officialExpr IExpression
-		
+
 		// 预编译进货价计算公式
 		if rule.CostExpression != "" {
 			expr, err := NewExpression(rule.CostExpression)
@@ -91,7 +91,7 @@ func NewCalculator(id string, currency string, variables Variables, rules []*Rul
 			}
 			costExpr = expr
 		}
-		
+
 		// 预编译销售价计算公式
 		if rule.SaleExpression != "" {
 			expr, err := NewExpression(rule.SaleExpression)
@@ -100,7 +100,7 @@ func NewCalculator(id string, currency string, variables Variables, rules []*Rul
 			}
 			saleExpr = expr
 		}
-		
+
 		if rule.OfficialExpression == "" {
 			expr, err := NewExpression(rule.SaleExpression)
 			if err != nil {
@@ -115,7 +115,7 @@ func NewCalculator(id string, currency string, variables Variables, rules []*Rul
 			}
 			officialExpr = expr
 		}
-		
+
 		processedRules = append(processedRules, &ProcessedRule{
 			id:           rule.ID,
 			name:         rule.Name,
@@ -126,7 +126,7 @@ func NewCalculator(id string, currency string, variables Variables, rules []*Rul
 			billingMode:  detectBillingMode(rule.SaleExpression),
 		})
 	}
-	
+
 	return &Calculator{
 		id:                 id,
 		currency:           currency,
@@ -186,12 +186,16 @@ func (c *Calculator) Calculate(ctx eocontext.EoContext, enableBalance bool, pric
 		if tmp.ID() == c.id {
 			return nil, fmt.Errorf("not found tmp for id: %s", c.id)
 		}
-		rules = c.rules
+		rs, err := tmp.Rules(ctx)
+		if err != nil {
+			return nil, err
+		}
+		rules = rs
 	}
 	if len(rules) < 1 {
 		return nil, errors.New("no pricing rules configured")
 	}
-	
+
 	// 动态抓取当前 EoContext 下的所有已配置变量集
 	vars := extractor.ExtractAll(ctx)
 	if len(vars) < 1 {
@@ -205,29 +209,29 @@ func (c *Calculator) Calculate(ctx eocontext.EoContext, enableBalance bool, pric
 		}
 		vars[k] = v
 	}
-	
+
 	context_label.SetPriceVariables(ctx, vars)
 	if !enableBalance {
 		return &CalculateResult{}, nil
 	}
-	
+
 	if pricingData == nil {
 		return nil, errors.New("redis pricing data is required but got nil")
 	}
-	
+
 	// 1. 按配置的高级计费规则顺序，依次匹配条件
 	var matchedRule *ProcessedRule
-	for _, rule := range c.rules {
+	for _, rule := range rules {
 		if matchCondition(rule.conditions, vars) {
 			matchedRule = rule
 			break
 		}
 	}
-	
+
 	if matchedRule == nil {
 		return nil, errors.New("no advanced rules matched the given context variables")
 	}
-	
+
 	context_label.SetChargeRule(ctx, matchedRule.id)
 	context_label.SetExprCost(ctx, matchedRule.costExpr.String())
 	context_label.SetExprSale(ctx, matchedRule.saleExpr.String())
@@ -258,7 +262,7 @@ func (c *Calculator) CalculateFromChunk(ctx eocontext.EoContext, enableBalance b
 		}
 		extractor = calculator.VariablesExtractor()
 	}
-	
+
 	// 从流式 Chunk 里解包和转换出最新的计量参数变量集
 	newVars := extractor.ExtractAllFromChunk(ctx, chunk)
 	if len(newVars) < 1 {
@@ -300,7 +304,7 @@ func (c *Calculator) CalculateFromChunk(ctx eocontext.EoContext, enableBalance b
 	} else {
 		mr = matchedRule.(*ProcessedRule)
 	}
-	
+
 	params, err := c.generateParams(ctx, vars, pricingData, mr)
 	if err != nil {
 		return nil, err
@@ -320,7 +324,7 @@ func (c *Calculator) generateParams(ctx eocontext.EoContext, vars map[string]int
 	}
 	// 3. 构建公式运行所需的上下文变量 map (合并自定义提取变量与绑定的动态价格变量)
 	params := make(map[string]interface{}, len(vars)+len(plan.Cost)+len(plan.Sale)+len(plan.Official))
-	
+
 	for k, v := range vars {
 		params[k] = v
 	}
@@ -347,13 +351,13 @@ func (c *Calculator) CalculateFromVariables(params map[string]interface{}, match
 	if err != nil {
 		return nil, fmt.Errorf("evaluate cost_expression failed: %w", err)
 	}
-	
+
 	// 计算销售价
 	salePrice, err := evaluateExpression(matchedRule.saleExpr.Expr(), params)
 	if err != nil {
 		return nil, fmt.Errorf("evaluate sale_expression failed: %w", err)
 	}
-	
+
 	// 6. 计算官方建议售价
 	officialPrice := salePrice
 	if matchedRule.officialExpr != nil {
@@ -362,7 +366,7 @@ func (c *Calculator) CalculateFromVariables(params map[string]interface{}, match
 			officialPrice = op
 		}
 	}
-	
+
 	return &CalculateResult{
 		Cost:     costPrice,
 		Sale:     salePrice,
@@ -376,19 +380,19 @@ func (c *Calculator) CalculateByRule(ctx eocontext.EoContext, pricingData *Prici
 		return nil, errors.New("pricing data is required but got nil")
 	}
 	vars := context_label.GetPriceVariables(ctx)
-	
+
 	matchedRuleVal := context_label.GetPriceMatchRule(ctx)
 	matchedRule, ok := matchedRuleVal.(*ProcessedRule)
 	if !ok {
 		return nil, errors.New("matched rule is not of type *ProcessedRule")
 	}
-	
+
 	// 2. 从 pricingData 中获取对应的价格包 Plan
 	plan := pricingData.Strategy[matchedRule.id]
 	if plan == nil {
 		return nil, fmt.Errorf("neither price plan for rule '%s' configured in strategy", matchedRule.id)
 	}
-	
+
 	// 3. 构建公式运行所需的上下文变量 map
 	params := make(map[string]interface{}, len(vars)+len(plan.Cost)+len(plan.Sale)+len(plan.Official))
 	for k, v := range vars {
@@ -403,7 +407,7 @@ func (c *Calculator) CalculateByRule(ctx eocontext.EoContext, pricingData *Prici
 	for k, v := range plan.Official {
 		params["official_"+k] = v
 	}
-	
+
 	// 4. 执行公式计算
 	return c.CalculateFromVariables(params, matchedRule)
 }
@@ -433,7 +437,7 @@ func (c *Calculator) PreDeduct(ctx eocontext.EoContext, pricingData *PricingData
 		if len(c.rules) == 0 {
 			return calculator.PreDeduct(ctx, pricingData)
 		}
-		
+
 		extractor = calculator.VariablesExtractor()
 	}
 	vars := extractor.ExtractAll(ctx)
@@ -448,18 +452,18 @@ func (c *Calculator) PreDeduct(ctx eocontext.EoContext, pricingData *PricingData
 		vars[k] = v
 	}
 	context_label.SetPriceVariables(ctx, vars)
-	
+
 	if pricingData == nil {
 		return 0, "", errors.New("redis pricing data is required but got nil")
 	}
-	
+
 	matchedRule := c.rules[0]
-	
+
 	plan := pricingData.Strategy[matchedRule.id]
 	if plan == nil {
 		return 0, matchedRule.id, nil
 	}
-	
+
 	switch matchedRule.billingMode {
 	case BillingModePerCall:
 		// 按次计费：直接取 per_call 销售价
@@ -483,7 +487,7 @@ func (c *Calculator) PreDeduct(ctx eocontext.EoContext, pricingData *PricingData
 		//   - 模型类型从上下文 label "model_type" 中读取，默认视为 text 模型
 		inputPrice := plan.Sale["input_token"]
 		outputPrice := plan.Sale["output_token"]
-		
+
 		// 读取上下文中的 input_token label / 变量作为预估请求 token 数
 		var inputTokens float64
 		if v, ok := vars[LabelInputToken]; ok {
@@ -496,10 +500,10 @@ func (c *Calculator) PreDeduct(ctx eocontext.EoContext, pricingData *PricingData
 				}
 			}
 		}
-		
+
 		// 请求 token 成本
 		inputCost := inputTokens * inputPrice / float64(PriceTokenScale)
-		
+
 		// 预估输出 token 数：根据上下文 label "model_type" 分配
 		modelType := ctxLabel(ctx, LabelModelType)
 		var estimatedOutputTokens float64
@@ -511,7 +515,7 @@ func (c *Calculator) PreDeduct(ctx eocontext.EoContext, pricingData *PricingData
 			estimatedOutputTokens = float64(PreDeductOutputTokensText)
 		}
 		outputCost := estimatedOutputTokens * outputPrice / float64(PriceTokenScale)
-		
+
 		estimated := inputCost + outputCost*DefaultSafetyFactor
 		return estimated, matchedRule.id, nil
 	}
@@ -587,7 +591,7 @@ func matchBasicRule(rule *BasicRule, params map[string]interface{}) bool {
 	if !exists {
 		return false
 	}
-	
+
 	switch rule.Type {
 	case "array":
 		var actual []interface{}
@@ -613,7 +617,7 @@ func matchBasicRule(rule *BasicRule, params map[string]interface{}) bool {
 			// Treat single value as a single-element array
 			actual = []interface{}{v}
 		}
-		
+
 		// Helper to check if actual array contains a string representation of any expected value
 		contains := func(expected string) bool {
 			for _, item := range actual {
@@ -623,7 +627,7 @@ func matchBasicRule(rule *BasicRule, params map[string]interface{}) bool {
 			}
 			return false
 		}
-		
+
 		switch rule.Op {
 		case "==", "in":
 			// For "in" or "==", we split rule.Value by commas and check if any expected value is contained in the actual array
@@ -665,7 +669,7 @@ func matchBasicRule(rule *BasicRule, params map[string]interface{}) bool {
 		default:
 			return false
 		}
-		
+
 		switch rule.Op {
 		case ">":
 			expect, err := strconv.ParseInt(rule.Value, 10, 64)
@@ -732,7 +736,7 @@ func matchBasicRule(rule *BasicRule, params map[string]interface{}) bool {
 		default:
 			return false
 		}
-		
+
 		switch rule.Op {
 		case ">":
 			expect, err := strconv.ParseFloat(rule.Value, 64)
@@ -785,12 +789,12 @@ func matchBasicRule(rule *BasicRule, params map[string]interface{}) bool {
 		default:
 			return false
 		}
-		
+
 		expect, err := strconv.ParseBool(rule.Value)
 		if err != nil {
 			return false
 		}
-		
+
 		switch rule.Op {
 		case "==":
 			return actual == expect
@@ -800,7 +804,7 @@ func matchBasicRule(rule *BasicRule, params map[string]interface{}) bool {
 	case "string":
 		actual := fmt.Sprintf("%v", val)
 		expect := rule.Value
-		
+
 		switch rule.Op {
 		case "==":
 			return actual == expect

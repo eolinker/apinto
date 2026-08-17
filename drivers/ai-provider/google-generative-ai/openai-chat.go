@@ -258,6 +258,7 @@ type GeminiCandidate struct {
 type GeminiUsageMetadata struct {
 	PromptTokenCount     int `json:"promptTokenCount"`
 	CandidatesTokenCount int `json:"candidatesTokenCount"`
+	ThoughtsTokenCount   int `json:"thoughtsTokenCount"`
 	TotalTokenCount      int `json:"totalTokenCount"`
 }
 
@@ -763,13 +764,14 @@ func convertOpenAIFormat(ctx http_service.IHttpContext, body []byte) ([]byte, er
 	}
 
 	if geminiResp.UsageMetadata != nil {
+		outputToken := geminiResp.UsageMetadata.CandidatesTokenCount + geminiResp.UsageMetadata.ThoughtsTokenCount
 		openaiResp.Usage = openai.Usage{
 			PromptTokens:     geminiResp.UsageMetadata.PromptTokenCount,
-			CompletionTokens: geminiResp.UsageMetadata.CandidatesTokenCount,
+			CompletionTokens: outputToken,
 			TotalTokens:      geminiResp.UsageMetadata.TotalTokenCount,
 		}
 		ai_convert.SetAIModelInputToken(ctx, geminiResp.UsageMetadata.PromptTokenCount)
-		ai_convert.SetAIModelOutputToken(ctx, geminiResp.UsageMetadata.CandidatesTokenCount)
+		ai_convert.SetAIModelOutputToken(ctx, outputToken)
 		ai_convert.SetAIModelTotalToken(ctx, geminiResp.UsageMetadata.TotalTokenCount)
 	}
 
@@ -991,7 +993,7 @@ func (o *OpenAIChat) streamHandler(ctx http_service.IHttpContext, p []byte) ([]b
 
 		if geminiResp.UsageMetadata != nil {
 			ai_convert.SetAIModelInputToken(ctx, geminiResp.UsageMetadata.PromptTokenCount)
-			ai_convert.SetAIModelOutputToken(ctx, geminiResp.UsageMetadata.CandidatesTokenCount)
+			ai_convert.SetAIModelOutputToken(ctx, geminiResp.UsageMetadata.CandidatesTokenCount+geminiResp.UsageMetadata.ThoughtsTokenCount)
 			ai_convert.SetAIModelTotalToken(ctx, geminiResp.UsageMetadata.TotalTokenCount)
 		}
 
@@ -1065,7 +1067,7 @@ func (o *OpenAIChat) streamHandler(ctx http_service.IHttpContext, p []byte) ([]b
 			if isFinal && geminiResp.UsageMetadata != nil {
 				streamResp.Usage = &openai.Usage{
 					PromptTokens:     geminiResp.UsageMetadata.PromptTokenCount,
-					CompletionTokens: geminiResp.UsageMetadata.CandidatesTokenCount,
+					CompletionTokens: geminiResp.UsageMetadata.CandidatesTokenCount + geminiResp.UsageMetadata.ThoughtsTokenCount,
 					TotalTokens:      geminiResp.UsageMetadata.TotalTokenCount,
 				}
 			}

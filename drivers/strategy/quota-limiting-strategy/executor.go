@@ -43,13 +43,18 @@ func (e *executor) Stop() error {
 	}
 	keys, err := cache.Keys(context.Background(), e.keys).Result()
 	if err != nil {
+		log.Errorf("quota limiting strategy executor stop, get keys error: %v", err)
 		return err
 	}
-	count, err := cache.Del(context.Background(), keys...).Result()
-	if err != nil {
-		return err
+	if len(keys) > 0 {
+		count, err := cache.Del(context.Background(), keys...).Result()
+		if err != nil {
+			log.Errorf("quota limiting strategy executor stop, delete keys error: %v", err)
+			return err
+		}
+		log.Info("quota limiting strategy executor stop, delete keys count: ", count)
 	}
-	log.Info("quota limiting strategy executor stop, delete keys count: ", count)
+	
 	removeStrategy(e.Id())
 	
 	return nil

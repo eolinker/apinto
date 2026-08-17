@@ -60,16 +60,19 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 	now := time.Now()
 	executedKeys := make([]string, 0, len(tenantStrategies))
 	executedTTLs := make([]time.Duration, 0, len(tenantStrategies))
-	
+	isProviderTenant := ctx.GetLabel("tenant") == ctx.GetLabel("provider_tenant")
 	// 3. 依次对配额策略进行计数累加与超限判断
 	for _, tss := range tenantStrategies {
 		for _, st := range tss.Strategies() {
+			if st.TargetType() == "channel" && isProviderTenant {
+				continue
+			}
 			threshold := st.Threshold()
 			if threshold <= 0 {
 				continue
 			}
 			
-			key, ttl := quota_limiting.BuildQuotaKeyAndTTL(ctx, s.key, st, now)
+			key, ttl := quota_limiting.BuildQuotaKeyAndTTL(ctx, s.key, st, now, "request")
 			
 			// 进行原子递增 1
 			val, err := cache.IncrBy(ctx.Context(), key, 1, ttl).Result()
@@ -103,7 +106,7 @@ func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.
 					resp := httpContext.Response()
 					resp.SetStatus(429, "429")
 					resp.SetHeader("Content-Type", "application/json; charset=utf-8")
-					resp.SetBody([]byte(`{"code":429,"message":"Request quota limit exceeded"}`))
+					resp.SetBody([]byte(`{"code":429,"message":"The throttling strategy has been triggered. Please check the throttling quota list in the call statistics of the console."}`))
 				}
 				return ErrQuotaExceeded
 			}

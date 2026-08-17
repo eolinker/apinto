@@ -1,24 +1,31 @@
 package quota_limiting_strategy
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
-	
+
 	"github.com/eolinker/apinto/utils/response"
-	
+
 	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 )
 
 // sortStrategies 对同级策略按 period 升序、再按 threshold 升序进行原地排序
-func sortStrategies(ss []IStrategy) {
+func sortStrategies(ss []IPathStrategy) {
 	sort.SliceStable(ss, func(i, j int) bool {
 		if ss[i].Period() != ss[j].Period() {
 			return ss[i].Period() < ss[j].Period()
 		}
 		return ss[i].Threshold() < ss[j].Threshold()
+	})
+}
+
+func sortParentStrategies(ss []ITenantStrategy) {
+	sort.SliceStable(ss, func(i, j int) bool {
+		return ss[i].Index() < ss[j].Index()
 	})
 }
 
@@ -58,6 +65,14 @@ const (
 	quotaTypeAmount
 )
 
+const (
+	TargetTypeAll                 = "all"
+	TargetTypeUser                = "user"
+	TargetTypeResourceGroup       = "resource_group"
+	TargetTypeUserOfResourceGroup = "user_of_resource_group"
+	TargetTypeChannel             = "channel"
+)
+
 // QuotaRule 单维度的配额规则
 type QuotaRule struct {
 	Second float64 `json:"second"` // 每秒配额
@@ -66,6 +81,24 @@ type QuotaRule struct {
 	Day    float64 `json:"day"`    // 每天配额
 	Month  float64 `json:"month"`  // 每月配额
 	Total  float64 `json:"total"`  // 总配额
+}
+
+type IPathStrategy interface {
+	Paths() []string
+	IStrategy
+}
+
+type pathStrategy struct {
+	paths []string
+	IStrategy
+}
+
+func (p pathStrategy) Paths() []string {
+	return p.paths
+}
+
+func newPathStrategy(paths []string, strategy IStrategy) IPathStrategy {
+	return &pathStrategy{paths: paths, IStrategy: strategy}
 }
 
 type IStrategy interface {
@@ -148,19 +181,25 @@ type IExtractor interface {
 
 type ITenantStrategy interface {
 	Tenant() string
-	Strategies() []IStrategy
+	Index() int
+	Strategies() []IPathStrategy
 }
 
 type tenantStrategy struct {
 	tenant     string
-	strategies []IStrategy
+	index      int
+	strategies []IPathStrategy
 }
 
 func (t *tenantStrategy) Tenant() string {
 	return t.tenant
 }
 
-func (t *tenantStrategy) Strategies() []IStrategy {
+func (t *tenantStrategy) Index() int {
+	return t.index
+}
+
+func (t *tenantStrategy) Strategies() []IPathStrategy {
 	return t.strategies
 }
 
@@ -219,7 +258,7 @@ func (t *GenericDimensionTree[T]) Remove(keys []string, matchFunc func(item T) b
 		}
 		curr = child
 	}
-	
+
 	newItems := make([]T, 0, len(curr.items))
 	for _, item := range curr.items {
 		if !matchFunc(item) {
@@ -230,24 +269,44 @@ func (t *GenericDimensionTree[T]) Remove(keys []string, matchFunc func(item T) b
 	return len(curr.items)
 }
 
-func (t *GenericDimensionTree[T]) Search(queryKeys [][]string) []T {
-	var results []T
-	var dfs func(node *GenericTreeNode[T], depth int)
-	dfs = func(node *GenericTreeNode[T], depth int) {
+// 搜索结果：路径 + 对应的数据
+type SearchResult[T any] struct {
+	Path  []string
+	Items []T
+}
+
+func (t *GenericDimensionTree[T]) Search(queryKeys [][]string) []SearchResult[T] {
+	var results []SearchResult[T]
+
+	var dfs func(node *GenericTreeNode[T], depth int, path []string)
+	dfs = func(node *GenericTreeNode[T], depth int, path []string) {
 		if node == nil {
 			return
 		}
+
+		// 到达最深层，记录当前路径和 items
 		if depth == len(queryKeys) {
-			results = append(results, node.items...)
+			// 必须拷贝一份路径，避免后续被覆盖
+			p := make([]string, len(path))
+			copy(p, path)
+
+			results = append(results, SearchResult[T]{
+				Path:  p,
+				Items: node.items, // 如果希望 items 也独立，可以再 copy 一份
+			})
 			return
 		}
+
+		// 在当前维度上尝试所有可能的 key
 		for _, key := range queryKeys[depth] {
 			if child, exists := node.children[key]; exists {
-				dfs(child, depth+1)
+				// 把当前 key 追加到路径里继续往下搜
+				dfs(child, depth+1, append(path, key))
 			}
 		}
 	}
-	dfs(t.root, 0)
+
+	dfs(t.root, 0, nil)
 	return results
 }
 
@@ -283,7 +342,7 @@ type multiQuotaExtractor struct {
 
 // NewExtractor 创建按 Quota 类型管理的综合提取器实例
 func NewExtractor() Extractor {
-	
+
 	return &multiQuotaExtractor{
 		requestExtractor:    newSingleExtractor(quotaTypeRequest),
 		totalTokenExtractor: newSingleExtractor(quotaTypeTotalToken),
@@ -341,7 +400,7 @@ func (m *multiQuotaExtractor) GetStrategies(ctx eocontext.EoContext, quotaType .
 	if len(quotaType) == 0 {
 		return m.GetExtractor(quotaTypeRequest).GetStrategies(ctx)
 	}
-	
+
 	allStrategies := make([]ITenantStrategy, 0, 10*len(quotaType))
 	for _, t := range quotaType {
 		ss, ok := m.GetExtractor(t).GetStrategies(ctx)
@@ -349,7 +408,7 @@ func (m *multiQuotaExtractor) GetStrategies(ctx eocontext.EoContext, quotaType .
 			allStrategies = append(allStrategies, ss...)
 		}
 	}
-	
+
 	return allStrategies, len(allStrategies) > 0
 }
 
@@ -357,7 +416,7 @@ func (m *multiQuotaExtractor) GetParentStrategies(ctx eocontext.EoContext, quota
 	if len(quotaType) > 0 {
 		return m.GetExtractor(quotaType[0]).GetParentStrategies(ctx)
 	}
-	
+
 	var allStrategies []ITenantStrategy
 	reqStr, ok1 := m.requestExtractor.GetParentStrategies(ctx)
 	if ok1 {
@@ -379,21 +438,21 @@ func GetTenantChain(tenant string, cv eosc.ICustomerVar) []string {
 	if tenant == "" {
 		return nil
 	}
-	
+
 	chain := make([]string, 0, 10)
 	if cv == nil {
 		return chain
 	}
-	
+
 	visited := map[string]bool{tenant: true}
 	curr := tenant
-	
+
 	for i := 0; i < 50; i++ {
 		parentMap, has := cv.GetAll("parent:" + curr)
 		if !has || len(parentMap) == 0 {
 			break
 		}
-		
+
 		var parentID string
 		for p := range parentMap {
 			if p != "" {
@@ -401,16 +460,16 @@ func GetTenantChain(tenant string, cv eosc.ICustomerVar) []string {
 				break
 			}
 		}
-		
+
 		if parentID == "" || visited[parentID] {
 			break
 		}
-		
+
 		visited[parentID] = true
 		chain = append(chain, parentID)
 		curr = parentID
 	}
-	
+
 	return chain
 }
 
@@ -441,7 +500,7 @@ func generateDimensionPaths(filter FiltersConfig) [][]string {
 		}
 		tKeys = filter.Target.Items
 	}
-	
+
 	// Depth 1: TargetType
 	var targetTypeKeys []string
 	if filter.Target.Type == "channel" {
@@ -451,15 +510,15 @@ func generateDimensionPaths(filter FiltersConfig) [][]string {
 	} else {
 		targetTypeKeys = normalizeKeys([]string{filter.Target.Type})
 	}
-	
+
 	// Depth 2: TargetItem
 	var targetItemKeys []string
-	if filter.Target.Type == "channel" || filter.Target.All || len(filter.Target.Items) == 0 {
+	if filter.Target.Type == "channel" || filter.Target.All || filter.Target.Type == "all" {
 		targetItemKeys = []string{"all"}
 	} else {
 		targetItemKeys = normalizeKeys(filter.Target.Items)
 	}
-	
+
 	// Depth 3: ResourceType
 	var resTypeKeys []string
 	if filter.Resource.Type == "" || filter.Resource.Type == "all" {
@@ -467,7 +526,7 @@ func generateDimensionPaths(filter FiltersConfig) [][]string {
 	} else {
 		resTypeKeys = normalizeKeys([]string{filter.Resource.Type})
 	}
-	
+
 	// Depth 4: ResourceParent
 	var resParentKeys []string
 	if filter.Resource.All || len(filter.Resource.Parents) == 0 {
@@ -475,7 +534,7 @@ func generateDimensionPaths(filter FiltersConfig) [][]string {
 	} else {
 		resParentKeys = normalizeKeys(filter.Resource.Parents)
 	}
-	
+
 	// Depth 5: ResourceItem
 	var resItemKeys []string
 	if filter.Resource.All || len(filter.Resource.Parents) > 0 || len(filter.Resource.Items) == 0 {
@@ -483,7 +542,7 @@ func generateDimensionPaths(filter FiltersConfig) [][]string {
 	} else {
 		resItemKeys = normalizeKeys(filter.Resource.Items)
 	}
-	
+
 	// 组合 6 维笛卡尔积路径 (Tenant -> TargetType -> TargetItem -> ResType -> ResParent -> ResItem)
 	paths := make([][]string, 0, len(tKeys)*len(targetTypeKeys)*len(targetItemKeys)*len(resTypeKeys)*len(resParentKeys)*len(resItemKeys))
 	for _, t := range tKeys {
@@ -506,10 +565,10 @@ func (e *strategyExtractor) AddStrategy(id string, config *Config) {
 	if id == "" || config == nil {
 		return
 	}
-	
+
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	
+
 	// 1. 若存在旧策略，从多维树中彻底清理旧路径节点
 	if old, exists := e.strategies[id]; exists {
 		for _, path := range old.DimensionPaths {
@@ -518,13 +577,13 @@ func (e *strategyExtractor) AddStrategy(id string, config *Config) {
 			})
 		}
 	}
-	
+
 	// 2. 计算策略映射到 6 维多维树的所有索引路径（要求必须有指定的 Tenant）
 	dimPaths := generateDimensionPaths(config.Filters)
 	if len(dimPaths) == 0 {
 		return
 	}
-	
+
 	// 3. 根据当前 extractor 的 quotaType 提取对应的 QuotaRule
 	var rule QuotaRule
 	switch e.quotaType {
@@ -535,20 +594,20 @@ func (e *strategyExtractor) AddStrategy(id string, config *Config) {
 	case quotaTypeAmount:
 		rule = config.Quota.Amount
 	}
-	
-	strategies := NewStrategies(id, config.Filters.Target.Type, rule, response.Parse(config.Response))
+	targetType := config.Filters.Target.Type
+	strategies := NewStrategies(id, targetType, rule, response.Parse(config.Response))
 	if len(strategies) == 0 {
 		delete(e.strategies, id)
 		return
 	}
-	
+
 	indexed := &IndexedStrategy{
 		ID:             id,
 		Config:         config,
 		Strategies:     strategies,
 		DimensionPaths: dimPaths,
 	}
-	
+
 	// 4. 存入 ID 主表并将所有路径节点插入多维树
 	e.strategies[id] = indexed
 	for _, path := range dimPaths {
@@ -560,10 +619,10 @@ func (e *strategyExtractor) RemoveStrategy(id string) [][]string {
 	if id == "" {
 		return nil
 	}
-	
+
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	
+
 	if indexed, exists := e.strategies[id]; exists {
 		clearedPath := make([][]string, 0, len(indexed.DimensionPaths))
 		for _, path := range indexed.DimensionPaths {
@@ -583,7 +642,7 @@ func (e *strategyExtractor) RemoveStrategy(id string) [][]string {
 func (e *strategyExtractor) GetStrategy(id string) (*Config, bool) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
-	
+
 	if indexed, exists := e.strategies[id]; exists {
 		return indexed.Config, true
 	}
@@ -603,84 +662,95 @@ func (e *strategyExtractor) GetStrategy(id string) (*Config, bool) {
 func (e *strategyExtractor) GetStrategies(ctx eocontext.EoContext, quotaType ...int) ([]ITenantStrategy, bool) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
-	
+
 	// 1. 从 Context 获取 6 个维度的特征
 	tenant := ctx.GetLabel("tenant")
-	
+
 	// Depth 0: Tenant (必须要有指定的 tenant，不允许 all)
 	if tenant == "" {
 		return nil, false
 	}
-	
+
 	resourceType := ctx.GetLabel("resource_type")
 	resource := ctx.GetLabel("resource")
 	provider := ctx.GetLabel("provider")
 	consumer := ctx.GetLabel("consumer")
-	consumerType := context_label.GetConsumerType(ctx)
-	
+
 	// 2. 构造 6 维 Depth 查询组合 Candidate Keys
 	// 维度顺序: Tenant -> TargetType -> TargetItem -> ResType -> ResParent -> ResItem
-	
+
 	// Depth 0: Tenant (仅精确指定 tenant)
 	dim0Tenants := []string{tenant}
-	
+
 	// Depth 1: TargetType
 	dim1TargetTypes := []string{"all"}
-	if consumerType != "" {
-		cType := context_label.GetConsumerType(ctx)
-		if cType != "" {
-			dim1TargetTypes = append(dim1TargetTypes, string(cType))
-		}
-		if context_label.IsUserConsumer(ctx) {
-			dim1TargetTypes = append(dim1TargetTypes, "user_of_resource_group")
-		}
+	cType := context_label.GetConsumerType(ctx)
+	if cType != "" {
+		dim1TargetTypes = append(dim1TargetTypes, string(cType))
 	}
-	
 	// Depth 2: TargetItem
 	dim2TargetItems := []string{"all"}
 	if consumer != "" {
 		dim2TargetItems = append(dim2TargetItems, consumer)
 	}
-	
+	if context_label.IsUserConsumer(ctx) {
+		dim1TargetTypes = append(dim1TargetTypes, TargetTypeUserOfResourceGroup)
+		resourceGroups, has := customerVar.GetAll(fmt.Sprintf("%s:%s", TargetTypeUserOfResourceGroup, consumer))
+		if has {
+			userOfResourceGroup := GetUserOfResourceGroup(ctx)
+			for group := range resourceGroups {
+				if userOfResourceGroup == "" || userOfResourceGroup == group {
+					dim2TargetItems = append(dim2TargetItems, group)
+				}
+
+			}
+		}
+	}
+
 	// Depth 3: ResourceType
 	dim3ResTypes := []string{"all"}
 	if resourceType != "" {
 		dim3ResTypes = append(dim3ResTypes, resourceType)
 	}
-	
+
 	// Depth 4: ResourceParent
 	dim4ResParents := []string{"all"}
 	if provider != "" {
 		dim4ResParents = append(dim4ResParents, provider)
 	}
-	
+
 	// Depth 5: ResourceItem
 	dim5ResItems := []string{"all"}
 	if resource != "" {
 		dim5ResItems = append(dim5ResItems, resource)
 	}
-	
+
 	queryKeys := [][]string{dim0Tenants, dim1TargetTypes, dim2TargetItems, dim3ResTypes, dim4ResParents, dim5ResItems}
-	
+
 	// 3. 一步通过多维树全量 DFS 搜索直接精准定位目标策略
 	matchedList := e.tree.Search(queryKeys)
 	if len(matchedList) == 0 {
 		return nil, false
 	}
-	
+
 	// 4. 去重收集符合条件的 Strategy
 	visited := make(map[string]bool, len(matchedList))
-	result := make([]IStrategy, 0, 10)
-	for _, cand := range matchedList {
-		if !visited[cand.ID] {
-			visited[cand.ID] = true
-			result = append(result, cand.Strategies...)
+	result := make([]IPathStrategy, 0, 10)
+	for _, srs := range matchedList {
+		for _, cand := range srs.Items {
+			if !visited[cand.ID] {
+				visited[cand.ID] = true
+				for _, strategy := range cand.Strategies {
+					result = append(result, newPathStrategy(srs.Path, strategy))
+				}
+			}
 		}
+
 	}
-	
+
 	// 5. 同级策略按 period 升序，再按 threshold 升序排序
 	sortStrategies(result)
-	
+
 	return []ITenantStrategy{
 		&tenantStrategy{
 			tenant:     tenant,
@@ -692,86 +762,97 @@ func (e *strategyExtractor) GetStrategies(ctx eocontext.EoContext, quotaType ...
 func (e *strategyExtractor) GetParentStrategies(ctx eocontext.EoContext, quotaType ...int) ([]ITenantStrategy, bool) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
-	
+
 	// 1. 从 Context 获取初始父租户 ID
 	tenant := ctx.GetLabel("tenant")
-	
+
 	if tenant == "" {
 		return nil, false
 	}
-	
+
 	// 2. 递归向上获取所有父租户链 (从直接父租户按顺序递归至一级根父租户)
 	parentChain := GetTenantChain(tenant, customerVar)
 	if len(parentChain) == 0 {
 		return nil, false
 	}
-	
+
 	resourceType := ctx.GetLabel("resource_type")
 	resource := ctx.GetLabel("resource")
 	provider := ctx.GetLabel("provider")
-	
+
 	// 3. 构造 6 维 Depth 查询组合 Candidate Keys
 	// 维度顺序: Tenant -> TargetType -> TargetItem -> ResType -> ResParent -> ResItem
-	
+
 	// Depth 1: TargetType (父租户策略只有 TargetType 为 all 的情况)
 	dim1TargetTypes := []string{"all"}
-	
+
 	// Depth 2: TargetItem
 	dim2TargetItems := []string{"all"}
-	
+
 	// Depth 3: ResourceType
 	dim3ResTypes := []string{"all"}
 	if resourceType != "" {
 		dim3ResTypes = append(dim3ResTypes, resourceType)
 	}
-	
+
 	// Depth 4: ResourceParent
 	dim4ResParents := []string{"all"}
 	if provider != "" {
 		dim4ResParents = append(dim4ResParents, provider)
 	}
-	
+
 	// Depth 5: ResourceItem
 	dim5ResItems := []string{"all"}
 	if resource != "" {
 		dim5ResItems = append(dim5ResItems, resource)
 	}
-	
+
 	visited := make(map[string]bool)
-	result := make([]IStrategy, 0, 10)
-	
+	result := make([]ITenantStrategy, 0, 10)
+
 	// 4. 沿父租户链从上往下（根租户到直接父租户）逐层检索匹配策略
 	//    GetTenantChain 返回顺序为从直接父租户到根租户，此处需反转为从根到直接父
 	dim0Tenants := make([]string, 0, len(parentChain))
 	for i := len(parentChain) - 1; i >= 0; i-- {
 		dim0Tenants = append(dim0Tenants, parentChain[i])
 	}
-	
+
 	// 按层级（父租户）逐层查询，保证父级从上往下的顺序，
 	// 同层级内按 period 升序、再按 threshold 升序排序
-	for _, parentTenant := range dim0Tenants {
+	for index, parentTenant := range dim0Tenants {
 		queryKeys := [][]string{{parentTenant}, dim1TargetTypes, dim2TargetItems, dim3ResTypes, dim4ResParents, dim5ResItems}
 		matchedList := e.tree.Search(queryKeys)
 		if len(matchedList) == 0 {
 			continue
 		}
-		levelResult := make([]IStrategy, 0, len(matchedList))
-		for _, cand := range matchedList {
-			if !visited[cand.ID] {
-				visited[cand.ID] = true
-				levelResult = append(levelResult, cand.Strategies...)
+		levelResult := make([]IPathStrategy, 0, len(matchedList))
+		//for _, cand := range matchedList {
+		//	if !visited[cand.ID] {
+		//		visited[cand.ID] = true
+		//		levelResult = append(levelResult, cand.Strategies...)
+		//	}
+		//}
+		for _, srs := range matchedList {
+			for _, cand := range srs.Items {
+				if !visited[cand.ID] {
+					visited[cand.ID] = true
+					for _, strategy := range cand.Strategies {
+						levelResult = append(levelResult, newPathStrategy(srs.Path, strategy))
+					}
+				}
 			}
 		}
+
 		sortStrategies(levelResult)
-		result = append(result, levelResult...)
+		result = append(result, &tenantStrategy{
+			tenant:     parentTenant,
+			index:      index,
+			strategies: levelResult,
+		})
 	}
-	
-	return []ITenantStrategy{
-		&tenantStrategy{
-			tenant:     tenant,
-			strategies: result,
-		},
-	}, len(result) > 0
+
+	sortParentStrategies(result)
+	return result, len(result) > 0
 }
 
 var (
