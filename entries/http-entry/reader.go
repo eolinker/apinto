@@ -85,6 +85,9 @@ func init() {
 var (
 	ctxRule *CtxRule
 	rule    Fields = map[string]IReader{
+		"retry": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return 0, true
+		}),
 		"request_id": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return ctx.RequestId(), true
 		}),
@@ -527,6 +530,9 @@ var (
 			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
 				return proxy.StatusCode(), true
 			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				return 0, true
+			}),
 		},
 		"status_xxx": &proxyReader{
 			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
@@ -543,6 +549,9 @@ var (
 				default:
 					return "other", true
 				}
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				return "other", true
 			}),
 		},
 		"path": &proxyReader{
@@ -572,6 +581,9 @@ var (
 		"response_length": &proxyReader{
 			ProxyReadFunc: ProxyReadFunc(func(name string, proxy http_service.IProxy) (interface{}, bool) {
 				return proxy.ResponseLength(), true
+			}),
+			ProxyReadRequestFunc: ProxyReadRequestFunc(func(name string, proxy http_service.IRequest) (interface{}, bool) {
+				return proxy.ContentLength(), true
 			}),
 		},
 		"response_body": &proxyReader{

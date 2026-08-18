@@ -85,6 +85,7 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 			return err
 		}
 		lastErr = ctx.SendTo(scheme, node, balanceTimeout)
+		ctx.WithValue("retry", index)
 		if lastErr == nil {
 			return nil
 		}
