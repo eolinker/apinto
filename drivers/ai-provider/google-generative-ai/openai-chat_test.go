@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -814,5 +815,149 @@ func TestStreamHandler(t *testing.T) {
 	// 验证 token 计数也被正确解析
 	if ai_convert.GetAIModelInputToken(mCtx) != 5 {
 		t.Errorf("expected input tokens = 5, got %d", ai_convert.GetAIModelInputToken(mCtx))
+	}
+}
+
+func TestConvertSchemaWithMultiTypeAndNull(t *testing.T) {
+	schema := map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"skip": map[string]interface{}{
+				"type": []interface{}{"number", "null"},
+			},
+			"multi": map[string]interface{}{
+				"type": []interface{}{"string", "number"},
+			},
+			"outputSchema": map[string]interface{}{
+				"anyOf": []interface{}{
+					map[string]interface{}{"type": "object"},
+					map[string]interface{}{"type": "null"},
+				},
+			},
+			"oneOfField": map[string]interface{}{
+				"oneOf": []interface{}{
+					map[string]interface{}{"type": "string"},
+					map[string]interface{}{"type": "number"},
+				},
+			},
+			"minField": map[string]interface{}{
+				"type":      "string",
+				"minLength": 1,
+				"maxLength": 100,
+			},
+		},
+	}
+
+	convertSchemaToGemini(schema)
+
+	props := schema["properties"].(map[string]interface{})
+
+	// 1. 验证 skip 字段转换：type 为 NUMBER，nullable 为 true
+	skipProp := props["skip"].(map[string]interface{})
+	if skipProp["type"] != "NUMBER" {
+		t.Errorf("expected skip.type to be NUMBER, got %v", skipProp["type"])
+	}
+	if skipProp["nullable"] != true {
+		t.Errorf("expected skip.nullable to be true, got %v", skipProp["nullable"])
+	}
+
+	// 2. 验证 multi 字段转换：被转成 anyOf
+	multiProp := props["multi"].(map[string]interface{})
+	if _, ok := multiProp["type"]; ok {
+		t.Errorf("expected multi.type to be deleted, got %v", multiProp["type"])
+	}
+	if anyOf, ok := multiProp["anyOf"].([]interface{}); !ok || len(anyOf) != 2 {
+		t.Errorf("expected multi.anyOf with 2 items, got %v", multiProp["anyOf"])
+	}
+
+	// 3. 验证 outputSchema 过滤 null 并设置 nullable: true
+	outSchema := props["outputSchema"].(map[string]interface{})
+	if outSchema["nullable"] != true {
+		t.Errorf("expected outputSchema.nullable to be true, got %v", outSchema["nullable"])
+	}
+	anyOf := outSchema["anyOf"].([]interface{})
+	if len(anyOf) != 1 {
+		t.Errorf("expected outputSchema.anyOf to have 1 item after null removal, got %d", len(anyOf))
+	}
+	if anyOf[0].(map[string]interface{})["type"] != "OBJECT" {
+		t.Errorf("expected remaining anyOf item type to be OBJECT, got %v", anyOf[0].(map[string]interface{})["type"])
+	}
+
+	// 4. 验证 oneOf 转换为 anyOf
+	oneOfProp := props["oneOfField"].(map[string]interface{})
+	if _, ok := oneOfProp["oneOf"]; ok {
+		t.Errorf("expected oneOf to be deleted")
+	}
+	if _, ok := oneOfProp["anyOf"]; !ok {
+		t.Errorf("expected anyOf to be present")
+	}
+
+	// 5. 验证 minLength / maxLength 被删除
+	minProp := props["minField"].(map[string]interface{})
+	if _, ok := minProp["minLength"]; ok {
+		t.Errorf("expected minLength to be deleted")
+	}
+	if _, ok := minProp["maxLength"]; ok {
+		t.Errorf("expected maxLength to be deleted")
+	}
+}
+
+func TestConvertOpenAIJsonFile(t *testing.T) {
+	raw, err := os.ReadFile("openai.json")
+	if err != nil {
+		t.Skipf("openai.json not found: %v", err)
+	}
+
+	chat, err := NewOpenAIChat("google", "test-key", "", ai_convert.ModelTypeOpenAIChat, 5*time.Second)
+	if err != nil {
+		t.Fatalf("failed to create OpenAIChat: %v", err)
+	}
+
+	mCtx := &mockHttpContext{
+		proxy: &mockRequest{
+			header: &mockHeader{},
+			body: &mockBody{
+				body: raw,
+			},
+			uri: &mockURI{},
+		},
+		requestId: "req-openai-json",
+	}
+	ai_convert.SetAIModel(mCtx, "Google/gemini-3.7-flash")
+
+	err = chat.RequestConvert(mCtx, map[string]interface{}{})
+	if err != nil {
+		t.Fatalf("RequestConvert failed: %v", err)
+	}
+
+	var geminiReq GeminiRequest
+	err = json.Unmarshal(mCtx.proxy.body.body, &geminiReq)
+	if err != nil {
+		t.Fatalf("unmarshal converted GeminiRequest failed: %v", err)
+	}
+
+	if len(geminiReq.Tools) == 0 || len(geminiReq.Tools[0].FunctionDeclarations) == 0 {
+		t.Fatalf("expected tools and function declarations to be converted")
+	}
+
+	// 验证 grep 工具的 skip 参数
+	var grepDecl *GeminiFunctionDeclaration
+	for _, decl := range geminiReq.Tools[0].FunctionDeclarations {
+		if decl.Name == "grep" {
+			grepDecl = &decl
+			break
+		}
+	}
+	if grepDecl == nil {
+		t.Fatalf("grep tool declaration not found")
+	}
+
+	props := grepDecl.Parameters["properties"].(map[string]interface{})
+	skipProp := props["skip"].(map[string]interface{})
+	if skipProp["type"] != "NUMBER" {
+		t.Errorf("expected grep.skip.type to be NUMBER, got %v", skipProp["type"])
+	}
+	if skipProp["nullable"] != true {
+		t.Errorf("expected grep.skip.nullable to be true, got %v", skipProp["nullable"])
 	}
 }

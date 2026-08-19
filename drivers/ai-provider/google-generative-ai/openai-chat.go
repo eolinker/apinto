@@ -262,21 +262,82 @@ type GeminiUsageMetadata struct {
 	TotalTokenCount      int `json:"totalTokenCount"`
 }
 
-// convertSchemaToGemini recursively changes lowercase parameter types (like "string", "object") to Gemini uppercase (like "STRING", "OBJECT")
-// and removes JSON Schema fields not supported by Gemini.
+// convertSchemaToGemini recursively changes lowercase parameter types (like "string", "object") to Gemini uppercase (like "STRING", "OBJECT"),
+// normalizes multi-types / nullables (like ["number", "null"]), and removes JSON Schema fields not supported by Gemini.
 func convertSchemaToGemini(schema map[string]interface{}) {
 	if schema == nil {
 		return
 	}
-	delete(schema, "$schema")
-	delete(schema, "additionalProperties")
-	delete(schema, "exclusiveMinimum")
-	delete(schema, "exclusiveMaximum")
-	delete(schema, "propertyNames")
-	delete(schema, "const")
-	if t, ok := schema["type"].(string); ok {
-		schema["type"] = strings.ToUpper(t)
+
+	// 1. Remove unsupported JSON Schema keywords for Gemini
+	unsupportedKeys := []string{
+		"$schema", "$id", "$comment", "$defs", "definitions",
+		"title",
+		"additionalProperties", "patternProperties", "propertyNames",
+		"dependencies", "dependentRequired", "dependentSchemas",
+		"minProperties", "maxProperties", "unevaluatedProperties",
+		"exclusiveMinimum", "exclusiveMaximum", "minimum", "maximum", "multipleOf",
+		"minLength", "maxLength", "pattern",
+		"uniqueItems", "minContains", "maxContains", "contains", "unevaluatedItems",
+		"const", "not",
 	}
+	for _, key := range unsupportedKeys {
+		delete(schema, key)
+	}
+
+	// Convert oneOf to anyOf since Gemini only supports anyOf
+	if oneOf, ok := schema["oneOf"]; ok {
+		if _, hasAnyOf := schema["anyOf"]; !hasAnyOf {
+			schema["anyOf"] = oneOf
+		}
+		delete(schema, "oneOf")
+	}
+
+	// 2. Handle type field (can be string or array of strings, e.g. ["number", "null"])
+	switch t := schema["type"].(type) {
+	case string:
+		if strings.EqualFold(t, "null") {
+			schema["nullable"] = true
+			delete(schema, "type")
+		} else {
+			schema["type"] = strings.ToUpper(t)
+		}
+	case []interface{}:
+		hasNull := false
+		var nonNullTypes []string
+		for _, item := range t {
+			if str, ok := item.(string); ok {
+				if strings.EqualFold(str, "null") {
+					hasNull = true
+				} else {
+					nonNullTypes = append(nonNullTypes, str)
+				}
+			}
+		}
+		if hasNull {
+			schema["nullable"] = true
+		}
+		if len(nonNullTypes) == 1 {
+			schema["type"] = strings.ToUpper(nonNullTypes[0])
+		} else if len(nonNullTypes) > 1 {
+			delete(schema, "type")
+			var anyOfList []interface{}
+			for _, tp := range nonNullTypes {
+				anyOfList = append(anyOfList, map[string]interface{}{
+					"type": strings.ToUpper(tp),
+				})
+			}
+			if existingAnyOf, ok := schema["anyOf"].([]interface{}); ok {
+				schema["anyOf"] = append(existingAnyOf, anyOfList...)
+			} else {
+				schema["anyOf"] = anyOfList
+			}
+		} else {
+			delete(schema, "type")
+		}
+	}
+
+	// 3. Recurse into properties
 	if props, ok := schema["properties"].(map[string]interface{}); ok {
 		for _, prop := range props {
 			if propMap, ok := prop.(map[string]interface{}); ok {
@@ -284,17 +345,41 @@ func convertSchemaToGemini(schema map[string]interface{}) {
 			}
 		}
 	}
+
+	// 4. Recurse into items
 	if items, ok := schema["items"].(map[string]interface{}); ok {
 		convertSchemaToGemini(items)
+	} else if itemsArr, ok := schema["items"].([]interface{}); ok {
+		for _, item := range itemsArr {
+			if itemMap, ok := item.(map[string]interface{}); ok {
+				convertSchemaToGemini(itemMap)
+			}
+		}
 	}
-	// Recurse into composition keywords (anyOf / allOf / oneOf) so that
-	// unsupported fields nested inside their member schemas are also removed.
-	for _, key := range []string{"anyOf", "allOf", "oneOf"} {
+
+	// 5. Recurse into anyOf / allOf and clean null branches
+	for _, key := range []string{"anyOf", "allOf"} {
 		if arr, ok := schema[key].([]interface{}); ok {
+			var newArr []interface{}
 			for _, elem := range arr {
 				if elemMap, ok := elem.(map[string]interface{}); ok {
 					convertSchemaToGemini(elemMap)
+					// If the branch is just a null type, hoist nullable=true and filter it out
+					t, hasType := elemMap["type"].(string)
+					isPureNull := (hasType && strings.EqualFold(t, "null")) || (!hasType && len(elemMap) == 0) || (elemMap["nullable"] == true && len(elemMap) == 1)
+					if isPureNull {
+						schema["nullable"] = true
+						continue
+					}
+					newArr = append(newArr, elemMap)
+				} else {
+					newArr = append(newArr, elem)
 				}
+			}
+			if len(newArr) == 0 {
+				delete(schema, key)
+			} else {
+				schema[key] = newArr
 			}
 		}
 	}
