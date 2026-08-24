@@ -2,7 +2,7 @@ package ai_convert
 
 import (
 	"fmt"
-	
+
 	"github.com/eolinker/eosc"
 	"github.com/eolinker/eosc/eocontext"
 )
@@ -20,6 +20,8 @@ func (m ModelType) String() string {
 const (
 	//ModelTypeChat 原生Chat格式
 	ModelTypeChat ModelType = "chat"
+	//ModelTypeAnthropicChat Anthropic兼容格式
+	ModelTypeAnthropicChat ModelType = "anthropic-chat"
 	//ModelTypeOpenAIChat openAI兼容格式
 	ModelTypeOpenAIChat ModelType = "openai-chat"
 	//ModelTypeImageGeneration 图片生成（文生图）
@@ -38,6 +40,7 @@ const (
 
 var validModelType = map[ModelType]struct{}{
 	ModelTypeChat:            {},
+	ModelTypeAnthropicChat:   {},
 	ModelTypeOpenAIChat:      {},
 	ModelTypeImageGeneration: {},
 	ModelTypeVideoTaskCommit: {},
@@ -96,7 +99,7 @@ func NewConverter[T any](provider string, cfg *T, fns map[ModelType]IConvertDriv
 		}
 		c.drivers.Set(mt, driver)
 	}
-	
+
 	return c, nil
 }
 

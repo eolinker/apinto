@@ -23,6 +23,9 @@ func init() {
 	driverCreate.Set(ai_convert.ModelTypeChat, func(mt ai_convert.ModelType, c *Config) (ai_convert.IConverterDriver, error) {
 		return NewChat(provider, c.APIKey, c.Base, mt, 10*time.Minute)
 	})
+	driverCreate.Set(ai_convert.ModelTypeAnthropicChat, func(mt ai_convert.ModelType, c *Config) (ai_convert.IConverterDriver, error) {
+		return NewChat(provider, c.APIKey, c.Base, mt, 10*time.Minute)
+	})
 }
 
 const (
