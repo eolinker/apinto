@@ -45,6 +45,10 @@ func BuildQuotaKeyAndTTL(ctx eoscContext.EoContext, key context_label.IKeyGenera
 				timeStr = now.Format("200601")
 				nextMonth := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location())
 				ttl = nextMonth.Sub(now) + 3600*time.Minute
+			case quota_limiting_strategy.PeriodYear:
+				timeStr = now.Format("2006")
+				nextMonth := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location())
+				ttl = nextMonth.Sub(now) + 72*time.Hour
 			case quota_limiting_strategy.PeriodTotal:
 				timeStr = "total"
 				ttl = -1

@@ -5,20 +5,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc/formatter"
 	"io"
 	"net/http"
 	"reflect"
 	"strings"
-
-	scope_manager "github.com/eolinker/apinto/scope-manager"
-
+	
 	"github.com/eolinker/apinto/output"
-
+	
 	"github.com/eolinker/apinto/drivers"
-
+	
 	"github.com/eolinker/eosc/log"
-
+	
 	"github.com/eolinker/eosc"
 )
 
@@ -117,8 +116,7 @@ func (o *Output) Output(entry eosc.IEntry) error {
 		return nil
 	}
 	data := o.formatter.Format(entry)
-	msecNano := eosc.ReadStringFromEntry(entry, "msec_nano")
-
+	msecNano := eosc.ReadStringFromEntry(entry, "now_nano")
 	//msecInt, _ := strconv.ParseInt(msec, 10, 64)
 	labels := make(map[string]string)
 	for k, v := range o.labels {

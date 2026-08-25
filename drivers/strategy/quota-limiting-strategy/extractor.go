@@ -43,6 +43,8 @@ func (p Period) String() string {
 		return "day"
 	case PeriodMonth:
 		return "month"
+	case PeriodYear:
+		return "year"
 	case PeriodTotal:
 		return "total"
 	default:
@@ -56,6 +58,7 @@ const (
 	PeriodHour
 	PeriodDay
 	PeriodMonth
+	PeriodYear
 	PeriodTotal
 )
 
@@ -80,7 +83,8 @@ type QuotaRule struct {
 	Hour   float64 `json:"hour"`   // 每小时配额
 	Day    float64 `json:"day"`    // 每天配额
 	Month  float64 `json:"month"`  // 每月配额
-	Total  float64 `json:"total"`  // 总配额
+	Year   float64 `json:"year"`
+	Total  float64 `json:"total"` // 总配额
 }
 
 type IPathStrategy interface {
@@ -143,6 +147,7 @@ func NewStrategies(id string, targetType string, rule QuotaRule, resp response.I
 		{PeriodHour, rule.Hour},
 		{PeriodDay, rule.Day},
 		{PeriodMonth, rule.Month},
+		{PeriodYear, rule.Year},
 		{PeriodTotal, rule.Total},
 	}
 	name := strings.TrimSuffix(id, "@strategy")
@@ -695,7 +700,7 @@ func (e *strategyExtractor) GetStrategies(ctx eocontext.EoContext, quotaType ...
 	}
 	if context_label.IsUserConsumer(ctx) {
 		dim1TargetTypes = append(dim1TargetTypes, TargetTypeUserOfResourceGroup)
-		resourceGroups, has := customerVar.GetAll(fmt.Sprintf("%s:%s", TargetTypeUserOfResourceGroup, consumer))
+		resourceGroups, has := customerVar.GetAll(fmt.Sprintf("user_bind_resource_group:%s", consumer))
 		if has {
 			userOfResourceGroup := GetUserOfResourceGroup(ctx)
 			for group := range resourceGroups {

@@ -152,7 +152,7 @@ func (o *Output) Output(entry eosc.IEntry) error {
 		}
 	}
 
-	msec := eosc.ReadStringFromEntry(entry, "msec")
+	msec := eosc.ReadStringFromEntry(entry, "now_nano")
 	msecInt, _ := strconv.ParseInt(msec, 10, 64)
 	var timestamp time.Time
 	if msecInt > 0 {

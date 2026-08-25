@@ -88,6 +88,12 @@ var (
 		"retry": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return 0, true
 		}),
+		"now": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return time.Now().UnixMilli(), true
+		}),
+		"now_nano": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
+			return time.Now().UnixNano(), true
+		}),
 		"request_id": ReadFunc(func(name string, ctx http_service.IHttpContext) (interface{}, bool) {
 			return ctx.RequestId(), true
 		}),
