@@ -205,8 +205,8 @@ func TestConvertGeminiToAnthropicResponse(t *testing.T) {
 	if resp.Content[1].Type != "tool_use" || resp.Content[1].Name != "get_weather" {
 		t.Errorf("tool_use content mismatch: %+v", resp.Content[1])
 	}
-	if !strings.Contains(resp.Content[1].ID, "_ts_sig_abc") {
-		t.Errorf("expected tool_use ID to contain _ts_sig_abc, got %s", resp.Content[1].ID)
+	if !strings.HasPrefix(resp.Content[1].ID, "call_") || strings.Contains(resp.Content[1].ID, "_ts_") {
+		t.Errorf("expected clean tool_use ID starting with call_, got %s", resp.Content[1].ID)
 	}
 	if resp.StopReason == nil || *resp.StopReason != "tool_use" {
 		t.Errorf("expected stop_reason tool_use, got %v", resp.StopReason)

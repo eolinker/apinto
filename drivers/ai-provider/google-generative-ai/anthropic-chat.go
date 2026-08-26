@@ -557,7 +557,6 @@ func convertGeminiToAnthropicResponse(resp *GeminiResponse, defaultModel string,
 				hasToolCall = true
 				toolCallID := "call_" + strconv.FormatInt(time.Now().UnixNano(), 10)
 				if part.ThoughtSignature != "" {
-					toolCallID = fmt.Sprintf("call_%d_ts_%s", time.Now().UnixNano(), part.ThoughtSignature)
 					cacheThoughtSignature(part.FunctionCall.Name, part.FunctionCall.Args, part.ThoughtSignature)
 				}
 				out.Content = append(out.Content, AnthropicContentBlock{
@@ -760,7 +759,6 @@ func (a *AnthropicChat) streamHandler(ctx http_service.IHttpContext, p []byte) (
 
 					toolCallID := "call_" + strconv.FormatInt(time.Now().UnixNano(), 10)
 					if part.ThoughtSignature != "" {
-						toolCallID = fmt.Sprintf("call_%d_ts_%s", time.Now().UnixNano(), part.ThoughtSignature)
 						cacheThoughtSignature(part.FunctionCall.Name, part.FunctionCall.Args, part.ThoughtSignature)
 					}
 

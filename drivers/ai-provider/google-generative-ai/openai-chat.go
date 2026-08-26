@@ -119,7 +119,10 @@ func lookupCachedThoughtSignature(name string, args map[string]interface{}) stri
 // or SSE-event boundary guarantee, so a single "data: {json}\n\n" event may be
 // split across calls. We buffer the incomplete tail here and prepend it to the
 // next chunk to avoid dropping (and thus losing) partial function-call events.
-const labelStreamRemain = "google_stream_remain"
+const (
+	labelStreamRemain      = "google_stream_remain"
+	labelStreamHasToolCall = "google_stream_has_tool_call"
+)
 
 func NewOpenAIChat(provider string, apikey string, baseUrl string, modelType ai_convert.ModelType, timeout time.Duration) (ai_convert.IConverterDriver, error) {
 	c := &OpenAIChat{
@@ -535,6 +538,7 @@ func (o *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string
 
 	// 1. Convert messages
 	var systemParts []GeminiPart
+	var lastValidSignature string
 	for msgIdx, msg := range chatRequest.Config.Messages {
 		if msg.Role == "system" || msg.Role == "developer" {
 			systemParts = append(systemParts, GeminiPart{Text: msg.Content})
@@ -596,9 +600,9 @@ func (o *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string
 					_ = json.Unmarshal([]byte(toolCall.Function.Arguments), &args)
 				}
 				// Prefer the signature carried via extra_content (survives ID rewrites);
-				// fall back to the signature encoded in the tool_call ID; finally fall
-				// back to the gateway-side cache keyed by function name + args, for
-				// clients that drop the signature entirely.
+				// fall back to the signature encoded in the tool_call ID;
+				// fall back to the gateway-side cache keyed by function name + args;
+				// finally fall back to the last known valid signature in the conversation.
 				ts := lookupExtraSignature(extraSignatures, msgIdx, tcIdx)
 				if ts == "" && strings.Contains(toolCall.ID, "_ts_") {
 					parts := strings.SplitN(toolCall.ID, "_ts_", 2)
@@ -608,6 +612,12 @@ func (o *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string
 				}
 				if ts == "" {
 					ts = lookupCachedThoughtSignature(toolCall.Function.Name, args)
+				}
+				if ts == "" && lastValidSignature != "" {
+					ts = lastValidSignature
+				}
+				if ts != "" {
+					lastValidSignature = ts
 				}
 				content.Parts = append(content.Parts, GeminiPart{
 					FunctionCall: &GeminiFunctionCall{
@@ -860,7 +870,6 @@ func convertOpenAIFormat(ctx http_service.IHttpContext, body []byte) ([]byte, er
 		ai_convert.SetAIModelTotalToken(ctx, geminiResp.UsageMetadata.TotalTokenCount)
 	}
 
-	toolSignatures := make(map[string]string)
 	for _, candidate := range geminiResp.Candidates {
 		choice := openai.ChatCompletionChoice{
 			Index: candidate.Index,
@@ -889,11 +898,7 @@ func convertOpenAIFormat(ctx http_service.IHttpContext, body []byte) ([]byte, er
 				argsBytes, _ := json.Marshal(part.FunctionCall.Args)
 				toolCallID := "call_" + strconv.FormatInt(time.Now().UnixNano(), 10)
 				if part.ThoughtSignature != "" {
-					// Keep the signature encoded in the ID as a fallback, and
-					// also surface it via extra_content below.
-					toolCallID = fmt.Sprintf("call_%d_ts_%s", time.Now().UnixNano(), part.ThoughtSignature)
-					toolSignatures[toolCallID] = part.ThoughtSignature
-					// Cache so we can re-inject even if the client drops it.
+					toolCallID += "_ts_" + part.ThoughtSignature
 					cacheThoughtSignature(part.FunctionCall.Name, part.FunctionCall.Args, part.ThoughtSignature)
 				}
 				toolCalls = append(toolCalls, openai.ToolCall{
@@ -919,7 +924,6 @@ func convertOpenAIFormat(ctx http_service.IHttpContext, body []byte) ([]byte, er
 	if err != nil {
 		return nil, err
 	}
-	newBody = injectToolCallSignatures(newBody, toolSignatures)
 	return newBody, nil
 }
 
@@ -942,63 +946,6 @@ func (o *OpenAIChat) ResponseConvert(ctx eocontext.EoContext) error {
 	}
 	httpContext.Response().SetBody(newBody)
 	return nil
-}
-
-// injectToolCallSignatures rewrites an already-marshalled OpenAI chat response
-// (completion or chunk) to attach thought signatures onto tool_calls via the
-// extra_content.google.thought_signature field, which is the format Gemini's
-// OpenAI-compatible layer expects to be echoed back in the next turn.
-// signatures maps tool_call ID -> thought signature.
-func injectToolCallSignatures(body []byte, signatures map[string]string) []byte {
-	if len(signatures) == 0 {
-		return body
-	}
-	var root map[string]interface{}
-	if err := json.Unmarshal(body, &root); err != nil {
-		return body
-	}
-	choices, ok := root["choices"].([]interface{})
-	if !ok {
-		return body
-	}
-	for _, ch := range choices {
-		choiceMap, ok := ch.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		// non-stream uses "message", stream uses "delta"
-		for _, key := range []string{"message", "delta"} {
-			msg, ok := choiceMap[key].(map[string]interface{})
-			if !ok {
-				continue
-			}
-			toolCalls, ok := msg["tool_calls"].([]interface{})
-			if !ok {
-				continue
-			}
-			for _, tc := range toolCalls {
-				tcMap, ok := tc.(map[string]interface{})
-				if !ok {
-					continue
-				}
-				id, _ := tcMap["id"].(string)
-				sig, exist := signatures[id]
-				if !exist || sig == "" {
-					continue
-				}
-				tcMap["extra_content"] = map[string]interface{}{
-					"google": map[string]interface{}{
-						"thought_signature": sig,
-					},
-				}
-			}
-		}
-	}
-	newBody, err := json.Marshal(root)
-	if err != nil {
-		return body
-	}
-	return newBody
 }
 
 // convertErrorResponse converts a Gemini error body into the OpenAI error format
@@ -1113,7 +1060,6 @@ func (o *OpenAIChat) streamHandler(ctx http_service.IHttpContext, p []byte) ([]b
 			delta.Role = "assistant"
 
 			var toolCalls []openai.ToolCall
-			toolSignatures := make(map[string]string)
 			for _, part := range candidate.Content.Parts {
 				if part.Text != "" {
 					delta.Content = part.Text
@@ -1123,8 +1069,7 @@ func (o *OpenAIChat) streamHandler(ctx http_service.IHttpContext, p []byte) ([]b
 					toolCallIdx := len(toolCalls)
 					toolCallID := "call_" + strconv.FormatInt(time.Now().UnixNano(), 10)
 					if part.ThoughtSignature != "" {
-						toolCallID = fmt.Sprintf("call_%d_ts_%s", time.Now().UnixNano(), part.ThoughtSignature)
-						toolSignatures[toolCallID] = part.ThoughtSignature
+						toolCallID += "_ts_" + part.ThoughtSignature
 						cacheThoughtSignature(part.FunctionCall.Name, part.FunctionCall.Args, part.ThoughtSignature)
 					}
 					toolCalls = append(toolCalls, openai.ToolCall{
@@ -1141,9 +1086,10 @@ func (o *OpenAIChat) streamHandler(ctx http_service.IHttpContext, p []byte) ([]b
 
 			if len(toolCalls) > 0 {
 				delta.ToolCalls = toolCalls
-				if isFinal {
-					finishReason = openai.FinishReasonToolCalls
-				}
+				ctx.SetLabel(labelStreamHasToolCall, "true")
+			}
+			if isFinal && (ctx.GetLabel(labelStreamHasToolCall) == "true" || len(toolCalls) > 0) {
+				finishReason = openai.FinishReasonToolCalls
 			}
 
 			// Attach usage on the final chunk so token stats are always
@@ -1165,7 +1111,6 @@ func (o *OpenAIChat) streamHandler(ctx http_service.IHttpContext, p []byte) ([]b
 			streamResp.Choices = []openai.ChatCompletionStreamChoice{choice}
 
 			content, _ := json.Marshal(streamResp)
-			content = injectToolCallSignatures(content, toolSignatures)
 			sseBuffer.WriteString(fmt.Sprintf("data: %s\n\n", string(content)))
 
 			if isFinal {

@@ -1,7 +1,6 @@
 package google
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -185,7 +184,7 @@ func TestConvertSchemaToGeminiAnyOf(t *testing.T) {
 						"additionalProperties": false,
 						"properties": map[string]interface{}{
 							"k": map[string]interface{}{
-								"type": "string",
+								"type":  "string",
 								"const": "fixed",
 							},
 						},
@@ -296,60 +295,70 @@ func TestMimeTypeFromURL(t *testing.T) {
 	}
 }
 
-func TestInjectToolCallSignatures(t *testing.T) {
-	body := []byte(`{
-		"choices": [
+func TestConvertOpenAIFormatWithToolCalls(t *testing.T) {
+	geminiResp := GeminiResponse{
+		Candidates: []GeminiCandidate{
 			{
-				"index": 0,
-				"message": {
-					"tool_calls": [
-						{"id": "call-1", "type": "function"}
-					]
-				}
-			}
-		]
-	}`)
-
-	signatures := map[string]string{
-		"call-1": "signature-123",
+				Index: 0,
+				Content: GeminiContent{
+					Role: "model",
+					Parts: []GeminiPart{
+						{
+							FunctionCall: &GeminiFunctionCall{
+								Name: "Write",
+								Args: map[string]interface{}{"file_path": "/tmp/test.txt", "content": "hello"},
+							},
+							ThoughtSignature: "sig_abcdef123",
+						},
+					},
+				},
+				FinishReason: "STOP",
+			},
+		},
 	}
+	respBytes, _ := json.Marshal(geminiResp)
 
-	injected := injectToolCallSignatures(body, signatures)
+	mCtx := &mockHttpContext{
+		requestId: "req-tc-123",
+	}
+	ai_convert.SetAIModel(mCtx, "gemini-2.5-flash")
 
-	var result map[string]interface{}
-	err := json.Unmarshal(injected, &result)
+	converted, err := convertOpenAIFormat(mCtx, respBytes)
 	if err != nil {
-		t.Fatalf("failed to unmarshal injected body: %v", err)
+		t.Fatalf("failed to convert: %v", err)
 	}
 
-	choices := result["choices"].([]interface{})
+	var rawMap map[string]interface{}
+	if err := json.Unmarshal(converted, &rawMap); err != nil {
+		t.Fatalf("failed to unmarshal: %v", err)
+	}
+
+	choices := rawMap["choices"].([]interface{})
 	choice := choices[0].(map[string]interface{})
 	message := choice["message"].(map[string]interface{})
 	toolCalls := message["tool_calls"].([]interface{})
 	tc := toolCalls[0].(map[string]interface{})
 
-	extra, ok := tc["extra_content"].(map[string]interface{})
-	if !ok {
-		t.Fatalf("extra_content not found")
-	}
-	google := extra["google"].(map[string]interface{})
-	sig := google["thought_signature"].(string)
-
-	if sig != "signature-123" {
-		t.Errorf("expected signature-123, got %s", sig)
+	// 验证 toolCall ID 包含 _ts_ 编码的签名
+	id := tc["id"].(string)
+	if !strings.HasPrefix(id, "call_") || !strings.Contains(id, "_ts_sig_abcdef123") {
+		t.Errorf("expected tool call id containing _ts_sig_abcdef123, got %s", id)
 	}
 
-	// 测试空的 signatures 应当原样返回
-	original := injectToolCallSignatures(body, nil)
-	if !bytes.Equal(original, body) {
-		t.Errorf("expected body to be unchanged when signatures are empty")
+	// 验证没有非标准的 extra_content
+	if _, ok := tc["extra_content"]; ok {
+		t.Errorf("extra_content should not be present in OpenAI format response")
 	}
 
-	// 测试无效 JSON 应当原样返回
-	invalidBody := []byte("{invalid")
-	injectedInvalid := injectToolCallSignatures(invalidBody, signatures)
-	if !bytes.Equal(injectedInvalid, invalidBody) {
-		t.Errorf("expected invalid body to be returned unchanged")
+	// 验证 finish_reason 为 tool_calls
+	if choice["finish_reason"] != "tool_calls" {
+		t.Errorf("expected finish_reason to be tool_calls, got %v", choice["finish_reason"])
+	}
+
+	// 验证 signature 已经写入 LRU 缓存
+	cachedSig := lookupCachedThoughtSignature("Write", map[string]interface{}{"file_path": "/tmp/test.txt", "content": "hello"})
+	if cachedSig != "sig_abcdef123" {
+		t.Errorf("expected cached signature sig_abcdef123, got %s", cachedSig)
 	}
 }
 
@@ -479,7 +488,6 @@ func (m *mockRequest) URI() http_service.IURIWriter {
 func (m *mockRequest) AppendStreamBodyHandle(handler http_service.StreamFunc) {
 	m.streamHandlers = append(m.streamHandlers, handler)
 }
-
 
 type mockResponse struct {
 	http_service.IResponse
@@ -818,6 +826,62 @@ func TestStreamHandler(t *testing.T) {
 	}
 }
 
+func TestStreamHandlerWithToolCalls(t *testing.T) {
+	chat, _ := NewOpenAIChat("google", "api-key", "", ai_convert.ModelTypeOpenAIChat, 5*time.Second)
+	chatImpl := chat.(*OpenAIChat)
+
+	mCtx := &mockHttpContext{
+		requestId: "req-stream-tc-789",
+		labels:    map[string]string{},
+	}
+	ai_convert.SetAIModel(mCtx, "gemini-2.5-flash")
+
+	// Chunk 1: 带工具调用和 thoughtSignature，finishReason 为空
+	chunk1 := []byte("data: {\"candidates\":[{\"index\":0,\"content\":{\"parts\":[{\"functionCall\":{\"name\":\"Write\",\"args\":{\"file_path\":\"/test.txt\"}},\"thoughtSignature\":\"stream_sig_xyz\"}]},\"finishReason\":\"\"}]}\n\n")
+	out1, err := chatImpl.streamHandler(mCtx, chunk1)
+	if err != nil {
+		t.Fatalf("streamHandler chunk1 failed: %v", err)
+	}
+
+	var streamResp1 openai.ChatCompletionStreamResponse
+	cleanData1 := strings.TrimPrefix(strings.TrimSuffix(string(out1), "\n\n"), "data: ")
+	err = json.Unmarshal([]byte(cleanData1), &streamResp1)
+	if err != nil {
+		t.Fatalf("failed to unmarshal chunk1: %v", err)
+	}
+	tc1 := streamResp1.Choices[0].Delta.ToolCalls[0]
+	if !strings.HasPrefix(tc1.ID, "call_") || !strings.Contains(tc1.ID, "_ts_stream_sig_xyz") {
+		t.Errorf("expected tool call id containing _ts_stream_sig_xyz, got %s", tc1.ID)
+	}
+	if streamResp1.Choices[0].FinishReason != "" {
+		t.Errorf("expected empty finish reason for chunk 1, got %v", streamResp1.Choices[0].FinishReason)
+	}
+
+	// Chunk 2: 结束 chunk，finishReason 为 STOP
+	chunk2 := []byte("data: {\"candidates\":[{\"index\":0,\"content\":{\"parts\":[]},\"finishReason\":\"STOP\"}],\"usageMetadata\":{\"promptTokenCount\":10,\"candidatesTokenCount\":20,\"totalTokenCount\":30}}\n\n")
+	out2, err := chatImpl.streamHandler(mCtx, chunk2)
+	if err != nil {
+		t.Fatalf("streamHandler chunk2 failed: %v", err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(out2)), "\n\n")
+	if len(lines) < 2 {
+		t.Fatalf("expected at least 2 events in out2, got %d", len(lines))
+	}
+	cleanData2 := strings.TrimPrefix(lines[0], "data: ")
+	var streamResp2 openai.ChatCompletionStreamResponse
+	err = json.Unmarshal([]byte(cleanData2), &streamResp2)
+	if err != nil {
+		t.Fatalf("failed to unmarshal chunk2: %v", err)
+	}
+	if streamResp2.Choices[0].FinishReason != openai.FinishReasonToolCalls {
+		t.Errorf("expected finish_reason tool_calls on final chunk, got %v", streamResp2.Choices[0].FinishReason)
+	}
+	if !strings.Contains(string(out2), "data: [DONE]") {
+		t.Errorf("expected data: [DONE] in stream")
+	}
+}
+
 func TestConvertSchemaWithMultiTypeAndNull(t *testing.T) {
 	schema := map[string]interface{}{
 		"type": "object",
@@ -959,5 +1023,16 @@ func TestConvertOpenAIJsonFile(t *testing.T) {
 	}
 	if skipProp["nullable"] != true {
 		t.Errorf("expected grep.skip.nullable to be true, got %v", skipProp["nullable"])
+	}
+
+	// 验证所有 functionCall 均有 thoughtSignature，无一遗漏
+	for cIdx, content := range geminiReq.Contents {
+		for pIdx, part := range content.Parts {
+			if part.FunctionCall != nil {
+				if part.ThoughtSignature == "" {
+					t.Errorf("content[%d].parts[%d] functionCall %s is missing thoughtSignature", cIdx, pIdx, part.FunctionCall.Name)
+				}
+			}
+		}
 	}
 }
