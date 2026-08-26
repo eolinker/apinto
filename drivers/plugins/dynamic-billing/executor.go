@@ -1,6 +1,7 @@
 package dynamic_billing
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,12 +11,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	
+
 	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/encoder"
 	price_calcular "github.com/eolinker/apinto/price-calcular"
 	"github.com/redis/go-redis/v9"
-	
+
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/apinto/resources"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
@@ -63,7 +64,7 @@ func (e *executor) Reset(conf interface{}, wks map[eosc.RequireId]eosc.IWorker) 
 
 func (e *executor) reset(cfg *Config, wks map[eosc.RequireId]eosc.IWorker) error {
 	e.redisID = string(cfg.Cache)
-	
+
 	e.defaultConcurrencyLimit = cfg.ConcurrencyLimit
 	e.enableBalance = cfg.EnableBalance
 	e.balanceKeyGenerator = context_label.NewKeyGenerator(cfg.BalanceKey)
@@ -85,7 +86,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		return nil
 	}
 	var err error
-	
+
 	// ==========================================
 	// 1. 动态从 scope_manager 检索 Redis 缓存
 	// ==========================================
@@ -102,7 +103,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	} else {
 		cache = resources.LocalCache()
 	}
-	
+
 	// ==========================================
 	// 2. 解析多层计费流属性 (Billing Mode, Step, Task ID)
 	// ==========================================
@@ -110,9 +111,9 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	if billingMode == "" {
 		billingMode = context_label.BillingModeImmediate
 	}
-	
+
 	resourceID := ctx.GetLabel("resource")
-	
+
 	// ==========================================
 	// 3. 异步两阶段“查询结果 (query)”步骤的前置上下文反查还原与直接缓存拦截
 	// ==========================================
@@ -138,12 +139,12 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 					snapshottedPricingData = info.PricingData
 				}
 				context_label.SetPriceVariables(ctx, info.Variables)
-				
+
 				// 还原预扣快照 key，供本次 query 阶段结算/回滚使用
 				if info.PreDeductKey != "" {
 					context_label.SetPreDeductKey(ctx, info.PreDeductKey)
 				}
-				
+
 				isCharged = info.IsCharged
 				// 若已有成功计费并落盘缓存的响应，则直接写回响应体阻断拦截，防范重复调用与二次扣费
 				if isCharged && info.Cache.Body != "" {
@@ -158,7 +159,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			}
 		}
 	}
-	
+
 	if resourceID == "" {
 		log.Error("[dynamic-billing] resource_id not found, skipping pricing calculation.")
 		if next != nil {
@@ -166,9 +167,9 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		}
 		return nil
 	}
-	
+
 	id := fmt.Sprintf("%s:%s", ctx.GetLabel("resource_type"), resourceID)
-	
+
 	//// 4. 定位计费计算器
 	calc, ok := price_calcular.GetCalculator(id)
 	if !ok || calc == nil {
@@ -179,7 +180,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		return nil
 	}
 	//context_label.SetCalculatorID(ctx, id)
-	
+
 	// ==========================================
 	// 5. 并发限制检查 (Concurrency Check)
 	// ==========================================
@@ -193,7 +194,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			concurrencyLimit = l
 		}
 	}
-	
+
 	concurrencyKey := e.concurrencyKeyGenerator.Key(ctx)
 	var acquired bool
 	if concurrencyLimit > 0 && cache != nil {
@@ -215,7 +216,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			return nil
 		}
 	}
-	
+
 	if acquired {
 		defer func() {
 			_ = cache.DecrBy(ctx.Context(), concurrencyKey, 1, 60*time.Second)
@@ -230,12 +231,12 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		ctx.Response().SetStatus(400, "Bad Request")
 		return err
 	}
-	
+
 	// ==========================================
 	// 6. 组装余额扣减 Key
 	// ==========================================
 	balanceKey := e.balanceKeyGenerator.Key(ctx)
-	
+
 	// ==========================================
 	// 7. 余额前置阻断校验 (Balance Pre-check)
 	//    若定价数据中存在任一"免费策略"（PricePlan 的 Sale map 全为 0），
@@ -266,9 +267,9 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			return err
 		}
 	}
-	
+
 	fn := ctx.Proxy().GetStreamBodyParse()
-	
+
 	// ==========================================
 	// 7.5 预扣逻辑（仅同步/Immediate 阶段）
 	//
@@ -313,7 +314,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 				amt, app, resourceID, rid, preDeductKey)
 		}
 	}
-	
+
 	//var res *pricing_policy.CalculateResult
 	// 结算回调仅对 Immediate（同步）模式注册：
 	//   - TaskCreate 阶段的响应体是任务创建结果，此时用它计算实际用量是错误的；
@@ -341,7 +342,18 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		})
 	} else if billingMode == context_label.BillingModeImmediate && ctx.GetLabel("resource_type") == "ai" {
 		var res *price_calcular.CalculateResult
+		var streamBuffer []byte
 		ctx.Proxy().AppendBodyFinish(func(ctx http_context.IHttpContext) {
+			if len(streamBuffer) > 0 {
+				line := strings.TrimSpace(string(streamBuffer))
+				if line != "" {
+					tmp, err := calc.CalculateFromChunk(ctx, e.enableBalance, []byte(line), priceData)
+					if err == nil && tmp != nil {
+						res = tmp
+					}
+				}
+				streamBuffer = nil
+			}
 			if res != nil && res.Sale > 0 {
 				if e.enableBalance && cache != nil {
 					settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
@@ -368,8 +380,22 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 					return p, nil
 				}
 			}
-			// # 遍历，以换行符分行
-			lines := strings.Split(string(body), "\n")
+			// 拼接到请求级流式缓冲区
+			streamBuffer = append(streamBuffer, body...)
+
+			// 查找最后一个换行符
+			lastNL := bytes.LastIndexByte(streamBuffer, '\n')
+			if lastNL == -1 {
+				// 尚未接收到完整的行，等待下一个 Chunk
+				return p, nil
+			}
+
+			// 截取所有完整行，残余未结束的部分留待下一个 Chunk 拼接
+			completeData := streamBuffer[:lastNL]
+			streamBuffer = append([]byte(nil), streamBuffer[lastNL+1:]...)
+
+			// 遍历已接收完整的各行
+			lines := strings.Split(string(completeData), "\n")
 			for _, line := range lines {
 				if strings.TrimSpace(line) == "" {
 					continue
@@ -399,7 +425,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		})
 	}
 	_ = preDeductKey // 预留：可用于埋点/日志时区分命中的规则
-	
+
 	// ==========================================
 	// 8. 转发下游链路 (Do Chain Forwarding)
 	// ==========================================
@@ -412,7 +438,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			return err
 		}
 	}
-	
+
 	// ==========================================
 	// 9. 异步两阶段“生成任务 (create)”后置落盘保存
 	// ==========================================
@@ -442,7 +468,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			PreDeductKey: preDeductKey,
 			Variables:    extractor.ExtractAll(ctx),
 		}
-		
+
 		// 获取并固化当前的定价配置数据，确保 query 阶段计费的一致性，防止中途价格配置变更
 		priceKey := e.priceKeyGenerator.Key(ctx)
 		if priceVal, pErr := cache.Get(ctx.Context(), priceKey).Result(); pErr == nil {
@@ -451,19 +477,19 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 				info.PricingData = &rData
 			}
 		}
-		
+
 		if infoBytes, mErr := json.Marshal(info); mErr == nil {
 			_ = cache.Set(ctx.Context(), taskInfoKey, infoBytes, 24*time.Hour)
 			log.DebugF("[dynamic-billing] [create_task] successfully cached async task metadata and pricing snapshot for %s", taskInfoKey)
 		}
-		
+
 		return nil
 	}
-	
+
 	if ctx.Response().IsBodyStream() {
 		return nil
 	}
-	
+
 	// 同步结算非流式响应
 	return e.settleBilling(ctx, calc, priceData, balanceKey, resourceID, app, cache, billingMode, isCharged)
 }
@@ -477,7 +503,7 @@ func (e *executor) getPricingData(ctx http_context.IHttpContext, cache resources
 			isUser := context_label.IsUserConsumer(ctx)
 			if !isUser {
 				priceKey := e.priceKeyGenerator.Key(ctx)
-				
+
 				strResult := cache.Get(ctx.Context(), priceKey)
 				val, err := strResult.Result()
 				if err != nil {
@@ -538,11 +564,11 @@ func (e *executor) immediateSettle(ctx http_context.IHttpContext, calc price_cal
 		log.Errorf("[dynamic-billing] calculate failed for resource %s: %v", resourceID, err)
 		return err
 	}
-	
+
 	context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
 	context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
 	context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
-	
+
 	if e.enableBalance && cache != nil {
 		// 若存在预扣快照，则以 Lua 幂等结算做多退少补；否则按 sale 直接扣款
 		preKey := context_label.GetPreDeductKey(ctx)
@@ -582,7 +608,7 @@ func (e *executor) settleBilling(ctx http_context.IHttpContext, calc price_calcu
 				ctx.SetLabel("pricing_error", calcErr.Error())
 				return calcErr
 			}
-			
+
 			context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
 			context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
 			context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
@@ -615,11 +641,11 @@ func (e *executor) settleBilling(ctx http_context.IHttpContext, calc price_calcu
 		}
 		taskByte, _ := json.Marshal(taskInfo)
 		cache.Set(ctx.Context(), taskKey, taskByte, 24*time.Hour)
-	
+
 	case context_label.BillingModeTaskCreate:
-	
+
 	}
-	
+
 	return nil
 }
 
@@ -660,7 +686,7 @@ func executeBalanceDeduction(ctx context.Context, cache resources.ICache, balanc
 		log.Errorf("[resource-pricing] balance deduct redis error for user %s, cost=%f: %v", userID, cost, evalErr)
 		return false
 	}
-	
+
 	// 扣款成功
 	log.DebugF("[resource-pricing] balance deducted successfully for user %s, cost=%f, key=%s, new_balance=%v", userID, cost, balanceKey, newBalance)
 	return true
@@ -710,7 +736,7 @@ func settlePreDeduct(ctx http_context.IHttpContext, cache resources.ICache, bala
 		return
 	}
 	actual := int64(math.Round(actualSale * 1000000))
-	
+
 	if preDeductKey == "" {
 		// 没有预扣，退化为普通扣款
 		if actual > 0 {
@@ -718,7 +744,7 @@ func settlePreDeduct(ctx http_context.IHttpContext, cache resources.ICache, bala
 		}
 		return
 	}
-	
+
 	// Lua 脚本原子完成：
 	//   pre = GET preKey (缺省 0)
 	//   若 pre == 0：说明已被结算/回滚过，直接返回幂等结果
