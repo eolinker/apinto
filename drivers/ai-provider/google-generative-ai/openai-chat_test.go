@@ -339,10 +339,10 @@ func TestConvertOpenAIFormatWithToolCalls(t *testing.T) {
 	toolCalls := message["tool_calls"].([]interface{})
 	tc := toolCalls[0].(map[string]interface{})
 
-	// 验证 toolCall ID 包含 _ts_ 编码的签名
+	// 验证 toolCall ID 是标准短 ID，不包含 _ts_
 	id := tc["id"].(string)
-	if !strings.HasPrefix(id, "call_") || !strings.Contains(id, "_ts_sig_abcdef123") {
-		t.Errorf("expected tool call id containing _ts_sig_abcdef123, got %s", id)
+	if !strings.HasPrefix(id, "call_") || strings.Contains(id, "_ts_") {
+		t.Errorf("expected clean tool call id starting with call_, got %s", id)
 	}
 
 	// 验证没有非标准的 extra_content
@@ -850,8 +850,8 @@ func TestStreamHandlerWithToolCalls(t *testing.T) {
 		t.Fatalf("failed to unmarshal chunk1: %v", err)
 	}
 	tc1 := streamResp1.Choices[0].Delta.ToolCalls[0]
-	if !strings.HasPrefix(tc1.ID, "call_") || !strings.Contains(tc1.ID, "_ts_stream_sig_xyz") {
-		t.Errorf("expected tool call id containing _ts_stream_sig_xyz, got %s", tc1.ID)
+	if !strings.HasPrefix(tc1.ID, "call_") || strings.Contains(tc1.ID, "_ts_") {
+		t.Errorf("expected clean tool call id, got %s", tc1.ID)
 	}
 	if streamResp1.Choices[0].FinishReason != "" {
 		t.Errorf("expected empty finish reason for chunk 1, got %v", streamResp1.Choices[0].FinishReason)
@@ -1023,16 +1023,5 @@ func TestConvertOpenAIJsonFile(t *testing.T) {
 	}
 	if skipProp["nullable"] != true {
 		t.Errorf("expected grep.skip.nullable to be true, got %v", skipProp["nullable"])
-	}
-
-	// 验证所有 functionCall 均有 thoughtSignature，无一遗漏
-	for cIdx, content := range geminiReq.Contents {
-		for pIdx, part := range content.Parts {
-			if part.FunctionCall != nil {
-				if part.ThoughtSignature == "" {
-					t.Errorf("content[%d].parts[%d] functionCall %s is missing thoughtSignature", cIdx, pIdx, part.FunctionCall.Name)
-				}
-			}
-		}
 	}
 }

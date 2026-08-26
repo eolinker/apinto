@@ -538,7 +538,6 @@ func (o *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string
 
 	// 1. Convert messages
 	var systemParts []GeminiPart
-	var lastValidSignature string
 	for msgIdx, msg := range chatRequest.Config.Messages {
 		if msg.Role == "system" || msg.Role == "developer" {
 			systemParts = append(systemParts, GeminiPart{Text: msg.Content})
@@ -600,9 +599,9 @@ func (o *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string
 					_ = json.Unmarshal([]byte(toolCall.Function.Arguments), &args)
 				}
 				// Prefer the signature carried via extra_content (survives ID rewrites);
-				// fall back to the signature encoded in the tool_call ID;
-				// fall back to the gateway-side cache keyed by function name + args;
-				// finally fall back to the last known valid signature in the conversation.
+				// fall back to the signature encoded in the tool_call ID; finally fall
+				// back to the gateway-side cache keyed by function name + args, for
+				// clients that drop the signature entirely.
 				ts := lookupExtraSignature(extraSignatures, msgIdx, tcIdx)
 				if ts == "" && strings.Contains(toolCall.ID, "_ts_") {
 					parts := strings.SplitN(toolCall.ID, "_ts_", 2)
@@ -612,12 +611,6 @@ func (o *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string
 				}
 				if ts == "" {
 					ts = lookupCachedThoughtSignature(toolCall.Function.Name, args)
-				}
-				if ts == "" && lastValidSignature != "" {
-					ts = lastValidSignature
-				}
-				if ts != "" {
-					lastValidSignature = ts
 				}
 				content.Parts = append(content.Parts, GeminiPart{
 					FunctionCall: &GeminiFunctionCall{
@@ -898,7 +891,7 @@ func convertOpenAIFormat(ctx http_service.IHttpContext, body []byte) ([]byte, er
 				argsBytes, _ := json.Marshal(part.FunctionCall.Args)
 				toolCallID := "call_" + strconv.FormatInt(time.Now().UnixNano(), 10)
 				if part.ThoughtSignature != "" {
-					toolCallID += "_ts_" + part.ThoughtSignature
+					// Cache so we can re-inject even if the client drops it.
 					cacheThoughtSignature(part.FunctionCall.Name, part.FunctionCall.Args, part.ThoughtSignature)
 				}
 				toolCalls = append(toolCalls, openai.ToolCall{
@@ -1069,7 +1062,6 @@ func (o *OpenAIChat) streamHandler(ctx http_service.IHttpContext, p []byte) ([]b
 					toolCallIdx := len(toolCalls)
 					toolCallID := "call_" + strconv.FormatInt(time.Now().UnixNano(), 10)
 					if part.ThoughtSignature != "" {
-						toolCallID += "_ts_" + part.ThoughtSignature
 						cacheThoughtSignature(part.FunctionCall.Name, part.FunctionCall.Args, part.ThoughtSignature)
 					}
 					toolCalls = append(toolCalls, openai.ToolCall{
