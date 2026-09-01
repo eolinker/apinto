@@ -228,12 +228,12 @@ func Profession() []*eosc.ProfessionConfig {
 					Label: "redis 集群",
 					Desc:  "redis 集群",
 				},
-				{
-					Id:    "eolinker.com:apinto:influxdbv2",
-					Name:  "influxdbv2",
-					Label: "influxdbv2输出",
-					Desc:  "influxdbv2输出",
-				},
+				// {
+				// 	Id:    "eolinker.com:apinto:influxdbv2",
+				// 	Name:  "influxdbv2",
+				// 	Label: "influxdbv2输出",
+				// 	Desc:  "influxdbv2输出",
+				// },
 				{
 					Id:    "eolinker.com:apinto:influxdb-v2",
 					Name:  "influxdb-v2",
@@ -255,7 +255,7 @@ func Profession() []*eosc.ProfessionConfig {
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
-		
+
 		{
 			Name:         "certificate",
 			Label:        "证书",
@@ -294,7 +294,7 @@ func Profession() []*eosc.ProfessionConfig {
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},
-		
+
 		{
 			Name:         "ai-resource",
 			Label:        "AI资源",

@@ -7,7 +7,11 @@ import (
 	"github.com/eolinker/eosc"
 )
 
-const name = "influxdb-v2"
+const (
+	name           = "influxdb-v2"
+	chanBufferSize = 2000
+	workerNum      = 10
+)
 
 // Register 注册 influxdbv2 驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
@@ -27,7 +31,7 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 	ctx, cancel := context.WithCancel(context.Background())
 	w := &Output{
 		WorkerBase: drivers.Worker(id, name),
-		outputChan: make(chan *Point, 100),
+		outputChan: make(chan *Point, chanBufferSize),
 		ctx:        ctx,
 		cancel:     cancel,
 	}
@@ -36,6 +40,8 @@ func Create(id, name string, conf *Config, workers map[eosc.RequireId]eosc.IWork
 		cancel()
 		return nil, err
 	}
-	go w.doLoop()
+	for i := 0; i < workerNum; i++ {
+		go w.doLoop()
+	}
 	return w, nil
 }

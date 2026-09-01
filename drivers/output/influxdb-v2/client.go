@@ -13,8 +13,8 @@ type Client struct {
 func NewClient(cfg *Config) *Client {
 	client := influxdb2.NewClient(cfg.Url, cfg.Token)
 	return &Client{
-		client,
-		client.WriteAPIBlocking(cfg.Org, cfg.Bucket),
+		Client:           client,
+		WriteAPIBlocking: client.WriteAPIBlocking(cfg.Org, cfg.Bucket),
 	}
 }
 
@@ -23,4 +23,5 @@ func (c *Client) Close() {
 		c.Client.Close()
 	}
 	c.Client = nil
+	c.WriteAPIBlocking = nil
 }

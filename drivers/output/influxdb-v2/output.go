@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/eolinker/apinto/checker"
@@ -18,6 +19,11 @@ import (
 
 	"github.com/eolinker/eosc"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+)
+
+const (
+	maxRetries    = 3
+	retryInterval = 100 * time.Millisecond
 )
 
 type fieldType string
@@ -59,6 +65,7 @@ type Point struct {
 
 type Output struct {
 	drivers.WorkerBase
+	lock        sync.RWMutex
 	client      *Client
 	metrics     map[string]string
 	measurement string
@@ -85,25 +92,24 @@ func (o *Output) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker
 }
 
 func (o *Output) reset(conf *Config) error {
-	//if reflect.DeepEqual(conf, o.conf) {
-	//	return nil
-	//}
-
 	client := NewClient(conf)
 	if _, err := client.Ping(o.ctx); err != nil {
 		client.Close()
 		return fmt.Errorf("connect influxdbv2 error: %w", err)
 	}
 
-	if o.client != nil {
-		o.client.Close()
-	}
-
+	o.lock.Lock()
+	oldClient := o.client
 	o.client = client
 	o.metrics = conf.Metrics
 	o.measurement = conf.Measurement
 	o.conf = conf
 	o.filters = parseFilters(conf.Filters)
+	o.lock.Unlock()
+
+	if oldClient != nil {
+		oldClient.Close()
+	}
 
 	scope_manager.Set(o.Id(), o, conf.Scopes...)
 	return nil
@@ -121,16 +127,27 @@ func (o *Output) CheckSkill(skill string) bool {
 
 func (o *Output) Close() error {
 	o.cancel()
-	if o.client != nil {
-		o.client.Close()
-		o.client = nil
+	o.lock.Lock()
+	client := o.client
+	o.client = nil
+	o.lock.Unlock()
+
+	if client != nil {
+		client.Close()
 	}
 	scope_manager.Del(o.Id())
 	return nil
 }
 
 func (o *Output) Output(entry eosc.IEntry) error {
-	for _, f := range o.filters {
+	o.lock.RLock()
+	filters := o.filters
+	measurementPattern := o.measurement
+	metrics := o.metrics
+	fieldsConf := o.conf.Fields
+	o.lock.RUnlock()
+
+	for _, f := range filters {
 		val := entry.Read(f.key)
 		var checkVal string
 		switch v := val.(type) {
@@ -152,22 +169,23 @@ func (o *Output) Output(entry eosc.IEntry) error {
 		}
 	}
 
-	msec := eosc.ReadStringFromEntry(entry, "now")
-	msecInt, _ := strconv.ParseInt(msec, 10, 64)
-	var timestamp time.Time
-	if msecInt > 0 {
-		timestamp = time.UnixMilli(msecInt)
-	} else {
-		timestamp = time.Now()
-	}
+	//msec := eosc.ReadStringFromEntry(entry, "now")
+	//msecInt, _ := strconv.ParseInt(msec, 10, 64)
+	//var timestamp time.Time
+	//if msecInt > 0 {
+	//	timestamp = time.UnixMilli(msecInt)
+	//} else {
+	//
+	//}
+	timestamp := time.Now()
 
-	measurement := o.measurement
+	measurement := measurementPattern
 	if strings.HasPrefix(measurement, "$") {
 		measurement = eosc.ReadStringFromEntry(entry, measurement[1:])
 	}
 
-	tags := make(map[string]string)
-	for k, v := range o.metrics {
+	tags := make(map[string]string, len(metrics))
+	for k, v := range metrics {
 		if strings.HasPrefix(v, "$") {
 			tags[k] = eosc.ReadStringFromEntry(entry, v[1:])
 		} else {
@@ -175,8 +193,8 @@ func (o *Output) Output(entry eosc.IEntry) error {
 		}
 	}
 
-	fields := make(map[string]interface{})
-	for k, v := range o.conf.Fields {
+	fields := make(map[string]interface{}, len(fieldsConf))
+	for k, v := range fieldsConf {
 		if strings.HasPrefix(v, "$") {
 			fields[k] = entry.Read(v[1:])
 		} else if strings.HasPrefix(v, "#") {
@@ -213,11 +231,52 @@ func (o *Output) Output(entry eosc.IEntry) error {
 		Fields:      fields,
 		Time:        timestamp,
 	}:
-	default:
-		log.Warn("influxdbv2 output channel is full, drop point")
+		return nil
+	case <-o.ctx.Done():
+		return o.ctx.Err()
+	}
+}
+
+func (o *Output) writePointWithRetry(p *Point) {
+	o.lock.RLock()
+	client := o.client
+	o.lock.RUnlock()
+
+	if client == nil || client.WriteAPIBlocking == nil {
+		return
 	}
 
-	return nil
+	point := influxdb2.NewPoint(
+		p.Measurement,
+		p.Tags,
+		p.Fields,
+		p.Time,
+	)
+
+	var err error
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		err = client.WritePoint(o.ctx, point)
+		if err == nil {
+			if attempt > 1 {
+				log.Infof("influxdbv2 write point to measurement %s succeeded on retry attempt %d", p.Measurement, attempt)
+			} else {
+				log.Debug("influxdbv2 write point succeeded, table: ", p.Measurement, " tags: ", p.Tags, " fields: ", p.Fields, " time: ", p.Time)
+			}
+			return
+		}
+
+		log.Warnf("influxdbv2 write point to measurement %s failed (attempt %d/%d), err: %v", p.Measurement, attempt, maxRetries, err)
+
+		if attempt < maxRetries {
+			select {
+			case <-o.ctx.Done():
+				return
+			case <-time.After(retryInterval):
+			}
+		}
+	}
+
+	log.Errorf("influxdbv2 write point to measurement %s failed after %d attempts, final err: %v", p.Measurement, maxRetries, err)
 }
 
 func (o *Output) doLoop() {
@@ -227,26 +286,7 @@ func (o *Output) doLoop() {
 			if !ok {
 				return
 			}
-			if o.client == nil || o.client.WriteAPI == nil {
-				continue
-			}
-			//if c.WriteAPI != nil {
-			//	p, ok := point.(monitor_entry.IPoint)
-			//	if !ok {
-			//		log.Error("need: ", reflect.TypeOf((monitor_entry.IPoint)(nil)), "now: ", reflect.TypeOf(point))
-			//		return nil
-			//	}
-			log.Debug("table: ", p.Measurement, " tags: ", p.Tags, " fields: ", p.Fields, " time: ", p.Time)
-
-			err := o.client.WritePoint(o.ctx, influxdb2.NewPoint(
-				p.Measurement,
-				p.Tags,
-				p.Fields,
-				p.Time,
-			))
-			if err != nil {
-				log.Errorf("write point to influxdb err:%s", err.Error())
-			}
+			o.writePointWithRetry(p)
 		case <-o.ctx.Done():
 			return
 		}
