@@ -40,11 +40,12 @@ func checkConfig(v interface{}) (*Config, error) {
 		if rule.ID == "" {
 			return nil, fmt.Errorf("rule id cannot be empty at index %d", i)
 		}
-		if rule.CostExpression == "" {
-			return nil, fmt.Errorf("cost_expression cannot be empty in rule %s", rule.ID)
-		}
+
 		if rule.SaleExpression == "" {
 			return nil, fmt.Errorf("sale_expression cannot be empty in rule %s", rule.ID)
+		}
+		if rule.CostExpression == "" {
+			rule.CostExpression = rule.SaleExpression
 		}
 		if rule.OfficialExpression == "" {
 			rule.OfficialExpression = rule.CostExpression

@@ -220,16 +220,24 @@ func (c *Calculator) Calculate(ctx eocontext.EoContext, enableBalance bool, pric
 	}
 
 	// 1. 按配置的高级计费规则顺序，依次匹配条件
+	strategyId := pricingData.MaxSaleStrategyID()
+	var strategyRule *ProcessedRule
 	var matchedRule *ProcessedRule
 	for _, rule := range rules {
 		if matchCondition(rule.conditions, vars) {
 			matchedRule = rule
 			break
 		}
+		if rule.id == strategyId {
+			strategyRule = rule
+		}
 	}
 
 	if matchedRule == nil {
-		return nil, errors.New("no advanced rules matched the given context variables")
+		if strategyRule == nil {
+			return nil, errors.New("no advanced rules matched the given context variables")
+		}
+		matchedRule = strategyRule
 	}
 
 	context_label.SetChargeRule(ctx, matchedRule.id)
@@ -283,6 +291,11 @@ func (c *Calculator) CalculateFromChunk(ctx eocontext.EoContext, enableBalance b
 		return nil, errors.New("redis pricing data is required but got nil")
 	}
 	var mr *ProcessedRule
+	strategyId := pricingData.MaxSaleStrategyID()
+	var strategyRule *ProcessedRule
+	maxRule := context_label.GetMaxSaleRule(ctx)
+	strategyRule, _ = maxRule.(*ProcessedRule)
+
 	matchedRule := context_label.GetPriceMatchRule(ctx)
 	if matchedRule == nil {
 		for _, rule := range c.rules {
@@ -290,9 +303,18 @@ func (c *Calculator) CalculateFromChunk(ctx eocontext.EoContext, enableBalance b
 				matchedRule = rule
 				break
 			}
+			if strategyRule == nil && rule.id == strategyId {
+				strategyRule = rule
+				context_label.SetMaxSaleRule(ctx, strategyRule)
+			}
 		}
 		if matchedRule == nil {
-			return nil, errors.New("no advanced rules matched the given context variables")
+			if strategyRule == nil {
+				return nil, errors.New("no advanced rules matched the given context variables")
+			}
+			matchedRule = strategyRule
+		} else {
+			context_label.SetPriceMatchRule(ctx, matchedRule)
 		}
 		mr = matchedRule.(*ProcessedRule)
 		context_label.SetChargeRule(ctx, mr.id)
@@ -300,7 +322,7 @@ func (c *Calculator) CalculateFromChunk(ctx eocontext.EoContext, enableBalance b
 		context_label.SetExprSale(ctx, mr.saleExpr.String())
 		context_label.SetExprOfficial(ctx, mr.officialExpr.String())
 		context_label.SetPriceMatchCondition(ctx, mr.conditions)
-		context_label.SetPriceMatchRule(ctx, matchedRule)
+
 	} else {
 		mr = matchedRule.(*ProcessedRule)
 	}

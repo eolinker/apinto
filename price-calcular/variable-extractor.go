@@ -135,9 +135,9 @@ func (e *BodyExtractor) Extract(ctx eoscContext.EoContext) (interface{}, error) 
 
 	// 极速单点查询，不耗费完整序列化开销
 	res := gjson.GetBytes(body, e.path)
-	if !res.Exists() {
-		return nil, fmt.Errorf("gjson path '%s' matches no values", e.path)
-	}
+	//if !res.Exists() {
+	//	return nil, fmt.Errorf("gjson path '%s' matches no values", e.path)
+	//}
 
 	return convertGjsonType(res, e.varType)
 }
@@ -178,9 +178,9 @@ func (e *BodyExtractor) ExtractFromChunk(chunk []byte) (interface{}, error) {
 
 			// 在 SSE 载荷帧内，执行指定的 json path 查询
 			res := gjson.Get(dataStr, e.path)
-			if !res.Exists() {
-				continue
-			}
+			//if !res.Exists() {
+			//	continue
+			//}
 
 			val, err := convertGjsonType(res, e.varType)
 			if err == nil {
@@ -418,6 +418,8 @@ func (ve *VariablesExtractor) ExtractAll(ctx eoscContext.EoContext) map[string]i
 		if err == nil {
 			res[name] = val
 			context_label.SetPriceVariable(ctx, name, val)
+		} else {
+
 		}
 	}
 	// 常规变量提取完成后，再计算依赖它们的表达式派生变量

@@ -31,7 +31,7 @@ const (
 	PreDeductTokensImageVideo = 1000000
 	// PriceTokenScale token 单价除数（价格表按百万 token 单价配置）
 	PriceTokenScale = 1000000
-	
+
 	// LabelInputToken 上下文中传递预估 input_token 的标签名
 	LabelInputToken = "input_token"
 	// LabelModelType 上下文中传递模型类型的标签名（text/image/video）
@@ -41,6 +41,41 @@ const (
 type PricingData struct {
 	BasicInfo *BasicInfo            `json:"basic_info"`
 	Strategy  map[string]*PricePlan `json:"strategy"`
+}
+
+// MaxSaleStrategyID 获取 Sale 总值最高的 strategy 的 id。
+// 若 PricingData 为空、Strategy 为空或无有效 Sale 数据，返回空字符串。
+func (p *PricingData) MaxSaleStrategyID() string {
+	if p == nil || len(p.Strategy) == 0 {
+		return ""
+	}
+	var (
+		maxID  string
+		maxSum float64
+		has    bool
+	)
+	for id, plan := range p.Strategy {
+		if plan == nil {
+			continue
+		}
+		var (
+			sum     float64
+			planHas bool
+		)
+		for _, v := range plan.Sale {
+			sum += v
+			planHas = true
+		}
+		if !planHas {
+			continue
+		}
+		if !has || sum > maxSum {
+			maxSum = sum
+			maxID = id
+			has = true
+		}
+	}
+	return maxID
 }
 
 type BasicInfo struct {

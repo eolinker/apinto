@@ -27,15 +27,16 @@ const (
 	LabelPriceVersion        = "price_version"
 	LabelPriceRelyVersion    = "price_rely"
 	LabelCalculatorID        = "calculator_id"
+	LabelMaxSaleRule         = "max_sale_rule"
 )
 
-//func SetCalculatorID(ctx eocontext.EoContext, id string) {
-//	ctx.SetLabel(LabelCalculatorID, id)
-//}
-//
-//func GetCalculatorID(ctx eocontext.EoContext) string {
-//	return ctx.GetLabel(LabelCalculatorID)
-//}
+func SetMaxSaleRule(ctx eocontext.EoContext, value interface{}) {
+	ctx.WithValue(LabelMaxSaleRule, value)
+}
+
+func GetMaxSaleRule(ctx eocontext.EoContext) interface{} {
+	return ctx.Value(LabelMaxSaleRule)
+}
 
 func GetPriceVersion(ctx eocontext.EoContext) string {
 	return ctx.GetLabel(LabelPriceVersion)
