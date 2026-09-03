@@ -205,8 +205,8 @@ func TestConvertGeminiToAnthropicResponse(t *testing.T) {
 	if resp.Content[1].Type != "tool_use" || resp.Content[1].Name != "get_weather" {
 		t.Errorf("tool_use content mismatch: %+v", resp.Content[1])
 	}
-	if !strings.HasPrefix(resp.Content[1].ID, "call_") || strings.Contains(resp.Content[1].ID, "_ts_") {
-		t.Errorf("expected clean tool_use ID starting with call_, got %s", resp.Content[1].ID)
+	if !strings.HasPrefix(resp.Content[1].ID, "call_") || !strings.Contains(resp.Content[1].ID, "_ts_sig_abc") {
+		t.Errorf("expected tool_use ID starting with call_ and containing _ts_sig_abc, got %s", resp.Content[1].ID)
 	}
 	if resp.StopReason == nil || *resp.StopReason != "tool_use" {
 		t.Errorf("expected stop_reason tool_use, got %v", resp.StopReason)
@@ -291,5 +291,53 @@ func TestAnthropicStreamHandler(t *testing.T) {
 	}
 	if !strings.Contains(outFinalStr, "event: message_stop") {
 		t.Errorf("expected message_stop in output: %s", outFinalStr)
+	}
+}
+
+func TestAnthropicStreamHandlerPacketFragmentation(t *testing.T) {
+	driver, _ := NewAnthropicChat("google-generative-ai", "test-key", "", ai_convert.ModelTypeAnthropicChat, 5*time.Second)
+	chat := driver.(*AnthropicChat)
+
+	mockCtx := &mockHttpContext{
+		labels:    make(map[string]string),
+		requestId: "stream-test-frag-456",
+	}
+	ai_convert.SetAIModel(mockCtx, "gemini-2.5-flash")
+
+	fullPayload := "data: {\"candidates\":[{\"index\":0,\"content\":{\"parts\":[{\"thought\":true,\"thoughtSignature\":\"anthropic_sig_test_777\",\"text\":\"Claude/Gemini 思考中...\"},{\"functionCall\":{\"name\":\"search_docs\",\"args\":{\"query\":\"apinto\"}}}]},\"finishReason\":\"\"}]}\n\n"
+
+	rawBytes := []byte(fullPayload)
+	p1 := rawBytes[:35]
+	p2 := rawBytes[35:80] // 中间截断
+	p3 := rawBytes[80:]
+
+	out1, err := chat.streamHandler(mockCtx, p1)
+	if err != nil {
+		t.Fatalf("streamHandler p1 failed: %v", err)
+	}
+	if len(out1) != 0 {
+		t.Fatalf("expected empty out1 on incomplete line, got: %s", string(out1))
+	}
+
+	out2, err := chat.streamHandler(mockCtx, p2)
+	if err != nil {
+		t.Fatalf("streamHandler p2 failed: %v", err)
+	}
+	if len(out2) != 0 {
+		t.Fatalf("expected empty out2 on incomplete line, got: %s", string(out2))
+	}
+
+	out3, err := chat.streamHandler(mockCtx, p3)
+	if err != nil {
+		t.Fatalf("streamHandler p3 failed: %v", err)
+	}
+	if len(out3) == 0 {
+		t.Fatalf("expected out3 to produce output after full line received")
+	}
+
+	// 校验继承并缓存的 signature
+	cachedSig := lookupCachedThoughtSignature("search_docs", map[string]interface{}{"query": "apinto"})
+	if cachedSig != "anthropic_sig_test_777" {
+		t.Errorf("expected cached thoughtSignature 'anthropic_sig_test_777', got '%s'", cachedSig)
 	}
 }

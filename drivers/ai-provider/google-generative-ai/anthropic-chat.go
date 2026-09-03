@@ -1,12 +1,10 @@
 package google
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -19,13 +17,27 @@ import (
 	"github.com/eolinker/eosc/log"
 )
 
-const (
-	labelAnthropicStreamRemain          = "google_anthropic_stream_remain"
-	labelAnthropicStreamStarted         = "google_anthropic_stream_started"
-	labelAnthropicStreamTextStarted     = "google_anthropic_stream_text_started"
-	labelAnthropicStreamOutputTokens    = "google_anthropic_stream_output_tokens"
-	labelAnthropicStreamActiveToolIndex = "google_anthropic_stream_active_tool_index"
-)
+type anthropicStreamState struct {
+	buffer               []byte
+	lastThoughtSignature string
+	started              bool
+	textStarted          bool
+	outTokens            int
+	toolIndex            int
+}
+
+const anthropicStreamStateKey = "google_anthropic_stream_state"
+
+func getAnthropicStreamState(ctx http_service.IHttpContext) *anthropicStreamState {
+	if val := ctx.Value(anthropicStreamStateKey); val != nil {
+		if state, ok := val.(*anthropicStreamState); ok {
+			return state
+		}
+	}
+	state := &anthropicStreamState{}
+	ctx.WithValue(anthropicStreamStateKey, state)
+	return state
+}
 
 func init() {
 	driverCreate.Set(ai_convert.ModelTypeAnthropicChat, func(mt ai_convert.ModelType, c *Config) (ai_convert.IConverterDriver, error) {
@@ -178,6 +190,7 @@ func (a *AnthropicChat) RequestConvert(ctx eocontext.EoContext, extender map[str
 		httpContext.Proxy().URI().SetPath(path)
 		httpContext.Proxy().URI().SetQuery("alt", "sse")
 		httpContext.Proxy().AppendStreamBodyHandle(a.streamHandler)
+		httpContext.Proxy().AppendBodyFinish(a.streamFinish)
 		context_label2.SetModelCompletionStreamTag(ctx)
 	} else {
 		path := fmt.Sprintf("%s/%s:%s", a.path, model, "generateContent")
@@ -214,6 +227,7 @@ func convertAnthropicToGeminiRequest(req *AnthropicMessageRequest) *GeminiReques
 		} else {
 			content.Role = "user"
 		}
+		var lastValidSig string
 
 		switch c := msg.Content.(type) {
 		case string:
@@ -268,6 +282,9 @@ func convertAnthropicToGeminiRequest(req *AnthropicMessageRequest) *GeminiReques
 					}
 					if ts == "" {
 						ts = lookupCachedThoughtSignature(block.Name, block.Input)
+					}
+					if ts != "" {
+						lastValidSig = ts
 					}
 					content.Parts = append(content.Parts, GeminiPart{
 						FunctionCall: &GeminiFunctionCall{
@@ -348,6 +365,15 @@ func convertAnthropicToGeminiRequest(req *AnthropicMessageRequest) *GeminiReques
 							Response: responseObj,
 						},
 					})
+				}
+			}
+		}
+
+		// If some function calls missed signatures, backfill with lastValidSig
+		if lastValidSig != "" {
+			for i := range content.Parts {
+				if content.Parts[i].FunctionCall != nil && content.Parts[i].ThoughtSignature == "" {
+					content.Parts[i].ThoughtSignature = lastValidSig
 				}
 			}
 		}
@@ -546,6 +572,12 @@ func convertGeminiToAnthropicResponse(resp *GeminiResponse, defaultModel string,
 	if len(resp.Candidates) > 0 {
 		candidate := resp.Candidates[0]
 		hasToolCall := false
+		lastSig := ""
+		for _, part := range candidate.Content.Parts {
+			if part.ThoughtSignature != "" {
+				lastSig = part.ThoughtSignature
+			}
+		}
 		for _, part := range candidate.Content.Parts {
 			if part.Text != "" {
 				out.Content = append(out.Content, AnthropicContentBlock{
@@ -555,9 +587,13 @@ func convertGeminiToAnthropicResponse(resp *GeminiResponse, defaultModel string,
 			}
 			if part.FunctionCall != nil {
 				hasToolCall = true
-				toolCallID := "call_" + strconv.FormatInt(time.Now().UnixNano(), 10)
-				if part.ThoughtSignature != "" {
-					cacheThoughtSignature(part.FunctionCall.Name, part.FunctionCall.Args, part.ThoughtSignature)
+				sig := part.ThoughtSignature
+				if sig == "" {
+					sig = lastSig
+				}
+				toolCallID := formatToolCallID(sig)
+				if sig != "" {
+					cacheThoughtSignature(part.FunctionCall.Name, part.FunctionCall.Args, sig)
 				}
 				out.Content = append(out.Content, AnthropicContentBlock{
 					Type:  "tool_use",
@@ -630,47 +666,39 @@ func (a *AnthropicChat) convertErrorResponse(httpContext http_service.IHttpConte
 }
 
 func (a *AnthropicChat) streamHandler(ctx http_service.IHttpContext, p []byte) ([]byte, error) {
+	state := getAnthropicStreamState(ctx)
+	state.buffer = append(state.buffer, p...)
+
+	lastNL := bytes.LastIndexByte(state.buffer, '\n')
+	if lastNL == -1 {
+		return []byte{}, nil
+	}
+
+	completeData := state.buffer[:lastNL]
+	state.buffer = append([]byte(nil), state.buffer[lastNL+1:]...)
+
 	var sseBuffer bytes.Buffer
 	requestID := ctx.RequestId()
 	model := ai_convert.GetAIModel(ctx)
 
-	data := ctx.GetLabel(labelAnthropicStreamRemain) + string(p)
-	lastNL := strings.LastIndexByte(data, '\n')
-	if lastNL < 0 {
-		ctx.SetLabel(labelAnthropicStreamRemain, data)
-		return []byte{}, nil
-	}
-	ctx.SetLabel(labelAnthropicStreamRemain, data[lastNL+1:])
-	complete := data[:lastNL+1]
-
-	scanner := bufio.NewScanner(strings.NewReader(complete))
-	scanner.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
-
-	started := ctx.GetLabel(labelAnthropicStreamStarted) == "true"
-	textStarted := ctx.GetLabel(labelAnthropicStreamTextStarted) == "true"
-	outTokens := 0
-	fmt.Sscanf(ctx.GetLabel(labelAnthropicStreamOutputTokens), "%d", &outTokens)
-	toolIndex := 0
-	fmt.Sscanf(ctx.GetLabel(labelAnthropicStreamActiveToolIndex), "%d", &toolIndex)
-
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || !strings.HasPrefix(line, "data:") {
+	lines := bytes.Split(completeData, []byte("\n"))
+	for _, lineBytes := range lines {
+		lineBytes = bytes.TrimSpace(lineBytes)
+		if len(lineBytes) == 0 || !bytes.HasPrefix(lineBytes, []byte("data:")) {
 			continue
 		}
-		dataStr := strings.TrimSpace(strings.TrimPrefix(line, "data:"))
-		if dataStr == "" {
+		dataBytes := bytes.TrimSpace(bytes.TrimPrefix(lineBytes, []byte("data:")))
+		if len(dataBytes) == 0 {
 			continue
 		}
 
-		if dataStr == "[DONE]" {
-			if textStarted {
+		if bytes.Equal(dataBytes, []byte("[DONE]")) {
+			if state.textStarted {
 				writeAnthropicSSE(&sseBuffer, "content_block_stop", map[string]interface{}{
 					"type":  "content_block_stop",
 					"index": 0,
 				})
-				textStarted = false
-				ctx.SetLabel(labelAnthropicStreamTextStarted, "false")
+				state.textStarted = false
 			}
 			writeAnthropicSSE(&sseBuffer, "message_delta", map[string]interface{}{
 				"type": "message_delta",
@@ -679,7 +707,7 @@ func (a *AnthropicChat) streamHandler(ctx http_service.IHttpContext, p []byte) (
 					"stop_sequence": nil,
 				},
 				"usage": map[string]interface{}{
-					"output_tokens": outTokens,
+					"output_tokens": state.outTokens,
 				},
 			})
 			writeAnthropicSSE(&sseBuffer, "message_stop", map[string]interface{}{
@@ -689,8 +717,8 @@ func (a *AnthropicChat) streamHandler(ctx http_service.IHttpContext, p []byte) (
 		}
 
 		var geminiResp GeminiResponse
-		if err := json.Unmarshal([]byte(dataStr), &geminiResp); err != nil {
-			log.Errorf("unmarshal gemini stream chunk error: %v, data: %s", err, dataStr)
+		if err := json.Unmarshal(dataBytes, &geminiResp); err != nil {
+			log.Errorf("unmarshal gemini stream chunk error: %v, data: %s", err, string(dataBytes))
 			continue
 		}
 
@@ -699,14 +727,18 @@ func (a *AnthropicChat) streamHandler(ctx http_service.IHttpContext, p []byte) (
 			outputTokens := geminiResp.UsageMetadata.CandidatesTokenCount + geminiResp.UsageMetadata.ThoughtsTokenCount
 			ai_convert.SetAIModelOutputToken(ctx, outputTokens)
 			ai_convert.SetAIModelTotalToken(ctx, geminiResp.UsageMetadata.TotalTokenCount)
-			outTokens = outputTokens
-			ctx.SetLabel(labelAnthropicStreamOutputTokens, fmt.Sprintf("%d", outTokens))
+			state.outTokens = outputTokens
 		}
 
 		for _, candidate := range geminiResp.Candidates {
-			if !started {
-				started = true
-				ctx.SetLabel(labelAnthropicStreamStarted, "true")
+			for _, part := range candidate.Content.Parts {
+				if part.ThoughtSignature != "" {
+					state.lastThoughtSignature = part.ThoughtSignature
+				}
+			}
+
+			if !state.started {
+				state.started = true
 				writeAnthropicSSE(&sseBuffer, "message_start", map[string]interface{}{
 					"type": "message_start",
 					"message": map[string]interface{}{
@@ -728,9 +760,8 @@ func (a *AnthropicChat) streamHandler(ctx http_service.IHttpContext, p []byte) (
 			hasToolCall := false
 			for _, part := range candidate.Content.Parts {
 				if part.Text != "" {
-					if !textStarted {
-						textStarted = true
-						ctx.SetLabel(labelAnthropicStreamTextStarted, "true")
+					if !state.textStarted {
+						state.textStarted = true
 						writeAnthropicSSE(&sseBuffer, "content_block_start", map[string]interface{}{
 							"type":  "content_block_start",
 							"index": 0,
@@ -740,8 +771,7 @@ func (a *AnthropicChat) streamHandler(ctx http_service.IHttpContext, p []byte) (
 							},
 						})
 					}
-					outTokens++
-					ctx.SetLabel(labelAnthropicStreamOutputTokens, fmt.Sprintf("%d", outTokens))
+					state.outTokens++
 					writeAnthropicSSE(&sseBuffer, "content_block_delta", map[string]interface{}{
 						"type":  "content_block_delta",
 						"index": 0,
@@ -754,17 +784,20 @@ func (a *AnthropicChat) streamHandler(ctx http_service.IHttpContext, p []byte) (
 
 				if part.FunctionCall != nil {
 					hasToolCall = true
-					toolIndex++
-					ctx.SetLabel(labelAnthropicStreamActiveToolIndex, fmt.Sprintf("%d", toolIndex))
+					state.toolIndex++
 
-					toolCallID := "call_" + strconv.FormatInt(time.Now().UnixNano(), 10)
-					if part.ThoughtSignature != "" {
-						cacheThoughtSignature(part.FunctionCall.Name, part.FunctionCall.Args, part.ThoughtSignature)
+					sig := part.ThoughtSignature
+					if sig == "" {
+						sig = state.lastThoughtSignature
+					}
+					toolCallID := formatToolCallID(sig)
+					if sig != "" {
+						cacheThoughtSignatureWithContext(ctx, part.FunctionCall.Name, part.FunctionCall.Args, sig)
 					}
 
 					writeAnthropicSSE(&sseBuffer, "content_block_start", map[string]interface{}{
 						"type":  "content_block_start",
-						"index": toolIndex,
+						"index": state.toolIndex,
 						"content_block": map[string]interface{}{
 							"type":  "tool_use",
 							"id":    toolCallID,
@@ -776,7 +809,7 @@ func (a *AnthropicChat) streamHandler(ctx http_service.IHttpContext, p []byte) (
 					argsBytes, _ := json.Marshal(part.FunctionCall.Args)
 					writeAnthropicSSE(&sseBuffer, "content_block_delta", map[string]interface{}{
 						"type":  "content_block_delta",
-						"index": toolIndex,
+						"index": state.toolIndex,
 						"delta": map[string]interface{}{
 							"type":         "input_json_delta",
 							"partial_json": string(argsBytes),
@@ -785,19 +818,18 @@ func (a *AnthropicChat) streamHandler(ctx http_service.IHttpContext, p []byte) (
 
 					writeAnthropicSSE(&sseBuffer, "content_block_stop", map[string]interface{}{
 						"type":  "content_block_stop",
-						"index": toolIndex,
+						"index": state.toolIndex,
 					})
 				}
 			}
 
 			if candidate.FinishReason != "" {
-				if textStarted {
+				if state.textStarted {
 					writeAnthropicSSE(&sseBuffer, "content_block_stop", map[string]interface{}{
 						"type":  "content_block_stop",
 						"index": 0,
 					})
-					textStarted = false
-					ctx.SetLabel(labelAnthropicStreamTextStarted, "false")
+					state.textStarted = false
 				}
 				stopReason := mapGeminiFinishReasonToAnthropic(candidate.FinishReason, hasToolCall)
 				writeAnthropicSSE(&sseBuffer, "message_delta", map[string]interface{}{
@@ -807,7 +839,7 @@ func (a *AnthropicChat) streamHandler(ctx http_service.IHttpContext, p []byte) (
 						"stop_sequence": nil,
 					},
 					"usage": map[string]interface{}{
-						"output_tokens": outTokens,
+						"output_tokens": state.outTokens,
 					},
 				})
 				writeAnthropicSSE(&sseBuffer, "message_stop", map[string]interface{}{
@@ -818,6 +850,52 @@ func (a *AnthropicChat) streamHandler(ctx http_service.IHttpContext, p []byte) (
 	}
 
 	return sseBuffer.Bytes(), nil
+}
+
+func (a *AnthropicChat) streamFinish(ctx http_service.IHttpContext) {
+	state := getAnthropicStreamState(ctx)
+	if len(state.buffer) == 0 {
+		return
+	}
+	remaining := bytes.TrimSpace(state.buffer)
+	state.buffer = nil
+	if len(remaining) == 0 {
+		return
+	}
+
+	lines := bytes.Split(remaining, []byte("\n"))
+	for _, lineBytes := range lines {
+		lineBytes = bytes.TrimSpace(lineBytes)
+		if len(lineBytes) == 0 || !bytes.HasPrefix(lineBytes, []byte("data:")) {
+			continue
+		}
+		dataBytes := bytes.TrimSpace(bytes.TrimPrefix(lineBytes, []byte("data:")))
+		if len(dataBytes) == 0 || bytes.Equal(dataBytes, []byte("[DONE]")) {
+			continue
+		}
+		var geminiResp GeminiResponse
+		if err := json.Unmarshal(dataBytes, &geminiResp); err != nil {
+			continue
+		}
+		for _, candidate := range geminiResp.Candidates {
+			for _, part := range candidate.Content.Parts {
+				if part.ThoughtSignature != "" {
+					state.lastThoughtSignature = part.ThoughtSignature
+				}
+			}
+			for _, part := range candidate.Content.Parts {
+				if part.FunctionCall != nil {
+					sig := part.ThoughtSignature
+					if sig == "" {
+						sig = state.lastThoughtSignature
+					}
+					if sig != "" {
+						cacheThoughtSignatureWithContext(ctx, part.FunctionCall.Name, part.FunctionCall.Args, sig)
+					}
+				}
+			}
+		}
+	}
 }
 
 func writeAnthropicSSE(buf *bytes.Buffer, event string, data interface{}) {

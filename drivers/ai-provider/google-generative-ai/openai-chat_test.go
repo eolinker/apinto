@@ -339,10 +339,10 @@ func TestConvertOpenAIFormatWithToolCalls(t *testing.T) {
 	toolCalls := message["tool_calls"].([]interface{})
 	tc := toolCalls[0].(map[string]interface{})
 
-	// 验证 toolCall ID 是标准短 ID，不包含 _ts_
+	// 验证 toolCall ID 编码了 thought_signature
 	id := tc["id"].(string)
-	if !strings.HasPrefix(id, "call_") || strings.Contains(id, "_ts_") {
-		t.Errorf("expected clean tool call id starting with call_, got %s", id)
+	if !strings.HasPrefix(id, "call_") || !strings.Contains(id, "_ts_sig_abcdef123") {
+		t.Errorf("expected tool call id starting with call_ and containing _ts_sig_abcdef123, got %s", id)
 	}
 
 	// 验证没有非标准的 extra_content
@@ -850,8 +850,8 @@ func TestStreamHandlerWithToolCalls(t *testing.T) {
 		t.Fatalf("failed to unmarshal chunk1: %v", err)
 	}
 	tc1 := streamResp1.Choices[0].Delta.ToolCalls[0]
-	if !strings.HasPrefix(tc1.ID, "call_") || strings.Contains(tc1.ID, "_ts_") {
-		t.Errorf("expected clean tool call id, got %s", tc1.ID)
+	if !strings.HasPrefix(tc1.ID, "call_") || !strings.Contains(tc1.ID, "_ts_stream_sig_xyz") {
+		t.Errorf("expected tool call id containing _ts_stream_sig_xyz, got %s", tc1.ID)
 	}
 	if streamResp1.Choices[0].FinishReason != "" {
 		t.Errorf("expected empty finish reason for chunk 1, got %v", streamResp1.Choices[0].FinishReason)
@@ -1023,5 +1023,165 @@ func TestConvertOpenAIJsonFile(t *testing.T) {
 	}
 	if skipProp["nullable"] != true {
 		t.Errorf("expected grep.skip.nullable to be true, got %v", skipProp["nullable"])
+	}
+}
+
+func TestStreamHandlerPacketFragmentation(t *testing.T) {
+	chat, _ := NewOpenAIChat("google", "api-key", "", ai_convert.ModelTypeOpenAIChat, 5*time.Second)
+	chatImpl := chat.(*OpenAIChat)
+
+	mCtx := &mockHttpContext{
+		requestId: "req-frag-101",
+		labels:    map[string]string{},
+	}
+	ai_convert.SetAIModel(mCtx, "gemini-2.5-flash")
+
+	// 一个带有中文 thought 和跨 Part 工具调用的完整 SSE 行
+	fullPayload := "data: {\"candidates\":[{\"index\":0,\"content\":{\"parts\":[{\"thought\":true,\"thoughtSignature\":\"split_sig_test_999\",\"text\":\"正在思考中，准备查询天气...\"},{\"functionCall\":{\"name\":\"get_weather\",\"args\":{\"city\":\"北京\"}}}]},\"finishReason\":\"\"}]}\n\n"
+
+	rawBytes := []byte(fullPayload)
+	// 将数据切成若干个碎片，包括在中文中间截断
+	p1 := rawBytes[:30]
+	p2 := rawBytes[30:75] // 中文字符中间
+	p3 := rawBytes[75:]
+
+	out1, err := chatImpl.streamHandler(mCtx, p1)
+	if err != nil {
+		t.Fatalf("streamHandler p1 failed: %v", err)
+	}
+	if len(out1) != 0 {
+		t.Fatalf("expected empty out1 on incomplete line, got: %s", string(out1))
+	}
+
+	out2, err := chatImpl.streamHandler(mCtx, p2)
+	if err != nil {
+		t.Fatalf("streamHandler p2 failed: %v", err)
+	}
+	if len(out2) != 0 {
+		t.Fatalf("expected empty out2 on incomplete line, got: %s", string(out2))
+	}
+
+	out3, err := chatImpl.streamHandler(mCtx, p3)
+	if err != nil {
+		t.Fatalf("streamHandler p3 failed: %v", err)
+	}
+	if len(out3) == 0 {
+		t.Fatalf("expected out3 to produce output after full line received")
+	}
+
+	// 验证跨 Part 签名继承和缓存：functionCall 虽然没有自身的 thoughtSignature，但应继承思考 part 的签名
+	cachedSig := lookupCachedThoughtSignature("get_weather", map[string]interface{}{"city": "北京"})
+	if cachedSig != "split_sig_test_999" {
+		t.Errorf("expected cached thoughtSignature 'split_sig_test_999', got '%s'", cachedSig)
+	}
+
+	// 测试 streamFinish 对未以换行符结尾的尾包的处理
+	tailPayload := "data: {\"candidates\":[{\"index\":0,\"content\":{\"parts\":[{\"functionCall\":{\"name\":\"tail_call\",\"args\":{\"key\":\"val\"}},\"thoughtSignature\":\"tail_sig_888\"}]}}]}"
+	_, err = chatImpl.streamHandler(mCtx, []byte(tailPayload))
+	if err != nil {
+		t.Fatalf("streamHandler tail failed: %v", err)
+	}
+	// 执行 streamFinish 刷新残余
+	chatImpl.streamFinish(mCtx)
+	tailSig := lookupCachedThoughtSignature("tail_call", map[string]interface{}{"key": "val"})
+	if tailSig != "tail_sig_888" {
+		t.Errorf("expected cached tail thoughtSignature 'tail_sig_888', got '%s'", tailSig)
+	}
+}
+
+func TestThoughtSignatureFallbackWithSessionAndQueue(t *testing.T) {
+	mCtx := &mockHttpContext{
+		requestId: "req-fallback-1",
+		labels:    map[string]string{"consumer": "test-consumer"},
+	}
+
+	toolName := "execute_command"
+	originalArgs := map[string]interface{}{"cmd": "ls", "flags": "-la"}
+	sig := "sig_session_queue_fallback_test"
+
+	cacheThoughtSignatureWithContext(mCtx, toolName, originalArgs, sig)
+
+	// 1. 精确匹配
+	exact := lookupCachedThoughtSignatureWithContext(mCtx, toolName, originalArgs)
+	if exact != sig {
+		t.Fatalf("expected exact match %s, got %s", sig, exact)
+	}
+
+	// 2. 客户端修改了参数（如增加了默认参数或顺序/浮点数变化），导致精确 Hash 不匹配
+	modifiedArgs := map[string]interface{}{"cmd": "ls", "flags": "-la", "timeout": 30}
+	fallbackBySession := lookupCachedThoughtSignatureWithContext(mCtx, toolName, modifiedArgs)
+	if fallbackBySession != sig {
+		t.Fatalf("expected session fallback %s, got %s", sig, fallbackBySession)
+	}
+
+	// 3. 跨请求但在同一工具名队列中的回退（无 context）
+	fallbackByToolQueue := lookupCachedThoughtSignatureWithContext(nil, toolName, map[string]interface{}{"random": "args"})
+	if fallbackByToolQueue != sig {
+		t.Fatalf("expected tool queue fallback %s, got %s", sig, fallbackByToolQueue)
+	}
+}
+
+func TestRequestConvertToolCallIDWithSignature(t *testing.T) {
+	chat, err := NewOpenAIChat("google", "test-key", "", ai_convert.ModelTypeOpenAIChat, 5*time.Second)
+	if err != nil {
+		t.Fatalf("failed to create OpenAIChat: %v", err)
+	}
+
+	injectedSig := "sig_from_encoded_id_999"
+	toolCallID := "call_1700000000000_ts_" + injectedSig
+
+	clientReq := openai.ChatCompletionRequest{
+		Model: "gemini-2.5-flash",
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role: "assistant",
+				ToolCalls: []openai.ToolCall{
+					{
+						ID:   toolCallID,
+						Type: openai.ToolTypeFunction,
+						Function: openai.FunctionCall{
+							Name:      "test_func_without_cache",
+							Arguments: `{"arg":1}`,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	reqBytes, _ := json.Marshal(clientReq)
+	mCtx := &mockHttpContext{
+		proxy: &mockRequest{
+			header: &mockHeader{},
+			body: &mockBody{
+				body: reqBytes,
+			},
+			uri: &mockURI{},
+		},
+		requestId: "req-id-decode-test",
+	}
+	ai_convert.SetAIModel(mCtx, "gemini-2.5-flash")
+
+	err = chat.RequestConvert(mCtx, map[string]interface{}{})
+	if err != nil {
+		t.Fatalf("RequestConvert failed: %v", err)
+	}
+
+	var geminiReq GeminiRequest
+	err = json.Unmarshal(mCtx.proxy.body.body, &geminiReq)
+	if err != nil {
+		t.Fatalf("failed to unmarshal GeminiRequest: %v", err)
+	}
+
+	if len(geminiReq.Contents) == 0 || len(geminiReq.Contents[0].Parts) == 0 {
+		t.Fatalf("expected converted parts in GeminiRequest")
+	}
+
+	part := geminiReq.Contents[0].Parts[0]
+	if part.FunctionCall == nil {
+		t.Fatalf("expected FunctionCall in converted part")
+	}
+	if part.ThoughtSignature != injectedSig {
+		t.Fatalf("expected thoughtSignature '%s' parsed directly from ToolCall ID, got '%s'", injectedSig, part.ThoughtSignature)
 	}
 }

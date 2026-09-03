@@ -1,7 +1,6 @@
 package google
 
 import (
-	"bufio"
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
@@ -11,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	context_label2 "github.com/eolinker/apinto/common/context-label"
@@ -36,10 +36,59 @@ func init() {
 // a 400 from Gemini 3 on multi-turn function calling. The gateway caches the
 // signature from the response and re-injects it when the same function call is
 // sent back, so we don't depend on the client echoing it.
-var thoughtSignatureCache *lru.Cache
+var (
+	thoughtSignatureCache *lru.Cache
+	sigFallbackMu         sync.RWMutex
+	toolSignaturesQueue   map[string][]string
+)
 
 func init() {
 	thoughtSignatureCache, _ = lru.New(8192)
+	toolSignaturesQueue = make(map[string][]string)
+}
+
+func formatToolCallID(signature string) string {
+	id := "call_" + strconv.FormatInt(time.Now().UnixNano(), 10)
+	if signature != "" {
+		id += "_ts_" + signature
+	}
+	return id
+}
+
+func getSessionOrConsumerKey(ctx http_service.IHttpContext) (key string) {
+	if ctx == nil {
+		return ""
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			if reqID := ctx.RequestId(); reqID != "" {
+				key = "r:" + reqID
+			}
+		}
+	}()
+	if consumer := ctx.GetLabel("consumer"); consumer != "" {
+		return "c:" + consumer
+	}
+	if req := ctx.Request(); req != nil && req.Header() != nil {
+		header := req.Header()
+		if sess := header.GetHeader("x-session-id"); sess != "" {
+			return "s:" + sess
+		}
+		if sess := header.GetHeader("session-id"); sess != "" {
+			return "s:" + sess
+		}
+		if sess := header.GetHeader("session_id"); sess != "" {
+			return "s:" + sess
+		}
+		if auth := header.GetHeader("Authorization"); auth != "" {
+			h := sha256.Sum256([]byte(auth))
+			return "a:" + hex.EncodeToString(h[:8])
+		}
+	}
+	if reqID := ctx.RequestId(); reqID != "" {
+		return "r:" + reqID
+	}
+	return ""
 }
 
 // thoughtSignatureKey builds a stable cache key from a function name and its
@@ -95,34 +144,121 @@ func writeCanonical(b *strings.Builder, v interface{}) {
 
 // cacheThoughtSignature stores a signature for a function call.
 func cacheThoughtSignature(name string, args map[string]interface{}, signature string) {
+	cacheThoughtSignatureWithContext(nil, name, args, signature)
+}
+
+func cacheThoughtSignatureWithContext(ctx http_service.IHttpContext, name string, args map[string]interface{}, signature string) {
 	if signature == "" || thoughtSignatureCache == nil {
 		return
 	}
+	// 1. 严格参数 JSON Hash 缓存
 	thoughtSignatureCache.Add(thoughtSignatureKey(name, args), signature)
+
+	// 2. 按工具名缓存最近签名
+	if name != "" {
+		thoughtSignatureCache.Add("tool:"+name, signature)
+	}
+
+	// 3. 按会话/消费者/请求缓存
+	if sessKey := getSessionOrConsumerKey(ctx); sessKey != "" {
+		thoughtSignatureCache.Add("sess:"+sessKey, signature)
+		if name != "" {
+			thoughtSignatureCache.Add("sess_tool:"+sessKey+":"+name, signature)
+		}
+	}
+
+	// 4. 更新内存中的工具回退队列
+	if name != "" {
+		sigFallbackMu.Lock()
+		q := toolSignaturesQueue[name]
+		if len(q) == 0 || q[len(q)-1] != signature {
+			if len(q) >= 16 {
+				q = q[1:]
+			}
+			toolSignaturesQueue[name] = append(q, signature)
+		}
+		sigFallbackMu.Unlock()
+	}
 }
 
 // lookupCachedThoughtSignature retrieves a cached signature for a function call.
 func lookupCachedThoughtSignature(name string, args map[string]interface{}) string {
+	return lookupCachedThoughtSignatureWithContext(nil, name, args)
+}
+
+func lookupCachedThoughtSignatureWithContext(ctx http_service.IHttpContext, name string, args map[string]interface{}) string {
 	if thoughtSignatureCache == nil {
 		return ""
 	}
+
+	// 1. 优先精确匹配：工具名 + canonical JSON 参数
 	if v, ok := thoughtSignatureCache.Get(thoughtSignatureKey(name, args)); ok {
-		if s, ok := v.(string); ok {
+		if s, ok := v.(string); ok && s != "" {
 			return s
 		}
 	}
+
+	sessKey := getSessionOrConsumerKey(ctx)
+	if sessKey != "" {
+		// 2. 匹配该会话/消费者的指定工具名签名
+		if name != "" {
+			if v, ok := thoughtSignatureCache.Get("sess_tool:" + sessKey + ":" + name); ok {
+				if s, ok := v.(string); ok && s != "" {
+					return s
+				}
+			}
+		}
+		// 3. 匹配该会话/消费者最近一次发出的任何签名
+		if v, ok := thoughtSignatureCache.Get("sess:" + sessKey); ok {
+			if s, ok := v.(string); ok && s != "" {
+				return s
+			}
+		}
+	}
+
+	// 4. 回退按工具名查找最近的签名（优先查 LRU，再查 toolSignaturesQueue）
+	if name != "" {
+		if v, ok := thoughtSignatureCache.Get("tool:" + name); ok {
+			if s, ok := v.(string); ok && s != "" {
+				return s
+			}
+		}
+		sigFallbackMu.RLock()
+		if q, ok := toolSignaturesQueue[name]; ok && len(q) > 0 {
+			sig := q[len(q)-1]
+			sigFallbackMu.RUnlock()
+			return sig
+		}
+		sigFallbackMu.RUnlock()
+	}
+
 	return ""
 }
 
-// labelStreamRemain holds the incomplete tail of the previous stream chunk. The
-// framework feeds raw TCP-sized byte slices (~4KB) to the handler with no line
-// or SSE-event boundary guarantee, so a single "data: {json}\n\n" event may be
-// split across calls. We buffer the incomplete tail here and prepend it to the
-// next chunk to avoid dropping (and thus losing) partial function-call events.
+// labelStreamRemain holds the incomplete tail of the previous stream chunk.
 const (
 	labelStreamRemain      = "google_stream_remain"
 	labelStreamHasToolCall = "google_stream_has_tool_call"
 )
+
+type openAIStreamState struct {
+	buffer               []byte
+	lastThoughtSignature string
+	hasToolCall          bool
+}
+
+const openAIStreamStateKey = "google_openai_stream_state"
+
+func getOpenAIStreamState(ctx http_service.IHttpContext) *openAIStreamState {
+	if val := ctx.Value(openAIStreamStateKey); val != nil {
+		if state, ok := val.(*openAIStreamState); ok {
+			return state
+		}
+	}
+	state := &openAIStreamState{}
+	ctx.WithValue(openAIStreamStateKey, state)
+	return state
+}
 
 func NewOpenAIChat(provider string, apikey string, baseUrl string, modelType ai_convert.ModelType, timeout time.Duration) (ai_convert.IConverterDriver, error) {
 	c := &OpenAIChat{
@@ -593,6 +729,7 @@ func (o *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string
 			if msg.Content != "" {
 				content.Parts = append(content.Parts, GeminiPart{Text: msg.Content})
 			}
+			var lastValidSig string
 			for tcIdx, toolCall := range msg.ToolCalls {
 				var args map[string]interface{}
 				if toolCall.Function.Arguments != "" {
@@ -610,7 +747,12 @@ func (o *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string
 					}
 				}
 				if ts == "" {
-					ts = lookupCachedThoughtSignature(toolCall.Function.Name, args)
+					ts = lookupCachedThoughtSignatureWithContext(httpContext, toolCall.Function.Name, args)
+				}
+				if ts != "" {
+					lastValidSig = ts
+				} else if lastValidSig != "" {
+					ts = lastValidSig
 				}
 				content.Parts = append(content.Parts, GeminiPart{
 					FunctionCall: &GeminiFunctionCall{
@@ -820,6 +962,7 @@ func (o *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string
 		path = fmt.Sprintf("%s/%s:%s", o.path, model, "streamGenerateContent")
 		httpContext.Proxy().URI().SetQuery("alt", "sse")
 		httpContext.Proxy().AppendStreamBodyHandle(o.streamHandler)
+		httpContext.Proxy().AppendBodyFinish(o.streamFinish)
 		context_label2.SetModelCompletionStreamTag(ctx)
 	} else {
 		path = fmt.Sprintf("%s/%s:%s", o.path, model, "generateContent")
@@ -883,16 +1026,26 @@ func convertOpenAIFormat(ctx http_service.IHttpContext, body []byte) ([]byte, er
 		}
 
 		var toolCalls []openai.ToolCall
+		lastSig := ""
+		for _, part := range candidate.Content.Parts {
+			if part.ThoughtSignature != "" {
+				lastSig = part.ThoughtSignature
+			}
+		}
 		for _, part := range candidate.Content.Parts {
 			if part.Text != "" {
 				choice.Message.Content += part.Text
 			}
 			if part.FunctionCall != nil {
 				argsBytes, _ := json.Marshal(part.FunctionCall.Args)
-				toolCallID := "call_" + strconv.FormatInt(time.Now().UnixNano(), 10)
-				if part.ThoughtSignature != "" {
+				sig := part.ThoughtSignature
+				if sig == "" {
+					sig = lastSig
+				}
+				toolCallID := formatToolCallID(sig)
+				if sig != "" {
 					// Cache so we can re-inject even if the client drops it.
-					cacheThoughtSignature(part.FunctionCall.Name, part.FunctionCall.Args, part.ThoughtSignature)
+					cacheThoughtSignatureWithContext(ctx, part.FunctionCall.Name, part.FunctionCall.Args, sig)
 				}
 				toolCalls = append(toolCalls, openai.ToolCall{
 					ID:   toolCallID,
@@ -971,48 +1124,93 @@ func (o *OpenAIChat) convertErrorResponse(httpContext http_service.IHttpContext)
 	httpContext.Response().SetBody(newBody)
 }
 
+func (o *OpenAIChat) streamFinish(ctx http_service.IHttpContext) {
+	state := getOpenAIStreamState(ctx)
+	if len(state.buffer) == 0 {
+		return
+	}
+	remaining := bytes.TrimSpace(state.buffer)
+	state.buffer = nil
+	if len(remaining) == 0 {
+		return
+	}
+
+	lines := bytes.Split(remaining, []byte("\n"))
+	for _, lineBytes := range lines {
+		lineBytes = bytes.TrimSpace(lineBytes)
+		if len(lineBytes) == 0 || !bytes.HasPrefix(lineBytes, []byte("data:")) {
+			continue
+		}
+		dataBytes := bytes.TrimSpace(bytes.TrimPrefix(lineBytes, []byte("data:")))
+		if len(dataBytes) == 0 || bytes.Equal(dataBytes, []byte("[DONE]")) {
+			continue
+		}
+		var geminiResp GeminiResponse
+		if err := json.Unmarshal(dataBytes, &geminiResp); err != nil {
+			continue
+		}
+		for _, candidate := range geminiResp.Candidates {
+			for _, part := range candidate.Content.Parts {
+				if part.ThoughtSignature != "" {
+					state.lastThoughtSignature = part.ThoughtSignature
+				}
+			}
+			for _, part := range candidate.Content.Parts {
+				if part.FunctionCall != nil {
+					sig := part.ThoughtSignature
+					if sig == "" {
+						sig = state.lastThoughtSignature
+					}
+					if sig != "" {
+						cacheThoughtSignatureWithContext(ctx, part.FunctionCall.Name, part.FunctionCall.Args, sig)
+					}
+				}
+			}
+		}
+	}
+}
+
 func (o *OpenAIChat) streamHandler(ctx http_service.IHttpContext, p []byte) ([]byte, error) {
 	var sseBuffer bytes.Buffer
 	requestID := "chatcmpl-" + ctx.RequestId()
 	model := ai_convert.GetAIModel(ctx)
 
-	// Prepend any incomplete tail buffered from the previous chunk, then split
-	// off a new tail so we only parse complete lines. The framework hands us raw
-	// TCP-sized slices with no event boundary, so a data line may be cut in half.
-	data := ctx.GetLabel(labelStreamRemain) + string(p)
-	lastNL := strings.LastIndexByte(data, '\n')
-	if lastNL < 0 {
-		// No complete line yet; buffer everything and emit nothing.
-		ctx.SetLabel(labelStreamRemain, data)
+	state := getOpenAIStreamState(ctx)
+	// 拼接到请求级流式缓冲区，保持原始字节避免 UTF-8 截断损坏
+	state.buffer = append(state.buffer, p...)
+
+	// 查找最后一个换行符
+	lastNL := bytes.LastIndexByte(state.buffer, '\n')
+	if lastNL == -1 {
+		// 尚未接收到完整的行，等待下一个 Chunk
 		return []byte{}, nil
 	}
-	// Keep the bytes after the last newline as the new remainder.
-	ctx.SetLabel(labelStreamRemain, data[lastNL+1:])
-	complete := data[:lastNL+1]
 
-	scanner := bufio.NewScanner(strings.NewReader(complete))
-	// Raise the line limit well above the default 64KB for large tool-call args.
-	scanner.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
+	// 截取所有完整行，残余未结束的部分留待下一个 Chunk 拼接
+	completeData := state.buffer[:lastNL]
+	state.buffer = append([]byte(nil), state.buffer[lastNL+1:]...)
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		line = strings.TrimSpace(line)
-		if line == "" {
+	lines := bytes.Split(completeData, []byte("\n"))
+	for _, lineBytes := range lines {
+		lineBytes = bytes.TrimSpace(lineBytes)
+		if len(lineBytes) == 0 {
 			continue
 		}
-		if !strings.HasPrefix(line, "data:") {
+		if !bytes.HasPrefix(lineBytes, []byte("data:")) {
 			continue
 		}
-		dataStr := strings.TrimPrefix(line, "data:")
-		dataStr = strings.TrimSpace(dataStr)
-		if dataStr == "" {
+		dataBytes := bytes.TrimSpace(bytes.TrimPrefix(lineBytes, []byte("data:")))
+		if len(dataBytes) == 0 {
+			continue
+		}
+		if bytes.Equal(dataBytes, []byte("[DONE]")) {
 			continue
 		}
 
 		var geminiResp GeminiResponse
-		err := json.Unmarshal([]byte(dataStr), &geminiResp)
+		err := json.Unmarshal(dataBytes, &geminiResp)
 		if err != nil {
-			log.Errorf("unmarshal gemini stream chunk error: %v, data: %s", err, dataStr)
+			log.Errorf("unmarshal gemini stream chunk error: %v, data: %s", err, string(dataBytes))
 			continue
 		}
 
@@ -1023,6 +1221,13 @@ func (o *OpenAIChat) streamHandler(ctx http_service.IHttpContext, p []byte) ([]b
 		}
 
 		for _, candidate := range geminiResp.Candidates {
+			// 先遍历当前 candidate 的所有 parts，提取并刷新最新的 thoughtSignature
+			for _, part := range candidate.Content.Parts {
+				if part.ThoughtSignature != "" {
+					state.lastThoughtSignature = part.ThoughtSignature
+				}
+			}
+
 			streamResp := openai.ChatCompletionStreamResponse{
 				ID:      requestID,
 				Object:  "chat.completion.chunk",
@@ -1060,9 +1265,13 @@ func (o *OpenAIChat) streamHandler(ctx http_service.IHttpContext, p []byte) ([]b
 				if part.FunctionCall != nil {
 					argsBytes, _ := json.Marshal(part.FunctionCall.Args)
 					toolCallIdx := len(toolCalls)
-					toolCallID := "call_" + strconv.FormatInt(time.Now().UnixNano(), 10)
-					if part.ThoughtSignature != "" {
-						cacheThoughtSignature(part.FunctionCall.Name, part.FunctionCall.Args, part.ThoughtSignature)
+					sig := part.ThoughtSignature
+					if sig == "" {
+						sig = state.lastThoughtSignature
+					}
+					toolCallID := formatToolCallID(sig)
+					if sig != "" {
+						cacheThoughtSignatureWithContext(ctx, part.FunctionCall.Name, part.FunctionCall.Args, sig)
 					}
 					toolCalls = append(toolCalls, openai.ToolCall{
 						Index: &toolCallIdx,
@@ -1078,9 +1287,10 @@ func (o *OpenAIChat) streamHandler(ctx http_service.IHttpContext, p []byte) ([]b
 
 			if len(toolCalls) > 0 {
 				delta.ToolCalls = toolCalls
+				state.hasToolCall = true
 				ctx.SetLabel(labelStreamHasToolCall, "true")
 			}
-			if isFinal && (ctx.GetLabel(labelStreamHasToolCall) == "true" || len(toolCalls) > 0) {
+			if isFinal && (state.hasToolCall || ctx.GetLabel(labelStreamHasToolCall) == "true" || len(toolCalls) > 0) {
 				finishReason = openai.FinishReasonToolCalls
 			}
 
