@@ -27,8 +27,10 @@ const (
 	PreDeductInputTokensText = 10000
 	// PreDeductOutputTokensText 文本模型预扣输出估算 token 数（1K，即 0.11% 百万 token 单价）
 	PreDeductOutputTokensText = 1000
-	// PreDeductTokensImageVideo 图片/视频模型预扣输出估算 token 数（1M，即 100% 百万 token 单价）
-	PreDeductTokensImageVideo = 1000000
+	// PreDeductTokensImage 图片/视频模型预扣输出估算 token 数（1M，即 100% 百万 token 单价）
+	PreDeductTokensImage = 10000
+
+	PreDeductTokensVideo = 100000
 	// PriceTokenScale token 单价除数（价格表按百万 token 单价配置）
 	PriceTokenScale = 1000000
 

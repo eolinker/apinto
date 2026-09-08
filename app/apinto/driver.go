@@ -34,6 +34,7 @@ import (
 	http_router "github.com/eolinker/apinto/drivers/router/http-router"
 	"github.com/eolinker/apinto/drivers/service"
 	cache_strategy "github.com/eolinker/apinto/drivers/strategy/cache-strategy"
+	failover_strategy "github.com/eolinker/apinto/drivers/strategy/failover-strategy"
 	fuse_strategy "github.com/eolinker/apinto/drivers/strategy/fuse-strategy"
 	grey_strategy "github.com/eolinker/apinto/drivers/strategy/grey-strategy"
 	limiting_strategy "github.com/eolinker/apinto/drivers/strategy/limiting-strategy"
@@ -95,6 +96,7 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	grey_strategy.Register(extenderRegister)
 	visit_strategy.Register(extenderRegister)
 	fuse_strategy.Register(extenderRegister)
+	failover_strategy.Register(extenderRegister)
 	data_mask_strategy.Register(extenderRegister)
 
 	// 编码器

@@ -12,23 +12,23 @@ func GetPreTotalToken(ctx eocontext.EoContext, rules []*ProcessedRule) int64 {
 	if rules[0].billingMode != BillingModeToken {
 		return 0
 	}
-	
+
 	var inputToken, outputToken int64
 	inputToken = context_label.GetPreInputToken(ctx)
 	if inputToken == 0 {
 		inputToken = PreDeductInputTokensText
 	}
-	
+
 	// 预估输出 token 数：根据上下文 label "model_type" 分配
 	modelType := ctxLabel(ctx, LabelModelType)
-	
+
 	switch modelType {
 	case ModelTypeImage, ModelTypeVideo:
-		outputToken = int64(PreDeductTokensImageVideo)
+		outputToken = int64(PreDeductTokensImage)
 	default:
 		// text 或未指定：按 10K token 计
 		outputToken = int64(PreDeductOutputTokensText)
 	}
-	
+
 	return inputToken + outputToken
 }

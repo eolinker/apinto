@@ -530,8 +530,10 @@ func (c *Calculator) PreDeduct(ctx eocontext.EoContext, pricingData *PricingData
 		modelType := ctxLabel(ctx, LabelModelType)
 		var estimatedOutputTokens float64
 		switch modelType {
-		case ModelTypeImage, ModelTypeVideo:
-			estimatedOutputTokens = float64(PreDeductTokensImageVideo)
+		case ModelTypeImage:
+			estimatedOutputTokens = float64(PreDeductTokensImage)
+		case ModelTypeVideo:
+			estimatedOutputTokens = float64(PreDeductTokensVideo)
 		default:
 			// text 或未指定：按 10K token 计
 			estimatedOutputTokens = float64(PreDeductOutputTokensText)

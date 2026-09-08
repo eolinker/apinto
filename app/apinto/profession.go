@@ -171,6 +171,12 @@ func Profession() []*eosc.ProfessionConfig {
 					Desc:  "熔断策略",
 				},
 				{
+					Id:    "eolinker.com:apinto:strategy-failover",
+					Name:  "failover",
+					Label: "灾备策略",
+					Desc:  "灾备策略",
+				},
+				{
 					Id:    "eolinker.com:apinto:strategy-data_mask",
 					Name:  "data_mask",
 					Label: "数据脱敏策略",
