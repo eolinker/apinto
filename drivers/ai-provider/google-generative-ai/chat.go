@@ -88,6 +88,9 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 	if index > 0 {
 		path = fmt.Sprintf("%s/%s:%s", c.path, model, requestPath[index+1:])
 	}
+	if strings.Contains(requestPath, "generateContent") {
+		context_label2.SetDisableStream(ctx, true)
+	}
 	httpContext.Proxy().URI().SetPath(path)
 	if c.balanceHandler != nil {
 		ctx.SetBalance(c.balanceHandler)
