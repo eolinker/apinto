@@ -178,9 +178,11 @@ func (e *BodyExtractor) ExtractFromChunk(chunk []byte) (interface{}, error) {
 
 			// 在 SSE 载荷帧内，执行指定的 json path 查询
 			res := gjson.Get(dataStr, e.path)
-			//if !res.Exists() {
-			//	continue
-			//}
+			if !res.Exists() {
+				if e.varType != "boolean" {
+					continue
+				}
+			}
 
 			val, err := convertGjsonType(res, e.varType)
 			if err == nil {
