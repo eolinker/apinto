@@ -47,7 +47,7 @@ func (e *executor) reset(conf *Config) error {
 	if err != nil {
 		return err
 	}
-	k := newKey(e.Id(), e.Name(), conf.Expired, conf.Priority, cv)
+	k := ai_convert.NewKey(e.Id(), e.Name(), conf.Expired, conf.Priority, cv)
 
 	e.key = k
 	e.provider = conf.Provider

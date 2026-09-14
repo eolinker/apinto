@@ -57,7 +57,6 @@ import (
 	rate_limiting "github.com/eolinker/apinto/drivers/plugins/rate-limiting"
 	response_rewrite "github.com/eolinker/apinto/drivers/plugins/response-rewrite"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/cache"
-	"github.com/eolinker/apinto/drivers/plugins/strategy/failover"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/fuse"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/grey"
 	"github.com/eolinker/apinto/drivers/plugins/strategy/limiting"
@@ -74,7 +73,6 @@ func pluginRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	grey.Register(extenderRegister)
 	visit.Register(extenderRegister)
 	fuse.Register(extenderRegister)
-	failover.Register(extenderRegister)
 	data_mask.Register(extenderRegister)
 
 	// Dubbo协议相关插件

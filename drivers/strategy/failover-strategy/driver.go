@@ -14,7 +14,7 @@ func Create(id, name string, v *Config, workers map[eosc.RequireId]eosc.IWorker)
 		return nil, err
 	}
 
-	lg := &Failover{
+	lg := &executor{
 		WorkerBase: drivers.Worker(id, name),
 	}
 

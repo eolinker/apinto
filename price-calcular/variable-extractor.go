@@ -438,8 +438,8 @@ func (ve *VariablesExtractor) ExtractAllFromChunk(ctx eoscContext.EoContext, chu
 			if err == nil {
 				res[name] = val
 				context_label.SetPriceVariable(ctx, name, val)
-			} else {
-				log.Errorf("stream v extractor error for %s: %v", name, err)
+				//} else {
+				//	log.Errorf("stream v extractor error for %s: %v", name, err)
 			}
 		}
 	}

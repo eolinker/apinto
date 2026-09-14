@@ -1,7 +1,9 @@
 package failover_strategy
 
 import (
+	"github.com/eolinker/apinto/drivers/strategy"
 	"reflect"
+	"sync"
 
 	"github.com/eolinker/apinto/drivers"
 	"github.com/eolinker/eosc"
@@ -12,12 +14,13 @@ const Name = "strategy-failover"
 
 var (
 	configType = reflect.TypeOf((*Config)(nil))
+	controller *strategy.Controller
+	once       = sync.Once{}
 )
 
 // Register 注册灾备策略驱动工厂
 func Register(register eosc.IExtenderDriverRegister) {
-	_ = register.RegisterExtenderDriver(Name, newFactory())
-	_ = setting.RegisterSetting("strategies-failover", controller)
+	register.RegisterExtenderDriver(Name, newFactory())
 }
 
 type factory struct {
@@ -31,7 +34,9 @@ func newFactory() eosc.IExtenderDriverFactory {
 }
 
 func (f *factory) Create(profession string, name string, label string, desc string, params map[string]interface{}) (eosc.IExtenderDriver, error) {
-	controller.driver = name
-	controller.profession = profession
+	controller = strategy.NewController(profession, name, configType)
+	once.Do(func() {
+		setting.RegisterSetting("strategies-failover", controller)
+	})
 	return f.IExtenderDriverFactory.Create(profession, name, label, desc, params)
 }

@@ -1,6 +1,7 @@
 package failover_strategy
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/eolinker/apinto/strategy"
@@ -29,8 +30,7 @@ type TriggersConf struct {
 }
 
 type TriggerFailureConf struct {
-	Enabled     bool  `json:"enabled" label:"是否启用"`
-	StatusCodes []int `json:"status_codes,omitempty" label:"触发状态码列表"`
+	Enabled bool `json:"enabled" label:"是否启用"`
 }
 
 type TriggerTimeoutConf struct {
@@ -39,9 +39,45 @@ type TriggerTimeoutConf struct {
 }
 
 type ProviderConf struct {
-	Name   string                 `json:"name" label:"供应商名称"`
-	Config map[string]interface{} `json:"config" label:"供应商配置"`
-	Model  string                 `json:"model,omitempty" label:"模型名称"`
+	Name   string      `json:"name" label:"供应商名称"`
+	Config *BaseConfig `json:"config" label:"供应商配置"`
+}
+
+type BaseConfig struct {
+	BaseUrl string `json:"base_url"`
+	APIKey  string `json:"apikey"`
+}
+
+func (b *BaseConfig) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		BaseUrl1 string `json:"base_url"`
+		BaseUrl2 string `json:"baseUrl"`
+		APIKey1  string `json:"apikey"`
+		APIKey2  string `json:"api_key"`
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	if aux.BaseUrl1 != "" {
+		b.BaseUrl = aux.BaseUrl1
+	} else {
+		b.BaseUrl = aux.BaseUrl2
+	}
+	if aux.APIKey1 != "" {
+		b.APIKey = aux.APIKey1
+	} else {
+		b.APIKey = aux.APIKey2
+	}
+	return nil
+}
+
+func (b BaseConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]string{
+		"base_url": b.BaseUrl,
+		"baseUrl":  b.BaseUrl,
+		"apikey":   b.APIKey,
+		"api_key":  b.APIKey,
+	})
 }
 
 func checkConfig(conf *Config) error {
@@ -49,11 +85,6 @@ func checkConfig(conf *Config) error {
 		conf.Priority = 1
 	} else if conf.Priority > 999 {
 		return fmt.Errorf("priority value %d not allowed, must be between 1 and 999", conf.Priority)
-	}
-
-	_, err := strategy.ParseFilter(conf.Filters)
-	if err != nil {
-		return fmt.Errorf("parse filters error: %w", err)
 	}
 
 	if conf.TriggerType == "" {
