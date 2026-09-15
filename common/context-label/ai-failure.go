@@ -24,3 +24,9 @@ func IsAIFailure(ctx eocontext.EoContext) bool {
 func HasAIFailureLabel(ctx eocontext.EoContext) bool {
 	return ctx.GetLabel(LabelAIFailure) != ""
 }
+
+// ClearAIFailure 清除上下文中的 AI 失败标签
+func ClearAIFailure(ctx eocontext.EoContext) {
+	ctx.SetLabel(LabelAIFailure, "")
+}
+

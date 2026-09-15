@@ -974,3 +974,108 @@ func TestAIProxy_ChineseHeaderEncoding(t *testing.T) {
 		t.Fatalf("expected ascii to stay unchanged, got %s", encodeHeaderValue(asciiProvider))
 	}
 }
+
+func TestAIProxy_FailureStatusCode401And403(t *testing.T) {
+	backupProvider1 := "status-backup-1"
+	backupProvider2 := "status-backup-2"
+
+	var backup1Called, backup2Called bool
+
+	exec := &executor{
+		modelType:   ai_convert.ModelTypeOpenAIChat,
+		modelIdFrom: "path",
+		config:      "{}",
+	}
+
+	ai_convert.SetKeyResource(backupProvider1, &mockKeyResource{
+		id: "status-backup-key-1",
+		driver: &mockConverterDriver{
+			provider:  backupProvider1,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+			requestConvertFn: func(ctx eocontext.EoContext, extender map[string]interface{}) error {
+				backup1Called = true
+				return nil
+			},
+		},
+	})
+	defer ai_convert.DelKeyResource(backupProvider1, "status-backup-key-1")
+
+	ai_convert.SetKeyResource(backupProvider2, &mockKeyResource{
+		id: "status-backup-key-2",
+		driver: &mockConverterDriver{
+			provider:  backupProvider2,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+			requestConvertFn: func(ctx eocontext.EoContext, extender map[string]interface{}) error {
+				backup2Called = true
+				return nil
+			},
+		},
+	})
+	defer ai_convert.DelKeyResource(backupProvider2, "status-backup-key-2")
+
+	cfg := &failover_strategy.Config{
+		Name:     "status-failover-strat",
+		Priority: 10,
+		Triggers: failover_strategy.TriggersConf{
+			Failure: failover_strategy.TriggerFailureConf{
+				Enabled: true,
+			},
+		},
+		Filters: map[string][]string{
+			"provider": {"status-primary"},
+		},
+		Providers: []*failover_strategy.ProviderConf{
+			{Name: backupProvider1},
+			{Name: backupProvider2},
+		},
+	}
+	handler, err := failover_strategy.NewHandler(cfg)
+	if err != nil {
+		t.Fatalf("create handler error: %v", err)
+	}
+
+	failover_strategy.SetStrategy(handler.Name(), handler, cfg.Filters)
+	defer failover_strategy.DelStrategy(handler.Name())
+
+	// 测试：Primary 返回 401 Unauthorized，Backup 1 返回 403 Forbidden，应继续灾备重试到 Backup 2 成功 (200)
+	chain := &mockChain{
+		fn: func(c eocontext.EoContext) error {
+			httpCtx := c.(http_service.IHttpContext)
+			currProvider := ai_convert.GetAIProvider(httpCtx)
+			if currProvider == "status-primary" {
+				httpCtx.Response().SetStatus(http.StatusUnauthorized, "Unauthorized")
+				httpCtx.Response().SetBody([]byte(`{"error":"invalid_api_key"}`))
+				return nil
+			}
+			if currProvider == backupProvider1 {
+				httpCtx.Response().SetStatus(http.StatusForbidden, "Forbidden")
+				httpCtx.Response().SetBody([]byte(`{"error":"access_denied"}`))
+				return nil
+			}
+			if currProvider == backupProvider2 {
+				httpCtx.Response().SetStatus(http.StatusOK, "OK")
+				httpCtx.Response().SetBody([]byte(`{"result":"ok"}`))
+				return nil
+			}
+			return nil
+		},
+	}
+
+	ctx := newMockHttpContext("/status-primary/model", nil)
+	err = exec.DoHttpFilter(ctx, chain)
+	if err != nil {
+		t.Fatalf("expected failover to succeed, got error: %v", err)
+	}
+	if !backup1Called {
+		t.Fatalf("expected backup 1 to be called")
+	}
+	if !backup2Called {
+		t.Fatalf("expected backup 2 to be called after backup 1 returned 403")
+	}
+	if ctx.Response().StatusCode() != http.StatusOK {
+		t.Fatalf("expected final status 200, got %d", ctx.Response().StatusCode())
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Provider") != backupProvider2 {
+		t.Fatalf("expected Strategy-Failover-Provider to be %s, got %s", backupProvider2, ctx.Response().GetHeader("Strategy-Failover-Provider"))
+	}
+}

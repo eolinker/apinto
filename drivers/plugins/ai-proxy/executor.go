@@ -427,10 +427,21 @@ func (e *executor) fallback(ctx http_context.IHttpContext, originProxy http_cont
 			continue
 		}
 		providerName := c.Provider()
+		ctx.SetLabel("strategy_failover", handler.Name())
+		ctx.SetLabel("handler", "failover")
+		ctx.SetLabel("failover_provider", key.ID())
+		currModel := ai_convert.GetAIModel(ctx)
+		if currModel == "" {
+			currModel = ctx.GetLabel("model")
+		}
+		if currModel != "" {
+			ctx.SetLabel("failover_model", currModel)
+			ctx.SetLabel("failover_resource", providerName+"/"+currModel)
+		}
 
 		// 重置上下文与响应状态，避免上一轮的错误状态残留
 		context_label.ClearAITimeout(ctx)
-		context_label.SetAIFailure(ctx, false)
+		context_label.ClearAIFailure(ctx)
 		ai_convert.SetAIStatusNormal(ctx)
 		ai_convert.SetAIProvider(ctx, providerName)
 		ctx.Response().SetStatus(http.StatusOK, "OK")
@@ -475,19 +486,7 @@ func (e *executor) fallback(ctx http_context.IHttpContext, originProxy http_cont
 
 		context_label.ClearAITimeout(ctx)
 		context_label.SetAIFailure(ctx, false)
-		ctx.SetLabel("strategy_failover", handler.Name())
-		ctx.SetLabel("handler", "failover")
-		ctx.SetLabel("failover_provider", providerName)
-		currModel := ai_convert.GetAIModel(ctx)
-		if currModel == "" {
-			currModel = ctx.GetLabel("model")
-		}
-		if currModel != "" {
-			ctx.SetLabel("failover_model", currModel)
-			ctx.SetLabel("failover_resource", providerName+"/"+currModel)
-		}
-		ctx.WithValue("failover_strategy", handler.Name())
-		ctx.WithValue("failover_provider", providerName)
+
 		return nil
 	}
 

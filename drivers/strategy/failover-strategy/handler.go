@@ -95,8 +95,8 @@ func NewHandler(cfg *Config) (IHandler, error) {
 			log.Errorf("create converter error: %v", err)
 			continue
 		}
-		keyId := cfg.Name + ":" + cs.Name
-		keys = append(keys, ai_convert.NewKey(keyId, cs.Name, 0, cfg.Priority, cv))
+		//keyId := cfg.Name + ":" + cs.Name
+		keys = append(keys, ai_convert.NewKey(cs.Name, cs.Name, 0, cfg.Priority, cv))
 	}
 
 	h := &Handler{
@@ -250,18 +250,23 @@ func (h *Handler) CheckTriggerCondition(ctx http_service.IHttpContext, err error
 			return true, "failure", fmt.Sprintf("upstream error: %v", err)
 		}
 
-		// 优先检查供应商是否显式设置了失败标签
-		if context_label.HasAIFailureLabel(ctx) {
-			if context_label.IsAIFailure(ctx) {
-				log.Warnf("[failover] strategy %s failure triggered: ai provider failure label is true", h.name)
-				return true, "failure", "ai provider failure label detected"
-			}
-		} else {
-			// 兜底检查：若供应商未配置该 label (为空)，则执行失败兜底检查
-			if fallback, reason := isFailureFallbackWithReason(ctx); fallback {
-				log.Warnf("[failover] strategy %s failure fallback triggered: %s", h.name, reason)
-				return true, "failure", reason
-			}
+		// 2.1 鉴权与权限失败检测：HTTP 401 Unauthorized / 403 Forbidden 直接判定为访问失败
+		statusCode := ctx.Response().StatusCode()
+		if statusCode == http.StatusUnauthorized || statusCode == http.StatusForbidden {
+			log.Warnf("[failover] strategy %s failure triggered: upstream status code %d", h.name, statusCode)
+			return true, "failure", fmt.Sprintf("upstream unauthorized / forbidden (status %d)", statusCode)
+		}
+
+		// 2.2 检查供应商是否显式设置了失败标签
+		if context_label.HasAIFailureLabel(ctx) && context_label.IsAIFailure(ctx) {
+			log.Warnf("[failover] strategy %s failure triggered: ai provider failure label is true", h.name)
+			return true, "failure", "ai provider failure label detected"
+		}
+
+		// 2.3 失败兜底检查（包含 401/403、429、5xx、配额不足、凭证失效等）
+		if fallback, reason := isFailureFallbackWithReason(ctx); fallback {
+			log.Warnf("[failover] strategy %s failure fallback triggered: %s", h.name, reason)
+			return true, "failure", reason
 		}
 	}
 
@@ -276,7 +281,14 @@ func isFailureFallback(ctx http_service.IHttpContext) bool {
 
 // isFailureFallbackWithReason 失败兜底检查及原因提取
 func isFailureFallbackWithReason(ctx http_service.IHttpContext) (bool, string) {
-	// 1. 检查 AI 业务模型状态（ai-convert 已转换的状态）
+	statusCode := ctx.Response().StatusCode()
+
+	// 1. 鉴权与权限失败：HTTP 401 Unauthorized / 403 Forbidden
+	if statusCode == http.StatusUnauthorized || statusCode == http.StatusForbidden {
+		return true, fmt.Sprintf("upstream unauthorized / forbidden (status %d)", statusCode)
+	}
+
+	// 2. 检查 AI 业务模型状态（ai-convert 已转换的状态）
 	aiStatus := ai_convert.GetAIStatus(ctx)
 	switch aiStatus {
 	case ai_convert.StatusQuotaExhausted:
@@ -290,14 +302,8 @@ func isFailureFallbackWithReason(ctx http_service.IHttpContext) (bool, string) {
 	case ai_convert.StatusTimeout:
 		return true, "ai status timeout"
 	case ai_convert.StatusInvalidRequest:
+		// 客户端请求参数非法，不属于上游失败
 		return false, ""
-	}
-
-	statusCode := ctx.Response().StatusCode()
-
-	// 2. 鉴权失败：HTTP 401 Unauthorized / 403 Forbidden
-	if statusCode == http.StatusUnauthorized || statusCode == http.StatusForbidden {
-		return true, fmt.Sprintf("upstream unauthorized / forbidden (status %d)", statusCode)
 	}
 
 	// 3. 上游额度不足 / 请求速率受限：HTTP 429 Too Many Requests
