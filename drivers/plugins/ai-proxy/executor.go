@@ -302,6 +302,32 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 		}
 		if outModel != "" {
 			ctx.Response().SetHeader("X-AI-Model", encodeHeaderValue(outModel))
+			if ctx.GetLabel("failover_model") != "" {
+				ctx.Response().SetHeader("Strategy-Failover-Model", encodeHeaderValue(outModel))
+			}
+		}
+
+		// 如果触发了灾备，在响应头补充触发类型、触发条件、触发原因、原始供应商与模型等详细信息
+		if ctx.GetLabel("failover_provider") != "" {
+			ctx.Response().SetHeader("Strategy-Failover", encodeHeaderValue(handler.Name()))
+			if origProvider := ctx.GetLabel("provider"); origProvider != "" {
+				ctx.Response().SetHeader("Strategy-Failover-Original-Provider", encodeHeaderValue(origProvider))
+			}
+			if origModel := ctx.GetLabel("model"); origModel != "" {
+				ctx.Response().SetHeader("Strategy-Failover-Original-Model", encodeHeaderValue(origModel))
+			}
+			if triggerType := ctx.GetLabel("strategy_failover_trigger_type"); triggerType != "" {
+				ctx.Response().SetHeader("Strategy-Failover-Trigger-Type", encodeHeaderValue(triggerType))
+			}
+			if triggerCondition := ctx.GetLabel("strategy_failover_trigger_condition"); triggerCondition != "" {
+				ctx.Response().SetHeader("Strategy-Failover-Trigger-Condition", encodeHeaderValue(triggerCondition))
+			}
+			if triggerReason := ctx.GetLabel("strategy_failover_trigger_reason"); triggerReason != "" {
+				ctx.Response().SetHeader("Strategy-Failover-Trigger-Reason", encodeHeaderValue(triggerReason))
+			}
+			if failoverKey := ctx.GetLabel("failover_key"); failoverKey != "" {
+				ctx.Response().SetHeader("Strategy-Failover-Key", encodeHeaderValue(failoverKey))
+			}
 		}
 	}()
 
@@ -319,7 +345,20 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 		provider = directProvider
 		ctx.SetLabel("failover_provider", directProvider)
 		ctx.SetLabel("strategy_failover_direct", directProvider)
+		ctx.SetLabel("strategy_failover_trigger_type", "direct")
+		ctx.SetLabel("strategy_failover_trigger_condition", "direct")
+		ctx.SetLabel("strategy_failover_trigger_reason", "direct failover configured")
+
 		ctx.Response().SetHeader("Strategy-Failover-Direct", encodeHeaderValue(directProvider))
+		ctx.Response().SetHeader("Strategy-Failover-Trigger-Type", "direct")
+		ctx.Response().SetHeader("Strategy-Failover-Trigger-Condition", "direct")
+		ctx.Response().SetHeader("Strategy-Failover-Trigger-Reason", encodeHeaderValue("direct failover configured"))
+
+		if directKey != nil {
+			ctx.SetLabel("failover_key", directKey.ID())
+			ctx.Response().SetHeader("Strategy-Failover-Key", encodeHeaderValue(directKey.ID()))
+		}
+
 		ai_convert.SetAIProvider(ctx, directProvider)
 		currModel := ai_convert.GetAIModel(ctx)
 		if currModel == "" {
@@ -368,9 +407,11 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 	ctx.WithValue("is_block", true)
 	ctx.SetLabel("handler", "failover")
 	ctx.SetLabel("strategy_failover", handler.Name())
+	ctx.SetLabel("strategy_failover_trigger_type", "conditional")
 	ctx.SetLabel("strategy_failover_trigger_condition", condition)
 	ctx.SetLabel("strategy_failover_trigger_reason", reason)
 	ctx.Response().SetHeader("Strategy-Failover", encodeHeaderValue(handler.Name()))
+	ctx.Response().SetHeader("Strategy-Failover-Trigger-Type", "conditional")
 	ctx.Response().SetHeader("Strategy-Failover-Trigger-Condition", encodeHeaderValue(condition))
 	ctx.Response().SetHeader("Strategy-Failover-Trigger-Reason", encodeHeaderValue(reason))
 
@@ -429,7 +470,8 @@ func (e *executor) fallback(ctx http_context.IHttpContext, originProxy http_cont
 		providerName := c.Provider()
 		ctx.SetLabel("strategy_failover", handler.Name())
 		ctx.SetLabel("handler", "failover")
-		ctx.SetLabel("failover_provider", key.ID())
+		ctx.SetLabel("failover_provider", providerName)
+		ctx.SetLabel("failover_key", key.ID())
 		currModel := ai_convert.GetAIModel(ctx)
 		if currModel == "" {
 			currModel = ctx.GetLabel("model")

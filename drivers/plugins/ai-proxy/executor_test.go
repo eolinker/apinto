@@ -142,6 +142,18 @@ func TestAIProxy_DirectFailover(t *testing.T) {
 	if ctx.Response().GetHeader("Strategy-Failover") != "direct-failover-strat" {
 		t.Fatalf("expected Strategy-Failover header, got %s", ctx.Response().GetHeader("Strategy-Failover"))
 	}
+	if ctx.Response().GetHeader("Strategy-Failover-Trigger-Type") != "direct" {
+		t.Fatalf("expected Strategy-Failover-Trigger-Type header direct, got %s", ctx.Response().GetHeader("Strategy-Failover-Trigger-Type"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Trigger-Condition") != "direct" {
+		t.Fatalf("expected Strategy-Failover-Trigger-Condition header direct, got %s", ctx.Response().GetHeader("Strategy-Failover-Trigger-Condition"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Provider") != backupProvider {
+		t.Fatalf("expected Strategy-Failover-Provider header %s, got %s", backupProvider, ctx.Response().GetHeader("Strategy-Failover-Provider"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Original-Provider") != "failing-ai" {
+		t.Fatalf("expected Strategy-Failover-Original-Provider header failing-ai, got %s", ctx.Response().GetHeader("Strategy-Failover-Original-Provider"))
+	}
 	if ctx.Response().GetHeader("X-AI-Provider") != backupProvider {
 		t.Fatalf("expected X-AI-Provider header %s, got %s", backupProvider, ctx.Response().GetHeader("X-AI-Provider"))
 	}
@@ -220,6 +232,18 @@ func TestAIProxy_ConditionFailover(t *testing.T) {
 	}
 	if ctx.Response().GetHeader("Strategy-Failover") != "cond-failover-strat" {
 		t.Fatalf("expected Strategy-Failover header, got %s", ctx.Response().GetHeader("Strategy-Failover"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Trigger-Type") != "conditional" {
+		t.Fatalf("expected Strategy-Failover-Trigger-Type header conditional, got %s", ctx.Response().GetHeader("Strategy-Failover-Trigger-Type"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Trigger-Condition") != "failure" {
+		t.Fatalf("expected Strategy-Failover-Trigger-Condition header failure, got %s", ctx.Response().GetHeader("Strategy-Failover-Trigger-Condition"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Provider") != backupProvider {
+		t.Fatalf("expected Strategy-Failover-Provider header %s, got %s", backupProvider, ctx.Response().GetHeader("Strategy-Failover-Provider"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Original-Provider") != "primary-cond" {
+		t.Fatalf("expected Strategy-Failover-Original-Provider header primary-cond, got %s", ctx.Response().GetHeader("Strategy-Failover-Original-Provider"))
 	}
 	if ctx.Response().GetHeader("X-AI-Provider") != backupProvider {
 		t.Fatalf("expected X-AI-Provider header %s, got %s", backupProvider, ctx.Response().GetHeader("X-AI-Provider"))
@@ -571,11 +595,17 @@ func TestAIProxy_DirectAndConditionFailover(t *testing.T) {
 	if ctx.Response().GetHeader("Strategy-Failover-Direct") != directProvider {
 		t.Fatalf("expected Strategy-Failover-Direct header %s, got %s", directProvider, ctx.Response().GetHeader("Strategy-Failover-Direct"))
 	}
-	if ctx.Response().GetHeader("Strategy-Failover-Provider") != fallbackProvider {
-		t.Fatalf("expected Strategy-Failover-Provider header %s, got %s", fallbackProvider, ctx.Response().GetHeader("Strategy-Failover-Provider"))
+	if ctx.Response().GetHeader("Strategy-Failover-Trigger-Type") != "conditional" {
+		t.Fatalf("expected Strategy-Failover-Trigger-Type header conditional, got %s", ctx.Response().GetHeader("Strategy-Failover-Trigger-Type"))
 	}
 	if ctx.Response().GetHeader("Strategy-Failover-Trigger-Condition") != "failure" {
 		t.Fatalf("expected Strategy-Failover-Trigger-Condition header failure, got %s", ctx.Response().GetHeader("Strategy-Failover-Trigger-Condition"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Original-Provider") != "origin-ai" {
+		t.Fatalf("expected Strategy-Failover-Original-Provider header origin-ai, got %s", ctx.Response().GetHeader("Strategy-Failover-Original-Provider"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Provider") != fallbackProvider {
+		t.Fatalf("expected Strategy-Failover-Provider header %s, got %s", fallbackProvider, ctx.Response().GetHeader("Strategy-Failover-Provider"))
 	}
 	if ctx.Response().GetHeader("X-AI-Provider") != fallbackProvider {
 		t.Fatalf("expected X-AI-Provider header %s, got %s", fallbackProvider, ctx.Response().GetHeader("X-AI-Provider"))
@@ -1077,5 +1107,77 @@ func TestAIProxy_FailureStatusCode401And403(t *testing.T) {
 	}
 	if ctx.Response().GetHeader("Strategy-Failover-Provider") != backupProvider2 {
 		t.Fatalf("expected Strategy-Failover-Provider to be %s, got %s", backupProvider2, ctx.Response().GetHeader("Strategy-Failover-Provider"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Trigger-Type") != "conditional" {
+		t.Fatalf("expected Strategy-Failover-Trigger-Type to be conditional, got %s", ctx.Response().GetHeader("Strategy-Failover-Trigger-Type"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Trigger-Condition") != "failure" {
+		t.Fatalf("expected Strategy-Failover-Trigger-Condition to be failure, got %s", ctx.Response().GetHeader("Strategy-Failover-Trigger-Condition"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Original-Provider") != "status-primary" {
+		t.Fatalf("expected Strategy-Failover-Original-Provider to be status-primary, got %s", ctx.Response().GetHeader("Strategy-Failover-Original-Provider"))
+	}
+}
+
+func TestAIProxy_FailoverNoTriggerNoHeaders(t *testing.T) {
+	exec := &executor{
+		modelType:   ai_convert.ModelTypeOpenAIChat,
+		modelIdFrom: "path",
+		config:      "{}",
+	}
+
+	backupProvider := "unused-backup"
+	ai_convert.SetKeyResource(backupProvider, &mockKeyResource{
+		id: "unused-backup-key",
+		driver: &mockConverterDriver{
+			provider:  backupProvider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+		},
+	})
+	defer ai_convert.DelKeyResource(backupProvider, "unused-backup-key")
+
+	cfg := &failover_strategy.Config{
+		Name:     "normal-strat",
+		Priority: 1,
+		Triggers: failover_strategy.TriggersConf{
+			Failure: failover_strategy.TriggerFailureConf{
+				Enabled: true,
+			},
+		},
+		Filters: map[string][]string{
+			"provider": {"normal-primary"},
+		},
+		Providers: []*failover_strategy.ProviderConf{
+			{Name: backupProvider},
+		},
+	}
+	handler, err := failover_strategy.NewHandler(cfg)
+	if err != nil {
+		t.Fatalf("create handler error: %v", err)
+	}
+
+	failover_strategy.SetStrategy(handler.Name(), handler, cfg.Filters)
+	defer failover_strategy.DelStrategy(handler.Name())
+
+	chain := &mockChain{
+		fn: func(c eocontext.EoContext) error {
+			httpCtx := c.(http_service.IHttpContext)
+			httpCtx.Response().SetStatus(http.StatusOK, "OK")
+			return nil
+		},
+	}
+
+	ctx := newMockHttpContext("/normal-primary/model-1", nil)
+	err = exec.DoHttpFilter(ctx, chain)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// 正常未触发灾备，不应存在灾备触发类型和灾备生效供应商等头
+	if triggerType := ctx.Response().GetHeader("Strategy-Failover-Trigger-Type"); triggerType != "" {
+		t.Fatalf("expected no Strategy-Failover-Trigger-Type when failover not triggered, got %s", triggerType)
+	}
+	if failoverProv := ctx.Response().GetHeader("Strategy-Failover-Provider"); failoverProv != "" {
+		t.Fatalf("expected no Strategy-Failover-Provider when failover not triggered, got %s", failoverProv)
 	}
 }
