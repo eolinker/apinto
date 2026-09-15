@@ -2,6 +2,7 @@ package context_label
 
 import (
 	"errors"
+	"time"
 
 	"github.com/eolinker/eosc/eocontext"
 )
@@ -9,6 +10,7 @@ import (
 const (
 	LabelAITimeout      = "ai_timeout"
 	LabelAITimeoutError = "ai_timeout_error"
+	LabelUpstreamCost   = "upstream_cost"
 )
 
 var (
@@ -68,3 +70,19 @@ func GetAITimeoutError(ctx eocontext.EoContext) error {
 	}
 	return nil
 }
+
+// SetUpstreamCost 设置网关向上游请求的真实网络耗时
+func SetUpstreamCost(ctx eocontext.EoContext, cost time.Duration) {
+	ctx.WithValue(LabelUpstreamCost, cost)
+}
+
+// GetUpstreamCost 获取网关向上游请求的真实网络耗时
+func GetUpstreamCost(ctx eocontext.EoContext) (time.Duration, bool) {
+	if v := ctx.Value(LabelUpstreamCost); v != nil {
+		if cost, ok := v.(time.Duration); ok {
+			return cost, true
+		}
+	}
+	return 0, false
+}
+

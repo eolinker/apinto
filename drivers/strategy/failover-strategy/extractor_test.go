@@ -66,7 +66,7 @@ func TestBaseConfig_Serialization(t *testing.T) {
 	}
 }
 
-func TestExtractor_ExactAndFallback(t *testing.T) {
+func TestExtractor_ExactAndGlobal(t *testing.T) {
 	ext := NewExtractor("provider")
 
 	h1, _ := NewHandler(&Config{
@@ -74,39 +74,50 @@ func TestExtractor_ExactAndFallback(t *testing.T) {
 		Priority: 10,
 	})
 	h2, _ := NewHandler(&Config{
-		Name:     "strat-wildcard",
+		Name:     "strat-exact-anthropic",
 		Priority: 5,
 	})
 
-	// 注册精确值与通配符
+	// 注册精确值
 	ext.Set("strat-1", []string{"openai"}, []IHandler{h1})
-	ext.Set("strat-2", []string{"*"}, []IHandler{h2})
+	ext.Set("strat-2", []string{"anthropic"}, []IHandler{h2})
 
-	// 1. 访问 openai: 命中精确值 h1 和通配符兜底 h2
+	// 1. 访问 openai: 仅命中精确值 h1
 	ctx1 := newMockEoContext(map[string]string{"provider": "openai"})
 	handlers, ok := ext.Get(ctx1)
-	if !ok || len(handlers) != 2 {
-		t.Fatalf("expected 2 handlers, got %d (ok=%v)", len(handlers), ok)
+	if !ok || len(handlers) != 1 {
+		t.Fatalf("expected 1 handler, got %d (ok=%v)", len(handlers), ok)
 	}
-	if handlers[0].Name() != "strat-exact-openai" || handlers[1].Name() != "strat-wildcard" {
-		t.Fatalf("unexpected handlers order: %+v", handlers)
+	if handlers[0].Name() != "strat-exact-openai" {
+		t.Fatalf("unexpected handler: %+v", handlers[0].Name())
 	}
 
-	// 2. 访问 claude: 未命中精确值，仅命中通配符兜底 h2
+	// 2. 访问 claude: 未命中任何精确值
 	ctx2 := newMockEoContext(map[string]string{"provider": "claude"})
 	handlers2, ok := ext.Get(ctx2)
-	if !ok || len(handlers2) != 1 {
-		t.Fatalf("expected 1 fallback handler, got %d", len(handlers2))
-	}
-	if handlers2[0].Name() != "strat-wildcard" {
-		t.Fatalf("expected strat-wildcard, got %s", handlers2[0].Name())
+	if ok || len(handlers2) != 0 {
+		t.Fatalf("expected no handler, got %d (ok=%v)", len(handlers2), ok)
 	}
 
-	// 3. 删除 strat-1: openai 精确索引被清理，只能命中通配符
+	// 3. 删除 strat-1: openai 精确索引被清理
 	ext.Del("strat-1")
 	handlersAfterDel, ok := ext.Get(ctx1)
-	if !ok || len(handlersAfterDel) != 1 || handlersAfterDel[0].Name() != "strat-wildcard" {
-		t.Fatalf("expected only fallback handler after del, got %+v", handlersAfterDel)
+	if ok || len(handlersAfterDel) != 0 {
+		t.Fatalf("expected no handler after del, got %+v", handlersAfterDel)
+	}
+
+	// 4. 测试全局通用 Extractor (name == "")
+	globalExt := NewExtractor("")
+	hGlobal, _ := NewHandler(&Config{
+		Name:     "strat-global",
+		Priority: 1,
+	})
+	globalExt.Set("strat-global", nil, []IHandler{hGlobal})
+
+	ctxAny := newMockEoContext(map[string]string{"provider": "any-unknown"})
+	gHandlers, ok := globalExt.Get(ctxAny)
+	if !ok || len(gHandlers) != 1 || gHandlers[0].Name() != "strat-global" {
+		t.Fatalf("expected global handler, got %+v (ok=%v)", gHandlers, ok)
 	}
 }
 

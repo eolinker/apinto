@@ -11,9 +11,11 @@ import (
 	"github.com/eolinker/apinto/entries/ctx_key"
 	"github.com/eolinker/apinto/entries/router"
 
+	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
+	"github.com/valyala/fasthttp"
 )
 
 var (
@@ -64,12 +66,11 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 
 	timeoutValue := ctx.Value(ctx_key.CtxKeyTimeout)
 	timeout, ok := timeoutValue.(time.Duration)
-	if !ok {
-		timeout = router.DefaultTimeout
-	}
-	balanceTimeout := balance.TimeOut()
-	if balanceTimeout == 0 {
-		balanceTimeout = timeout
+	if !ok || timeout <= 0 {
+		timeout = balance.TimeOut()
+		if timeout == 0 {
+			timeout = router.DefaultTimeout
+		}
 	}
 	var lastErr error
 	for index := 0; index <= retry; index++ {
@@ -84,13 +85,16 @@ func (h *HttpComplete) Complete(org eocontext.EoContext) error {
 			ctx.Response().SetBody([]byte(err.Error()))
 			return err
 		}
-		lastErr = ctx.SendTo(scheme, node, balanceTimeout)
+		lastErr = ctx.SendTo(scheme, node, timeout)
 		ctx.WithValue("retry", index)
 		if lastErr == nil {
 			return nil
 		}
 		node.Down()
 		log.Error("http upstream send error: ", lastErr)
+		if errors.Is(lastErr, fasthttp.ErrTimeout) || context_label.IsAITimeout(ctx) {
+			return lastErr
+		}
 	}
 
 	return lastErr

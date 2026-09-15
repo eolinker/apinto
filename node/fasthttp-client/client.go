@@ -212,8 +212,8 @@ func (c *Client) ProxyTimeout(addr string, host string, req *fasthttp.Request, r
 		return err
 	}
 	request.URI().SetScheme(scheme)
-
 	return client.DoTimeout(req, resp, timeout)
+	return err
 
 }
 

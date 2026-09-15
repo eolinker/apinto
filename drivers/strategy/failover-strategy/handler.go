@@ -6,12 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	ai_convert "github.com/eolinker/apinto/ai-convert"
 	context_label "github.com/eolinker/apinto/common/context-label"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
+	"github.com/valyala/fasthttp"
 )
 
 type IHandler interface {
@@ -194,6 +196,10 @@ func (h *Handler) IsTriggerCondition(ctx http_service.IHttpContext, err error, c
 func (h *Handler) CheckTriggerCondition(ctx http_service.IHttpContext, err error, cost time.Duration) (bool, string, string) {
 	// 1. 超时触发检查
 	if h.triggers.Timeout.Enabled {
+		// 优先从上下文获取网关向上游发起请求的真实耗时（从 client.DoTimeout 开始计时）
+		if upstreamCost, ok := context_label.GetUpstreamCost(ctx); ok {
+			cost = upstreamCost
+		}
 		// 优先检查上下文中是否显式设置了超时标签或错误
 		if context_label.IsAITimeout(ctx) {
 			log.Warnf("[failover] strategy %s timeout triggered: ai timeout label detected", h.name)
@@ -202,6 +208,10 @@ func (h *Handler) CheckTriggerCondition(ctx http_service.IHttpContext, err error
 		if errors.Is(err, context_label.ErrAITimeout) {
 			log.Warnf("[failover] strategy %s timeout triggered: ai timeout error detected", h.name)
 			return true, "timeout", "ai timeout error detected"
+		}
+		if errors.Is(err, fasthttp.ErrTimeout) || (err != nil && strings.Contains(strings.ToLower(err.Error()), "timeout")) {
+			log.Warnf("[failover] strategy %s timeout triggered: timeout error detected: %v", h.name, err)
+			return true, "timeout", fmt.Sprintf("timeout error: %v", err)
 		}
 		if timeoutErr := context_label.GetAITimeoutError(ctx); timeoutErr != nil {
 			log.Warnf("[failover] strategy %s timeout triggered: %v", h.name, timeoutErr)
@@ -231,7 +241,7 @@ func (h *Handler) CheckTriggerCondition(ctx http_service.IHttpContext, err error
 	// 指平台与上游供应商之间的调用失败（包括上游鉴权失败、连接上游网络异常、上游服务器5xx错误、上游额度不足等情况，不包含客户端业务报错）。
 	if h.triggers.Failure.Enabled {
 		// 若当前中断或错误是超时导致的，属于超时触发范畴；若超时规则未启用，则不应被失败触发器误触发
-		if context_label.IsAITimeout(ctx) || errors.Is(err, context_label.ErrAITimeout) || context_label.GetAITimeoutError(ctx) != nil {
+		if context_label.IsAITimeout(ctx) || errors.Is(err, context_label.ErrAITimeout) || errors.Is(err, fasthttp.ErrTimeout) || context_label.GetAITimeoutError(ctx) != nil || (err != nil && strings.Contains(strings.ToLower(err.Error()), "timeout")) {
 			return false, "", ""
 		}
 

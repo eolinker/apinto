@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -13,6 +14,7 @@ import (
 	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/drivers"
 	failover_strategy "github.com/eolinker/apinto/drivers/strategy/failover-strategy"
+	"github.com/eolinker/apinto/entries/ctx_key"
 	"github.com/eolinker/apinto/resources"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
 	"github.com/eolinker/eosc"
@@ -22,6 +24,7 @@ import (
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
 	"github.com/redis/go-redis/v9"
+	"github.com/valyala/fasthttp"
 )
 
 var _ eocontext.IFilter = (*executor)(nil)
@@ -210,7 +213,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			}
 		}
 		if outProvider != "" {
-			ctx.Response().SetHeader("X-AI-Provider", outProvider)
+			ctx.Response().SetHeader("X-AI-Provider", encodeHeaderValue(outProvider))
 		}
 
 		outModel := ctx.GetLabel("failover_model")
@@ -221,7 +224,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			}
 		}
 		if outModel != "" {
-			ctx.Response().SetHeader("X-AI-Model", outModel)
+			ctx.Response().SetHeader("X-AI-Model", encodeHeaderValue(outModel))
 		}
 	}()
 
@@ -274,7 +277,7 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 	}
 
 	defer func() {
-		ctx.Response().SetHeader("x-failover-strategy", handler.Name())
+		ctx.Response().SetHeader("x-failover-strategy", encodeHeaderValue(handler.Name()))
 		// 成功时在响应头中设置 Provider 和 Model（优先使用灾备切换后的供应商/模型，若未发生灾备则使用原始值）
 		outProvider := ctx.GetLabel("failover_provider")
 		if outProvider == "" {
@@ -284,9 +287,9 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 			}
 		}
 		if outProvider != "" {
-			ctx.Response().SetHeader("X-AI-Provider", outProvider)
+			ctx.Response().SetHeader("X-AI-Provider", encodeHeaderValue(outProvider))
 			if ctx.GetLabel("failover_provider") != "" {
-				ctx.Response().SetHeader("Strategy-Failover-Provider", outProvider)
+				ctx.Response().SetHeader("Strategy-Failover-Provider", encodeHeaderValue(outProvider))
 			}
 		}
 
@@ -298,13 +301,13 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 			}
 		}
 		if outModel != "" {
-			ctx.Response().SetHeader("X-AI-Model", outModel)
+			ctx.Response().SetHeader("X-AI-Model", encodeHeaderValue(outModel))
 		}
 	}()
 
 	// 1. 先判断是否直接切换，若直接切换，则将上游改成直接切换
 	ctx.SetLabel("strategy_failover", handler.Name())
-	ctx.Response().SetHeader("Strategy-Failover", handler.Name())
+	ctx.Response().SetHeader("Strategy-Failover", encodeHeaderValue(handler.Name()))
 
 	provider := ctx.GetLabel("provider")
 	if provider == "" {
@@ -316,7 +319,7 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 		provider = directProvider
 		ctx.SetLabel("failover_provider", directProvider)
 		ctx.SetLabel("strategy_failover_direct", directProvider)
-		ctx.Response().SetHeader("Strategy-Failover-Direct", directProvider)
+		ctx.Response().SetHeader("Strategy-Failover-Direct", encodeHeaderValue(directProvider))
 		ai_convert.SetAIProvider(ctx, directProvider)
 		currModel := ai_convert.GetAIModel(ctx)
 		if currModel == "" {
@@ -330,6 +333,9 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 
 	// 2. 向上游发起请求（包含超时控制与中断处理）
 	timeoutDuration := handler.TimeoutDuration()
+	if timeoutDuration > 0 {
+		ctx.WithValue(ctx_key.CtxKeyTimeout, timeoutDuration)
+	}
 	start := time.Now()
 	err, isTimeout := e.doProcessKeyWithTimeout(ctx, provider, directKey, cloneProxy, next, timeoutDuration)
 	cost := time.Since(start)
@@ -364,9 +370,9 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 	ctx.SetLabel("strategy_failover", handler.Name())
 	ctx.SetLabel("strategy_failover_trigger_condition", condition)
 	ctx.SetLabel("strategy_failover_trigger_reason", reason)
-	ctx.Response().SetHeader("Strategy-Failover", handler.Name())
-	ctx.Response().SetHeader("Strategy-Failover-Trigger-Condition", condition)
-	ctx.Response().SetHeader("Strategy-Failover-Trigger-Reason", reason)
+	ctx.Response().SetHeader("Strategy-Failover", encodeHeaderValue(handler.Name()))
+	ctx.Response().SetHeader("Strategy-Failover-Trigger-Condition", encodeHeaderValue(condition))
+	ctx.Response().SetHeader("Strategy-Failover-Trigger-Reason", encodeHeaderValue(reason))
 
 	return e.fallback(ctx, cloneProxy, next, handler)
 }
@@ -374,7 +380,7 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 func (e *executor) doProcessKeyWithTimeout(ctx http_context.IHttpContext, provider string, key ai_convert.IKeyResource, cloneProxy http_context.IRequest, next eocontext.IChain, timeout time.Duration) (error, bool) {
 	err := e.processKeyResource(ctx, provider, key, cloneProxy, next, timeout)
 	if err != nil || context_label.IsAITimeout(ctx) || ctx.Response().StatusCode() == http.StatusGatewayTimeout {
-		if errors.Is(err, context_label.ErrAITimeout) || context_label.IsAITimeout(ctx) || ctx.Response().StatusCode() == http.StatusGatewayTimeout {
+		if errors.Is(err, context_label.ErrAITimeout) || errors.Is(err, fasthttp.ErrTimeout) || errors.Is(err, context.DeadlineExceeded) || context_label.IsAITimeout(ctx) || ctx.Response().StatusCode() == http.StatusGatewayTimeout || (err != nil && strings.Contains(strings.ToLower(err.Error()), "timeout")) {
 			return err, true
 		}
 		return err, false
@@ -397,44 +403,17 @@ func (e *executor) interruptTimeout(ctx http_context.IHttpContext, timeoutErr er
 	ai_convert.SetAIStatusTimeout(ctx)
 }
 
-// doChainWithTimeout 在时限内执行链路，超时主动中断
+// doChainWithTimeout 执行链路，超时由 complete.go 及底层 client.DoTimeout 控制，若超时主动中断
 func (e *executor) doChainWithTimeout(ctx http_context.IHttpContext, next eocontext.IChain, timeout time.Duration) (err error, isTimeout bool) {
 	if next == nil {
 		return nil, false
 	}
-	if timeout <= 0 {
-		err = next.DoChain(ctx)
-		if ctx.Response().StatusCode() == http.StatusGatewayTimeout || errors.Is(err, context_label.ErrAITimeout) || errors.Is(err, context.DeadlineExceeded) {
-			e.interruptTimeout(ctx, err)
-			return err, true
-		}
-		return err, false
+	err = next.DoChain(ctx)
+	if ctx.Response().StatusCode() == http.StatusGatewayTimeout || errors.Is(err, context_label.ErrAITimeout) || errors.Is(err, fasthttp.ErrTimeout) || errors.Is(err, context.DeadlineExceeded) || context_label.IsAITimeout(ctx) || (err != nil && strings.Contains(strings.ToLower(err.Error()), "timeout")) {
+		e.interruptTimeout(ctx, err)
+		return err, true
 	}
-
-	done := make(chan error, 1)
-	go func() {
-		var chainErr error
-		defer func() {
-			if r := recover(); r != nil {
-				log.Errorf("[ai-proxy] doChain panic: %v", r)
-				done <- fmt.Errorf("panic: %v", r)
-			}
-		}()
-		chainErr = next.DoChain(ctx)
-		done <- chainErr
-	}()
-
-	select {
-	case err = <-done:
-		if ctx.Response().StatusCode() == http.StatusGatewayTimeout || errors.Is(err, context_label.ErrAITimeout) || errors.Is(err, context.DeadlineExceeded) {
-			e.interruptTimeout(ctx, err)
-			return err, true
-		}
-		return err, false
-	case <-time.After(timeout):
-		e.interruptTimeout(ctx, context_label.ErrAITimeout)
-		return context_label.ErrAITimeout, true
-	}
+	return err, false
 }
 
 // fallback 执行策略配置供应商顺序重试，灾备供应商也遵循触发条件，若符合触发条件则切换到下一个供应商
@@ -457,6 +436,9 @@ func (e *executor) fallback(ctx http_context.IHttpContext, originProxy http_cont
 		ctx.Response().SetStatus(http.StatusOK, "OK")
 		ctx.Response().SetBody(nil)
 
+		if timeout > 0 {
+			ctx.WithValue(ctx_key.CtxKeyTimeout, timeout)
+		}
 		start := time.Now()
 		err, isTimeout := e.doProcessKeyWithTimeout(ctx, providerName, key, originProxy, next, timeout)
 		cost := time.Since(start)
@@ -725,6 +707,16 @@ func (e *executor) Start() error {
 func (e *executor) Reset(conf interface{}, workers map[eosc.RequireId]eosc.IWorker) error {
 	cfg := conf.(*Config)
 	return e.reset(cfg)
+}
+
+// encodeHeaderValue 若字符串包含非 ASCII 字符，执行 URL 转义，避免 HTTP 响应头在客户端解析时产生 Latin1 乱码
+func encodeHeaderValue(val string) string {
+	for i := 0; i < len(val); i++ {
+		if val[i] > 127 || val[i] < 32 {
+			return url.QueryEscape(val)
+		}
+	}
+	return val
 }
 
 func (e *executor) reset(cfg *Config) error {

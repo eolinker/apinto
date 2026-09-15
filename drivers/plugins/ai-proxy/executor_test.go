@@ -4,12 +4,15 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 
 	ai_convert "github.com/eolinker/apinto/ai-convert"
 	context_label "github.com/eolinker/apinto/common/context-label"
 	failover_strategy "github.com/eolinker/apinto/drivers/strategy/failover-strategy"
+	"github.com/eolinker/apinto/entries/ctx_key"
 	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -764,5 +767,210 @@ func TestAIProxy_AllFallbackProvidersTriggerFailure(t *testing.T) {
 
 	if !fb1Called || !fb2Called {
 		t.Fatalf("expected all fallback providers to have been attempted (fb1: %v, fb2: %v)", fb1Called, fb2Called)
+	}
+}
+
+func TestAIProxy_UpstreamTimingBaseline(t *testing.T) {
+	exec := &executor{
+		modelType:   ai_convert.ModelTypeOpenAIChat,
+		modelIdFrom: "path",
+		config:      "{}",
+	}
+
+	backupProvider := "upstream-timed-backup"
+	backupCalled := false
+
+	ai_convert.SetKeyResource(backupProvider, &mockKeyResource{
+		id: "upstream-backup-key",
+		driver: &mockConverterDriver{
+			provider:  backupProvider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+			requestConvertFn: func(ctx eocontext.EoContext, extender map[string]interface{}) error {
+				backupCalled = true
+				return nil
+			},
+		},
+	})
+	defer ai_convert.DelKeyResource(backupProvider, "upstream-backup-key")
+
+	cfg := &failover_strategy.Config{
+		Name:     "upstream-time-strat",
+		Priority: 1,
+		Triggers: failover_strategy.TriggersConf{
+			Timeout: failover_strategy.TriggerTimeoutConf{
+				Enabled:        true,
+				TimeoutSeconds: 1, // 1秒超时
+			},
+		},
+		Filters: map[string][]string{
+			"provider": {"upstream-time-primary"},
+		},
+		Providers: []*failover_strategy.ProviderConf{
+			{Name: backupProvider},
+		},
+	}
+	handler, err := failover_strategy.NewHandler(cfg)
+	if err != nil {
+		t.Fatalf("create handler error: %v", err)
+	}
+
+	failover_strategy.SetStrategy(handler.Name(), handler, cfg.Filters)
+	defer failover_strategy.DelStrategy(handler.Name())
+
+	// 测试：上游真实耗时仅 100ms，未超 1s，不触发超时灾备
+	chainNoTimeout := &mockChain{
+		fn: func(c eocontext.EoContext) error {
+			ctx := c.(http_service.IHttpContext)
+			// 设置真实上游网络耗时为 100ms
+			context_label.SetUpstreamCost(ctx, 100*time.Millisecond)
+			ctx.Response().SetStatus(200, "OK")
+			return nil
+		},
+	}
+
+	ctxNoTimeout := newMockHttpContext("/upstream-time-primary/model", nil)
+	err = exec.DoHttpFilter(ctxNoTimeout, chainNoTimeout)
+	if err != nil {
+		t.Fatalf("expected success, got error: %v", err)
+	}
+	if backupCalled {
+		t.Fatalf("upstream cost 100ms should NOT trigger timeout failover")
+	}
+
+	// 测试：上游真实耗时 1200ms，超过 1s，触发超时灾备
+	chainTimeout := &mockChain{
+		fn: func(c eocontext.EoContext) error {
+			ctx := c.(http_service.IHttpContext)
+			// 第一次调用设置上游网络耗时 1200ms
+			if !backupCalled {
+				context_label.SetUpstreamCost(ctx, 1200*time.Millisecond)
+				ctx.Response().SetStatus(200, "OK")
+				return nil
+			}
+			context_label.SetUpstreamCost(ctx, 50*time.Millisecond)
+			ctx.Response().SetStatus(200, "OK")
+			return nil
+		},
+	}
+
+	ctxTimeout := newMockHttpContext("/upstream-time-primary/model", nil)
+	err = exec.DoHttpFilter(ctxTimeout, chainTimeout)
+	if err != nil {
+		t.Fatalf("expected failover to succeed, got error: %v", err)
+	}
+	if !backupCalled {
+		t.Fatalf("upstream cost 1200ms SHOULD trigger timeout failover")
+	}
+	if ctxTimeout.Response().GetHeader("Strategy-Failover") != "upstream-time-strat" {
+		t.Fatalf("expected Strategy-Failover header, got %s", ctxTimeout.Response().GetHeader("Strategy-Failover"))
+	}
+}
+
+func TestAIProxy_TimeoutAutoInterruptionAndRetry(t *testing.T) {
+	exec := &executor{
+		modelType:   ai_convert.ModelTypeOpenAIChat,
+		modelIdFrom: "path",
+		config:      "{}",
+	}
+
+	backupProvider := "auto-interrupt-backup"
+	backupCalled := false
+
+	ai_convert.SetKeyResource(backupProvider, &mockKeyResource{
+		id: "auto-interrupt-backup-key",
+		driver: &mockConverterDriver{
+			provider:  backupProvider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+			requestConvertFn: func(ctx eocontext.EoContext, extender map[string]interface{}) error {
+				backupCalled = true
+				return nil
+			},
+		},
+	})
+	defer ai_convert.DelKeyResource(backupProvider, "auto-interrupt-backup-key")
+
+	cfg := &failover_strategy.Config{
+		Name:     "auto-interrupt-strat",
+		Priority: 1,
+		Triggers: failover_strategy.TriggersConf{
+			Timeout: failover_strategy.TriggerTimeoutConf{
+				Enabled:        true,
+				TimeoutSeconds: 1, // 1秒策略超时
+			},
+		},
+		Filters: map[string][]string{
+			"provider": {"hanging-primary"},
+		},
+		Providers: []*failover_strategy.ProviderConf{
+			{Name: backupProvider},
+		},
+	}
+	handler, err := failover_strategy.NewHandler(cfg)
+	if err != nil {
+		t.Fatalf("create handler error: %v", err)
+	}
+
+	failover_strategy.SetStrategy(handler.Name(), handler, cfg.Filters)
+	defer failover_strategy.DelStrategy(handler.Name())
+
+	firstCall := true
+	chain := &mockChain{
+		fn: func(c eocontext.EoContext) error {
+			if firstCall {
+				firstCall = false
+				// 验证策略通过 ctx_key.CtxKeyTimeout 设置并修改了超时时间
+				tVal := c.Value(ctx_key.CtxKeyTimeout)
+				timeout, ok := tVal.(time.Duration)
+				if !ok || timeout != time.Second {
+					t.Errorf("expected ctx_key.CtxKeyTimeout to be 1s, got %v", tVal)
+				}
+				// 模拟请求超过策略设置的超时时间，底层自动中断并返回 fasthttp.ErrTimeout
+				httpCtx := c.(http_service.IHttpContext)
+				context_label.SetAITimeout(httpCtx, true)
+				httpCtx.Response().SetStatus(504, "Gateway Timeout")
+				return fasthttp.ErrTimeout
+			}
+			httpCtx := c.(http_service.IHttpContext)
+			httpCtx.Response().SetStatus(200, "OK")
+			return nil
+		},
+	}
+
+	ctx := newMockHttpContext("/hanging-primary/model", nil)
+	err = exec.DoHttpFilter(ctx, chain)
+
+	if err != nil {
+		t.Fatalf("expected failover retry to succeed after auto interruption, got error: %v", err)
+	}
+	if !backupCalled {
+		t.Fatalf("expected backup provider to be called during retry")
+	}
+
+	if ctx.Response().GetHeader("Strategy-Failover") != "auto-interrupt-strat" {
+		t.Fatalf("expected Strategy-Failover header auto-interrupt-strat, got %s", ctx.Response().GetHeader("Strategy-Failover"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Provider") != backupProvider {
+		t.Fatalf("expected Strategy-Failover-Provider header %s, got %s", backupProvider, ctx.Response().GetHeader("Strategy-Failover-Provider"))
+	}
+}
+
+func TestAIProxy_ChineseHeaderEncoding(t *testing.T) {
+	chineseProvider := "备选供应商-1"
+	escaped := encodeHeaderValue(chineseProvider)
+	if !strings.Contains(escaped, "%") {
+		t.Fatalf("expected escaped string to contain percent-encoding, got %s", escaped)
+	}
+	unescaped, err := url.QueryUnescape(escaped)
+	if err != nil {
+		t.Fatalf("query unescape error: %v", err)
+	}
+	if unescaped != chineseProvider {
+		t.Fatalf("expected unescaped to match %s, got %s", chineseProvider, unescaped)
+	}
+
+	// 纯 ASCII 字符保持原样
+	asciiProvider := "openai-provider-1"
+	if encodeHeaderValue(asciiProvider) != asciiProvider {
+		t.Fatalf("expected ascii to stay unchanged, got %s", encodeHeaderValue(asciiProvider))
 	}
 }
