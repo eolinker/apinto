@@ -386,7 +386,7 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 	}
 
 	// 3. 触发配置则不管是否直接切换，都需要判断响应是否触发对应的条件，若触发，执行灾备流程
-	triggered, condition, reason := handler.CheckTriggerCondition(ctx, err, cost)
+	triggered, condition, reason := handler.CheckTriggerCondition(ctx, err)
 	if !triggered {
 		if isTimeout && err == nil {
 			err = context_label.GetAITimeoutError(ctx)
@@ -440,6 +440,7 @@ func (e *executor) interruptTimeout(ctx http_context.IHttpContext, timeoutErr er
 	}
 	ctx.Response().SetStatus(http.StatusGatewayTimeout, "Gateway Timeout")
 	ctx.Response().SetBody([]byte(timeoutErr.Error()))
+	ctx.Response().SetHeader("Connection", "close")
 	context_label.SetAITimeoutError(ctx, timeoutErr)
 	ai_convert.SetAIStatusTimeout(ctx)
 }
@@ -492,20 +493,18 @@ func (e *executor) fallback(ctx http_context.IHttpContext, originProxy http_cont
 		if timeout > 0 {
 			ctx.WithValue(ctx_key.CtxKeyTimeout, timeout)
 		}
-		start := time.Now()
 		err, isTimeout := e.doProcessKeyWithTimeout(ctx, providerName, key, originProxy, next, timeout)
-		cost := time.Since(start)
 
-		if timeout > 0 && cost >= timeout {
-			isTimeout = true
-			e.interruptTimeout(ctx, context_label.ErrAITimeout)
-		}
+		//if timeout > 0 && cost >= timeout {
+		//	isTimeout = true
+		//	e.interruptTimeout(ctx, context_label.ErrAITimeout)
+		//}
 
 		// 灾备供应商也遵循触发条件，如果符合触发条件，则切换到下一个供应商
-		triggered, condition, reason := handler.CheckTriggerCondition(ctx, err, cost)
+		triggered, condition, reason := handler.CheckTriggerCondition(ctx, err)
 		if triggered {
-			log.Warnf("[failover] strategy %s fallback provider %s triggered (%s: %s): err=%v, cost=%v, isTimeout=%v, statusCode=%d",
-				handler.Name(), providerName, condition, reason, err, cost, isTimeout, ctx.Response().StatusCode())
+			log.Warnf("[failover] strategy %s fallback provider %s triggered (%s: %s): err=%v, isTimeout=%v, statusCode=%d",
+				handler.Name(), providerName, condition, reason, err, isTimeout, ctx.Response().StatusCode())
 			fallbackErr = fmt.Errorf("provider %s triggered failover condition: %s (%s)", providerName, condition, reason)
 			if err != nil {
 				fallbackErr = err

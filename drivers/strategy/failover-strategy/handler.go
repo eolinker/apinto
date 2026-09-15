@@ -23,8 +23,8 @@ type IHandler interface {
 	TimeoutDuration() time.Duration
 	ProviderNames() []string
 	Keys() []ai_convert.IKeyResource
-	IsTriggerCondition(ctx http_service.IHttpContext, err error, cost time.Duration) bool
-	CheckTriggerCondition(ctx http_service.IHttpContext, err error, cost time.Duration) (bool, string, string)
+	IsTriggerCondition(ctx http_service.IHttpContext, err error) bool
+	CheckTriggerCondition(ctx http_service.IHttpContext, err error) (bool, string, string)
 	ApplyFailover(ctx http_service.IHttpContext, providerIndex int) (string, bool)
 }
 
@@ -188,18 +188,18 @@ func (h *Handler) ApplyFailover(ctx http_service.IHttpContext, providerIndex int
 	return p, true
 }
 
-func (h *Handler) IsTriggerCondition(ctx http_service.IHttpContext, err error, cost time.Duration) bool {
-	triggered, _, _ := h.CheckTriggerCondition(ctx, err, cost)
+func (h *Handler) IsTriggerCondition(ctx http_service.IHttpContext, err error) bool {
+	triggered, _, _ := h.CheckTriggerCondition(ctx, err)
 	return triggered
 }
 
-func (h *Handler) CheckTriggerCondition(ctx http_service.IHttpContext, err error, cost time.Duration) (bool, string, string) {
+func (h *Handler) CheckTriggerCondition(ctx http_service.IHttpContext, err error) (bool, string, string) {
 	// 1. 超时触发检查
 	if h.triggers.Timeout.Enabled {
 		// 优先从上下文获取网关向上游发起请求的真实耗时（从 client.DoTimeout 开始计时）
-		if upstreamCost, ok := context_label.GetUpstreamCost(ctx); ok {
-			cost = upstreamCost
-		}
+		//if upstreamCost, ok := context_label.GetUpstreamCost(ctx); ok {
+		//	cost = upstreamCost
+		//}
 		// 优先检查上下文中是否显式设置了超时标签或错误
 		if context_label.IsAITimeout(ctx) {
 			log.Warnf("[failover] strategy %s timeout triggered: ai timeout label detected", h.name)
@@ -217,11 +217,11 @@ func (h *Handler) CheckTriggerCondition(ctx http_service.IHttpContext, err error
 			log.Warnf("[failover] strategy %s timeout triggered: %v", h.name, timeoutErr)
 			return true, "timeout", fmt.Sprintf("ai timeout error: %v", timeoutErr)
 		}
-		timeoutDuration := h.TimeoutDuration()
-		if timeoutDuration > 0 && cost >= timeoutDuration {
-			log.Warnf("[failover] strategy %s timeout triggered: cost %v >= %v", h.name, cost, timeoutDuration)
-			return true, "timeout", fmt.Sprintf("request timeout (cost %v >= limit %v)", cost, timeoutDuration)
-		}
+		//timeoutDuration := h.TimeoutDuration()
+		//if timeoutDuration > 0 && cost >= timeoutDuration {
+		//	log.Warnf("[failover] strategy %s timeout triggered: cost %v >= %v", h.name, cost, timeoutDuration)
+		//	return true, "timeout", fmt.Sprintf("request timeout (cost %v >= limit %v)", cost, timeoutDuration)
+		//}
 		if errors.Is(err, context.DeadlineExceeded) {
 			log.Warnf("[failover] strategy %s timeout triggered: context deadline exceeded", h.name)
 			return true, "timeout", "context deadline exceeded"

@@ -31,9 +31,9 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/traefik/yaegi v0.16.1
 	github.com/urfave/cli/v2 v2.23.4
-	github.com/valyala/fasthttp v1.66.0
-	golang.org/x/crypto v0.44.0
-	golang.org/x/net v0.47.0
+	github.com/valyala/fasthttp v1.73.0
+	golang.org/x/crypto v0.55.0
+	golang.org/x/net v0.58.0
 	golang.org/x/oauth2 v0.30.0
 	google.golang.org/api v0.197.0
 	google.golang.org/grpc v1.67.3
@@ -164,8 +164,8 @@ require (
 	go.opentelemetry.io/otel/metric v1.29.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/term v0.37.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/term v0.45.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
@@ -184,7 +184,7 @@ require (
 
 require (
 	dubbo.apache.org/dubbo-go/v3 v3.0.2-0.20220519062747-f6405fa79d5c
-	github.com/andybalholm/brotli v1.2.0
+	github.com/andybalholm/brotli v1.2.2
 	github.com/apache/dubbo-go-hessian2 v1.11.6
 	github.com/armon/go-metrics v0.3.9 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -222,7 +222,7 @@ require (
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/julienschmidt/httprouter v1.3.0 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/klauspost/compress v1.20.0 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
@@ -256,8 +256,8 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.23.0
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.31.0
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/text v0.41.0
 	golang.org/x/time v0.9.0 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
