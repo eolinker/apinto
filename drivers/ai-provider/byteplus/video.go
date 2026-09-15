@@ -99,6 +99,11 @@ func (v *VideoTaskCommit) RequestConvert(ctx eoscContext.EoContext, extender map
 }
 
 func (v *VideoTaskCommit) ResponseConvert(ctx eoscContext.EoContext) error {
+	httpContext, err := http_service.Assert(ctx)
+	if err != nil {
+		return err
+	}
+	ensureFailure(httpContext)
 	return nil
 }
 
@@ -183,6 +188,11 @@ func (v *VideoTaskQuery) RequestConvert(ctx eoscContext.EoContext, extender map[
 }
 
 func (v *VideoTaskQuery) ResponseConvert(ctx eoscContext.EoContext) error {
+	httpContext, err := http_service.Assert(ctx)
+	if err != nil {
+		return err
+	}
+	ensureFailure(httpContext)
 	return nil
 }
 

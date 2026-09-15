@@ -439,6 +439,7 @@ func (a *AnthropicChat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
+	ensureFailure(httpContext)
 	body := httpContext.Response().GetBody()
 	encoding := httpContext.Response().Headers().Get("content-encoding")
 	if encoding != "utf-8" && encoding != "" {
@@ -449,12 +450,6 @@ func (a *AnthropicChat) ResponseConvert(ctx eocontext.EoContext) error {
 	}
 
 	if httpContext.Response().StatusCode() != 200 {
-		errorCallback(httpContext, body)
-		status := ai_convert.GetAIStatus(ctx)
-		if status == "" {
-			status = ai_convert.StatusInvalid
-		}
-		ai_convert.SetAIProviderStatuses(httpContext, status)
 		a.convertErrorResponse(httpContext, body)
 		return nil
 	}

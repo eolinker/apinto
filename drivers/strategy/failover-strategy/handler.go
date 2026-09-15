@@ -16,7 +16,8 @@ import (
 
 type IHandler interface {
 	Name() string
-	TriggerType() string
+	DirectProvider() string
+	DirectKey() ai_convert.IKeyResource
 	TimeoutDuration() time.Duration
 	ProviderNames() []string
 	Keys() []ai_convert.IKeyResource
@@ -28,11 +29,12 @@ type IHandler interface {
 var _ IHandler = (*Handler)(nil)
 
 type Handler struct {
-	name        string
-	triggerType string
-	triggers    TriggersConf
-	providers   []string
-	keys        []ai_convert.IKeyResource
+	name           string
+	directProvider string
+	directKey      ai_convert.IKeyResource
+	triggers       TriggersConf
+	providers      []string
+	keys           []ai_convert.IKeyResource
 }
 
 func NewHandler(cfg *Config) (IHandler, error) {
@@ -41,11 +43,36 @@ func NewHandler(cfg *Config) (IHandler, error) {
 	//	return nil, err
 	//}
 
-	keys := make([]ai_convert.IKeyResource, 0, len(cfg.Providers))
 	createFunc, has := ai_convert.GetConverterCreateFunc(cfg.Template)
 	if !has {
 		createFunc, _ = ai_convert.GetConverterCreateFunc("customize-openai")
 	}
+
+	var directProvider string
+	var directKey ai_convert.IKeyResource
+	if cfg.Direct != nil && cfg.Direct.Name != "" {
+		directProvider = cfg.Direct.Name
+		if cfg.Direct.Config != nil && createFunc != nil {
+			tmp := map[string]string{
+				"api_key":  cfg.Direct.Config.APIKey,
+				"base_url": cfg.Direct.Config.BaseUrl,
+			}
+			cfgByte, err := json.Marshal(tmp)
+			if err != nil {
+				log.Errorf("marshal direct config error: %v", err)
+			} else {
+				cv, err := createFunc(string(cfgByte))
+				if err != nil {
+					log.Errorf("create direct converter error: %v", err)
+				} else {
+					keyId := cfg.Name + ":direct:" + cfg.Direct.Name
+					directKey = ai_convert.NewKey(keyId, cfg.Direct.Name, 0, cfg.Priority, cv)
+				}
+			}
+		}
+	}
+
+	keys := make([]ai_convert.IKeyResource, 0, len(cfg.Providers))
 	providerNames := make([]string, 0, len(cfg.Providers))
 	for _, cs := range cfg.Providers {
 		providerNames = append(providerNames, cs.Name)
@@ -71,11 +98,12 @@ func NewHandler(cfg *Config) (IHandler, error) {
 	}
 
 	h := &Handler{
-		name:        cfg.Name,
-		triggerType: cfg.TriggerType,
-		triggers:    cfg.Triggers,
-		providers:   providerNames,
-		keys:        keys,
+		name:           cfg.Name,
+		directProvider: directProvider,
+		directKey:      directKey,
+		triggers:       cfg.Triggers,
+		providers:      providerNames,
+		keys:           keys,
 	}
 	return h, nil
 }
@@ -84,8 +112,20 @@ func (h *Handler) Name() string {
 	return h.name
 }
 
-func (h *Handler) TriggerType() string {
-	return h.triggerType
+func (h *Handler) DirectProvider() string {
+	return h.directProvider
+}
+
+func (h *Handler) DirectKey() ai_convert.IKeyResource {
+	if h.directKey != nil {
+		return h.directKey
+	}
+	if h.directProvider != "" {
+		if globalKeys, ok := ai_convert.KeyResources(h.directProvider); ok && len(globalKeys) > 0 {
+			return globalKeys[0]
+		}
+	}
+	return nil
 }
 
 func (h *Handler) TimeoutDuration() time.Duration {

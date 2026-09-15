@@ -2,15 +2,16 @@ package google
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
+	"time"
+
 	ai_convert "github.com/eolinker/apinto/ai-convert"
 	context_label2 "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/encoder"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
 	"github.com/eolinker/eosc/log"
-	"net/url"
-	"strings"
-	"time"
 )
 
 var (
@@ -117,5 +118,10 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 }
 
 func (c *Chat) ResponseConvert(ctx eocontext.EoContext) error {
+	httpContext, err := http_service.Assert(ctx)
+	if err != nil {
+		return err
+	}
+	ensureFailure(httpContext)
 	return nil
 }

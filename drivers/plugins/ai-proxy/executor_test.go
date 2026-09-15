@@ -49,7 +49,7 @@ type mockConverterDriver struct {
 	responseConvertFn func(ctx eocontext.EoContext) error
 }
 
-func (m *mockConverterDriver) Provider() string                 { return m.provider }
+func (m *mockConverterDriver) Provider() string                { return m.provider }
 func (m *mockConverterDriver) ModelType() ai_convert.ModelType { return m.modelType }
 func (m *mockConverterDriver) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
 	if m.requestConvertFn != nil {
@@ -69,13 +69,13 @@ type mockKeyResource struct {
 	driver ai_convert.IConverterDriver
 }
 
-func (m *mockKeyResource) ID() string        { return m.id }
-func (m *mockKeyResource) Health() bool      { return true }
-func (m *mockKeyResource) Priority() int     { return 1 }
-func (m *mockKeyResource) Up()               {}
-func (m *mockKeyResource) Down()             {}
-func (m *mockKeyResource) IsBreaker() bool   { return false }
-func (m *mockKeyResource) Breaker()          {}
+func (m *mockKeyResource) ID() string      { return m.id }
+func (m *mockKeyResource) Health() bool    { return true }
+func (m *mockKeyResource) Priority() int   { return 1 }
+func (m *mockKeyResource) Up()             {}
+func (m *mockKeyResource) Down()           {}
+func (m *mockKeyResource) IsBreaker() bool { return false }
+func (m *mockKeyResource) Breaker()        {}
 func (m *mockKeyResource) Get(modelType ai_convert.ModelType) (ai_convert.IConverterDriver, bool) {
 	return m.driver, true
 }
@@ -107,14 +107,13 @@ func TestAIProxy_DirectFailover(t *testing.T) {
 	defer ai_convert.DelKeyResource(backupProvider, "backup-key")
 
 	cfg := &failover_strategy.Config{
-		Name:        "direct-failover-strat",
-		Priority:    1,
-		TriggerType: failover_strategy.TriggerTypeDirect,
+		Name:     "direct-failover-strat",
+		Priority: 1,
+		Direct: &failover_strategy.ProviderConf{
+			Name: backupProvider,
+		},
 		Filters: map[string][]string{
 			"provider": {"failing-ai"},
-		},
-		Providers: []*failover_strategy.ProviderConf{
-			{Name: backupProvider},
 		},
 	}
 	handler, err := failover_strategy.NewHandler(cfg)
@@ -172,9 +171,8 @@ func TestAIProxy_ConditionFailover(t *testing.T) {
 	defer ai_convert.DelKeyResource(backupProvider, "backup-cond-key")
 
 	cfg := &failover_strategy.Config{
-		Name:        "cond-failover-strat",
-		Priority:    1,
-		TriggerType: failover_strategy.TriggerTypeCondition,
+		Name:     "cond-failover-strat",
+		Priority: 1,
 		Triggers: failover_strategy.TriggersConf{
 			Failure: failover_strategy.TriggerFailureConf{
 				Enabled: true,
@@ -249,9 +247,8 @@ func TestAIProxy_TimeoutInterruption(t *testing.T) {
 	defer ai_convert.DelKeyResource(backupProvider, "backup-timeout-key")
 
 	cfg := &failover_strategy.Config{
-		Name:        "timeout-failover-strat",
-		Priority:    1,
-		TriggerType: failover_strategy.TriggerTypeCondition,
+		Name:     "timeout-failover-strat",
+		Priority: 1,
 		Triggers: failover_strategy.TriggersConf{
 			Timeout: failover_strategy.TriggerTimeoutConf{
 				Enabled:        true,
@@ -326,9 +323,8 @@ func TestAIProxy_TimeoutInterruption_TriggerDisabledNoFallback(t *testing.T) {
 	defer ai_convert.DelKeyResource(backupProvider, "disabled-backup-key")
 
 	cfg := &failover_strategy.Config{
-		Name:        "disabled-timeout-strat",
-		Priority:    1,
-		TriggerType: failover_strategy.TriggerTypeCondition,
+		Name:     "disabled-timeout-strat",
+		Priority: 1,
 		Triggers: failover_strategy.TriggersConf{
 			Timeout: failover_strategy.TriggerTimeoutConf{
 				Enabled:        false,
@@ -419,14 +415,13 @@ func TestAIProxy_ResourceMatchPriority(t *testing.T) {
 
 	// 策略 1: provider 级别匹配
 	cfgProvider := &failover_strategy.Config{
-		Name:        "provider-strat",
-		Priority:    10,
-		TriggerType: failover_strategy.TriggerTypeDirect,
+		Name:     "provider-strat",
+		Priority: 10,
+		Direct: &failover_strategy.ProviderConf{
+			Name: providerBackup,
+		},
 		Filters: map[string][]string{
 			"provider": {"ai-svc"},
-		},
-		Providers: []*failover_strategy.ProviderConf{
-			{Name: providerBackup},
 		},
 	}
 	hProvider, err := failover_strategy.NewHandler(cfgProvider)
@@ -438,14 +433,13 @@ func TestAIProxy_ResourceMatchPriority(t *testing.T) {
 
 	// 策略 2: resource 级别精准匹配
 	cfgResource := &failover_strategy.Config{
-		Name:        "resource-strat",
-		Priority:    1,
-		TriggerType: failover_strategy.TriggerTypeDirect,
+		Name:     "resource-strat",
+		Priority: 1,
+		Direct: &failover_strategy.ProviderConf{
+			Name: resourceBackup,
+		},
 		Filters: map[string][]string{
 			"resource": {"ai-svc/special-model"},
-		},
-		Providers: []*failover_strategy.ProviderConf{
-			{Name: resourceBackup},
 		},
 	}
 	hResource, err := failover_strategy.NewHandler(cfgResource)
@@ -475,5 +469,300 @@ func TestAIProxy_ResourceMatchPriority(t *testing.T) {
 	}
 	if lastCalledProvider != providerBackup {
 		t.Fatalf("expected provider-backup to be called for general model, got %s", lastCalledProvider)
+	}
+}
+
+func TestAIProxy_DirectAndConditionFailover(t *testing.T) {
+	exec := &executor{
+		modelType:   ai_convert.ModelTypeOpenAIChat,
+		modelIdFrom: "path",
+		config:      "{}",
+	}
+
+	directProvider := "direct-ai"
+	fallbackProvider := "fallback-ai"
+	directCalled := false
+	fallbackCalled := false
+
+	ai_convert.SetKeyResource(directProvider, &mockKeyResource{
+		id: "direct-ai-key",
+		driver: &mockConverterDriver{
+			provider:  directProvider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+			requestConvertFn: func(ctx eocontext.EoContext, extender map[string]interface{}) error {
+				directCalled = true
+				return nil
+			},
+		},
+	})
+	defer ai_convert.DelKeyResource(directProvider, "direct-ai-key")
+
+	ai_convert.SetKeyResource(fallbackProvider, &mockKeyResource{
+		id: "fallback-ai-key",
+		driver: &mockConverterDriver{
+			provider:  fallbackProvider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+			requestConvertFn: func(ctx eocontext.EoContext, extender map[string]interface{}) error {
+				fallbackCalled = true
+				return nil
+			},
+		},
+	})
+	defer ai_convert.DelKeyResource(fallbackProvider, "fallback-ai-key")
+
+	cfg := &failover_strategy.Config{
+		Name:     "direct-and-cond-strat",
+		Priority: 1,
+		Direct: &failover_strategy.ProviderConf{
+			Name: directProvider,
+		},
+		Triggers: failover_strategy.TriggersConf{
+			Failure: failover_strategy.TriggerFailureConf{
+				Enabled: true,
+			},
+		},
+		Filters: map[string][]string{
+			"provider": {"origin-ai"},
+		},
+		Providers: []*failover_strategy.ProviderConf{
+			{Name: fallbackProvider},
+		},
+	}
+	handler, err := failover_strategy.NewHandler(cfg)
+	if err != nil {
+		t.Fatalf("create handler error: %v", err)
+	}
+
+	failover_strategy.SetStrategy(handler.Name(), handler, cfg.Filters)
+	defer failover_strategy.DelStrategy(handler.Name())
+
+	firstCall := true
+	chain := &mockChain{
+		fn: func(c eocontext.EoContext) error {
+			if firstCall {
+				firstCall = false
+				ctx := c.(http_service.IHttpContext)
+				ctx.Response().SetStatus(500, "Internal Server Error")
+				return errors.New("direct upstream failure")
+			}
+			return nil
+		},
+	}
+
+	ctx := newMockHttpContext("/origin-ai/chat-model", nil)
+	err = exec.DoHttpFilter(ctx, chain)
+	if err != nil {
+		t.Fatalf("expected failover to succeed, got error: %v", err)
+	}
+
+	if !directCalled {
+		t.Fatalf("expected direct provider to be called first")
+	}
+	if !fallbackCalled {
+		t.Fatalf("expected fallback provider to be called after direct provider failed")
+	}
+
+	if ctx.Response().GetHeader("Strategy-Failover") != "direct-and-cond-strat" {
+		t.Fatalf("expected Strategy-Failover header, got %s", ctx.Response().GetHeader("Strategy-Failover"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Direct") != directProvider {
+		t.Fatalf("expected Strategy-Failover-Direct header %s, got %s", directProvider, ctx.Response().GetHeader("Strategy-Failover-Direct"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Provider") != fallbackProvider {
+		t.Fatalf("expected Strategy-Failover-Provider header %s, got %s", fallbackProvider, ctx.Response().GetHeader("Strategy-Failover-Provider"))
+	}
+	if ctx.Response().GetHeader("Strategy-Failover-Trigger-Condition") != "failure" {
+		t.Fatalf("expected Strategy-Failover-Trigger-Condition header failure, got %s", ctx.Response().GetHeader("Strategy-Failover-Trigger-Condition"))
+	}
+	if ctx.Response().GetHeader("X-AI-Provider") != fallbackProvider {
+		t.Fatalf("expected X-AI-Provider header %s, got %s", fallbackProvider, ctx.Response().GetHeader("X-AI-Provider"))
+	}
+}
+
+func TestAIProxy_FallbackProviderFollowsTriggerCondition(t *testing.T) {
+	exec := &executor{
+		modelType:   ai_convert.ModelTypeOpenAIChat,
+		modelIdFrom: "path",
+		config:      "{}",
+	}
+
+	fb1Provider := "fallback-ai-1"
+	fb2Provider := "fallback-ai-2"
+	fb1Called := false
+	fb2Called := false
+
+	ai_convert.SetKeyResource(fb1Provider, &mockKeyResource{
+		id: "fb1-key",
+		driver: &mockConverterDriver{
+			provider:  fb1Provider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+			requestConvertFn: func(ctx eocontext.EoContext, extender map[string]interface{}) error {
+				fb1Called = true
+				return nil
+			},
+		},
+	})
+	defer ai_convert.DelKeyResource(fb1Provider, "fb1-key")
+
+	ai_convert.SetKeyResource(fb2Provider, &mockKeyResource{
+		id: "fb2-key",
+		driver: &mockConverterDriver{
+			provider:  fb2Provider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+			requestConvertFn: func(ctx eocontext.EoContext, extender map[string]interface{}) error {
+				fb2Called = true
+				return nil
+			},
+		},
+	})
+	defer ai_convert.DelKeyResource(fb2Provider, "fb2-key")
+
+	cfg := &failover_strategy.Config{
+		Name:     "fb-chain-strat",
+		Priority: 1,
+		Triggers: failover_strategy.TriggersConf{
+			Failure: failover_strategy.TriggerFailureConf{
+				Enabled: true,
+			},
+		},
+		Filters: map[string][]string{
+			"provider": {"origin-ai-fb"},
+		},
+		Providers: []*failover_strategy.ProviderConf{
+			{Name: fb1Provider},
+			{Name: fb2Provider},
+		},
+	}
+	handler, err := failover_strategy.NewHandler(cfg)
+	if err != nil {
+		t.Fatalf("create handler error: %v", err)
+	}
+
+	failover_strategy.SetStrategy(handler.Name(), handler, cfg.Filters)
+	defer failover_strategy.DelStrategy(handler.Name())
+
+	callCount := 0
+	chain := &mockChain{
+		fn: func(c eocontext.EoContext) error {
+			callCount++
+			ctx := c.(http_service.IHttpContext)
+			if callCount == 1 {
+				// 原始上游报错
+				ctx.Response().SetStatus(500, "Internal Server Error")
+				return errors.New("primary error")
+			}
+			if callCount == 2 {
+				// 灾备供应商 1 同样报错（符合触发条件）
+				ctx.Response().SetStatus(502, "Bad Gateway")
+				return errors.New("fallback 1 upstream error")
+			}
+			// 灾备供应商 2 成功
+			ctx.Response().SetStatus(200, "OK")
+			return nil
+		},
+	}
+
+	ctx := newMockHttpContext("/origin-ai-fb/chat-model", nil)
+	err = exec.DoHttpFilter(ctx, chain)
+	if err != nil {
+		t.Fatalf("expected fallback to succeed at fb2, got error: %v", err)
+	}
+
+	if !fb1Called {
+		t.Fatalf("expected fallback-ai-1 to be called")
+	}
+	if !fb2Called {
+		t.Fatalf("expected fallback-ai-2 to be called after fallback-ai-1 triggered failover condition")
+	}
+	if callCount != 3 {
+		t.Fatalf("expected 3 total calls, got %d", callCount)
+	}
+
+	if ctx.Response().GetHeader("Strategy-Failover-Provider") != fb2Provider {
+		t.Fatalf("expected Strategy-Failover-Provider header %s, got %s", fb2Provider, ctx.Response().GetHeader("Strategy-Failover-Provider"))
+	}
+	if ctx.Response().GetHeader("X-AI-Provider") != fb2Provider {
+		t.Fatalf("expected X-AI-Provider header %s, got %s", fb2Provider, ctx.Response().GetHeader("X-AI-Provider"))
+	}
+}
+
+func TestAIProxy_AllFallbackProvidersTriggerFailure(t *testing.T) {
+	exec := &executor{
+		modelType:   ai_convert.ModelTypeOpenAIChat,
+		modelIdFrom: "path",
+		config:      "{}",
+	}
+
+	fb1Provider := "all-fail-1"
+	fb2Provider := "all-fail-2"
+	fb1Called := false
+	fb2Called := false
+
+	ai_convert.SetKeyResource(fb1Provider, &mockKeyResource{
+		id: "all-fail-1-key",
+		driver: &mockConverterDriver{
+			provider:  fb1Provider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+			requestConvertFn: func(ctx eocontext.EoContext, extender map[string]interface{}) error {
+				fb1Called = true
+				return nil
+			},
+		},
+	})
+	defer ai_convert.DelKeyResource(fb1Provider, "all-fail-1-key")
+
+	ai_convert.SetKeyResource(fb2Provider, &mockKeyResource{
+		id: "all-fail-2-key",
+		driver: &mockConverterDriver{
+			provider:  fb2Provider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+			requestConvertFn: func(ctx eocontext.EoContext, extender map[string]interface{}) error {
+				fb2Called = true
+				return nil
+			},
+		},
+	})
+	defer ai_convert.DelKeyResource(fb2Provider, "all-fail-2-key")
+
+	cfg := &failover_strategy.Config{
+		Name:     "all-fail-strat",
+		Priority: 1,
+		Triggers: failover_strategy.TriggersConf{
+			Failure: failover_strategy.TriggerFailureConf{
+				Enabled: true,
+			},
+		},
+		Filters: map[string][]string{
+			"provider": {"all-fail-origin"},
+		},
+		Providers: []*failover_strategy.ProviderConf{
+			{Name: fb1Provider},
+			{Name: fb2Provider},
+		},
+	}
+	handler, err := failover_strategy.NewHandler(cfg)
+	if err != nil {
+		t.Fatalf("create handler error: %v", err)
+	}
+
+	failover_strategy.SetStrategy(handler.Name(), handler, cfg.Filters)
+	defer failover_strategy.DelStrategy(handler.Name())
+
+	chain := &mockChain{
+		fn: func(c eocontext.EoContext) error {
+			ctx := c.(http_service.IHttpContext)
+			ctx.Response().SetStatus(500, "Internal Server Error")
+			return errors.New("continuous failure")
+		},
+	}
+
+	ctx := newMockHttpContext("/all-fail-origin/chat", nil)
+	err = exec.DoHttpFilter(ctx, chain)
+	if err == nil {
+		t.Fatalf("expected error when all providers fail, got nil")
+	}
+
+	if !fb1Called || !fb2Called {
+		t.Fatalf("expected all fallback providers to have been attempted (fb1: %v, fb2: %v)", fb1Called, fb2Called)
 	}
 }

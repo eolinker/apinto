@@ -262,25 +262,7 @@ func (e *executor) dispatchProxy(ctx http_context.IHttpContext, provider string,
 
 	// 2. 未命中策略时，执行原默认链路
 	if err := e.processKeyPool(ctx, provider, cloneProxy, next, 0); err != nil {
-		balances := ai_convert.Balances()
-		if len(balances) == 0 {
-			body := ctx.Response().GetBody()
-			if len(body) == 0 {
-				if ctx.Response().StatusCode() != http.StatusGatewayTimeout {
-					ctx.Response().SetBody([]byte(err.Error()))
-					ctx.Response().SetStatus(http.StatusBadRequest, "Bad Request")
-				}
-			}
-			return err
-		}
-		err = e.doBalance(ctx, cloneProxy, next, 0)
-		if err != nil {
-			if ctx.Response().StatusCode() != http.StatusGatewayTimeout {
-				ctx.Response().SetBody([]byte(err.Error()))
-				ctx.Response().SetStatus(http.StatusBadRequest, "Bad Request")
-			}
-			return err
-		}
+		return err
 	}
 	return nil
 }
@@ -292,6 +274,7 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 	}
 
 	defer func() {
+		ctx.Response().SetHeader("x-failover-strategy", handler.Name())
 		// 成功时在响应头中设置 Provider 和 Model（优先使用灾备切换后的供应商/模型，若未发生灾备则使用原始值）
 		outProvider := ctx.GetLabel("failover_provider")
 		if outProvider == "" {
@@ -319,29 +302,36 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 		}
 	}()
 
-	// 1. 直接触发模式
-	if handler.TriggerType() == failover_strategy.TriggerTypeDirect {
-		ctx.WithValue("is_block", true)
-		ctx.SetLabel("handler", "failover-direct")
-		ctx.SetLabel("strategy_failover", handler.Name())
-		ctx.SetLabel("strategy_failover_trigger_type", failover_strategy.TriggerTypeDirect)
-		ctx.SetLabel("strategy_failover_trigger_condition", failover_strategy.TriggerTypeDirect)
-		ctx.SetLabel("strategy_failover_trigger_reason", "direct trigger")
-		ctx.Response().SetHeader("Strategy-Failover", handler.Name())
-		ctx.Response().SetHeader("Strategy-Failover-Trigger-Type", failover_strategy.TriggerTypeDirect)
-		ctx.Response().SetHeader("Strategy-Failover-Trigger-Condition", failover_strategy.TriggerTypeDirect)
-		ctx.Response().SetHeader("Strategy-Failover-Trigger-Reason", "direct trigger")
-		return e.fallback(ctx, cloneProxy, next, handler)
-	}
+	// 1. 先判断是否直接切换，若直接切换，则将上游改成直接切换
+	ctx.SetLabel("strategy_failover", handler.Name())
+	ctx.Response().SetHeader("Strategy-Failover", handler.Name())
 
-	// 2. 条件触发模式（包含超时控制与中断处理）
-	timeoutDuration := handler.TimeoutDuration()
-	start := time.Now()
 	provider := ctx.GetLabel("provider")
 	if provider == "" {
 		provider = ai_convert.GetAIProvider(ctx)
 	}
-	err, isTimeout := e.doProcessKeyPoolWithTimeout(ctx, provider, cloneProxy, next, timeoutDuration)
+
+	directKey := handler.DirectKey()
+	if directProvider := handler.DirectProvider(); directProvider != "" {
+		provider = directProvider
+		ctx.SetLabel("failover_provider", directProvider)
+		ctx.SetLabel("strategy_failover_direct", directProvider)
+		ctx.Response().SetHeader("Strategy-Failover-Direct", directProvider)
+		ai_convert.SetAIProvider(ctx, directProvider)
+		currModel := ai_convert.GetAIModel(ctx)
+		if currModel == "" {
+			currModel = ctx.GetLabel("model")
+		}
+		if currModel != "" {
+			ctx.SetLabel("failover_model", currModel)
+			ctx.SetLabel("failover_resource", directProvider+"/"+currModel)
+		}
+	}
+
+	// 2. 向上游发起请求（包含超时控制与中断处理）
+	timeoutDuration := handler.TimeoutDuration()
+	start := time.Now()
+	err, isTimeout := e.doProcessKeyWithTimeout(ctx, provider, directKey, cloneProxy, next, timeoutDuration)
 	cost := time.Since(start)
 
 	// 若耗时超出请求超时限制，执行超时中断并写下上下文超时错误
@@ -350,7 +340,7 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 		e.interruptTimeout(ctx, context_label.ErrAITimeout)
 	}
 
-	// 识别到错误或超时后，根据触发器决定是否要进行供应商的顺序执行
+	// 3. 触发配置则不管是否直接切换，都需要判断响应是否触发对应的条件，若触发，执行灾备流程
 	triggered, condition, reason := handler.CheckTriggerCondition(ctx, err, cost)
 	if !triggered {
 		if isTimeout && err == nil {
@@ -370,21 +360,19 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 		handler.Name(), condition, reason, err, cost, isTimeout, ctx.Response().StatusCode())
 
 	ctx.WithValue("is_block", true)
-	ctx.SetLabel("handler", "failover-condition")
+	ctx.SetLabel("handler", "failover")
 	ctx.SetLabel("strategy_failover", handler.Name())
-	ctx.SetLabel("strategy_failover_trigger_type", failover_strategy.TriggerTypeCondition)
 	ctx.SetLabel("strategy_failover_trigger_condition", condition)
 	ctx.SetLabel("strategy_failover_trigger_reason", reason)
 	ctx.Response().SetHeader("Strategy-Failover", handler.Name())
-	ctx.Response().SetHeader("Strategy-Failover-Trigger-Type", failover_strategy.TriggerTypeCondition)
 	ctx.Response().SetHeader("Strategy-Failover-Trigger-Condition", condition)
 	ctx.Response().SetHeader("Strategy-Failover-Trigger-Reason", reason)
 
 	return e.fallback(ctx, cloneProxy, next, handler)
 }
 
-func (e *executor) doProcessKeyPoolWithTimeout(ctx http_context.IHttpContext, provider string, cloneProxy http_context.IRequest, next eocontext.IChain, timeout time.Duration) (error, bool) {
-	err := e.processKeyPool(ctx, provider, cloneProxy, next, timeout)
+func (e *executor) doProcessKeyWithTimeout(ctx http_context.IHttpContext, provider string, key ai_convert.IKeyResource, cloneProxy http_context.IRequest, next eocontext.IChain, timeout time.Duration) (error, bool) {
+	err := e.processKeyResource(ctx, provider, key, cloneProxy, next, timeout)
 	if err != nil || context_label.IsAITimeout(ctx) || ctx.Response().StatusCode() == http.StatusGatewayTimeout {
 		if errors.Is(err, context_label.ErrAITimeout) || context_label.IsAITimeout(ctx) || ctx.Response().StatusCode() == http.StatusGatewayTimeout {
 			return err, true
@@ -392,6 +380,10 @@ func (e *executor) doProcessKeyPoolWithTimeout(ctx http_context.IHttpContext, pr
 		return err, false
 	}
 	return nil, false
+}
+
+func (e *executor) doProcessKeyPoolWithTimeout(ctx http_context.IHttpContext, provider string, cloneProxy http_context.IRequest, next eocontext.IChain, timeout time.Duration) (error, bool) {
+	return e.doProcessKeyWithTimeout(ctx, provider, nil, cloneProxy, next, timeout)
 }
 
 // interruptTimeout 中断请求，设置 504 响应码并在上下文写入超时错误与标签
@@ -445,206 +437,128 @@ func (e *executor) doChainWithTimeout(ctx http_context.IHttpContext, next eocont
 	}
 }
 
-// fallback 执行策略配置供应商顺序重试，若全部失败则走 Balances 兜底
+// fallback 执行策略配置供应商顺序重试，灾备供应商也遵循触发条件，若符合触发条件则切换到下一个供应商
 func (e *executor) fallback(ctx http_context.IHttpContext, originProxy http_context.IRequest, next eocontext.IChain, handler failover_strategy.IHandler) error {
 	var fallbackErr error = errors.New("failover triggered")
 	timeout := handler.TimeoutDuration()
 	for _, key := range handler.Keys() {
 		c, ok := key.Get(e.modelType)
 		if !ok {
-			log.Errorf("[ai-proxy] failover strategy %s key %s not found for model type %s", handler.Name(), key, e.modelType)
+			log.Errorf("[ai-proxy] failover strategy %s key %s not found for model type %s", handler.Name(), key.ID(), e.modelType)
 			continue
 		}
-		ctx.SetProxy(originProxy)
-		err := c.RequestConvert(ctx, nil)
-		if err != nil {
-			log.Errorf("[ai-proxy] failover strategy %s key %s request convert failed: %v", handler.Name(), key, err)
+		providerName := c.Provider()
+
+		// 重置上下文与响应状态，避免上一轮的错误状态残留
+		context_label.ClearAITimeout(ctx)
+		context_label.SetAIFailure(ctx, false)
+		ai_convert.SetAIStatusNormal(ctx)
+		ai_convert.SetAIProvider(ctx, providerName)
+		ctx.Response().SetStatus(http.StatusOK, "OK")
+		ctx.Response().SetBody(nil)
+
+		start := time.Now()
+		err, isTimeout := e.doProcessKeyWithTimeout(ctx, providerName, key, originProxy, next, timeout)
+		cost := time.Since(start)
+
+		if timeout > 0 && cost >= timeout {
+			isTimeout = true
+			e.interruptTimeout(ctx, context_label.ErrAITimeout)
+		}
+
+		// 灾备供应商也遵循触发条件，如果符合触发条件，则切换到下一个供应商
+		triggered, condition, reason := handler.CheckTriggerCondition(ctx, err, cost)
+		if triggered {
+			log.Warnf("[failover] strategy %s fallback provider %s triggered (%s: %s): err=%v, cost=%v, isTimeout=%v, statusCode=%d",
+				handler.Name(), providerName, condition, reason, err, cost, isTimeout, ctx.Response().StatusCode())
+			fallbackErr = fmt.Errorf("provider %s triggered failover condition: %s (%s)", providerName, condition, reason)
+			if err != nil {
+				fallbackErr = err
+			}
 			continue
 		}
-		if next != nil {
-			err, isTimeout := e.doChainWithTimeout(ctx, next, timeout)
-			if err == nil {
-				context_label.ClearAITimeout(ctx)
-				context_label.SetAIFailure(ctx, false)
-				providerName := c.Provider()
-				ctx.SetLabel("strategy_failover", handler.Name())
-				ctx.SetLabel("handler", "failover")
-				ctx.SetLabel("failover_provider", providerName)
-				currModel := ai_convert.GetAIModel(ctx)
-				if currModel == "" {
-					currModel = ctx.GetLabel("model")
-				}
-				if currModel != "" {
-					ctx.SetLabel("failover_model", currModel)
-					ctx.SetLabel("failover_resource", providerName+"/"+currModel)
-				}
-				ctx.WithValue("failover_strategy", handler.Name())
-				ctx.WithValue("failover_provider", providerName)
-				return nil
+
+		// 未触发条件，说明当前灾备供应商满足正常响应（或不触发切换）
+		if isTimeout && err == nil {
+			err = context_label.GetAITimeoutError(ctx)
+		}
+		if err != nil && ctx.Response().StatusCode() != http.StatusGatewayTimeout {
+			body := ctx.Response().GetBody()
+			if len(body) == 0 {
+				ctx.Response().SetStatus(http.StatusBadRequest, "Bad Request")
+				ctx.Response().SetBody([]byte(err.Error()))
 			}
-			fallbackErr = err
-			log.Warnf("[ai-proxy] failover strategy %s key %s failed: %v", handler.Name(), key, err)
-			if isTimeout {
-				log.Warnf("[ai-proxy] failover strategy %s key %s timeout: %v", handler.Name(), key, err)
-			}
-		} else {
-			context_label.ClearAITimeout(ctx)
-			context_label.SetAIFailure(ctx, false)
-			providerName := c.Provider()
-			ctx.SetLabel("strategy_failover", handler.Name())
-			ctx.SetLabel("handler", "failover")
-			ctx.SetLabel("failover_provider", providerName)
-			currModel := ai_convert.GetAIModel(ctx)
-			if currModel == "" {
-				currModel = ctx.GetLabel("model")
-			}
-			if currModel != "" {
-				ctx.SetLabel("failover_model", currModel)
-				ctx.SetLabel("failover_resource", providerName+"/"+currModel)
-			}
-			ctx.WithValue("failover_strategy", handler.Name())
-			ctx.WithValue("failover_provider", providerName)
-			return nil
+			return err
+		}
+
+		context_label.ClearAITimeout(ctx)
+		context_label.SetAIFailure(ctx, false)
+		ctx.SetLabel("strategy_failover", handler.Name())
+		ctx.SetLabel("handler", "failover")
+		ctx.SetLabel("failover_provider", providerName)
+		currModel := ai_convert.GetAIModel(ctx)
+		if currModel == "" {
+			currModel = ctx.GetLabel("model")
+		}
+		if currModel != "" {
+			ctx.SetLabel("failover_model", currModel)
+			ctx.SetLabel("failover_resource", providerName+"/"+currModel)
+		}
+		ctx.WithValue("failover_strategy", handler.Name())
+		ctx.WithValue("failover_provider", providerName)
+		return nil
+	}
+
+	if fallbackErr != nil && ctx.Response().StatusCode() != http.StatusGatewayTimeout {
+		body := ctx.Response().GetBody()
+		if len(body) == 0 {
+			ctx.Response().SetStatus(http.StatusBadGateway, "Bad Gateway")
+			ctx.Response().SetBody([]byte(fallbackErr.Error()))
 		}
 	}
-	//// 优先尝试策略中指定的灾备供应商列表（按顺序执行）
-	//providers := handler.ProviderNames()
-	//for i, p := range providers {
-	//	handler.ApplyFailover(ctx, i)
-	//	err := e.tryProviderConf(ctx, originProxy, next, handler, p, timeout)
-	//	if err == nil {
-	//		context_label.ClearAITimeout(ctx)
-	//		context_label.SetAIFailure(ctx, false)
-	//		return nil
-	//	}
-	//	fallbackErr = err
-	//	log.Warnf("[ai-proxy] failover strategy %s provider %s failed: %v", handler.Name(), p, err)
-	//}
-	//
-	//// 若策略配置的供应商耗尽或未配置，fallback 到 balance 机制
-	//balances := ai_convert.Balances()
-	//if len(balances) == 0 {
-	//	body := ctx.Response().GetBody()
-	//	if len(body) == 0 {
-	//		if ctx.Response().StatusCode() != http.StatusGatewayTimeout {
-	//			ctx.Response().SetBody([]byte(fallbackErr.Error()))
-	//			ctx.Response().SetStatus(http.StatusBadRequest, "Bad Request")
-	//		}
-	//	}
-	//	return fallbackErr
-	//}
-
-	//err := e.doBalance(ctx, originProxy, next, timeout)
-	//if err != nil {
-	//	if ctx.Response().StatusCode() != http.StatusGatewayTimeout {
-	//		ctx.Response().SetBody([]byte(err.Error()))
-	//		ctx.Response().SetStatus(http.StatusBadRequest, "Bad Request")
-	//	}
-	//	return err
-	//}
-	//
-	//context_label.ClearAITimeout(ctx)
-	//context_label.SetAIFailure(ctx, false)
 	return fallbackErr
 }
 
-//// tryProviderConf 顺序尝试单个策略配置的供应商，支持独立配置覆盖，保留原请求标签供追溯
-//func (e *executor) tryProviderConf(ctx http_context.IHttpContext, originProxy http_context.IRequest, next eocontext.IChain, handler failover_strategy.IHandler, p *failover_strategy.ProviderConf, timeout time.Duration) error {
-//	providerName := p.Name
-//	modelName := ai_convert.GetAIModel(ctx)
-//	if modelName == "" {
-//		modelName = ctx.GetLabel("model")
-//	}
-//
-//	// 记录灾备标签，保留原始请求的 provider/model/resource 标签用于追溯
-//	ctx.SetLabel("failover_provider", providerName)
-//	if modelName != "" {
-//		ctx.SetLabel("failover_model", modelName)
-//		ctx.SetLabel("failover_resource", providerName+"/"+modelName)
-//	}
-//
-//	sysProvider, hasSys := ai_convert.GetProvider(providerName)
-//	var extender map[string]interface{}
-//	if hasSys && sysProvider != nil {
-//		if balanceHandler := sysProvider.BalanceHandler(); balanceHandler != nil {
-//			ctx.SetBalance(balanceHandler)
-//		}
-//		extender = sysProvider.ModelConfig()
-//	}
-//	if p.Config != nil {
-//		cfgMap := p.Config.ToMap()
-//		if len(cfgMap) > 0 {
-//			extender = cfgMap
-//		}
-//	}
-//	if extender == nil {
-//		extender = make(map[string]interface{})
-//	}
-//
-//	// 优先使用策略自带的 KeyResource，若无再回退全局 KeyResources
-//	var keyResource ai_convert.IKeyResource
-//	if handler != nil {
-//		targetKeyID := handler.Name() + ":" + providerName
-//		for _, k := range handler.Keys() {
-//			if k.ID() == targetKeyID || strings.HasSuffix(k.ID(), ":"+providerName) {
-//				keyResource = k
-//				break
-//			}
-//		}
-//	}
-//
-//	var resources []ai_convert.IKeyResource
-//	if keyResource != nil {
-//		resources = []ai_convert.IKeyResource{keyResource}
-//	} else if globalResources, has := ai_convert.KeyResources(providerName); has && len(globalResources) > 0 {
-//		resources = globalResources
-//	}
-//
-//	if len(resources) == 0 {
-//		return fmt.Errorf("%w: provider %s", errKeyNotFound, providerName)
-//	}
-//
-//	for _, resource := range resources {
-//		if originProxy != nil {
-//			ctx.SetProxy(originProxy)
-//		}
-//		ai_convert.SetAIKey(ctx, resource.ID())
-//		err := e.doConverter(ctx, next, resource, sysProvider, extender, timeout)
-//		if err != nil {
-//			log.Errorf("[ai-proxy] try provider %s key %s error: %v", providerName, resource.ID(), err)
-//			continue
-//		}
-//		return nil
-//	}
-//
-//	return fmt.Errorf("provider %s exhausted", providerName)
-//}
-
 // processKeyPool handles processing using the key pool resources.
 func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string, cloneProxy http_context.IRequest, next eocontext.IChain, timeout time.Duration) error {
-	p, has := ai_convert.GetProvider(provider)
-	if !has {
-		if next != nil {
-			return e.processNext(ctx, next, nil, timeout)
+	return e.processKeyResource(ctx, provider, nil, cloneProxy, next, timeout)
+}
+
+// processKeyResource 使用指定的 KeyResource 或从 key pool 中选择资源进行请求处理与转换
+func (e *executor) processKeyResource(ctx http_context.IHttpContext, provider string, key ai_convert.IKeyResource, cloneProxy http_context.IRequest, next eocontext.IChain, timeout time.Duration) error {
+	var extender map[string]interface{}
+	var p ai_convert.IProvider
+	if pObj, has := ai_convert.GetProvider(provider); has {
+		p = pObj
+		ext, err := p.GenExtender(e.config)
+		if err != nil {
+			return err
 		}
-		return errProviderNotFound
+		extender = ext
+		balanceHandler := p.BalanceHandler()
+		if balanceHandler != nil {
+			ctx.SetBalance(balanceHandler)
+		}
 	}
-	extender, err := p.GenExtender(e.config)
-	if err != nil {
-		return err
+
+	r := key
+	if r == nil {
+		resources, has := ai_convert.KeyResources(provider)
+		if has && len(resources) > 0 {
+			r = resources[0]
+		}
 	}
-	balanceHandler := p.BalanceHandler()
-	if balanceHandler != nil {
-		ctx.SetBalance(balanceHandler)
-	}
-	resources, has := ai_convert.KeyResources(provider)
-	if !has || len(resources) == 0 {
+
+	if r == nil {
 		if next != nil {
 			return e.processNext(ctx, next, p, timeout)
 		}
+		if p == nil {
+			return errProviderNotFound
+		}
 		return errKeyNotFound
 	}
-	r := resources[0]
+
 	if cloneProxy != nil {
 		ctx.SetProxy(cloneProxy)
 	}
@@ -653,12 +567,12 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string
 	if !has {
 		return fmt.Errorf("key %s does not support model type %s", r.ID(), e.modelType)
 	}
-	if err = converter.RequestConvert(ctx, extender); err != nil {
+	if err := converter.RequestConvert(ctx, extender); err != nil {
 		return fmt.Errorf("request convert error: %v", err)
 	}
 
 	if next != nil {
-		if err = e.processNext(ctx, next, p, timeout); err != nil {
+		if err := e.processNext(ctx, next, p, timeout); err != nil {
 			return err
 		}
 	}
@@ -669,7 +583,7 @@ func (e *executor) processKeyPool(ctx http_context.IHttpContext, provider string
 		}
 		return nil
 	}
-	if err = converter.ResponseConvert(ctx); err != nil {
+	if err := converter.ResponseConvert(ctx); err != nil {
 		return fmt.Errorf("response convert error: %v", err)
 	}
 	return nil

@@ -102,5 +102,10 @@ func (i *ImageGeneration) RequestConvert(ctx eoscContext.EoContext, extender map
 }
 
 func (i *ImageGeneration) ResponseConvert(ctx eoscContext.EoContext) error {
+	httpContext, err := http_service.Assert(ctx)
+	if err != nil {
+		return err
+	}
+	ensureFailure(httpContext)
 	return nil
 }

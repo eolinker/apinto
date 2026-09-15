@@ -7,11 +7,6 @@ import (
 	"github.com/eolinker/apinto/strategy"
 )
 
-const (
-	TriggerTypeDirect    = "direct"
-	TriggerTypeCondition = "condition"
-)
-
 type Config struct {
 	Name        string                `json:"name" skip:"skip"`
 	Description string                `json:"description" skip:"skip"`
@@ -19,7 +14,7 @@ type Config struct {
 	Priority    int                   `json:"priority" label:"优先级" description:"1-999"`
 	Template    string                `json:"template" label:"模版ID"`
 	Filters     strategy.FilterConfig `json:"filters" label:"过滤规则"`
-	TriggerType string                `json:"trigger_type" label:"触发类型" enum:"direct,condition"`
+	Direct      *ProviderConf         `json:"direct" label:"直接切换"`
 	Triggers    TriggersConf          `json:"triggers" label:"触发器"`
 	Providers   []*ProviderConf       `json:"providers" label:"灾备供应商列表"`
 }
@@ -87,33 +82,27 @@ func checkConfig(conf *Config) error {
 		return fmt.Errorf("priority value %d not allowed, must be between 1 and 999", conf.Priority)
 	}
 
-	if conf.TriggerType == "" {
-		if conf.Triggers.Failure.Enabled || conf.Triggers.Timeout.Enabled {
-			conf.TriggerType = TriggerTypeCondition
-		} else {
-			conf.TriggerType = TriggerTypeDirect
-		}
-	} else if conf.TriggerType != TriggerTypeDirect && conf.TriggerType != TriggerTypeCondition {
-		return fmt.Errorf("unsupported trigger_type: %s, must be direct or condition", conf.TriggerType)
+	if conf.Direct != nil && conf.Direct.Name == "" {
+		return fmt.Errorf("direct provider name cannot be empty")
 	}
 
-	if conf.TriggerType == TriggerTypeCondition {
-		if !conf.Triggers.Failure.Enabled && !conf.Triggers.Timeout.Enabled {
-			return fmt.Errorf("at least one trigger (failure or timeout) must be enabled when trigger_type is condition")
-		}
-		if conf.Triggers.Timeout.Enabled && conf.Triggers.Timeout.TimeoutSeconds <= 0 {
-			conf.Triggers.Timeout.TimeoutSeconds = 60
-		}
-	}
-
-	if len(conf.Providers) == 0 {
-		return fmt.Errorf("providers cannot be empty")
+	if conf.Triggers.Timeout.Enabled && conf.Triggers.Timeout.TimeoutSeconds <= 0 {
+		conf.Triggers.Timeout.TimeoutSeconds = 60
 	}
 
 	for i, p := range conf.Providers {
 		if p.Name == "" {
 			return fmt.Errorf("provider name cannot be empty at index %d", i)
 		}
+	}
+
+	hasTriggers := conf.Triggers.Failure.Enabled || conf.Triggers.Timeout.Enabled
+	if hasTriggers && len(conf.Providers) == 0 {
+		return fmt.Errorf("providers cannot be empty when triggers are enabled")
+	}
+
+	if conf.Direct == nil && len(conf.Providers) == 0 {
+		return fmt.Errorf("either direct or providers must be specified")
 	}
 
 	return nil

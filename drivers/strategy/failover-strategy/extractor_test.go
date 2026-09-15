@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	ai_convert "github.com/eolinker/apinto/ai-convert"
 	"github.com/eolinker/eosc/eocontext"
 )
 
@@ -106,5 +107,61 @@ func TestExtractor_ExactAndFallback(t *testing.T) {
 	handlersAfterDel, ok := ext.Get(ctx1)
 	if !ok || len(handlersAfterDel) != 1 || handlersAfterDel[0].Name() != "strat-wildcard" {
 		t.Fatalf("expected only fallback handler after del, got %+v", handlersAfterDel)
+	}
+}
+
+type mockConverter struct{}
+
+func (m *mockConverter) Get(modelType ai_convert.ModelType) (ai_convert.IConverterDriver, bool) {
+	return nil, false
+}
+func (m *mockConverter) ModelTypeList() []ai_convert.ModelType {
+	return nil
+}
+
+func TestDirectConfig_CheckAndHandler(t *testing.T) {
+	ai_convert.RegisterConverterCreateFunc("mock-template", func(cfg string) (ai_convert.IConverter, error) {
+		return &mockConverter{}, nil
+	})
+
+	// 校验直接切换配置
+	cfg := &Config{
+		Name:     "strat-direct-test",
+		Priority: 10,
+		Template: "mock-template",
+		Direct: &ProviderConf{
+			Name: "direct-provider",
+			Config: &BaseConfig{
+				BaseUrl: "https://api.direct.com",
+				APIKey:  "direct-secret",
+			},
+		},
+		Triggers: TriggersConf{
+			Failure: TriggerFailureConf{
+				Enabled: true,
+			},
+		},
+		Providers: []*ProviderConf{
+			{Name: "backup-provider"},
+		},
+	}
+
+	if err := checkConfig(cfg); err != nil {
+		t.Fatalf("checkConfig failed: %v", err)
+	}
+
+	h, err := NewHandler(cfg)
+	if err != nil {
+		t.Fatalf("NewHandler failed: %v", err)
+	}
+
+	if h.DirectProvider() != "direct-provider" {
+		t.Fatalf("expected direct-provider, got %s", h.DirectProvider())
+	}
+	if h.DirectKey() == nil {
+		t.Fatalf("expected DirectKey to be non-nil")
+	}
+	if len(h.ProviderNames()) != 1 || h.ProviderNames()[0] != "backup-provider" {
+		t.Fatalf("expected backup-provider in provider names, got %+v", h.ProviderNames())
 	}
 }

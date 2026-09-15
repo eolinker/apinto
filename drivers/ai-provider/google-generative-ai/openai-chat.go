@@ -1078,6 +1078,7 @@ func (o *OpenAIChat) ResponseConvert(ctx eocontext.EoContext) error {
 	if err != nil {
 		return err
 	}
+	ensureFailure(httpContext)
 	if httpContext.Response().StatusCode() != 200 {
 		o.convertErrorResponse(httpContext)
 		return nil
