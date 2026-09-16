@@ -240,10 +240,10 @@ func (h *Handler) CheckTriggerCondition(ctx http_service.IHttpContext, err error
 	// 2. 失败触发检查：
 	// 指平台与上游供应商之间的调用失败（包括上游鉴权失败、连接上游网络异常、上游服务器5xx错误、上游额度不足等情况，不包含客户端业务报错）。
 	if h.triggers.Failure.Enabled {
-		// 若当前中断或错误是超时导致的，属于超时触发范畴；若超时规则未启用，则不应被失败触发器误触发
-		if context_label.IsAITimeout(ctx) || errors.Is(err, context_label.ErrAITimeout) || errors.Is(err, fasthttp.ErrTimeout) || context_label.GetAITimeoutError(ctx) != nil || (err != nil && strings.Contains(strings.ToLower(err.Error()), "timeout")) {
-			return false, "", ""
-		}
+		//// 若当前中断或错误是超时导致的，属于超时触发范畴；若超时规则未启用，则不应被失败触发器误触发
+		//if context_label.IsAITimeout(ctx) || errors.Is(err, context_label.ErrAITimeout) || errors.Is(err, fasthttp.ErrTimeout) || context_label.GetAITimeoutError(ctx) != nil || (err != nil && strings.Contains(strings.ToLower(err.Error()), "timeout")) {
+		//	return false, "", ""
+		//}
 
 		if err != nil {
 			log.Warnf("[failover] strategy %s failure triggered: err=%v", h.name, err)
