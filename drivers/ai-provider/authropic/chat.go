@@ -11,12 +11,9 @@ import (
 	"strings"
 	"time"
 
-	anthropic "github.com/anthropics/anthropic-sdk-go"
 	ai_convert "github.com/eolinker/apinto/ai-convert"
-	"github.com/eolinker/apinto/encoder"
 	eoscContext "github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
-	"github.com/eolinker/eosc/log"
 )
 
 func init() {
@@ -79,21 +76,10 @@ func (c *Chat) ModelType() ai_convert.ModelType {
 
 func (c *Chat) RequestConvert(ctx eoscContext.EoContext, extender map[string]interface{}) error {
 	httpContext, err := http_service.Assert(ctx)
+	context_label.SetModelCompletionTag(ctx)
 	if err != nil {
 		return err
 	}
-	//body, err := httpContext.Proxy().Body().RawBody()
-	//if err != nil {
-	//	return err
-	//}
-	//chatRequest := eosc.NewBase[anthropic.MessageNewParams](extender)
-	//err = json.Unmarshal(body, chatRequest)
-	//if err != nil {
-	//	return fmt.Errorf("unmarshal body error: %v, body: %s", err, string(body))
-	//}
-	//if chatRequest.Config.Model == "" {
-	//	chatRequest.Config.Model = ai_convert.GetAIModel(ctx)
-	//}
 	body, err := httpContext.Proxy().Body().RawBody()
 	if err != nil {
 		return err
@@ -126,45 +112,6 @@ func (c *Chat) RequestConvert(ctx eoscContext.EoContext, extender map[string]int
 }
 
 func (c *Chat) ResponseConvert(ctx eoscContext.EoContext) error {
-	httpContext, err := http_service.Assert(ctx)
-	if err != nil {
-		return err
-	}
-	body := httpContext.Response().GetBody()
-	// Check the content encoding and convert to UTF-8 if necessary.
-	encoding := httpContext.Response().Headers().Get("content-encoding")
-	if encoding != "utf-8" && encoding != "" {
-		body, err = encoder.ToUTF8(encoding, body)
-		if err != nil {
-			return err
-		}
-	}
-
-	if httpContext.Response().StatusCode() != 200 {
-		errorCallback(httpContext, body)
-		status := ai_convert.GetAIStatus(ctx)
-		if status == "" {
-			status = ai_convert.StatusInvalid
-		}
-		ai_convert.SetAIProviderStatuses(httpContext, status)
-		return nil
-	}
-
-	var resp anthropic.Message
-	err = json.Unmarshal(body, &resp)
-	if err != nil {
-		ai_convert.SetAIProviderStatuses(httpContext, ai_convert.StatusInvalid)
-		log.Errorf("unmarshal body error: %v, body: %s", err, string(body))
-		return err
-	}
-
-	ai_convert.SetAIModelInputToken(httpContext, int(resp.Usage.InputTokens))
-	ai_convert.SetAIModelOutputToken(httpContext, int(resp.Usage.OutputTokens))
-	ai_convert.SetAIModelTotalToken(httpContext, int(resp.Usage.InputTokens+resp.Usage.OutputTokens))
-	ai_convert.SetAIStatusNormal(ctx)
-	ai_convert.SetAIProviderStatuses(httpContext, ai_convert.GetAIStatus(ctx))
-	httpContext.Response().SetHeader("content-encoding", "utf-8")
-	httpContext.Response().SetBody(body)
 	return nil
 }
 
