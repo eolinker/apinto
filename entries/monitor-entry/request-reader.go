@@ -84,7 +84,18 @@ var request = map[string]RequestReadFunc{
 		return ctx.Response().StatusCode(), true
 	},
 	"timing": func(ctx http_context.IHttpContext) (interface{}, bool) {
-		return time.Now().Sub(ctx.AcceptTime()).Milliseconds(), true
+		//return time.Now().Sub(ctx.AcceptTime()).Milliseconds(), true
+		now := time.Now()
+		t := ctx.AcceptTime()
+		if t.UnixMilli() > 0 {
+			return now.Sub(t), true
+		}
+		rt := ctx.Value("request_time")
+		v, ok := rt.(time.Time)
+		if !ok {
+			return 0, true
+		}
+		return now.Sub(v), true
 	},
 	"input_token": func(ctx http_context.IHttpContext) (interface{}, bool) {
 		value := ctx.Value("ai_model_input_token")
