@@ -31,9 +31,10 @@ var _ eosc.IWorker = (*executor)(nil)
 
 type executor struct {
 	drivers.WorkerBase
-	redisID                       string
-	defaultConcurrencyLimit       int
-	enableBalance                 bool
+	redisID                 string
+	defaultConcurrencyLimit int
+	//enableBalance                 bool
+	settingKeyGenerator           context_label.IKeyGenerator
 	taskKeyGenerator              context_label.IKeyGenerator
 	concurrencyKeyGenerator       context_label.IKeyGenerator
 	balanceKeyGenerator           context_label.IKeyGenerator
@@ -66,7 +67,8 @@ func (e *executor) reset(cfg *Config, wks map[eosc.RequireId]eosc.IWorker) error
 	e.redisID = string(cfg.Cache)
 
 	e.defaultConcurrencyLimit = cfg.ConcurrencyLimit
-	e.enableBalance = cfg.EnableBalance
+	//enableBilling = cfg.EnableBalance
+	e.settingKeyGenerator = context_label.NewKeyGenerator(cfg.SettingKey)
 	e.balanceKeyGenerator = context_label.NewKeyGenerator(cfg.BalanceKey)
 	e.priceKeyGenerator = context_label.NewKeyGenerator(cfg.PriceKey)
 	e.taskKeyGenerator = context_label.NewKeyGenerator(cfg.TaskKey)
@@ -78,6 +80,11 @@ func (e *executor) reset(cfg *Config, wks map[eosc.RequireId]eosc.IWorker) error
 func (e *executor) DoFilter(ctx eocontext.EoContext, next eocontext.IChain) (err error) {
 	return http_context.DoHttpFilter(e, ctx, next)
 }
+
+//
+//func (e *executor) getEnableBilling() bool {
+//
+//}
 
 func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IChain) error {
 	app := ctx.GetLabel("application")
@@ -222,10 +229,17 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			_ = cache.DecrBy(ctx.Context(), concurrencyKey, 1, 60*time.Second)
 		}()
 	}
+
+	settingKey := e.settingKeyGenerator.Key(ctx)
+	enableBilling := false
+	val, has := customerVar.Get(settingKey, "enable_billing")
+	if has {
+		enableBilling = val == "1"
+	}
 	// ==========================================
 	// 10. 组装资源定价价格 Key (优先使用固化的 PricingData，若无则从 Redis 动态读取)
 	// ==========================================
-	priceData, err := e.getPricingData(ctx, cache, snapshottedPricingData)
+	priceData, err := e.getPricingData(ctx, cache, snapshottedPricingData, enableBilling)
 	if err != nil {
 		ctx.Response().SetBody([]byte(err.Error()))
 		ctx.Response().SetStatus(400, "Bad Request")
@@ -242,8 +256,9 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	//    若定价数据中存在任一"免费策略"（PricePlan 的 Sale map 全为 0），
 	//    则视为该资源存在免费通路，跳过余额拦截；否则按余额<=0 拦截。
 	// ==========================================
+
 	isPreCheckRequired := billingMode == context_label.BillingModeImmediate || billingMode == context_label.BillingModeTaskCreate
-	if isPreCheckRequired && e.enableBalance && cache != nil && !hasFreePricePlan(priceData) {
+	if isPreCheckRequired && enableBilling && cache != nil && !hasFreePricePlan(priceData) {
 		balanceStr, err := cache.Get(ctx.Context(), balanceKey).Result()
 		if err == nil {
 			if balanceInt, parseErr := strconv.ParseInt(balanceStr, 10, 64); parseErr == nil {
@@ -283,7 +298,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	//      同一请求多次触发结算/回滚，账面变化只会发生一次。
 	// ==========================================
 	var preDeductKey string
-	if e.enableBalance && cache != nil && isPreCheckRequired && !hasFreePricePlan(priceData) {
+	if enableBilling && cache != nil && isPreCheckRequired && !hasFreePricePlan(priceData) {
 		amt, rid, pdErr := calc.PreDeduct(ctx, priceData)
 		if pdErr != nil {
 			log.Errorf("[dynamic-billing] pre-deduct calculate error for resource %s: %v", resourceID, pdErr)
@@ -323,7 +338,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	//     若此处再注册 AppendBodyFinish 会造成双重扣款。
 	if billingMode == context_label.BillingModeImmediate && ctx.GetLabel("resource_type") == "api" {
 		ctx.Proxy().AppendBodyFinish(func(ctx http_context.IHttpContext) {
-			res, err := calc.Calculate(ctx, e.enableBalance, priceData)
+			res, err := calc.Calculate(ctx, enableBilling, priceData)
 			if err != nil {
 				log.Errorf("[dynamic-billing] calculate error: %v", err)
 				// 计算失败：整额退还预扣
@@ -333,7 +348,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
 			context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
 			context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
-			if e.enableBalance && cache != nil {
+			if enableBilling && cache != nil {
 				settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
 			} else {
 				log.DebugF("[dynamic-billing] balance settlement skipped for user %s on resource %s (rule=%s, key=%s)",
@@ -347,7 +362,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			if len(streamBuffer) > 0 {
 				line := strings.TrimSpace(string(streamBuffer))
 				if line != "" {
-					tmp, err := calc.CalculateFromChunk(ctx, e.enableBalance, []byte(line), priceData)
+					tmp, err := calc.CalculateFromChunk(ctx, enableBilling, []byte(line), priceData)
 					if err == nil && tmp != nil {
 						res = tmp
 					}
@@ -355,7 +370,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 				streamBuffer = nil
 			}
 			if res != nil && res.Sale > 0 {
-				if e.enableBalance && cache != nil {
+				if enableBilling && cache != nil {
 					settlePreDeduct(ctx, cache, balanceKey, preDeductKey, res.Sale, app)
 				}
 			} else {
@@ -400,7 +415,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 				if strings.TrimSpace(line) == "" {
 					continue
 				}
-				tmp, err := calc.CalculateFromChunk(ctx, e.enableBalance, []byte(line), priceData)
+				tmp, err := calc.CalculateFromChunk(ctx, enableBilling, []byte(line), priceData)
 				if err != nil {
 					continue
 				}
@@ -420,7 +435,7 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 			if res.Official > 0 {
 				context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
 			}
-			
+
 			return p, nil
 		})
 	}
@@ -491,12 +506,12 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	}
 
 	// 同步结算非流式响应
-	return e.settleBilling(ctx, calc, priceData, balanceKey, resourceID, app, cache, billingMode, isCharged)
+	return e.settleBilling(ctx, calc, priceData, balanceKey, resourceID, app, cache, billingMode, isCharged, enableBilling)
 }
 
-func (e *executor) getPricingData(ctx http_context.IHttpContext, cache resources.ICache, snapPricingData *price_calcular.PricingData) (*price_calcular.PricingData, error) {
+func (e *executor) getPricingData(ctx http_context.IHttpContext, cache resources.ICache, snapPricingData *price_calcular.PricingData, enableBilling bool) (*price_calcular.PricingData, error) {
 	var priceData *price_calcular.PricingData
-	if e.enableBalance {
+	if enableBilling {
 		if snapPricingData != nil {
 			priceData = snapPricingData
 		} else {
@@ -550,16 +565,16 @@ func (e *executor) getPricingData(ctx http_context.IHttpContext, cache resources
 			context_label.SetPriceVersion(ctx, priceData.BasicInfo.Version)
 			context_label.SetPriceRelyVersion(ctx, priceData.BasicInfo.Rely)
 		}
-	} else if e.enableBalance && priceData == nil {
+	} else if enableBilling && priceData == nil {
 		return nil, fmt.Errorf("{\"error\":\"pricing data not found\"}")
 	}
 	return priceData, nil
 }
 
-func (e *executor) immediateSettle(ctx http_context.IHttpContext, calc price_calcular.ICalculator, priceData *price_calcular.PricingData, balanceKey, resourceID, app string, cache resources.ICache) error {
+func (e *executor) immediateSettle(ctx http_context.IHttpContext, calc price_calcular.ICalculator, priceData *price_calcular.PricingData, balanceKey, resourceID, app string, cache resources.ICache, enableBilling bool) error {
 	var res *price_calcular.CalculateResult
 	var err error
-	res, err = calc.Calculate(ctx, e.enableBalance, priceData)
+	res, err = calc.Calculate(ctx, enableBilling, priceData)
 	if err != nil {
 		log.Errorf("[dynamic-billing] calculate failed for resource %s: %v", resourceID, err)
 		return err
@@ -569,7 +584,7 @@ func (e *executor) immediateSettle(ctx http_context.IHttpContext, calc price_cal
 	context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
 	context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
 
-	if e.enableBalance && cache != nil {
+	if enableBilling && cache != nil {
 		// 若存在预扣快照，则以 Lua 幂等结算做多退少补；否则按 sale 直接扣款
 		preKey := context_label.GetPreDeductKey(ctx)
 		settlePreDeduct(ctx, cache, balanceKey, preKey, res.Sale, app)
@@ -577,10 +592,10 @@ func (e *executor) immediateSettle(ctx http_context.IHttpContext, calc price_cal
 	return nil
 }
 
-func (e *executor) settleBilling(ctx http_context.IHttpContext, calc price_calcular.ICalculator, priceData *price_calcular.PricingData, balanceKey, resourceID, app string, cache resources.ICache, billingMode context_label.BillingMode, isCharged bool) error {
+func (e *executor) settleBilling(ctx http_context.IHttpContext, calc price_calcular.ICalculator, priceData *price_calcular.PricingData, balanceKey, resourceID, app string, cache resources.ICache, billingMode context_label.BillingMode, isCharged bool, enableBilling bool) error {
 	switch billingMode {
 	case context_label.BillingModeImmediate:
-		return e.immediateSettle(ctx, calc, priceData, balanceKey, resourceID, app, cache)
+		return e.immediateSettle(ctx, calc, priceData, balanceKey, resourceID, app, cache, enableBilling)
 	case context_label.BillingModeTaskQuery:
 		if isCharged {
 			// 已经计费过或者任务完成状态为false，不做重复计费
@@ -601,7 +616,7 @@ func (e *executor) settleBilling(ctx http_context.IHttpContext, calc price_calcu
 		case context_label.TaskStatusRunning:
 		case context_label.TaskStatusSuccess:
 			isCharged = true
-			res, calcErr := calc.Calculate(ctx, e.enableBalance, priceData)
+			res, calcErr := calc.Calculate(ctx, enableBilling, priceData)
 			if calcErr != nil {
 				log.Errorf("[dynamic-billing] calculate failed for resource %s: %v", resourceID, calcErr)
 				ctx.SetLabel("pricing_status", "failed")
@@ -612,7 +627,7 @@ func (e *executor) settleBilling(ctx http_context.IHttpContext, calc price_calcu
 			context_label.SetAmountCost(ctx, fmt.Sprintf("%f", res.Cost))
 			context_label.SetAmountSale(ctx, fmt.Sprintf("%f", res.Sale))
 			context_label.SetAmountOfficial(ctx, fmt.Sprintf("%f", res.Official))
-			if e.enableBalance && cache != nil {
+			if enableBilling && cache != nil {
 				// 任务执行成功：以预扣快照做多退少补结算；
 				// 若无预扣快照（例如免费策略或 TaskCreate 阶段未预扣），
 				// settlePreDeduct 会退化为按 res.Sale 直接扣款。
@@ -621,7 +636,7 @@ func (e *executor) settleBilling(ctx http_context.IHttpContext, calc price_calcu
 		case context_label.TaskStatusFailed:
 			isCharged = true
 			// 任务执行失败：整额退回 TaskCreate 阶段的预扣金额。
-			if e.enableBalance && cache != nil {
+			if enableBilling && cache != nil {
 				refundPreDeduct(ctx, cache, balanceKey, preDeductKey, app)
 			}
 		}

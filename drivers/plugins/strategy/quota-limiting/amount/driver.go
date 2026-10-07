@@ -12,6 +12,7 @@ type Config struct {
 	PriceKey             string         `json:"price_key"`
 	VersionKey           string         `json:"version_key"`
 	BindResourceGroupKey string         `json:"bind_resource_group_key"`
+	SettingKey           string         `json:"setting_key"`
 }
 
 func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorker) (eosc.IWorker, error) {
@@ -19,6 +20,7 @@ func Create(id, name string, cfg *Config, workers map[eosc.RequireId]eosc.IWorke
 		WorkerBase:           drivers.Worker(id, name),
 		redisID:              string(cfg.Cache),
 		key:                  context_label.NewKeyGenerator(cfg.Key),
+		settingKey:           context_label.NewKeyGenerator(cfg.SettingKey),
 		versionKey:           context_label.NewKeyGenerator(cfg.VersionKey),
 		priceKey:             context_label.NewKeyGenerator(cfg.PriceKey),
 		bindResourceGroupKey: context_label.NewKeyGenerator(cfg.BindResourceGroupKey),
@@ -37,6 +39,9 @@ func CheckConfig(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 	}
 	if cfg.BindResourceGroupKey == "" {
 		cfg.BindResourceGroupKey = "user_bind_resource_group:{application}"
+	}
+	if cfg.SettingKey == "" {
+		cfg.SettingKey = "tenant_setting:{tenant}"
 	}
 	return nil
 }

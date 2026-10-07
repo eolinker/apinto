@@ -31,6 +31,7 @@ type Strategy struct {
 	drivers.WorkerBase
 	key                  context_label.IKeyGenerator
 	redisID              string
+	settingKey           context_label.IKeyGenerator
 	priceKey             context_label.IKeyGenerator
 	versionKey           context_label.IKeyGenerator
 	bindResourceGroupKey context_label.IKeyGenerator
@@ -41,6 +42,14 @@ func (s *Strategy) DoFilter(ctx eoscContext.EoContext, next eoscContext.IChain) 
 }
 
 func (s *Strategy) DoHttpFilter(ctx http_service.IHttpContext, next eoscContext.IChain) error {
+	settingKey := s.settingKey.Key(ctx)
+	val, has := customerVar.Get(settingKey, "enable_billing")
+	if !has || val != "1" {
+		if next != nil {
+			return next.DoChain(ctx)
+		}
+		return nil
+	}
 	start := time.Now()
 	defer func() {
 		log.Info("quota-limiting spend time: ", time.Now().Sub(start))
