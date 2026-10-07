@@ -188,6 +188,12 @@ func Profession() []*eosc.ProfessionConfig {
 					Label: "配额限流策略",
 					Desc:  "配额限流策略",
 				},
+				{
+					Id:    "eolinker.com:apinto:strategy-model-mapping",
+					Name:  "model-mapping",
+					Label: "配额限流策略",
+					Desc:  "配额限流策略",
+				},
 			},
 			Mod: eosc.ProfessionConfig_Worker,
 		},

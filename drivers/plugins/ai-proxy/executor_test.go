@@ -11,11 +11,13 @@ import (
 
 	ai_convert "github.com/eolinker/apinto/ai-convert"
 	context_label "github.com/eolinker/apinto/common/context-label"
+	model_mapping "github.com/eolinker/apinto/drivers/model-mapping"
 	failover_strategy "github.com/eolinker/apinto/drivers/strategy/failover-strategy"
 	"github.com/eolinker/apinto/entries/ctx_key"
 	http_context "github.com/eolinker/apinto/node/http-context"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
+	"github.com/ohler55/ojg/jp"
 	"github.com/valyala/fasthttp"
 )
 
@@ -874,6 +876,7 @@ func TestAIProxy_UpstreamTimingBaseline(t *testing.T) {
 			// 第一次调用设置上游网络耗时 1200ms
 			if !backupCalled {
 				context_label.SetUpstreamCost(ctx, 1200*time.Millisecond)
+				time.Sleep(1100 * time.Millisecond)
 				ctx.Response().SetStatus(200, "OK")
 				return nil
 			}
@@ -1179,5 +1182,416 @@ func TestAIProxy_FailoverNoTriggerNoHeaders(t *testing.T) {
 	}
 	if failoverProv := ctx.Response().GetHeader("Strategy-Failover-Provider"); failoverProv != "" {
 		t.Fatalf("expected no Strategy-Failover-Provider when failover not triggered, got %s", failoverProv)
+	}
+}
+
+func TestAIProxy_ModelMapping_ExactMatch(t *testing.T) {
+	aliasName := "my-gpt4"
+	providerName := "openai-mapped"
+	realModel := "gpt-4o"
+
+	ai_convert.SetKeyResource(providerName, &mockKeyResource{
+		id: "mapped-key-1",
+		driver: &mockConverterDriver{
+			provider:  providerName,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+		},
+	})
+	defer ai_convert.DelKeyResource(providerName, "mapped-key-1")
+
+	// 注册模型映射策略
+	cfg := &model_mapping.Config{
+		Name:     "user-mapping-strat",
+		Priority: 10,
+		Filters: map[string][]string{
+			"consumer": {"consumer-vip-1"},
+			"model":    {aliasName},
+		},
+		Targets: []string{providerName + "/" + realModel},
+	}
+	handler, err := model_mapping.NewHandler(cfg)
+	if err != nil {
+		t.Fatalf("NewHandler err: %v", err)
+	}
+	model_mapping.SetStrategy(handler.Name(), handler, cfg.Filters)
+	defer model_mapping.DelStrategy(handler.Name())
+
+	expr, _ := jp.ParseString("model")
+	exec := &executor{
+		modelType:   ai_convert.ModelTypeOpenAIChat,
+		modelIdFrom: "body",
+		modelIdKey:  "model",
+		bodyExpr:    expr,
+		config:      "{}",
+	}
+
+	chain := &mockChain{
+		fn: func(c eocontext.EoContext) error {
+			httpCtx := c.(http_service.IHttpContext)
+			httpCtx.Response().SetStatus(http.StatusOK, "OK")
+			return nil
+		},
+	}
+
+	// 构造请求体含有别名 {"model":"my-gpt4","messages":[]}
+	rawReqBody := []byte(`{"model":"` + aliasName + `","messages":[{"role":"user","content":"hello"}]}`)
+	ctx := newMockHttpContext("/v1/chat/completions", rawReqBody)
+	ctx.SetLabel("consumer", "consumer-vip-1")
+
+	err = exec.DoHttpFilter(ctx, chain)
+	if err != nil {
+		t.Fatalf("DoHttpFilter err: %v", err)
+	}
+
+	// 验证策略名响应头
+	if ctx.Response().GetHeader("Strategy-Model-Mapping") != "user-mapping-strat" {
+		t.Fatalf("expected Strategy-Model-Mapping header, got %s", ctx.Response().GetHeader("Strategy-Model-Mapping"))
+	}
+	// 验证最终实际解析出的供应商和模型
+	if ctx.GetLabel("provider") != providerName {
+		t.Fatalf("expected provider %s, got %s", providerName, ctx.GetLabel("provider"))
+	}
+	if ctx.GetLabel("model") != realModel {
+		t.Fatalf("expected model %s, got %s", realModel, ctx.GetLabel("model"))
+	}
+	if ctx.Response().GetHeader("X-AI-Provider") != providerName {
+		t.Fatalf("expected X-AI-Provider %s, got %s", providerName, ctx.Response().GetHeader("X-AI-Provider"))
+	}
+	if ctx.Response().GetHeader("X-AI-Model") != realModel {
+		t.Fatalf("expected X-AI-Model %s, got %s", realModel, ctx.Response().GetHeader("X-AI-Model"))
+	}
+
+	// 核心业务红线验证：请求体中的 model 参数被精准改写为 realModel
+	proxyBody, err := ctx.Proxy().Body().RawBody()
+	if err != nil {
+		t.Fatalf("read proxy body err: %v", err)
+	}
+	if !strings.Contains(string(proxyBody), `"`+realModel+`"`) {
+		t.Fatalf("expected proxy body model rewritten to %s, got: %s", realModel, string(proxyBody))
+	}
+}
+
+func TestAIProxy_ModelMapping_Failover(t *testing.T) {
+	aliasName := "claude-pro"
+	target1Provider := "anthropic-primary"
+	target1Model := "claude-3-opus"
+	target2Provider := "anthropic-backup"
+	target2Model := "claude-3-5-sonnet"
+
+	ai_convert.SetKeyResource(target1Provider, &mockKeyResource{
+		id: "target1-key",
+		driver: &mockConverterDriver{
+			provider:  target1Provider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+		},
+	})
+	defer ai_convert.DelKeyResource(target1Provider, "target1-key")
+
+	ai_convert.SetKeyResource(target2Provider, &mockKeyResource{
+		id: "target2-key",
+		driver: &mockConverterDriver{
+			provider:  target2Provider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+		},
+	})
+	defer ai_convert.DelKeyResource(target2Provider, "target2-key")
+
+	cfg := &model_mapping.Config{
+		Name:     "claude-failover-map",
+		Priority: 10,
+		Filters: map[string][]string{
+			"consumer": {"dev-team"},
+			"model":    {aliasName},
+		},
+		Targets: []string{
+			target1Provider + "/" + target1Model,
+			target2Provider + "/" + target2Model,
+		},
+	}
+	handler, err := model_mapping.NewHandler(cfg)
+	if err != nil {
+		t.Fatalf("NewHandler error: %v", err)
+	}
+	model_mapping.SetStrategy(handler.Name(), handler, cfg.Filters)
+	defer model_mapping.DelStrategy(handler.Name())
+
+	expr, _ := jp.ParseString("model")
+	exec := &executor{
+		modelType:   ai_convert.ModelTypeOpenAIChat,
+		modelIdFrom: "body",
+		modelIdKey:  "model",
+		bodyExpr:    expr,
+		config:      "{}",
+	}
+
+	callCount := 0
+	chain := &mockChain{
+		fn: func(c eocontext.EoContext) error {
+			callCount++
+			httpCtx := c.(http_service.IHttpContext)
+			currProv := ai_convert.GetAIProvider(httpCtx)
+			if currProv == target1Provider {
+				httpCtx.Response().SetStatus(http.StatusServiceUnavailable, "Service Unavailable")
+				httpCtx.Response().SetBody([]byte(`{"error":"primary down"}`))
+				return errors.New("upstream service unavailable")
+			}
+			if currProv == target2Provider {
+				httpCtx.Response().SetStatus(http.StatusOK, "OK")
+				httpCtx.Response().SetBody([]byte(`{"result":"backup success"}`))
+				return nil
+			}
+			return nil
+		},
+	}
+
+	rawReqBody := []byte(`{"model":"` + aliasName + `"}`)
+	ctx := newMockHttpContext("/v1/chat/completions", rawReqBody)
+	ctx.SetLabel("consumer", "dev-team")
+
+	err = exec.DoHttpFilter(ctx, chain)
+	if err != nil {
+		t.Fatalf("DoHttpFilter error: %v", err)
+	}
+
+	if callCount != 2 {
+		t.Fatalf("expected 2 calls for failover, got %d", callCount)
+	}
+
+	// 验证最终生效的标签与响应头
+	if ctx.GetLabel("provider") != target2Provider {
+		t.Fatalf("expected provider to be %s, got %s", target2Provider, ctx.GetLabel("provider"))
+	}
+	if ctx.GetLabel("model") != target2Model {
+		t.Fatalf("expected model to be %s, got %s", target2Model, ctx.GetLabel("model"))
+	}
+	if ctx.Response().GetHeader("Strategy-Model-Mapping-Failover-Provider") != target2Provider {
+		t.Fatalf("expected failover header provider %s, got %s", target2Provider, ctx.Response().GetHeader("Strategy-Model-Mapping-Failover-Provider"))
+	}
+	if ctx.Response().GetHeader("Strategy-Model-Mapping-Failover-Model") != target2Model {
+		t.Fatalf("expected failover header model %s, got %s", target2Model, ctx.Response().GetHeader("Strategy-Model-Mapping-Failover-Model"))
+	}
+
+	// 验证最终 proxy body 中的 model 是 target2Model
+	proxyBody, err := ctx.Proxy().Body().RawBody()
+	if err != nil {
+		t.Fatalf("read proxy body err: %v", err)
+	}
+	if !strings.Contains(string(proxyBody), `"`+target2Model+`"`) {
+		t.Fatalf("expected proxy body to have model %s, got %s", target2Model, string(proxyBody))
+	}
+}
+
+func TestAIProxy_ModelMapping_FailoverPriorityOverPlatform(t *testing.T) {
+	aliasName := "claude-coder"
+	primaryProvider := "primary-anthropic"
+	primaryModel := "claude-3-5-sonnet"
+	consumerFailoverProvider := "consumer-anthropic-pro"
+	consumerFailoverModel := "claude-3-opus"
+	platformFailoverProvider := "platform-anthropic-backup"
+
+	var primaryCalled, consumerFailoverCalled, platformFailoverCalled bool
+
+	ai_convert.SetKeyResource(primaryProvider, &mockKeyResource{
+		id: "primary-key",
+		driver: &mockConverterDriver{
+			provider:  primaryProvider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+			requestConvertFn: func(ctx eocontext.EoContext, extender map[string]interface{}) error {
+				primaryCalled = true
+				return nil
+			},
+		},
+	})
+	defer ai_convert.DelKeyResource(primaryProvider, "primary-key")
+
+	ai_convert.SetKeyResource(consumerFailoverProvider, &mockKeyResource{
+		id: "consumer-failover-key",
+		driver: &mockConverterDriver{
+			provider:  consumerFailoverProvider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+			requestConvertFn: func(ctx eocontext.EoContext, extender map[string]interface{}) error {
+				consumerFailoverCalled = true
+				return nil
+			},
+		},
+	})
+	defer ai_convert.DelKeyResource(consumerFailoverProvider, "consumer-failover-key")
+
+	ai_convert.SetKeyResource(platformFailoverProvider, &mockKeyResource{
+		id: "platform-failover-key",
+		driver: &mockConverterDriver{
+			provider:  platformFailoverProvider,
+			modelType: ai_convert.ModelTypeOpenAIChat,
+			requestConvertFn: func(ctx eocontext.EoContext, extender map[string]interface{}) error {
+				platformFailoverCalled = true
+				return nil
+			},
+		},
+	})
+	defer ai_convert.DelKeyResource(platformFailoverProvider, "platform-failover-key")
+
+	// 1. 注册平台级供应商灾备策略：当 primaryProvider 失败时切换到 platformFailoverProvider
+	platformFailoverCfg := &failover_strategy.Config{
+		Name:     "platform-failover-strat",
+		Priority: 5,
+		Triggers: failover_strategy.TriggersConf{
+			Failure: failover_strategy.TriggerFailureConf{
+				Enabled: true,
+			},
+		},
+		Filters: map[string][]string{
+			"provider": {primaryProvider},
+		},
+		Providers: []*failover_strategy.ProviderConf{
+			{Name: platformFailoverProvider},
+		},
+	}
+	platformHandler, err := failover_strategy.NewHandler(platformFailoverCfg)
+	if err != nil {
+		t.Fatalf("failover_strategy.NewHandler err: %v", err)
+	}
+	failover_strategy.SetStrategy(platformHandler.Name(), platformHandler, platformFailoverCfg.Filters)
+	defer failover_strategy.DelStrategy(platformHandler.Name())
+
+	// 2. 注册消费者模型别名映射：配置了次选灾备目标 consumerFailoverProvider/consumerFailoverModel
+	mappingCfg := &model_mapping.Config{
+		Name:     "consumer-coder-mapping",
+		Priority: 10,
+		Filters: map[string][]string{
+			"consumer": {"consumer-dev"},
+			"model":    {aliasName},
+		},
+		Targets: []string{
+			primaryProvider + "/" + primaryModel,
+			consumerFailoverProvider + "/" + consumerFailoverModel,
+		},
+	}
+	mappingHandler, err := model_mapping.NewHandler(mappingCfg)
+	if err != nil {
+		t.Fatalf("model_mapping.NewHandler err: %v", err)
+	}
+	model_mapping.SetStrategy(mappingHandler.Name(), mappingHandler, mappingCfg.Filters)
+	defer model_mapping.DelStrategy(mappingHandler.Name())
+
+	expr, _ := jp.ParseString("model")
+	exec := &executor{
+		modelType:   ai_convert.ModelTypeOpenAIChat,
+		modelIdFrom: "body",
+		modelIdKey:  "model",
+		bodyExpr:    expr,
+		config:      "{}",
+	}
+
+	// 模拟链路执行：Primary 遇到 500 报错，而消费者备选 Target 响应 200
+	chain := &mockChain{
+		fn: func(c eocontext.EoContext) error {
+			httpCtx := c.(http_service.IHttpContext)
+			currProv := ai_convert.GetAIProvider(httpCtx)
+			if currProv == primaryProvider {
+				httpCtx.Response().SetStatus(http.StatusInternalServerError, "Internal Server Error")
+				httpCtx.Response().SetBody([]byte(`{"error":"upstream down"}`))
+				return nil
+			}
+			if currProv == consumerFailoverProvider {
+				httpCtx.Response().SetStatus(http.StatusOK, "OK")
+				httpCtx.Response().SetBody([]byte(`{"result":"success from consumer backup"}`))
+				return nil
+			}
+			if currProv == platformFailoverProvider {
+				httpCtx.Response().SetStatus(http.StatusOK, "OK")
+				return nil
+			}
+			return nil
+		},
+	}
+
+	rawReqBody := []byte(`{"model":"` + aliasName + `"}`)
+	ctx := newMockHttpContext("/v1/chat/completions", rawReqBody)
+	ctx.SetLabel("consumer", "consumer-dev")
+
+	err = exec.DoHttpFilter(ctx, chain)
+	if err != nil {
+		t.Fatalf("DoHttpFilter error: %v", err)
+	}
+
+	if !primaryCalled {
+		t.Fatalf("expected primary provider to be attempted first")
+	}
+	if !consumerFailoverCalled {
+		t.Fatalf("expected consumer failover target to be called, but wasn't")
+	}
+	if platformFailoverCalled {
+		t.Fatalf("platform failover MUST NOT be called when consumer failover succeeded")
+	}
+
+	// 核心业务红线验证：切换后按实际接通的新模型精准计费（上下文中的 provider/model 必须变为消费者灾备目标）
+	if ctx.GetLabel("provider") != consumerFailoverProvider {
+		t.Fatalf("expected billing provider to be updated to %s, got %s", consumerFailoverProvider, ctx.GetLabel("provider"))
+	}
+	if ctx.GetLabel("model") != consumerFailoverModel {
+		t.Fatalf("expected billing model to be updated to %s, got %s", consumerFailoverModel, ctx.GetLabel("model"))
+	}
+	if ctx.Response().GetHeader("Strategy-Model-Mapping-Failover-Provider") != consumerFailoverProvider {
+		t.Fatalf("expected failover header provider %s, got %s", consumerFailoverProvider, ctx.Response().GetHeader("Strategy-Model-Mapping-Failover-Provider"))
+	}
+	if ctx.Response().GetHeader("Strategy-Model-Mapping-Failover-Model") != consumerFailoverModel {
+		t.Fatalf("expected failover header model %s, got %s", consumerFailoverModel, ctx.Response().GetHeader("Strategy-Model-Mapping-Failover-Model"))
+	}
+
+	// 核心业务红线验证：请求体中的 model 被精准改写为消费者备选目标模型
+	proxyBody, err := ctx.Proxy().Body().RawBody()
+	if err != nil {
+		t.Fatalf("read proxy body err: %v", err)
+	}
+	if !strings.Contains(string(proxyBody), `"`+consumerFailoverModel+`"`) {
+		t.Fatalf("expected proxy body model rewritten to %s, got: %s", consumerFailoverModel, string(proxyBody))
+	}
+}
+
+func TestAIProxy_ModelMapping_NoFallback_ShortCircuit(t *testing.T) {
+	aliasName := "precise-alias"
+	mappingCfg := &model_mapping.Config{
+		Name:     "strict-mapping",
+		Priority: 1,
+		Filters: map[string][]string{
+			"consumer": {"vip-only"},
+			"model":    {aliasName},
+		},
+		Targets: []string{"openai/gpt-4"},
+	}
+	h, err := model_mapping.NewHandler(mappingCfg)
+	if err != nil {
+		t.Fatalf("NewHandler err: %v", err)
+	}
+	model_mapping.SetStrategy(h.Name(), h, mappingCfg.Filters)
+	defer model_mapping.DelStrategy(h.Name())
+
+	expr, _ := jp.ParseString("model")
+	exec := &executor{
+		modelType:   ai_convert.ModelTypeOpenAIChat,
+		modelIdFrom: "body",
+		modelIdKey:  "model",
+		bodyExpr:    expr,
+		config:      "{}",
+	}
+
+	chain := &mockChain{
+		fn: func(c eocontext.EoContext) error {
+			return nil
+		},
+	}
+
+	// 请求缺失 consumer 标签（未认证），即便 model 命中也必须纯精确短路放行，不走该映射
+	rawReqBody := []byte(`{"model":"` + aliasName + `"}`)
+	ctx := newMockHttpContext("/v1/chat/completions", rawReqBody)
+	// 未设置 consumer label
+
+	err = exec.DoHttpFilter(ctx, chain)
+	// 由于没有命中别名映射，也没有提供有效 provider（格式非 {provider}/{model} 且未在 balances 注册），应按标准逻辑报错
+	if err == nil {
+		t.Fatalf("expected error because extracted model has no provider and did not match mapping")
+	}
+	if ctx.Response().GetHeader("Strategy-Model-Mapping") != "" {
+		t.Fatalf("Strategy-Model-Mapping should NOT be set when exact match fails")
 	}
 }

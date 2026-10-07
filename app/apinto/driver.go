@@ -11,6 +11,7 @@ import (
 	"github.com/eolinker/apinto/drivers/discovery/nacos"
 	"github.com/eolinker/apinto/drivers/discovery/static"
 	gm_certs "github.com/eolinker/apinto/drivers/gm-certs"
+	model_mapping "github.com/eolinker/apinto/drivers/model-mapping"
 	influxdb_v2 "github.com/eolinker/apinto/drivers/output/influxdb-v2"
 	"github.com/eolinker/apinto/drivers/output/loki"
 	auth_interceptor "github.com/eolinker/apinto/drivers/plugins/auth-interceptor"
@@ -97,6 +98,7 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 	visit_strategy.Register(extenderRegister)
 	fuse_strategy.Register(extenderRegister)
 	failover_strategy.Register(extenderRegister)
+	model_mapping.Register(extenderRegister)
 	data_mask_strategy.Register(extenderRegister)
 
 	// 编码器

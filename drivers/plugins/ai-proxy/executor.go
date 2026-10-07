@@ -13,6 +13,7 @@ import (
 	ai_convert "github.com/eolinker/apinto/ai-convert"
 	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/drivers"
+	model_mapping "github.com/eolinker/apinto/drivers/model-mapping"
 	failover_strategy "github.com/eolinker/apinto/drivers/strategy/failover-strategy"
 	"github.com/eolinker/apinto/entries/ctx_key"
 	"github.com/eolinker/apinto/resources"
@@ -157,51 +158,14 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		}
 	}
 
-	// 2. 解析供应商与模型
-	var provider, model string
-	if strings.Contains(extractedModelID, "/") {
-		parts := strings.SplitN(extractedModelID, "/", 2)
-		provider = parts[0]
-		model = parts[1]
-	} else {
-		// 自动检索已注册的 Balances 进行智能匹配
-		for _, b := range ai_convert.Balances() {
-			if b.Model() == extractedModelID {
-				provider = b.Provider()
-				model = b.Model()
-				break
-			}
-		}
-
-		if provider == "" || model == "" {
-			return e.handleError(ctx, fmt.Errorf("extracted model_id '%s' has no provider. Please use '{provider_id}/{model_id}' format, configure default_provider, or register the model in gateway", extractedModelID))
-		}
-	}
-	ctx.SetLabel("provider", provider)
-	ctx.SetLabel("model", model)
-	ctx.SetLabel("resource", provider+"/"+model)
-	ai_convert.SetAIProvider(ctx, provider)
-	ai_convert.SetAIModel(ctx, model)
-	for k, v := range e.labels {
-		ctx.SetLabel(k, v)
+	// 2. 获取候选模型列表（命中模型映射策略则返回 targets 列表，未命中则返回单个 extractedModelID）
+	modelCandidates, mappingHandler := e.resolveModelCandidates(ctx, extractedModelID)
+	if mappingHandler != nil {
+		ctx.SetLabel("strategy_model_mapping", mappingHandler.Name())
+		ctx.Response().SetHeader("Strategy-Model-Mapping", encodeHeaderValue(mappingHandler.Name()))
 	}
 
-	// 3. 修改并替换请求体中转发的模型 ID 参数
-	if e.modelIdFrom == "body" && e.bodyExpr != nil {
-		body, err := ctx.Request().Body().RawBody()
-		if err == nil {
-			obj, err := oj.Parse(body)
-			if err == nil {
-				e.bodyExpr.Set(obj, model)
-				newBody, err := oj.Marshal(obj)
-				if err == nil {
-					ctx.Proxy().Body().SetRaw("application/json", newBody)
-				}
-			}
-		}
-	}
-
-	cloneProxy := ctx.ProxyClone()
+	originProxy := ctx.ProxyClone()
 
 	defer func() {
 		// 成功时在响应头中设置 Provider 和 Model（优先使用灾备切换后的供应商/模型，若未发生灾备则使用原始值）
@@ -228,9 +192,91 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		}
 	}()
 
-	// 4. 调度执行：结合灾备策略（Failover）或默认密钥池转换与兜底
-	if err = e.dispatchProxy(ctx, provider, cloneProxy, next); err != nil {
-		return err
+	var lastErr error
+	for i, candidate := range modelCandidates {
+		// 每次尝试重置为原始 Proxy 请求，重置响应
+		if originProxy != nil {
+			ctx.SetProxy(originProxy)
+		}
+		if i > 0 {
+			ctx.Response().SetStatus(http.StatusOK, "OK")
+			ctx.Response().SetBody(nil)
+		}
+
+		// 解析当前候选的供应商与模型
+		var provider, model string
+		if strings.Contains(candidate, "/") {
+			parts := strings.SplitN(candidate, "/", 2)
+			provider = parts[0]
+			model = parts[1]
+		} else {
+			// 自动检索已注册的 Balances 进行智能匹配
+			for _, b := range ai_convert.Balances() {
+				if b.Model() == candidate {
+					provider = b.Provider()
+					model = b.Model()
+					break
+				}
+			}
+
+			if provider == "" || model == "" {
+				lastErr = fmt.Errorf("model_id '%s' has no provider. Please use '{provider_id}/{model_id}' format, configure default_provider, or register the model in gateway", candidate)
+				if len(modelCandidates) == 1 {
+					return e.handleError(ctx, lastErr)
+				}
+				log.Warnf("[ai_proxy] candidate '%s' has no provider, trying next: %v", candidate, lastErr)
+				continue
+			}
+		}
+
+		ctx.SetLabel("provider", provider)
+		ctx.SetLabel("model", model)
+		ctx.SetLabel("resource", provider+"/"+model)
+		ai_convert.SetAIProvider(ctx, provider)
+		ai_convert.SetAIModel(ctx, model)
+		for k, v := range e.labels {
+			ctx.SetLabel(k, v)
+		}
+
+		if mappingHandler != nil && i > 0 {
+			ctx.SetLabel("strategy_model_mapping_failover_provider", provider)
+			ctx.SetLabel("strategy_model_mapping_failover_model", model)
+			ctx.Response().SetHeader("Strategy-Model-Mapping-Failover-Provider", encodeHeaderValue(provider))
+			ctx.Response().SetHeader("Strategy-Model-Mapping-Failover-Model", encodeHeaderValue(model))
+		}
+
+		// 3. 修改并替换请求体中转发的模型 ID 参数
+		if e.modelIdFrom == "body" && e.bodyExpr != nil {
+			body, err := ctx.Request().Body().RawBody()
+			if err == nil {
+				obj, err := oj.Parse(body)
+				if err == nil {
+					e.bodyExpr.Set(obj, model)
+					newBody, err := oj.Marshal(obj)
+					if err == nil {
+						ctx.Proxy().Body().SetRaw("application/json", newBody)
+					}
+				}
+			}
+		}
+
+		candidateProxy := ctx.ProxyClone()
+
+		// 4. 调度执行：结合平台级灾备策略（Failover）或默认密钥池转换与兜底
+		// 若当前仍有未尝试的模型候选目标，优先流转候选目标，仅在最后一个候选目标时才允许平台级灾备兜底
+		hasMoreCandidates := i < len(modelCandidates)-1
+		err = e.dispatchProxy(ctx, provider, candidateProxy, next, !hasMoreCandidates)
+		if !isTargetFailure(ctx, err) {
+			lastErr = nil
+			break
+		}
+
+		lastErr = err
+		log.Warnf("[ai_proxy] target '%s/%s' failed (status: %d, err: %v), trying next candidate", provider, model, ctx.Response().StatusCode(), err)
+	}
+
+	if lastErr != nil {
+		return lastErr
 	}
 
 	switch e.taskMode {
@@ -249,15 +295,42 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 	return nil
 }
 
+// resolveModelCandidates 从模型映射策略或提取结果中获取候选模型列表（多目标容灾或单目标）
+func (e *executor) resolveModelCandidates(ctx http_context.IHttpContext, extractedModelID string) ([]string, model_mapping.IHandler) {
+	ctx.SetLabel("model", extractedModelID)
+	h, hasMapping := model_mapping.MatchBest(ctx)
+	if hasMapping && len(h.Targets()) > 0 {
+		targets := make([]string, 0, len(h.Targets()))
+		for _, t := range h.Targets() {
+			if t.Raw != "" {
+				targets = append(targets, t.Raw)
+			} else {
+				targets = append(targets, t.Provider+"/"+t.Model)
+			}
+		}
+		return targets, h
+	}
+	return []string{extractedModelID}, nil
+}
+
+// isTargetFailure 判断当前 target 执行结果是否属于需要触发 Failover 流转的失败场景
+func isTargetFailure(ctx http_context.IHttpContext, err error) bool {
+	if err != nil {
+		return true
+	}
+	code := ctx.Response().StatusCode()
+	return code >= 500 || code == http.StatusRequestTimeout || code == http.StatusTooManyRequests
+}
+
 // dispatchProxy 结合灾备策略或默认密钥池转换与 Balance 兜底逻辑
-func (e *executor) dispatchProxy(ctx http_context.IHttpContext, provider string, cloneProxy http_context.IRequest, next eocontext.IChain) error {
+func (e *executor) dispatchProxy(ctx http_context.IHttpContext, provider string, cloneProxy http_context.IRequest, next eocontext.IChain, allowPlatformFailover bool) error {
 	// 1. 检查是否命中了灾备策略（优先 resource，次之 provider，其余维度及通用兜底，最多命中一个）
 	extractors := failover_strategy.ListExtractor(nil)
 	for _, ext := range extractors {
 		if handlers, ok := ext.Get(ctx); ok && len(handlers) > 0 {
 			for _, h := range handlers {
 				if h != nil {
-					return e.doFailover(ctx, cloneProxy, next, h)
+					return e.doFailover(ctx, cloneProxy, next, h, allowPlatformFailover)
 				}
 			}
 		}
@@ -271,7 +344,7 @@ func (e *executor) dispatchProxy(ctx http_context.IHttpContext, provider string,
 }
 
 // doFailover 完整的灾备策略执行逻辑：直接触发、超时中断与注入、条件触发器判决、供应商顺序 fallback 与 Balance 兜底
-func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_context.IRequest, next eocontext.IChain, handler failover_strategy.IHandler) error {
+func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_context.IRequest, next eocontext.IChain, handler failover_strategy.IHandler, allowPlatformFailover bool) error {
 	if cloneProxy == nil {
 		cloneProxy = ctx.ProxyClone()
 	}
@@ -398,6 +471,10 @@ func (e *executor) doFailover(ctx http_context.IHttpContext, cloneProxy http_con
 				ctx.Response().SetBody([]byte(err.Error()))
 			}
 		}
+		return err
+	}
+
+	if !allowPlatformFailover {
 		return err
 	}
 
@@ -734,7 +811,7 @@ func DoFailoverWithModelType(ctx http_context.IHttpContext, next eocontext.IChai
 		modelType: modelType,
 		config:    "{}",
 	}
-	return exec.doFailover(ctx, nil, next, handler)
+	return exec.doFailover(ctx, nil, next, handler, true)
 }
 
 func (e *executor) Destroy() {
