@@ -301,13 +301,26 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 		fasthttp.ReleaseResponse(response)
 		return ctx.response.responseError
 	}
-	response.CopyTo(ctx.response.Response)
+	copyUpstreamResponse(response, ctx.response.Response)
 	agent.responseBody.Write(ctx.response.Response.Body())
 	agent.setResponseLength(ctx.response.Response.Header.ContentLength())
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)
 	fasthttp.ReleaseResponse(response)
 	return ctx.response.responseError
 
+}
+
+// copyUpstreamResponse copies an upstream response, including a fixed-length body stream.
+// fasthttp Response.CopyTo copies headers but not a body stream. Unknown-length streams
+// are left unread so the chunked streaming path can still consume them.
+func copyUpstreamResponse(src, dst *fasthttp.Response) {
+	if src.IsBodyStream() && src.Header.ContentLength() >= 0 {
+		body := append([]byte(nil), src.Body()...)
+		src.CopyTo(dst)
+		dst.SetBody(body)
+		return
+	}
+	src.CopyTo(dst)
 }
 
 func (ctx *HttpContext) Context() context.Context {
