@@ -49,41 +49,21 @@ func (m *Manager) SetRule(id string, rule *CompiledRule) {
 
 	m.rules[id] = rule
 
-	// 1. 同步更新 AI 场景多维度 Extractor
-	if pExt, ok := m.aiManager.GetExtractor("provider"); ok {
-		if rule.HasAI {
-			provs := rule.AIProviders
-			if rule.AllAI || len(provs) == 0 {
-				provs = []string{Wildcard}
-			}
-			pExt.Set(id, provs, []*CompiledRule{rule})
-		} else {
-			pExt.Del(id)
-		}
-	}
-	if rExt, ok := m.aiManager.GetExtractor("resource"); ok {
-		if rule.HasAI && len(rule.AIResources) > 0 {
-			rExt.Set(id, rule.AIResources, []*CompiledRule{rule})
-		} else {
-			rExt.Del(id)
-		}
-	}
+	setProtocolRule(m.aiManager, id, rule, rule.AI)
+	setProtocolRule(m.apiManager, id, rule, rule.API)
+}
 
-	// 2. 同步更新 API 场景多维度 Extractor
-	if pExt, ok := m.apiManager.GetExtractor("provider"); ok {
-		if rule.HasAPI {
-			provs := rule.APIProviders
-			if rule.AllAPI || len(provs) == 0 {
-				provs = []string{Wildcard}
-			}
-			pExt.Set(id, provs, []*CompiledRule{rule})
+func setProtocolRule(m *extractor.Manager[*CompiledRule], id string, rule *CompiledRule, pr ProtocolRule) {
+	if pExt, ok := m.GetExtractor("provider"); ok {
+		if pr.Enabled && len(pr.Providers) > 0 {
+			pExt.Set(id, pr.Providers, []*CompiledRule{rule})
 		} else {
 			pExt.Del(id)
 		}
 	}
-	if rExt, ok := m.apiManager.GetExtractor("resource"); ok {
-		if rule.HasAPI && len(rule.APIResources) > 0 {
-			rExt.Set(id, rule.APIResources, []*CompiledRule{rule})
+	if rExt, ok := m.GetExtractor("resource"); ok {
+		if pr.Enabled && len(pr.Resources) > 0 {
+			rExt.Set(id, pr.Resources, []*CompiledRule{rule})
 		} else {
 			rExt.Del(id)
 		}
@@ -97,24 +77,21 @@ func (m *Manager) DelRule(id string) {
 
 	delete(m.rules, id)
 
-	if pExt, ok := m.aiManager.GetExtractor("provider"); ok {
-		pExt.Del(id)
-	}
-	if rExt, ok := m.aiManager.GetExtractor("resource"); ok {
-		rExt.Del(id)
-	}
+	delRule(m.aiManager, id, defaultSorted)
+	delRule(m.apiManager, id, defaultSorted)
+}
 
-	if pExt, ok := m.apiManager.GetExtractor("provider"); ok {
-		pExt.Del(id)
-	}
-	if rExt, ok := m.apiManager.GetExtractor("resource"); ok {
-		rExt.Del(id)
+func delRule(m *extractor.Manager[*CompiledRule], id string, keys []string) {
+	for _, key := range keys {
+		if ext, ok := m.GetExtractor(key); ok {
+			ext.Del(id)
+		}
 	}
 }
 
-// MatchCandidateRules 按照自定义维度顺序（先找 provider，再找 resource）获取候选规则列表并求交集，按 Exp ASC 正序返回
+// MatchCandidateRules 按照自定义维度顺序（先找 provider，再找 resource）获取候选规则列表（符合任一维度即可），按 Exp ASC 正序返回
 func (m *Manager) MatchCandidateRules(targetType, provider, resource string, now int64) []*CompiledRule {
-	if resource == "" || resource == Wildcard {
+	if (provider == "" || provider == Wildcard) && (resource == "" || resource == Wildcard) {
 		return nil
 	}
 
@@ -135,42 +112,27 @@ func (m *Manager) MatchCandidateRules(targetType, provider, resource string, now
 		"resource": resource,
 	}
 	dimResults := mgr.GetByValuesOrder(vals, defaultSorted...)
-	if len(dimResults) < 2 {
+	if len(dimResults) == 0 {
 		return nil
 	}
 
-	var providerRules, resourceRules []*CompiledRule
-	for _, res := range dimResults {
-		switch res.Dimension {
-		case "provider":
-			providerRules = res.Items
-		case "resource":
-			resourceRules = res.Items
-		}
-	}
-
-	if len(providerRules) == 0 || len(resourceRules) == 0 {
-		return nil
-	}
-
-	// 2. 取两个维度的交集，并校验时效（Nbf 与 Exp）
-	provMap := make(map[string]struct{}, len(providerRules))
-	for _, r := range providerRules {
-		provMap[r.ID] = struct{}{}
-	}
-
+	// 2. 合并各维度命中的规则（满足其一即可，按规则 ID 去重），并校验时效（Nbf 与 Exp）
+	seen := make(map[string]struct{})
 	var matched []*CompiledRule
-	for _, r := range resourceRules {
-		if _, ok := provMap[r.ID]; !ok {
-			continue
+	for _, res := range dimResults {
+		for _, r := range res.Items {
+			if _, ok := seen[r.ID]; ok {
+				continue
+			}
+			seen[r.ID] = struct{}{}
+			if r.Nbf > 0 && now < r.Nbf {
+				continue
+			}
+			if r.Exp > 0 && now >= r.Exp {
+				continue
+			}
+			matched = append(matched, r)
 		}
-		if r.Nbf > 0 && now < r.Nbf {
-			continue
-		}
-		if r.Exp > 0 && now >= r.Exp {
-			continue
-		}
-		matched = append(matched, r)
 	}
 
 	if len(matched) <= 1 {

@@ -107,34 +107,34 @@ func TestRuleTree_Combinations(t *testing.T) {
 		Exp: 300,
 	}))
 
-	// 查 (p1, res_a) -> 应该命中 (r1, r2) 按 exp 排序
+	// 查 (p1, res_a) -> provider=p1 命中 r1/r2/r3，resource=res_a 命中 r1/r2 -> 合并去重为 [r1, r2, r3] 按 exp 排序
 	res := mgr.MatchCandidateRules("ai", "p1", "res_a", 50)
+	if len(res) != 3 || res[0].ID != "r1" || res[1].ID != "r2" || res[2].ID != "r3" {
+		t.Fatalf("expected [r1, r2, r3], got %v", res)
+	}
+
+	// 查 (p2, res_a) -> provider=p2 命中 r2(*)，resource=res_a 命中 r1/r2 -> 合并去重为 [r1, r2]
+	res = mgr.MatchCandidateRules("ai", "p2", "res_a", 50)
 	if len(res) != 2 || res[0].ID != "r1" || res[1].ID != "r2" {
 		t.Fatalf("expected [r1, r2], got %v", res)
 	}
 
-	// 查 (p2, res_a) -> 应该命中 provider=* 的 r2
-	res = mgr.MatchCandidateRules("ai", "p2", "res_a", 50)
-	if len(res) != 1 || res[0].ID != "r2" {
-		t.Fatalf("expected [r2], got %v", res)
-	}
-
-	// 查 (p1, res_b) -> 应该命中 r3
+	// 查 (p1, res_b) -> provider=p1 命中 r1/r2/r3，resource=res_b 命中 r3 -> 合并去重为 [r1, r2, r3]
 	res = mgr.MatchCandidateRules("ai", "p1", "res_b", 50)
-	if len(res) != 1 || res[0].ID != "r3" {
-		t.Fatalf("expected [r3], got %v", res)
+	if len(res) != 3 || res[0].ID != "r1" || res[1].ID != "r2" || res[2].ID != "r3" {
+		t.Fatalf("expected [r1, r2, r3], got %v", res)
 	}
 
-	// 查 (p2, res_b) -> 无通配 provider 规则，应该为 0
+	// 查 (p2, res_b) -> provider=p2 命中 r2(*)，resource=res_b 命中 r3 -> 合并去重为 [r2, r3]
 	res = mgr.MatchCandidateRules("ai", "p2", "res_b", 50)
-	if len(res) != 0 {
-		t.Fatalf("expected 0 rules, got %d", len(res))
+	if len(res) != 2 || res[0].ID != "r2" || res[1].ID != "r3" {
+		t.Fatalf("expected [r2, r3], got %v", res)
 	}
 
-	// 查未配置的具体 resource -> 0（resource 不走通配）
-	res = mgr.MatchCandidateRules("ai", "p1", "res_c", 50)
-	if len(res) != 0 {
-		t.Fatalf("expected 0 rules for res_c, got %d", len(res))
+	// 查 (p3, res_c) -> 仅命中 provider=* 的 r2
+	res = mgr.MatchCandidateRules("ai", "p3", "res_c", 50)
+	if len(res) != 1 || res[0].ID != "r2" {
+		t.Fatalf("expected [r2] for (p3, res_c), got %v", res)
 	}
 
 	// 查未支持的协议类型 -> 0
@@ -143,11 +143,15 @@ func TestRuleTree_Combinations(t *testing.T) {
 		t.Fatalf("expected 0 rules for api, got %d", len(res))
 	}
 
-	// 测试删除规则
+	// 测试删除规则 r2 后，查 (p3, res_c) -> 0，查 (p2, res_a) -> 仅剩 resource=res_a 命中的 r1
 	mgr.DelRule("r2")
-	res = mgr.MatchCandidateRules("ai", "p2", "res_a", 50)
+	res = mgr.MatchCandidateRules("ai", "p3", "res_c", 50)
 	if len(res) != 0 {
-		t.Fatalf("expected 0 rules after r2 deleted, got %d", len(res))
+		t.Fatalf("expected 0 rules for (p3, res_c) after r2 deleted, got %d", len(res))
+	}
+	res = mgr.MatchCandidateRules("ai", "p2", "res_a", 50)
+	if len(res) != 1 || res[0].ID != "r1" {
+		t.Fatalf("expected [r1] for (p2, res_a) after r2 deleted, got %v", res)
 	}
 }
 
@@ -252,7 +256,7 @@ func BenchmarkRuleTree_Match(b *testing.B) {
 func TestMatchCandidateRules_MultiDimensionOrder(t *testing.T) {
 	mgr := NewManager()
 
-	// rule_prov_only: 只有 provider 没配 resource -> 不应命中
+	// rule_prov_only: 只有 provider 没配 resource -> 只要 provider 匹配即可命中
 	mgr.SetRule("rule_prov_only", CompileRule("rule_prov_only", &Config{
 		Filters: Filters{
 			Provider: RuleFilter{AI: []string{"openai"}},
@@ -260,7 +264,7 @@ func TestMatchCandidateRules_MultiDimensionOrder(t *testing.T) {
 		Exp: 2000,
 	}))
 
-	// rule_res_only: 只有 resource 没配 provider (自动通配 provider) -> 可以命中
+	// rule_res_only: 只有 resource 没配 provider -> 只要 resource 匹配即可命中
 	mgr.SetRule("rule_res_only", CompileRule("rule_res_only", &Config{
 		Filters: Filters{
 			Resource: RuleFilter{AI: []string{"gpt-4"}},
@@ -268,7 +272,7 @@ func TestMatchCandidateRules_MultiDimensionOrder(t *testing.T) {
 		Exp: 3000,
 	}))
 
-	// rule_both: 同时指定 provider 和 resource
+	// rule_both: 同时指定 provider 和 resource -> 满足任一维度即可命中
 	mgr.SetRule("rule_both", CompileRule("rule_both", &Config{
 		Filters: Filters{
 			Provider: RuleFilter{AI: []string{"openai"}},
@@ -278,24 +282,38 @@ func TestMatchCandidateRules_MultiDimensionOrder(t *testing.T) {
 	}))
 
 	// 1. 匹配 openai + gpt-4
-	// provider 维度候选: rule_prov_only, rule_res_only (*), rule_both
+	// provider 维度候选: rule_prov_only, rule_both
 	// resource 维度候选: rule_res_only, rule_both
-	// 交集: rule_res_only, rule_both
-	// 排序: rule_both (Exp 1000) 先于 rule_res_only (Exp 3000)
+	// 并集: rule_both (Exp 1000), rule_prov_only (Exp 2000), rule_res_only (Exp 3000)
 	cands := mgr.MatchCandidateRules("ai", "openai", "gpt-4", 500)
-	if len(cands) != 2 {
-		t.Fatalf("expected 2 candidates, got %d", len(cands))
+	if len(cands) != 3 {
+		t.Fatalf("expected 3 candidates, got %d", len(cands))
 	}
-	if cands[0].ID != "rule_both" || cands[1].ID != "rule_res_only" {
-		t.Fatalf("expected [rule_both, rule_res_only], got [%s, %s]", cands[0].ID, cands[1].ID)
+	if cands[0].ID != "rule_both" || cands[1].ID != "rule_prov_only" || cands[2].ID != "rule_res_only" {
+		t.Fatalf("expected [rule_both, rule_prov_only, rule_res_only], got [%s, %s, %s]", cands[0].ID, cands[1].ID, cands[2].ID)
 	}
 
 	// 2. 匹配 anthropic + gpt-4
-	// provider 维度候选: rule_res_only (*)
+	// provider 维度候选: 无
 	// resource 维度候选: rule_res_only, rule_both
-	// 交集: rule_res_only
+	// 并集: rule_both (Exp 1000), rule_res_only (Exp 3000)
 	candsAnthropic := mgr.MatchCandidateRules("ai", "anthropic", "gpt-4", 500)
-	if len(candsAnthropic) != 1 || candsAnthropic[0].ID != "rule_res_only" {
-		t.Fatalf("expected [rule_res_only], got %v", candsAnthropic)
+	if len(candsAnthropic) != 2 || candsAnthropic[0].ID != "rule_both" || candsAnthropic[1].ID != "rule_res_only" {
+		t.Fatalf("expected [rule_both, rule_res_only], got %v", candsAnthropic)
+	}
+
+	// 3. 匹配 openai + claude-3
+	// provider 维度候选: rule_prov_only, rule_both
+	// resource 维度候选: 无
+	// 并集: rule_both (Exp 1000), rule_prov_only (Exp 2000)
+	candsOpenAIOnly := mgr.MatchCandidateRules("ai", "openai", "claude-3", 500)
+	if len(candsOpenAIOnly) != 2 || candsOpenAIOnly[0].ID != "rule_both" || candsOpenAIOnly[1].ID != "rule_prov_only" {
+		t.Fatalf("expected [rule_both, rule_prov_only], got %v", candsOpenAIOnly)
+	}
+
+	// 4. 匹配 anthropic + claude-3 -> 两个维度都不命中
+	candsNone := mgr.MatchCandidateRules("ai", "anthropic", "claude-3", 500)
+	if len(candsNone) != 0 {
+		t.Fatalf("expected 0 candidates, got %d", len(candsNone))
 	}
 }

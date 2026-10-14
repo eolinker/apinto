@@ -1330,6 +1330,25 @@ func TestExecutePreDeduct_Scale_6Digits(t *testing.T) {
 	}
 }
 
+// TestExecutePreDeductTwoPhase_Scale_6Digits 验证两阶段预扣金额按 1e6 放大为 int64 整数传入 Redis，不进行浮点数计算。
+func TestExecutePreDeductTwoPhase_Scale_6Digits(t *testing.T) {
+	// amount=5.5 元 -> 5500000 (int64)
+	c := &captureCache{returns: []interface{}{[]interface{}{int64(1), int64(1), "coupon_1", int64(44500000), int64(0)}}}
+	ok, dType, cID := executePreDeductTwoPhase(context.Background(), c, "credit:1", "bal:1", "pre:1", []string{"coupon_1"}, 5.5, 5*time.Minute, "u1")
+	if !ok || dType != 1 || cID != "coupon_1" {
+		t.Fatalf("expected (true, 1, coupon_1), got (%v, %d, %s)", ok, dType, cID)
+	}
+	if len(c.runs) != 1 {
+		t.Fatalf("expected 1 run call, got %d", len(c.runs))
+	}
+	if got, ok := c.runs[0].args[0].(int64); !ok || got != 5500000 {
+		t.Errorf("pre-deduct two-phase amount = %v (%T), want int64(5500000)", c.runs[0].args[0], c.runs[0].args[0])
+	}
+	if got, ok := c.runs[0].args[1].(int64); !ok || got != 300 {
+		t.Errorf("pre-deduct two-phase ttl = %v (%T), want int64(300)", c.runs[0].args[1], c.runs[0].args[1])
+	}
+}
+
 // TestExecutePreDeduct_InsufficientBalance_ReturnsFalse 余额不足时应返回 false。
 func TestExecutePreDeduct_InsufficientBalance_ReturnsFalse(t *testing.T) {
 	c := &captureCache{returns: []interface{}{[]interface{}{int64(0), int64(1000000)}}}
