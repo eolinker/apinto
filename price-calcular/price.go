@@ -91,6 +91,7 @@ type PricePlan struct {
 	Cost     map[string]float64 `json:"cost"`
 	Sale     map[string]float64 `json:"sale"`
 	Official map[string]float64 `json:"official"`
+	Marked   map[string]float64 `json:"marked"`
 }
 
 // MinSalePricingData 从 []*PricingData 中挑选 Sale 总和最小的一个。

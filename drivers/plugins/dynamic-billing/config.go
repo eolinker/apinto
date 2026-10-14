@@ -13,6 +13,7 @@ type Config struct {
 	ConcurrencyKey       string   `json:"concurrency_key" label:"并发 Key 模版" default:"dynamic-billing-concurrency:{application}:{resource}" description:"支持{application}, {resource}等占位符"`
 	SettingKey           string   `json:"setting_key" label:"资源设置 Key 模版" default:"dynamic-billing-setting:{application}:{resource}" description:"支持{application}, {resource}等占位符"`
 	BalanceKey           string   `json:"balance_key" label:"租户余额扣减 Key 模版" default:"balance:{balance_target}" description:"支持{balance_target}等占位符"`
+	CreditKey            string   `json:"credit_key" label:"用户代金券 Key 模版" default:"{product}:credit:user:{balance_target}" description:"支持{balance_target}, {user_id}, {application}等占位符"`
 	PriceKey             string   `json:"price_key" label:"资源定价价格 Key 模版" default:"access-resource-price:{application}:{resource}" description:"支持{application}, {resource}等占位符"`
 	ExtendKeys           []string `json:"extend_keys" label:"扩展 Key 模版" description:"支持{application}, {resource}等占位符"`
 	BindResourceGroupKey string   `json:"bind_resource_group_key" label:"绑定资源组 Key 模版" default:"user_bind_resource_group:{application}" description:"支持{application}, {resource}等占位符"`
@@ -22,6 +23,9 @@ type Config struct {
 func checkConfig(cfg *Config, workers map[eosc.RequireId]eosc.IWorker) error {
 	if cfg.BalanceKey == "" {
 		cfg.BalanceKey = "balance:{balance_target}"
+	}
+	if cfg.CreditKey == "" {
+		cfg.CreditKey = "{product}:credit:user:{balance_target}"
 	}
 	if cfg.PriceKey == "" {
 		cfg.PriceKey = "access-resource-price:{application}:{resource}"

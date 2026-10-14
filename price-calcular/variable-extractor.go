@@ -97,7 +97,17 @@ var jsonPathRegex = regexp.MustCompile(`^(\$?\.?)(.*?)\[\?\(@\.([a-zA-Z0-9_-]+)\
 
 func convertJSONPathToGjson(path string) string {
 	if jsonPathRegex.MatchString(path) {
-		path = jsonPathRegex.ReplaceAllString(path, "${2}.#(${3}${4}${5})${6}")
+		path = jsonPathRegex.ReplaceAllStringFunc(path, func(s string) string {
+			m := jsonPathRegex.FindStringSubmatch(s)
+			if len(m) >= 7 {
+				val := m[5]
+				if strings.HasPrefix(val, "'") && strings.HasSuffix(val, "'") && len(val) >= 2 {
+					val = `"` + val[1:len(val)-1] + `"`
+				}
+				return fmt.Sprintf("%s.#(%s%s%s)%s", m[2], m[3], m[4], val, m[6])
+			}
+			return s
+		})
 	}
 	// Also strip leading $. if present
 	if strings.HasPrefix(path, "$.") {

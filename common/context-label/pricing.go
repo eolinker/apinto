@@ -10,9 +10,11 @@ const (
 	LabelPriceCost           = "price_cost"
 	LabelPriceSale           = "price_sale"
 	LabelPriceOfficial       = "price_official"
+	LabelPriceMarked         = "price_marked"
 	LabelAmountCost          = "cost_amount"
 	LabelAmountSale          = "sale_amount"
 	LabelAmountOfficial      = "official_amount"
+	LabelAmountMarked        = "marked_amount"
 	LabelAmountPreDeduct     = "pre_deduct_amount"
 	LabelPreDeductKey        = "pre_deduct_key"
 	LabelChargeRule          = "charge_rule" // 计费规则ID
@@ -21,6 +23,11 @@ const (
 	LabelExprCost            = "cost_expr"
 	LabelExprSale            = "sale_expr"
 	LabelExprOfficial        = "official_expr"
+	LabelExprMarked          = "marked_expr"
+	LabelCreditID            = "credit_id"
+	LabelCreditApplied       = "credit_applied"
+	LabelBalanceApplied      = "balance_applied"
+	LabelDeductType          = "deduct_type"
 	LabelPriceMatchRule      = "price_match_rule"
 	LabelPriceMatchCondition = "price_conditions"
 	LabelPriceCurrency       = "price_currency"
@@ -28,6 +35,11 @@ const (
 	LabelPriceRelyVersion    = "price_rely"
 	LabelCalculatorID        = "calculator_id"
 	LabelMaxSaleRule         = "max_sale_rule"
+
+	// 抵扣类型枚举值（用于写入 LabelDeductType）
+	DeductTypeCredit   = "credit"   // 全额代金券抵扣
+	DeductTypeBalance  = "balance"  // 全额现金余额抵扣
+	DeductTypeCombined = "combined" // 组合抵扣（券不足清零 + 现金扣剩余）
 )
 
 func SetMaxSaleRule(ctx eocontext.EoContext, value interface{}) {
@@ -102,6 +114,14 @@ func GetExprOfficial(ctx eocontext.EoContext) string {
 	return ctx.GetLabel(LabelExprOfficial)
 }
 
+func SetExprMarked(ctx eocontext.EoContext, value string) {
+	ctx.SetLabel(LabelExprMarked, value)
+}
+
+func GetExprMarked(ctx eocontext.EoContext) string {
+	return ctx.GetLabel(LabelExprMarked)
+}
+
 func SetPriceVariable(ctx eocontext.EoContext, key string, value interface{}) {
 	ctx.WithValue(fmt.Sprintf("%s.%s", LabelPriceVariable, key), value)
 }
@@ -162,6 +182,14 @@ func GetPriceOfficial(ctx eocontext.EoContext) interface{} {
 	return GetPrice(ctx, LabelPriceOfficial)
 }
 
+func SetPriceMarked(ctx eocontext.EoContext, value interface{}) {
+	SetPrice(ctx, LabelPriceMarked, value)
+}
+
+func GetPriceMarked(ctx eocontext.EoContext) interface{} {
+	return GetPrice(ctx, LabelPriceMarked)
+}
+
 func SetAmount(ctx eocontext.EoContext, label string, value string) {
 	ctx.SetLabel(label, value)
 }
@@ -194,6 +222,14 @@ func GetAmountOfficial(ctx eocontext.EoContext) string {
 	return GetAmount(ctx, LabelAmountOfficial)
 }
 
+func SetAmountMarked(ctx eocontext.EoContext, value string) {
+	SetAmount(ctx, LabelAmountMarked, value)
+}
+
+func GetAmountMarked(ctx eocontext.EoContext) string {
+	return GetAmount(ctx, LabelAmountMarked)
+}
+
 func SetAmountPreDeduct(ctx eocontext.EoContext, value string) {
 	SetAmount(ctx, LabelAmountPreDeduct, value)
 }
@@ -210,4 +246,49 @@ func SetPreDeductKey(ctx eocontext.EoContext, value string) {
 // GetPreDeductKey 获取当前请求关联的预扣快照 Redis key，未设置时返回空串。
 func GetPreDeductKey(ctx eocontext.EoContext) string {
 	return GetAmount(ctx, LabelPreDeductKey)
+}
+
+func SetCreditID(ctx eocontext.EoContext, value string) {
+	ctx.SetLabel(LabelCreditID, value)
+}
+
+func GetCreditID(ctx eocontext.EoContext) string {
+	return ctx.GetLabel(LabelCreditID)
+}
+
+func SetCreditApplied(ctx eocontext.EoContext, value string) {
+	ctx.SetLabel(LabelCreditApplied, value)
+}
+
+func GetCreditApplied(ctx eocontext.EoContext) string {
+	return ctx.GetLabel(LabelCreditApplied)
+}
+
+func SetBalanceApplied(ctx eocontext.EoContext, value string) {
+	ctx.SetLabel(LabelBalanceApplied, value)
+}
+
+func GetBalanceApplied(ctx eocontext.EoContext) string {
+	return ctx.GetLabel(LabelBalanceApplied)
+}
+
+func SetDeductType(ctx eocontext.EoContext, value string) {
+	ctx.SetLabel(LabelDeductType, value)
+}
+
+func FormatDeductType(dType int) string {
+	switch dType {
+	case 1:
+		return DeductTypeCredit
+	case 2:
+		return DeductTypeBalance
+	case 3:
+		return DeductTypeCombined
+	default:
+		return ""
+	}
+}
+
+func GetDeductType(ctx eocontext.EoContext) string {
+	return ctx.GetLabel(LabelDeductType)
 }

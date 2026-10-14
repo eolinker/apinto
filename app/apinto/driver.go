@@ -44,6 +44,7 @@ import (
 	protocbuf "github.com/eolinker/apinto/drivers/transcode/protobuf"
 
 	"github.com/eolinker/apinto/drivers/app"
+	credit_driver "github.com/eolinker/apinto/drivers/credit"
 	"github.com/eolinker/apinto/drivers/output/prometheus"
 	pricing_driver "github.com/eolinker/apinto/drivers/pricing-policy"
 	"github.com/eolinker/eosc"
@@ -114,4 +115,7 @@ func driverRegister(extenderRegister eosc.IExtenderDriverRegister) {
 
 	// 计费计算器（通用，用于 AI 与 API 共用）
 	pricing_driver.Register(extenderRegister)
+
+	// 代金券规则驱动
+	credit_driver.Register(extenderRegister)
 }

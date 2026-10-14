@@ -8,6 +8,7 @@ type Rule struct {
 	CostExpression     string            `json:"cost_expression" label:"进货价计算表达式"`
 	SaleExpression     string            `json:"sale_expression" label:"销售价计算表达式"`
 	OfficialExpression string            `json:"official_expression" label:"官方价计算表达式"`
+	MarkedExpression   string            `json:"marked_expression" label:"标价计算表达式"`
 }
 
 type Condition struct {

@@ -121,6 +121,8 @@ func TestConvertJSONPathToGjson(t *testing.T) {
 		{"$.content[?(@.role==\"reference_video\")]", "content.#(role==\"reference_video\")"},
 		{"content[?(@.role==\"reference_video\")]", "content.#(role==\"reference_video\")"},
 		{"$.choices.0.message.content", "choices.0.message.content"},
+		{"$.usageMetadata.candidatesTokensDetails[?(@.modality=='TEXT')].tokenCount", "usageMetadata.candidatesTokensDetails.#(modality==\"TEXT\").tokenCount"},
+		{"$.usageMetadata.candidatesTokensDetails[?(@.modality=='IMAGE')].tokenCount", "usageMetadata.candidatesTokensDetails.#(modality==\"IMAGE\").tokenCount"},
 	}
 
 	for _, tt := range tests {

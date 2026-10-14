@@ -3,9 +3,10 @@ package price_calcular
 import (
 	"errors"
 	"fmt"
-	context_label "github.com/eolinker/apinto/common/context-label"
 	"strconv"
 	"strings"
+
+	context_label "github.com/eolinker/apinto/common/context-label"
 
 	"github.com/Knetic/govaluate"
 	"github.com/eolinker/eosc/eocontext"
@@ -49,6 +50,7 @@ type ProcessedRule struct {
 	costExpr     IExpression // 预编译后的进货价（成本）计算表达式
 	saleExpr     IExpression // 预编译后的销售价（计费）计算表达式
 	officialExpr IExpression // 预编译后的官方参考价计算表达式
+	markedExpr   IExpression // 预编译后的标价计算表达式
 	billingMode  string      // 从 saleExpr 中自动推断的计费模式：per_call / per_second / token
 }
 
@@ -57,6 +59,7 @@ type CalculateResult struct {
 	Cost     float64 // 进货（成本）价
 	Sale     float64 // 销售（计费）价
 	Official float64 // 官方参考建议价
+	Marked   float64 // 标价
 }
 
 // Calculator 高性能定价计算器，其计算所依赖的全部上下文计量属性均通过配置的变量动态提取。
@@ -81,7 +84,7 @@ func NewCalculator(id string, currency string, variables Variables, rules []*Rul
 
 	processedRules := make([]*ProcessedRule, 0, len(rules))
 	for _, rule := range rules {
-		var costExpr, saleExpr, officialExpr IExpression
+		var costExpr, saleExpr, officialExpr, markedExpr IExpression
 
 		// 预编译进货价计算公式
 		if rule.CostExpression != "" {
@@ -116,6 +119,21 @@ func NewCalculator(id string, currency string, variables Variables, rules []*Rul
 			officialExpr = expr
 		}
 
+		if rule.MarkedExpression == "" {
+			expr, err := NewExpression(rule.SaleExpression)
+			if err != nil {
+				return nil, fmt.Errorf("compile marked_expression '%s' error: %w", rule.MarkedExpression, err)
+			}
+			markedExpr = expr
+		} else {
+			// 预编译标价计算公式
+			expr, err := NewExpression(rule.MarkedExpression)
+			if err != nil {
+				return nil, fmt.Errorf("compile marked_expression '%s' error: %w", rule.MarkedExpression, err)
+			}
+			markedExpr = expr
+		}
+
 		processedRules = append(processedRules, &ProcessedRule{
 			id:           rule.ID,
 			name:         rule.Name,
@@ -123,6 +141,7 @@ func NewCalculator(id string, currency string, variables Variables, rules []*Rul
 			costExpr:     costExpr,
 			saleExpr:     saleExpr,
 			officialExpr: officialExpr,
+			markedExpr:   markedExpr,
 			billingMode:  detectBillingMode(rule.SaleExpression),
 		})
 	}
@@ -141,10 +160,10 @@ func detectBillingMode(saleExpr string) string {
 	if saleExpr == "" {
 		return BillingModeToken
 	}
-	if strings.Contains(saleExpr, "#sale.per_call") {
+	if strings.Contains(saleExpr, "#sale.per_call") || strings.Contains(saleExpr, "sale_per_call") {
 		return BillingModePerCall
 	}
-	if strings.Contains(saleExpr, "#sale.per_second") {
+	if strings.Contains(saleExpr, "#sale.per_second") || strings.Contains(saleExpr, "sale_per_second") {
 		return BillingModePerSecond
 	}
 	return BillingModeToken
@@ -244,6 +263,9 @@ func (c *Calculator) Calculate(ctx eocontext.EoContext, enableBalance bool, pric
 	context_label.SetExprCost(ctx, matchedRule.costExpr.String())
 	context_label.SetExprSale(ctx, matchedRule.saleExpr.String())
 	context_label.SetExprOfficial(ctx, matchedRule.officialExpr.String())
+	if matchedRule.markedExpr != nil {
+		context_label.SetExprMarked(ctx, matchedRule.markedExpr.String())
+	}
 	context_label.SetPriceMatchRule(ctx, matchedRule)
 	context_label.SetPriceMatchCondition(ctx, matchedRule.conditions)
 	context_label.SetPriceCurrency(ctx, c.Currency())
@@ -321,6 +343,9 @@ func (c *Calculator) CalculateFromChunk(ctx eocontext.EoContext, enableBalance b
 		context_label.SetExprCost(ctx, mr.costExpr.String())
 		context_label.SetExprSale(ctx, mr.saleExpr.String())
 		context_label.SetExprOfficial(ctx, mr.officialExpr.String())
+		if mr.markedExpr != nil {
+			context_label.SetExprMarked(ctx, mr.markedExpr.String())
+		}
 		context_label.SetPriceMatchCondition(ctx, mr.conditions)
 
 	} else {
@@ -345,7 +370,7 @@ func (c *Calculator) generateParams(ctx eocontext.EoContext, vars map[string]int
 		return nil, fmt.Errorf("neither price plan for rule '%s' nor base pricing plan is configured in strategy", matchedRule.id)
 	}
 	// 3. 构建公式运行所需的上下文变量 map (合并自定义提取变量与绑定的动态价格变量)
-	params := make(map[string]interface{}, len(vars)+len(plan.Cost)+len(plan.Sale)+len(plan.Official))
+	params := make(map[string]interface{}, len(vars)+len(plan.Cost)+len(plan.Sale)+len(plan.Official)+len(plan.Marked))
 
 	for k, v := range vars {
 		params[k] = v
@@ -359,9 +384,13 @@ func (c *Calculator) generateParams(ctx eocontext.EoContext, vars map[string]int
 	for k, v := range plan.Official {
 		params["official_"+k] = v
 	}
+	for k, v := range plan.Marked {
+		params["marked_"+k] = v
+	}
 	context_label.SetPriceCost(ctx, plan.Cost)
 	context_label.SetPriceSale(ctx, plan.Sale)
 	context_label.SetPriceOfficial(ctx, plan.Official)
+	context_label.SetPriceMarked(ctx, plan.Marked)
 	return params, nil
 }
 
@@ -389,10 +418,20 @@ func (c *Calculator) CalculateFromVariables(params map[string]interface{}, match
 		}
 	}
 
+	// 7. 计算标价
+	markedPrice := salePrice
+	if matchedRule.markedExpr != nil {
+		mp, err := evaluateExpression(matchedRule.markedExpr.Expr(), params)
+		if err == nil {
+			markedPrice = mp
+		}
+	}
+
 	return &CalculateResult{
 		Cost:     costPrice,
 		Sale:     salePrice,
 		Official: officialPrice,
+		Marked:   markedPrice,
 	}, nil
 }
 
@@ -416,7 +455,7 @@ func (c *Calculator) CalculateByRule(ctx eocontext.EoContext, pricingData *Prici
 	}
 
 	// 3. 构建公式运行所需的上下文变量 map
-	params := make(map[string]interface{}, len(vars)+len(plan.Cost)+len(plan.Sale)+len(plan.Official))
+	params := make(map[string]interface{}, len(vars)+len(plan.Cost)+len(plan.Sale)+len(plan.Official)+len(plan.Marked))
 	for k, v := range vars {
 		params[k] = v
 	}
@@ -429,6 +468,13 @@ func (c *Calculator) CalculateByRule(ctx eocontext.EoContext, pricingData *Prici
 	for k, v := range plan.Official {
 		params["official_"+k] = v
 	}
+	for k, v := range plan.Marked {
+		params["marked_"+k] = v
+	}
+	context_label.SetPriceCost(ctx, plan.Cost)
+	context_label.SetPriceSale(ctx, plan.Sale)
+	context_label.SetPriceOfficial(ctx, plan.Official)
+	context_label.SetPriceMarked(ctx, plan.Marked)
 
 	// 4. 执行公式计算
 	return c.CalculateFromVariables(params, matchedRule)

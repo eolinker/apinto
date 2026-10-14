@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/drivers"
+	"github.com/eolinker/apinto/drivers/credit"
 	price_calcular "github.com/eolinker/apinto/price-calcular"
 	"github.com/eolinker/apinto/resources"
 	scope_manager "github.com/eolinker/apinto/scope-manager"
@@ -18,6 +20,47 @@ import (
 	"github.com/eolinker/eosc/eocontext"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
+
+// mockCustomerVar 模拟 eosc.ICustomerVar 配置读取
+type mockCustomerVar struct {
+	eosc.ICustomerVar
+	vars       map[string]map[string]string
+	allEnabled bool
+}
+
+func (m *mockCustomerVar) Get(namespace, key string) (string, bool) {
+	if m.allEnabled && key == "enable_billing" {
+		return "1", true
+	}
+	if m.vars == nil {
+		return "", false
+	}
+	if ns, ok := m.vars[namespace]; ok {
+		val, ok := ns[key]
+		return val, ok
+	}
+	return "", false
+}
+
+func (m *mockCustomerVar) GetAll(namespace string) (map[string]string, bool) {
+	if m.vars == nil {
+		return nil, false
+	}
+	ns, ok := m.vars[namespace]
+	return ns, ok
+}
+
+func setMockBillingEnabled(enabled bool) func() {
+	old := customerVar
+	if enabled {
+		customerVar = &mockCustomerVar{allEnabled: true}
+	} else {
+		customerVar = nil
+	}
+	return func() {
+		customerVar = old
+	}
+}
 
 // ============================================================================
 // Cache mocks
@@ -111,6 +154,13 @@ func (m *mockCache) DecrBy(ctx context.Context, key string, decrement int64, exp
 
 func (m *mockCache) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) resources.InterfaceResult {
 	m.runCalls = append(m.runCalls, runCall{keys: keys, args: args})
+	if len(keys) == 3 {
+		if len(args) >= 2 {
+			return &mockInterfaceResult{val: []interface{}{int64(1), int64(2), "", int64(100000000)}, err: nil}
+		} else if len(args) >= 1 {
+			return &mockInterfaceResult{val: []interface{}{int64(1), int64(2), "", args[0].(int64), int64(0)}, err: nil}
+		}
+	}
 	return &mockInterfaceResult{val: int64(1), err: nil}
 }
 
@@ -263,7 +313,7 @@ func newTestCalculator(t *testing.T) price_calcular.ICalculator {
 			OfficialExpression: "official_per_call * 1.2",
 		},
 	}
-	calc, err := price_calcular.NewCalculator("USD", variables, rules)
+	calc, err := price_calcular.NewCalculator("calc_test", "USD", variables, rules)
 	if err != nil {
 		t.Fatalf("create calculator failed: %v", err)
 	}
@@ -276,6 +326,8 @@ func newTestCalculator(t *testing.T) price_calcular.ICalculator {
 
 // TestDynamicBilling_ImmediateSettle 验证同步（immediate）模式下命中规则并完成计费与扣款。
 func TestDynamicBilling_ImmediateSettle(t *testing.T) {
+	defer setMockBillingEnabled(true)()
+
 	// 注册资源计算器，key 为 resource_type:resource
 	price_calcular.SetCalculator("api:res_01", newTestCalculator(t))
 	defer price_calcular.DelCalculator("api:res_01")
@@ -298,11 +350,12 @@ func TestDynamicBilling_ImmediateSettle(t *testing.T) {
 	plugin := &executor{
 		WorkerBase:              drivers.Worker("pricing_filter_test", "pricing_filter_test"),
 		redisID:                 "mock_cache",
-		enableBalance:           true,
 		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
+		creditKeyGenerator:      context_label.NewKeyGenerator("{product}:credit:user:{balance_target}"),
 		priceKeyGenerator:       context_label.NewKeyGenerator("access-resource-price:{application}:{resource}"),
 		taskKeyGenerator:        context_label.NewKeyGenerator("dynamic-billing-task:{application}:{resource}"),
 		concurrencyKeyGenerator: context_label.NewKeyGenerator("dynamic-billing-concurrency:{application}:{resource}"),
+		settingKeyGenerator:     context_label.NewKeyGenerator("dynamic-billing-setting:{application}:{resource}"),
 	}
 
 	ctx := newMockHttpContext(map[string]string{
@@ -316,6 +369,12 @@ func TestDynamicBilling_ImmediateSettle(t *testing.T) {
 		t.Fatalf("DoHttpFilter failed: %v", err)
 	}
 
+	// 触发响应结束结算
+	proxy := ctx.Proxy().(*mockProxy)
+	for _, fn := range proxy.bodyFinishFns {
+		fn(ctx)
+	}
+
 	// cost_per_call*1.0 = 2.0；sale_per_call*1.1 = 22.0；official 表达式实际复用 sale 表达式 => 22.0
 	if got := context_label.GetAmountCost(ctx); got != "2.000000" {
 		t.Errorf("expected cost_amount 2.000000, got %q", got)
@@ -324,18 +383,16 @@ func TestDynamicBilling_ImmediateSettle(t *testing.T) {
 		t.Errorf("expected sale_amount 22.000000, got %q", got)
 	}
 
-	// sale > 0，应触发一次余额扣减 Lua 调用
-	if len(cache.runCalls) != 1 {
-		t.Fatalf("expected 1 balance deduction call, got %d", len(cache.runCalls))
-	}
-	// 扣款金额按 6 位放大为整数：22.0 * 1000000 = 22000000
-	if got := cache.runCalls[0].args[0]; got != int64(22000000) {
-		t.Errorf("expected deduct arg 22000000, got %v", got)
+	// 两阶段下：1次预扣（PreDeduct）+ 1次结算（Settle）
+	if len(cache.runCalls) != 2 {
+		t.Fatalf("expected 2 deduction calls (pre-deduct + settle), got %d", len(cache.runCalls))
 	}
 }
 
 // TestDynamicBilling_InsufficientBalance 验证余额不足时前置阻断返回 402。
 func TestDynamicBilling_InsufficientBalance(t *testing.T) {
+	defer setMockBillingEnabled(true)()
+
 	price_calcular.SetCalculator("api:res_01", newTestCalculator(t))
 	defer price_calcular.DelCalculator("api:res_01")
 
@@ -360,11 +417,12 @@ func TestDynamicBilling_InsufficientBalance(t *testing.T) {
 	plugin := &executor{
 		WorkerBase:              drivers.Worker("pricing_filter_test", "pricing_filter_test"),
 		redisID:                 "mock_cache",
-		enableBalance:           true,
 		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
+		creditKeyGenerator:      context_label.NewKeyGenerator("{product}:credit:user:{balance_target}"),
 		priceKeyGenerator:       context_label.NewKeyGenerator("access-resource-price:{application}:{resource}"),
 		taskKeyGenerator:        context_label.NewKeyGenerator("dynamic-billing-task:{application}:{resource}"),
 		concurrencyKeyGenerator: context_label.NewKeyGenerator("dynamic-billing-concurrency:{application}:{resource}"),
+		settingKeyGenerator:     context_label.NewKeyGenerator("dynamic-billing-setting:{application}:{resource}"),
 	}
 
 	resp := &mockResponse{statusCode: 200}
@@ -391,6 +449,8 @@ func TestDynamicBilling_InsufficientBalance(t *testing.T) {
 // TestDynamicBilling_TaskPricingSnapshot 验证异步两阶段：create 阶段固化定价快照，
 // query 阶段即使 Redis 实时价格被篡改，仍按快照价格结算。
 func TestDynamicBilling_TaskPricingSnapshot(t *testing.T) {
+	defer setMockBillingEnabled(true)()
+
 	price_calcular.SetCalculator("api:res_snapshot", newTestCalculator(t))
 	defer price_calcular.DelCalculator("api:res_snapshot")
 
@@ -416,11 +476,12 @@ func TestDynamicBilling_TaskPricingSnapshot(t *testing.T) {
 		WorkerBase:              drivers.Worker("pricing_filter_test", "pricing_filter_test"),
 		redisID:                 "mock_cache_snapshot",
 		defaultConcurrencyLimit: 100,
-		enableBalance:           true,
 		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
+		creditKeyGenerator:      context_label.NewKeyGenerator("{product}:credit:user:{balance_target}"),
 		priceKeyGenerator:       context_label.NewKeyGenerator("access-resource-price:{application}:{resource}"),
 		taskKeyGenerator:        context_label.NewKeyGenerator("dynamic-billing-task:{application}:{resource}"),
 		concurrencyKeyGenerator: context_label.NewKeyGenerator("dynamic-billing-concurrency:{application}:{resource}"),
+		settingKeyGenerator:     context_label.NewKeyGenerator("dynamic-billing-setting:{application}:{resource}"),
 	}
 
 	// ---- create 阶段：应固化定价快照到 Redis ----
@@ -578,23 +639,24 @@ func TestExecutor_ResetTypeCheck(t *testing.T) {
 	if err := e.Reset("not a config", nil); err == nil {
 		t.Errorf("expected type error for invalid config type, got nil")
 	}
-	cfg := &Config{Cache: "cache_id", ConcurrencyLimit: 200, EnableBalance: true}
+	cfg := &Config{Cache: "cache_id", ConcurrencyLimit: 200}
 	_ = checkConfig(cfg, nil)
 	if err := e.Reset(cfg, nil); err != nil {
 		t.Fatalf("Reset with valid Config returned error: %v", err)
 	}
-	if e.redisID != "cache_id" || e.defaultConcurrencyLimit != 200 || !e.enableBalance {
+	if e.redisID != "cache_id" || e.defaultConcurrencyLimit != 200 {
 		t.Errorf("Reset did not apply config: %+v", e)
 	}
 	if e.balanceKeyGenerator == nil || e.priceKeyGenerator == nil ||
-		e.taskKeyGenerator == nil || e.concurrencyKeyGenerator == nil {
+		e.taskKeyGenerator == nil || e.concurrencyKeyGenerator == nil ||
+		e.creditKeyGenerator == nil {
 		t.Errorf("Reset did not initialize key generators")
 	}
 }
 
 // TestCreate 工厂函数应成功创建 executor 并完成基础初始化
 func TestCreate(t *testing.T) {
-	cfg := &Config{Cache: "cache_id", ConcurrencyLimit: 10, EnableBalance: false}
+	cfg := &Config{Cache: "cache_id", ConcurrencyLimit: 10}
 	_ = checkConfig(cfg, nil)
 	w, err := Create("id_x", "name_x", cfg, nil)
 	if err != nil {
@@ -604,7 +666,7 @@ func TestCreate(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected *executor, got %T", w)
 	}
-	if e.redisID != "cache_id" || e.defaultConcurrencyLimit != 10 || e.enableBalance {
+	if e.redisID != "cache_id" || e.defaultConcurrencyLimit != 10 {
 		t.Errorf("Create did not apply config: %+v", e)
 	}
 }
@@ -659,7 +721,6 @@ func TestDoHttpFilter_NoResource(t *testing.T) {
 	plugin := &executor{
 		WorkerBase:              drivers.Worker("id", "name"),
 		redisID:                 "mock_cache_noresource",
-		enableBalance:           false,
 		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
 		priceKeyGenerator:       context_label.NewKeyGenerator("price:{application}"),
 		taskKeyGenerator:        context_label.NewKeyGenerator("task:{application}"),
@@ -687,7 +748,6 @@ func TestDoHttpFilter_CalculatorNotFound(t *testing.T) {
 	plugin := &executor{
 		WorkerBase:              drivers.Worker("id", "name"),
 		redisID:                 "mock_cache_nocalc",
-		enableBalance:           false,
 		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
 		priceKeyGenerator:       context_label.NewKeyGenerator("price:{application}"),
 		taskKeyGenerator:        context_label.NewKeyGenerator("task:{application}"),
@@ -733,7 +793,6 @@ func TestDoHttpFilter_ConcurrencyLimitExceeded(t *testing.T) {
 		WorkerBase:              drivers.Worker("id", "name"),
 		redisID:                 "mock_cache_conc",
 		defaultConcurrencyLimit: 1,
-		enableBalance:           false,
 		balanceKeyGenerator:     context_label.NewKeyGenerator("balance:{application}"),
 		priceKeyGenerator:       context_label.NewKeyGenerator("price:{application}"),
 		taskKeyGenerator:        context_label.NewKeyGenerator("task:{application}"),
@@ -806,6 +865,7 @@ type luaCache struct {
 	resources.ICache
 	mu   sync.Mutex
 	kv   map[string]string
+	hash map[string]map[string]int64
 	runs int
 }
 
@@ -814,7 +874,28 @@ func newLuaCache(balance map[string]string) *luaCache {
 	for k, v := range balance {
 		m[k] = v
 	}
-	return &luaCache{kv: m}
+	return &luaCache{kv: m, hash: make(map[string]map[string]int64)}
+}
+
+func (c *luaCache) setCreditBalance(creditKey, cid string, amt int64) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.hash == nil {
+		c.hash = make(map[string]map[string]int64)
+	}
+	if c.hash[creditKey] == nil {
+		c.hash[creditKey] = make(map[string]int64)
+	}
+	c.hash[creditKey][cid] = amt
+}
+
+func (c *luaCache) creditInt(creditKey, cid string) int64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.hash == nil || c.hash[creditKey] == nil {
+		return 0
+	}
+	return c.hash[creditKey][cid]
 }
 
 func (c *luaCache) Get(ctx context.Context, key string) resources.StringResult {
@@ -863,12 +944,15 @@ func (c *luaCache) Del(ctx context.Context, keys ...string) resources.IntResult 
 	return &mockIntResult{val: n, err: nil}
 }
 
-// Run 模拟 executor.go 中用到的 4 种 Lua 脚本语义。
-// 通过 keys 数量与 args 数量区分分支（与生产代码的调用约定一致）。
+// Run 模拟 executor.go 中用到的 Lua 脚本语义。
 func (c *luaCache) Run(ctx context.Context, script interface{}, keys []string, args ...interface{}) resources.InterfaceResult {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.runs++
-	bal := keys[0]
+	bal := ""
+	if len(keys) > 0 {
+		bal = keys[0]
+	}
 	getInt := func(k string) int64 {
 		v, ok := c.kv[k]
 		if !ok {
@@ -879,12 +963,259 @@ func (c *luaCache) Run(ctx context.Context, script interface{}, keys []string, a
 	}
 	set := func(k string, n int64) { c.kv[k] = strconv.FormatInt(n, 10) }
 	var ret interface{}
+
+	s, _ := script.(string)
+
 	switch {
+	case strings.Contains(s, "fallbackAmt") || strings.Contains(s, "recovery") || strings.Contains(s, "estAmt"):
+		// executeRecovery 冲正
+		creditKey := keys[0]
+		balanceKey := keys[1]
+		preKey := keys[2]
+		var dType int64 = 2
+		var preAmt int64
+		var cid string
+		var creditAmt int64
+		var balanceAmt int64
+		if c.hash != nil && c.hash[preKey] != nil {
+			dType = c.hash[preKey]["deduct_type"]
+			preAmt = c.hash[preKey]["amount"]
+			creditAmt = c.hash[preKey]["credit_amount"]
+			balanceAmt = c.hash[preKey]["balance_amount"]
+			cid = c.kv[preKey+":cid"]
+			delete(c.hash, preKey)
+			delete(c.kv, preKey+":cid")
+		} else if len(args) >= 1 {
+			preAmt = args[0].(int64)
+			if len(args) >= 2 {
+				dType = int64(args[1].(int))
+			}
+			if len(args) >= 3 {
+				cid = args[2].(string)
+			}
+		}
+
+		if dType == 3 {
+			if creditAmt > 0 && cid != "" {
+				if c.hash == nil {
+					c.hash = make(map[string]map[string]int64)
+				}
+				if c.hash[creditKey] == nil {
+					c.hash[creditKey] = make(map[string]int64)
+				}
+				c.hash[creditKey][cid] += creditAmt
+			}
+			if balanceAmt > 0 {
+				nb := getInt(balanceKey) + balanceAmt
+				set(balanceKey, nb)
+			}
+			ret = []interface{}{int64(1), int64(3), cid, creditAmt, balanceAmt}
+		} else if dType == 1 && cid != "" {
+			refund := creditAmt
+			if refund <= 0 {
+				refund = preAmt
+			}
+			if refund > 0 {
+				if c.hash == nil {
+					c.hash = make(map[string]map[string]int64)
+				}
+				if c.hash[creditKey] == nil {
+					c.hash[creditKey] = make(map[string]int64)
+				}
+				c.hash[creditKey][cid] += refund
+			}
+			ret = []interface{}{int64(1), int64(1), cid, refund}
+		} else {
+			refund := balanceAmt
+			if refund <= 0 {
+				refund = preAmt
+			}
+			if refund > 0 {
+				nb := getInt(balanceKey) + refund
+				set(balanceKey, nb)
+			}
+			ret = []interface{}{int64(1), int64(2), "", refund}
+		}
+
+	case strings.Contains(s, "expire") || strings.Contains(s, "hmset") || strings.Contains(s, "ttl"):
+		// executePreDeductTwoPhase 预扣
+		amt := args[0].(int64)
+		creditKey := keys[0]
+		balanceKey := keys[1]
+		preKey := keys[2]
+
+		targetCid := ""
+		var targetCBal int64 = 0
+		for i := 2; i < len(args); i++ {
+			cid := args[i].(string)
+			if c.hash != nil && c.hash[creditKey] != nil {
+				if bal := c.hash[creditKey][cid]; bal > 0 {
+					targetCid = cid
+					targetCBal = bal
+					break
+				}
+			}
+		}
+
+		if targetCid != "" {
+			if targetCBal >= amt {
+				c.hash[creditKey][targetCid] -= amt
+				if c.hash[preKey] == nil {
+					c.hash[preKey] = make(map[string]int64)
+				}
+				c.hash[preKey]["deduct_type"] = 1
+				c.hash[preKey]["amount"] = amt
+				c.hash[preKey]["credit_amount"] = amt
+				c.hash[preKey]["balance_amount"] = 0
+				c.kv[preKey+":cid"] = targetCid
+				ret = []interface{}{int64(1), int64(1), targetCid, c.hash[creditKey][targetCid], int64(0)}
+			} else {
+				remain := amt - targetCBal
+				b := getInt(balanceKey)
+				if b >= remain {
+					c.hash[creditKey][targetCid] = 0
+					nb := b - remain
+					set(balanceKey, nb)
+					if c.hash[preKey] == nil {
+						c.hash[preKey] = make(map[string]int64)
+					}
+					c.hash[preKey]["deduct_type"] = 3
+					c.hash[preKey]["amount"] = amt
+					c.hash[preKey]["credit_amount"] = targetCBal
+					c.hash[preKey]["balance_amount"] = remain
+					c.kv[preKey+":cid"] = targetCid
+					ret = []interface{}{int64(1), int64(3), targetCid, int64(0), nb}
+				} else {
+					ret = []interface{}{int64(0), int64(0), "", targetCBal, b}
+				}
+			}
+		} else {
+			b := getInt(balanceKey)
+			if b >= amt {
+				nb := b - amt
+				set(balanceKey, nb)
+				if c.hash == nil {
+					c.hash = make(map[string]map[string]int64)
+				}
+				if c.hash[preKey] == nil {
+					c.hash[preKey] = make(map[string]int64)
+				}
+				c.hash[preKey]["deduct_type"] = 2
+				c.hash[preKey]["amount"] = amt
+				c.hash[preKey]["credit_amount"] = 0
+				c.hash[preKey]["balance_amount"] = amt
+				ret = []interface{}{int64(1), int64(2), "", int64(0), nb}
+			} else {
+				ret = []interface{}{int64(0), int64(0), "", int64(0), b}
+			}
+		}
+
+	case strings.Contains(s, "actual") && len(keys) == 3:
+		// settlePreDeductTwoPhase 结算
+		actual := args[0].(int64)
+		creditKey := keys[0]
+		balanceKey := keys[1]
+		preKey := keys[2]
+		var dType int64 = 2
+		var preAmt int64
+		var preCreditAmt int64
+		var preBalanceAmt int64
+		var cid string
+		if c.hash != nil && c.hash[preKey] != nil {
+			dType = c.hash[preKey]["deduct_type"]
+			preAmt = c.hash[preKey]["amount"]
+			preCreditAmt = c.hash[preKey]["credit_amount"]
+			preBalanceAmt = c.hash[preKey]["balance_amount"]
+			cid = c.kv[preKey+":cid"]
+			delete(c.hash, preKey)
+			delete(c.kv, preKey+":cid")
+		} else {
+			// 幂等：若快照已删除/不存在，直接返回不重复扣款
+			ret = []interface{}{int64(1), int64(0), "", int64(0), int64(0)}
+			break
+		}
+		if preCreditAmt == 0 && preBalanceAmt == 0 {
+			if dType == 1 {
+				preCreditAmt = preAmt
+			} else if dType == 2 {
+				preBalanceAmt = preAmt
+			}
+		}
+
+		diff := actual - preAmt
+		if dType == 1 {
+			if diff <= 0 {
+				refund := -diff
+				if refund > 0 {
+					c.hash[creditKey][cid] += refund
+				}
+				ret = []interface{}{int64(1), int64(1), cid, actual, int64(0)}
+			} else {
+				cBal := c.hash[creditKey][cid]
+				if cBal >= diff {
+					c.hash[creditKey][cid] -= diff
+					ret = []interface{}{int64(1), int64(1), cid, actual, int64(0)}
+				} else {
+					c.hash[creditKey][cid] = 0
+					remain := diff - cBal
+					nb := getInt(balanceKey) - remain
+					set(balanceKey, nb)
+					ret = []interface{}{int64(1), int64(3), cid, preAmt + cBal, remain, nb}
+				}
+			}
+		} else if dType == 3 {
+			if diff < 0 {
+				refund := -diff
+				if refund <= preBalanceAmt {
+					nb := getInt(balanceKey) + refund
+					set(balanceKey, nb)
+					ret = []interface{}{int64(1), int64(3), cid, preCreditAmt, preBalanceAmt - refund}
+				} else {
+					nb := getInt(balanceKey) + preBalanceAmt
+					set(balanceKey, nb)
+					remainRefund := refund - preBalanceAmt
+					c.hash[creditKey][cid] += remainRefund
+					ret = []interface{}{int64(1), int64(1), cid, actual, int64(0)}
+				}
+			} else if diff > 0 {
+				cBal := c.hash[creditKey][cid]
+				if cBal >= diff {
+					c.hash[creditKey][cid] -= diff
+					ret = []interface{}{int64(1), int64(3), cid, preCreditAmt + diff, preBalanceAmt}
+				} else {
+					c.hash[creditKey][cid] = 0
+					remainDiff := diff - cBal
+					nb := getInt(balanceKey) - remainDiff
+					set(balanceKey, nb)
+					ret = []interface{}{int64(1), int64(3), cid, preCreditAmt + cBal, preBalanceAmt + remainDiff, nb}
+				}
+			} else {
+				ret = []interface{}{int64(1), int64(3), cid, preCreditAmt, preBalanceAmt}
+			}
+		} else {
+			if diff != 0 {
+				nb := getInt(balanceKey) - diff
+				set(balanceKey, nb)
+				ret = []interface{}{int64(1), int64(2), "", int64(0), actual, nb}
+			} else {
+				ret = []interface{}{int64(1), int64(2), "", int64(0), actual}
+			}
+		}
+
+	case strings.Contains(s, "actual") && len(keys) == 2:
+		// directDeductLua 无预扣直接扣款
+		actual := args[0].(int64)
+		balanceKey := keys[1]
+		nb := getInt(balanceKey) - actual
+		set(balanceKey, nb)
+		ret = []interface{}{int64(1), int64(2), "", nb, actual}
+
 	case len(keys) == 1 && len(args) == 1:
 		// executeBalanceDeduction: decrby balance amt
 		nb := getInt(bal) - args[0].(int64)
 		set(bal, nb)
 		ret = nb
+
 	case len(keys) == 2 && len(args) == 2:
 		// executePreDeduct: 余额校验 + decrby + setex pre
 		amt := args[0].(int64)
@@ -897,6 +1228,7 @@ func (c *luaCache) Run(ctx context.Context, script interface{}, keys []string, a
 			c.kv[keys[1]] = strconv.FormatInt(amt, 10)
 			ret = []interface{}{int64(1), nb}
 		}
+
 	case len(keys) == 2 && len(args) == 1:
 		// settlePreDeduct: get pre / del pre / decrby diff
 		actual := args[0].(int64)
@@ -912,6 +1244,7 @@ func (c *luaCache) Run(ctx context.Context, script interface{}, keys []string, a
 			}
 			ret = []interface{}{diff, nb, pre}
 		}
+
 	case len(keys) == 2 && len(args) == 0:
 		// refundPreDeduct: get pre / del pre / incrby pre
 		pre := getInt(keys[1])
@@ -924,7 +1257,6 @@ func (c *luaCache) Run(ctx context.Context, script interface{}, keys []string, a
 			ret = []interface{}{pre, nb}
 		}
 	}
-	c.mu.Unlock()
 	return &mockInterfaceResult{val: ret, err: nil}
 }
 
@@ -1067,6 +1399,9 @@ func TestRefundPreDeduct_NoKey_Noop(t *testing.T) {
 // 定价：cost_per_call=2, sale_per_call=20，规则系数 sale*1.1 => sale=22 元。
 func newBillingTestEnv(t *testing.T, balanceYuan float64) (*executor, *luaCache, *mockHttpContext) {
 	t.Helper()
+	deferBilling := setMockBillingEnabled(true)
+	t.Cleanup(deferBilling)
+
 	price_calcular.SetCalculator("api:res_billing", newTestCalculator(t))
 	t.Cleanup(func() { price_calcular.DelCalculator("api:res_billing") })
 
@@ -1086,17 +1421,18 @@ func newBillingTestEnv(t *testing.T, balanceYuan float64) (*executor, *luaCache,
 		balanceKey: strconv.FormatInt(int64(balanceYuan*1000000), 10),
 		priceKey:   priceJSON,
 	})
-	scope_manager.Set("lua_cache_billing", cache, "redis")
+	scope_manager.Set("lua_cache_billing", cache, "lua_cache_billing", "redis")
 	t.Cleanup(func() { scope_manager.Del("lua_cache_billing") })
 
 	plugin := &executor{
 		WorkerBase:              drivers.Worker("billing_test", "billing_test"),
 		redisID:                 "lua_cache_billing",
-		enableBalance:           true,
 		balanceKeyGenerator:     context_label.NewKeyGenerator(balanceKey),
+		creditKeyGenerator:      context_label.NewKeyGenerator("{product}:credit:user:{balance_target}"),
 		priceKeyGenerator:       context_label.NewKeyGenerator(priceKey),
 		taskKeyGenerator:        context_label.NewKeyGenerator("task:{application}:{resource}"),
 		concurrencyKeyGenerator: context_label.NewKeyGenerator("conc:{application}:{resource}"),
+		settingKeyGenerator:     context_label.NewKeyGenerator("dynamic-billing-setting:{application}:{resource}"),
 	}
 
 	resp := &mockResponse{statusCode: 200}
@@ -1132,6 +1468,9 @@ func TestEndToEnd_ImmediateSettle_BalanceChange(t *testing.T) {
 	want := int64(78 * 1000000)
 	if got != want {
 		t.Errorf("balance after immediate settle = %d (=%.6f元), want %d (78元)", got, float64(got)/1e6, want)
+	}
+	if dType := ctx.GetLabel(context_label.LabelDeductType); dType != context_label.DeductTypeBalance {
+		t.Errorf("deduct_type = %s, want %s", dType, context_label.DeductTypeBalance)
 	}
 }
 
@@ -1196,7 +1535,9 @@ func TestEndToEnd_PreDeductInsufficientBalance_Block402(t *testing.T) {
 	plugin, cache, ctx := newBillingTestEnv(t, 1.0)
 	balanceKey := "balance:app_billing"
 
+	t.Logf("cache balance before = %s", cache.kv[balanceKey])
 	err := plugin.DoHttpFilter(ctx, &mockChain{})
+	t.Logf("DoHttpFilter returned err = %v, cache runs = %d", err, cache.runs)
 	if err == nil {
 		t.Fatalf("expected insufficient balance error, got nil")
 	}
@@ -1233,7 +1574,7 @@ func TestEndToEnd_ConcurrencyRedisError_FailClosed(t *testing.T) {
 	// 用 IncrBy 返回 error 的 cache 包装，复用 luaCache 的 kv
 	plugin.redisID = "err_cache_conc"
 	errCache := &errIncrCache{mockCache: mockCache{kv: cache.kv}}
-	scope_manager.Set("err_cache_conc", errCache, "redis")
+	scope_manager.Set("err_cache_conc", errCache, "err_cache_conc", "redis")
 	defer scope_manager.Del("err_cache_conc")
 
 	plugin.defaultConcurrencyLimit = 10
@@ -1246,5 +1587,437 @@ func TestEndToEnd_ConcurrencyRedisError_FailClosed(t *testing.T) {
 	resp := ctx.Response().(*mockResponse)
 	if resp.statusCode != http.StatusServiceUnavailable {
 		t.Errorf("expected 503 when concurrency redis errors, got %d", resp.statusCode)
+	}
+}
+
+// TestEndToEnd_Credit_PreDeductAndSettle_Refund 代金券全额抵扣与标签测试
+func TestEndToEnd_Credit_PreDeductAndSettle_Refund(t *testing.T) {
+	plugin, cache, ctx := newBillingTestEnv(t, 100.0)
+	ctx.SetLabel("product", "demo_prod")
+	ctx.SetLabel("balance_target", "user_c1")
+	ctx.SetLabel("service", "srv_c1")
+	ctx.SetLabel("api", "api_billing")
+
+	creditRule := credit.CompileRule("coupon_c1", &credit.Config{
+		Nbf: time.Now().Unix() - 100,
+		Exp: time.Now().Unix() + 3600,
+		Filters: credit.Filters{
+			Provider: credit.RuleFilter{API: []string{"srv_c1"}},
+			Resource: credit.RuleFilter{API: []string{"res_billing"}},
+		},
+	})
+	credit.SetRule("coupon_c1", creditRule)
+	defer credit.DelRule("coupon_c1")
+
+	creditKey := "demo_prod:credit:user:user_c1"
+	cache.setCreditBalance(creditKey, "coupon_c1", 50*1000000) // 代金券 50 元
+
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
+		t.Fatalf("DoHttpFilter failed: %v", err)
+	}
+	triggerSettle(ctx)
+
+	// 代金券扣除 22 元，剩余 28 元；现金 100 元分文未动
+	gotCredit := cache.creditInt(creditKey, "coupon_c1")
+	wantCredit := int64(28 * 1000000)
+	if gotCredit != wantCredit {
+		t.Errorf("credit balance = %d, want %d", gotCredit, wantCredit)
+	}
+	gotCash := cache.balanceInt("balance:app_billing")
+	wantCash := int64(100 * 1000000)
+	if gotCash != wantCash {
+		t.Errorf("cash balance = %d, want %d", gotCash, wantCash)
+	}
+
+	// 校验计费标签
+	if dType := ctx.GetLabel(context_label.LabelDeductType); dType != context_label.DeductTypeCredit {
+		t.Errorf("deduct_type = %s, want %s", dType, context_label.DeductTypeCredit)
+	}
+	if cid := ctx.GetLabel(context_label.LabelCreditID); cid != "coupon_c1" {
+		t.Errorf("credit_id = %s, want coupon_c1", cid)
+	}
+	if cApp := ctx.GetLabel(context_label.LabelCreditApplied); cApp != "22.000000" {
+		t.Errorf("credit_applied = %s, want 22.000000", cApp)
+	}
+	if bApp := ctx.GetLabel(context_label.LabelBalanceApplied); bApp != "0" {
+		t.Errorf("balance_applied = %s, want 0", bApp)
+	}
+}
+
+// TestEndToEnd_Credit_PreDeductAndSettle_InsufficientCredit_OverdraftCash 跨账本抵扣测试
+func TestEndToEnd_Credit_PreDeductAndSettle_InsufficientCredit_OverdraftCash(t *testing.T) {
+	defer setMockBillingEnabled(true)()
+
+	variables := price_calcular.Variables{
+		"status": {Source: "response_status", Type: "integer"},
+	}
+	rules := []*price_calcular.Rule{
+		{
+			ID:                 "rule_success",
+			Name:               "跨账本测试规则",
+			CostExpression:     "cost_per_call * 1.0",
+			SaleExpression:     "sale_per_call * 1.5", // 20 * 1.5 = 30 元
+			OfficialExpression: "official_per_call * 1.0",
+		},
+	}
+	calc, err := price_calcular.NewCalculator("calc_cross", "USD", variables, rules)
+	if err != nil {
+		t.Fatalf("create calculator failed: %v", err)
+	}
+	price_calcular.SetCalculator("api:res_cross", calc)
+	defer price_calcular.DelCalculator("api:res_cross")
+
+	balanceKey := "balance:app_cross"
+	priceKey := "access-resource-price:app_cross:res_cross"
+	priceJSON := `{
+		"basic_info": {"version": "v1.0.0", "resource_group_id": "res_cross", "tenant_id": "t1"},
+		"strategy": {
+			"rule_success": {
+				"cost": {"per_call": 2.0},
+				"sale": {"per_call": 20.0},
+				"official": {"per_call": 25.0}
+			}
+		}
+	}`
+	cache := newLuaCache(map[string]string{
+		balanceKey: strconv.FormatInt(100*1000000, 10), // 现金 100 元
+		priceKey:   priceJSON,
+	})
+	scope_manager.Set("lua_cache_cross", cache, "lua_cache_cross", "redis")
+	defer scope_manager.Del("lua_cache_cross")
+
+	plugin := &executor{
+		WorkerBase:              drivers.Worker("billing_test", "billing_test"),
+		redisID:                 "lua_cache_cross",
+		balanceKeyGenerator:     context_label.NewKeyGenerator(balanceKey),
+		creditKeyGenerator:      context_label.NewKeyGenerator("{product}:credit:user:{balance_target}"),
+		priceKeyGenerator:       context_label.NewKeyGenerator(priceKey),
+		taskKeyGenerator:        context_label.NewKeyGenerator("task:{application}:{resource}"),
+		concurrencyKeyGenerator: context_label.NewKeyGenerator("conc:{application}:{resource}"),
+		settingKeyGenerator:     context_label.NewKeyGenerator("dynamic-billing-setting:{application}:{resource}"),
+	}
+
+	ctx := newMockHttpContext(map[string]string{
+		"application":    "app_cross",
+		"api":            "api_cross",
+		"resource":       "res_cross",
+		"resource_type":  "api",
+		"product":        "demo_prod",
+		"balance_target": "user_cross",
+		"service":        "srv_cross",
+	}, &mockResponse{statusCode: 200})
+
+	creditRule := credit.CompileRule("coupon_cross", &credit.Config{
+		Nbf: time.Now().Unix() - 100,
+		Exp: time.Now().Unix() + 3600,
+		Filters: credit.Filters{
+			Provider: credit.RuleFilter{API: []string{"srv_cross"}},
+			Resource: credit.RuleFilter{API: []string{"res_cross"}},
+		},
+	})
+	credit.SetRule("coupon_cross", creditRule)
+	defer credit.DelRule("coupon_cross")
+
+	creditKey := "demo_prod:credit:user:user_cross"
+	cache.setCreditBalance(creditKey, "coupon_cross", 25*1000000)
+
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
+		t.Fatalf("DoHttpFilter failed: %v", err)
+	}
+	triggerSettle(ctx)
+
+	// 最终消费 30 元：
+	// 代金券初始 25 元，预扣 20，少补时代金券不足，代金券清零，剩余转扣现金 5 元
+	gotCredit := cache.creditInt(creditKey, "coupon_cross")
+	if gotCredit != 0 {
+		t.Errorf("credit balance = %d, want 0", gotCredit)
+	}
+	gotCash := cache.balanceInt(balanceKey)
+	wantCash := int64(95 * 1000000) // 100 - 5 = 95 元
+	if gotCash != wantCash {
+		t.Errorf("cash balance = %d, want %d", gotCash, wantCash)
+	}
+
+	if dType := ctx.GetLabel(context_label.LabelDeductType); dType != context_label.DeductTypeCombined {
+		t.Errorf("deduct_type = %s, want %s (cross-ledger)", dType, context_label.DeductTypeCombined)
+	}
+	if cid := ctx.GetLabel(context_label.LabelCreditID); cid != "coupon_cross" {
+		t.Errorf("credit_id = %s, want coupon_cross", cid)
+	}
+	if cApp := ctx.GetLabel(context_label.LabelCreditApplied); cApp != "25.000000" {
+		t.Errorf("credit_applied = %s, want 25.000000", cApp)
+	}
+	if bApp := ctx.GetLabel(context_label.LabelBalanceApplied); bApp != "5.000000" {
+		t.Errorf("balance_applied = %s, want 5.000000", bApp)
+	}
+}
+
+// TestEndToEnd_Credit_CandidatePriority_ExpAsc 候选代金券按失效时间排序优先抵扣测试
+func TestEndToEnd_Credit_CandidatePriority_ExpAsc(t *testing.T) {
+	plugin, cache, ctx := newBillingTestEnv(t, 100.0)
+	ctx.SetLabel("product", "demo_prod")
+	ctx.SetLabel("balance_target", "user_exp")
+	ctx.SetLabel("service", "srv_exp")
+	ctx.SetLabel("api", "api_billing")
+
+	// 规则 1：最先失效（exp=now+100），但余额不足（仅 5 元 < 预扣 22 元）
+	// 新逻辑：最先失效的券哪怕只有 5 元，也会先扣至 0，不足的扣现金
+	rEarly := credit.CompileRule("c_early", &credit.Config{
+		Nbf: time.Now().Unix() - 100,
+		Exp: time.Now().Unix() + 100,
+		Filters: credit.Filters{
+			Provider: credit.RuleFilter{API: []string{"srv_exp"}},
+			Resource: credit.RuleFilter{API: []string{"res_billing"}},
+		},
+	})
+	credit.SetRule("c_early", rEarly)
+	defer credit.DelRule("c_early")
+
+	// 规则 2：较晚失效（exp=now+200），余额充足（50 元）
+	rLate := credit.CompileRule("c_late", &credit.Config{
+		Nbf: time.Now().Unix() - 100,
+		Exp: time.Now().Unix() + 200,
+		Filters: credit.Filters{
+			Provider: credit.RuleFilter{API: []string{"srv_exp"}},
+			Resource: credit.RuleFilter{API: []string{"res_billing"}},
+		},
+	})
+	credit.SetRule("c_late", rLate)
+	defer credit.DelRule("c_late")
+
+	creditKey := "demo_prod:credit:user:user_exp"
+	cache.setCreditBalance(creditKey, "c_early", 5*1000000)
+	cache.setCreditBalance(creditKey, "c_late", 50*1000000)
+
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
+		t.Fatalf("DoHttpFilter failed: %v", err)
+	}
+	triggerSettle(ctx)
+
+	// c_early 先被选中扣至 0，差额 17 元扣现金；c_late 未动
+	if gotEarly := cache.creditInt(creditKey, "c_early"); gotEarly != 0 {
+		t.Errorf("c_early balance = %d, want 0", gotEarly)
+	}
+	if gotLate := cache.creditInt(creditKey, "c_late"); gotLate != 50*1000000 {
+		t.Errorf("c_late balance = %d, want 50000000", gotLate)
+	}
+	if cid := ctx.GetLabel(context_label.LabelCreditID); cid != "c_early" {
+		t.Errorf("credit_id = %s, want c_early", cid)
+	}
+	if dType := ctx.GetLabel(context_label.LabelDeductType); dType != context_label.DeductTypeCombined {
+		t.Errorf("deduct_type = %s, want %s", dType, context_label.DeductTypeCombined)
+	}
+}
+
+// TestEndToEnd_Credit_DownstreamError_RefundCredit 下游失败冲正退还代金券测试
+func TestEndToEnd_Credit_DownstreamError_RefundCredit(t *testing.T) {
+	plugin, cache, ctx := newBillingTestEnv(t, 100.0)
+	ctx.SetLabel("product", "demo_prod")
+	ctx.SetLabel("balance_target", "user_err")
+	ctx.SetLabel("service", "srv_err")
+	ctx.SetLabel("api", "api_billing")
+
+	creditRule := credit.CompileRule("coupon_err", &credit.Config{
+		Nbf: time.Now().Unix() - 100,
+		Exp: time.Now().Unix() + 3600,
+		Filters: credit.Filters{
+			Provider: credit.RuleFilter{API: []string{"srv_err"}},
+			Resource: credit.RuleFilter{API: []string{"res_billing"}},
+		},
+	})
+	credit.SetRule("coupon_err", creditRule)
+	defer credit.DelRule("coupon_err")
+
+	creditKey := "demo_prod:credit:user:user_err"
+	cache.setCreditBalance(creditKey, "coupon_err", 50*1000000)
+
+	if err := plugin.DoHttpFilter(ctx, &errChain{}); err == nil {
+		t.Fatalf("expected error from chain, got nil")
+	}
+
+	// 冲正全额回滚，代金券恢复 50 元
+	if got := cache.creditInt(creditKey, "coupon_err"); got != 50*1000000 {
+		t.Errorf("credit balance after recovery = %d, want 50000000", got)
+	}
+}
+
+// TestEndToEnd_MarkedPrice_ContextLabels 标价 Marked 表达式与审计标签注入测试
+func TestEndToEnd_MarkedPrice_ContextLabels(t *testing.T) {
+	defer setMockBillingEnabled(true)()
+
+	variables := price_calcular.Variables{
+		"status": {Source: "response_status", Type: "integer"},
+	}
+	rules := []*price_calcular.Rule{
+		{
+			ID:                 "rule_marked",
+			Name:               "标价测试规则",
+			CostExpression:     "cost_per_call * 1.0",
+			SaleExpression:     "sale_per_call * 1.0",
+			OfficialExpression: "official_per_call * 1.0",
+			MarkedExpression:   "marked_per_call * 1.5",
+		},
+	}
+	calc, err := price_calcular.NewCalculator("calc_marked", "USD", variables, rules)
+	if err != nil {
+		t.Fatalf("create calculator failed: %v", err)
+	}
+	price_calcular.SetCalculator("api:res_marked", calc)
+	defer price_calcular.DelCalculator("api:res_marked")
+
+	balanceKey := "balance:app_marked"
+	priceKey := "access-resource-price:app_marked:res_marked"
+	priceJSON := `{
+		"basic_info": {"version": "v1.0.0", "resource_group_id": "res_marked", "tenant_id": "t1"},
+		"strategy": {
+			"rule_marked": {
+				"cost": {"per_call": 2.0},
+				"sale": {"per_call": 10.0},
+				"official": {"per_call": 12.0},
+				"marked": {"per_call": 8.0}
+			}
+		}
+	}`
+	cache := newLuaCache(map[string]string{
+		balanceKey: strconv.FormatInt(100*1000000, 10),
+		priceKey:   priceJSON,
+	})
+	scope_manager.Set("lua_cache_marked", cache, "lua_cache_marked", "redis")
+	defer scope_manager.Del("lua_cache_marked")
+
+	plugin := &executor{
+		WorkerBase:              drivers.Worker("billing_test", "billing_test"),
+		redisID:                 "lua_cache_marked",
+		balanceKeyGenerator:     context_label.NewKeyGenerator(balanceKey),
+		creditKeyGenerator:      context_label.NewKeyGenerator("{product}:credit:user:{balance_target}"),
+		priceKeyGenerator:       context_label.NewKeyGenerator(priceKey),
+		taskKeyGenerator:        context_label.NewKeyGenerator("task:{application}:{resource}"),
+		concurrencyKeyGenerator: context_label.NewKeyGenerator("conc:{application}:{resource}"),
+		settingKeyGenerator:     context_label.NewKeyGenerator("dynamic-billing-setting:{application}:{resource}"),
+	}
+
+	ctx := newMockHttpContext(map[string]string{
+		"application":   "app_marked",
+		"api":           "api_marked",
+		"resource":      "res_marked",
+		"resource_type": "api",
+	}, &mockResponse{statusCode: 200})
+
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
+		t.Fatalf("DoHttpFilter failed: %v", err)
+	}
+	triggerSettle(ctx)
+
+	// 校验标价相关标签注入
+	// marked_amount = 8.0 * 1.5 = 12.000000
+	if markedAmt := ctx.GetLabel(context_label.LabelAmountMarked); markedAmt != "12.000000" {
+		t.Errorf("marked_amount = %s, want 12.000000", markedAmt)
+	}
+	if markedExpr := ctx.GetLabel(context_label.LabelExprMarked); markedExpr != "marked_per_call * 1.5" {
+		t.Errorf("marked_expr = %s, want 'marked_per_call * 1.5'", markedExpr)
+	}
+}
+
+// TestEndToEnd_Credit_PartialPreDeduct_CreditToZeroAndCashRemainder
+// 重点测试用户需求：预扣时先检查券余额，若券不足预扣金额，先预扣券余额到0，剩下不足的扣现金余额。
+func TestEndToEnd_Credit_PartialPreDeduct_CreditToZeroAndCashRemainder(t *testing.T) {
+	plugin, cache, ctx := newBillingTestEnv(t, 100.0) // 现金 100 元，预扣金额需 22 元
+	ctx.SetLabel("product", "demo_prod")
+	ctx.SetLabel("balance_target", "user_partial")
+	ctx.SetLabel("service", "srv_partial")
+	ctx.SetLabel("api", "api_billing")
+
+	creditRule := credit.CompileRule("coupon_part", &credit.Config{
+		Nbf: time.Now().Unix() - 100,
+		Exp: time.Now().Unix() + 3600,
+		Filters: credit.Filters{
+			Provider: credit.RuleFilter{API: []string{"srv_partial"}},
+			Resource: credit.RuleFilter{API: []string{"res_billing"}},
+		},
+	})
+	credit.SetRule("coupon_part", creditRule)
+	defer credit.DelRule("coupon_part")
+
+	creditKey := "demo_prod:credit:user:user_partial"
+	// 券余额仅 10 元 (< 22 元)
+	cache.setCreditBalance(creditKey, "coupon_part", 10*1000000)
+
+	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
+		t.Fatalf("DoHttpFilter failed: %v", err)
+	}
+
+	// 此时仅完成阶段一预扣：预扣金额为底价 20 元
+	// 代金券 10 元应被扣至 0；现金应被扣除剩余的 10 元 (100 - 10 = 90 元)
+	gotCredit := cache.creditInt(creditKey, "coupon_part")
+	if gotCredit != 0 {
+		t.Errorf("credit balance after pre-deduct = %d, want 0", gotCredit)
+	}
+	gotCash := cache.balanceInt("balance:app_billing")
+	wantCashPre := int64(90 * 1000000)
+	if gotCash != wantCashPre {
+		t.Errorf("cash balance after pre-deduct = %d, want %d (90元)", gotCash, wantCashPre)
+	}
+
+	// 校验阶段一标签
+	if dType := ctx.GetLabel(context_label.LabelDeductType); dType != context_label.DeductTypeCombined {
+		t.Errorf("deduct_type in label = %s, want %s", dType, context_label.DeductTypeCombined)
+	}
+	if cid := ctx.GetLabel(context_label.LabelCreditID); cid != "coupon_part" {
+		t.Errorf("credit_id in label = %s, want coupon_part", cid)
+	}
+
+	// 执行阶段二结算（实际结算金额 22 元，相比预扣 20 元少补 2 元，从现金中追加扣除 2 元）
+	triggerSettle(ctx)
+
+	// 结算后：券依然为 0，现金扣减 2 元变为 88 元；applied 标签记录代金券 10 元，现金 12 元
+	if gotCreditAfter := cache.creditInt(creditKey, "coupon_part"); gotCreditAfter != 0 {
+		t.Errorf("credit balance after settle = %d, want 0", gotCreditAfter)
+	}
+	wantCashAfter := int64(88 * 1000000)
+	if gotCashAfter := cache.balanceInt("balance:app_billing"); gotCashAfter != wantCashAfter {
+		t.Errorf("cash balance after settle = %d, want %d (88元)", gotCashAfter, wantCashAfter)
+	}
+	if cApp := ctx.GetLabel(context_label.LabelCreditApplied); cApp != "10.000000" {
+		t.Errorf("credit_applied = %s, want 10.000000", cApp)
+	}
+	if bApp := ctx.GetLabel(context_label.LabelBalanceApplied); bApp != "12.000000" {
+		t.Errorf("balance_applied = %s, want 12.000000", bApp)
+	}
+}
+
+// TestEndToEnd_Credit_PartialPreDeduct_DownstreamError_Recovery
+// 测试组合预扣（券扣到0+扣现金）后下游错误触发冲正：券和现金各自原路退回
+func TestEndToEnd_Credit_PartialPreDeduct_DownstreamError_Recovery(t *testing.T) {
+	plugin, cache, ctx := newBillingTestEnv(t, 100.0)
+	ctx.SetLabel("product", "demo_prod")
+	ctx.SetLabel("balance_target", "user_rec")
+	ctx.SetLabel("service", "srv_rec")
+	ctx.SetLabel("api", "api_billing")
+
+	creditRule := credit.CompileRule("coupon_rec", &credit.Config{
+		Nbf: time.Now().Unix() - 100,
+		Exp: time.Now().Unix() + 3600,
+		Filters: credit.Filters{
+			Provider: credit.RuleFilter{API: []string{"srv_rec"}},
+			Resource: credit.RuleFilter{API: []string{"res_billing"}},
+		},
+	})
+	credit.SetRule("coupon_rec", creditRule)
+	defer credit.DelRule("coupon_rec")
+
+	creditKey := "demo_prod:credit:user:user_rec"
+	cache.setCreditBalance(creditKey, "coupon_rec", 10*1000000)
+
+	// 模拟下游错误
+	if err := plugin.DoHttpFilter(ctx, &errChain{}); err == nil {
+		t.Fatalf("expected error from chain, got nil")
+	}
+
+	// 冲正后：券 10 元全部恢复，现金 100 元全部恢复
+	if gotCredit := cache.creditInt(creditKey, "coupon_rec"); gotCredit != 10*1000000 {
+		t.Errorf("credit balance after recovery = %d, want 10000000", gotCredit)
+	}
+	if gotCash := cache.balanceInt("balance:app_billing"); gotCash != 100*1000000 {
+		t.Errorf("cash balance after recovery = %d, want 100000000", gotCash)
 	}
 }

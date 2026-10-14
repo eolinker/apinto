@@ -349,5 +349,20 @@ func Profession() []*eosc.ProfessionConfig {
 				},
 			},
 		},
+		{
+			Name:         "credit",
+			Label:        "代金券规则",
+			Desc:         "代金券规则",
+			Dependencies: nil,
+			AppendLabels: nil,
+			Drivers: []*eosc.DriverConfig{
+				{
+					Id:    "eolinker.com:apinto:credit",
+					Name:  "credit",
+					Label: "代金券规则",
+					Desc:  "代金券规则",
+				},
+			},
+		},
 	}
 }

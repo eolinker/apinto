@@ -50,6 +50,9 @@ func checkConfig(v interface{}) (*Config, error) {
 		if rule.OfficialExpression == "" {
 			rule.OfficialExpression = rule.CostExpression
 		}
+		if rule.MarkedExpression == "" {
+			rule.MarkedExpression = rule.SaleExpression
+		}
 
 		// 提前校验进货价表达式语法
 		_, err := price_calcular.NewExpression(rule.CostExpression)
@@ -67,6 +70,12 @@ func checkConfig(v interface{}) (*Config, error) {
 		_, err = price_calcular.NewExpression(rule.OfficialExpression)
 		if err != nil {
 			return nil, fmt.Errorf("invalid official_expression '%s' in rule %s: %w", rule.OfficialExpression, rule.ID, err)
+		}
+
+		// 提前校验标价表达式语法
+		_, err = price_calcular.NewExpression(rule.MarkedExpression)
+		if err != nil {
+			return nil, fmt.Errorf("invalid marked_expression '%s' in rule %s: %w", rule.MarkedExpression, rule.ID, err)
 		}
 	}
 
