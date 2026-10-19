@@ -24,6 +24,9 @@ const (
 	LabelExprSale            = "sale_expr"
 	LabelExprOfficial        = "official_expr"
 	LabelExprMarked          = "marked_expr"
+	LabelNumExprCost         = "cost_num_expr"
+	LabelNumExprSale         = "sale_num_expr"
+	LabelPriceUnit           = "price_unit"
 	LabelCreditID            = "credit_id"
 	LabelCreditApplied       = "credit_applied"
 	LabelBalanceApplied      = "balance_applied"
@@ -120,6 +123,30 @@ func SetExprMarked(ctx eocontext.EoContext, value string) {
 
 func GetExprMarked(ctx eocontext.EoContext) string {
 	return ctx.GetLabel(LabelExprMarked)
+}
+
+func SetNumExprCost(ctx eocontext.EoContext, value string) {
+	ctx.SetLabel(LabelNumExprCost, value)
+}
+
+func GetNumExprCost(ctx eocontext.EoContext) string {
+	return ctx.GetLabel(LabelNumExprCost)
+}
+
+func SetNumExprSale(ctx eocontext.EoContext, value string) {
+	ctx.SetLabel(LabelNumExprSale, value)
+}
+
+func GetNumExprSale(ctx eocontext.EoContext) string {
+	return ctx.GetLabel(LabelNumExprSale)
+}
+
+func SetPriceUnit(ctx eocontext.EoContext, value string) {
+	ctx.SetLabel(LabelPriceUnit, value)
+}
+
+func GetPriceUnit(ctx eocontext.EoContext) string {
+	return ctx.GetLabel(LabelPriceUnit)
 }
 
 func SetPriceVariable(ctx eocontext.EoContext, key string, value interface{}) {

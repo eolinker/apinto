@@ -260,6 +260,7 @@ func (c *Calculator) Calculate(ctx eocontext.EoContext, enableBalance bool, pric
 	}
 
 	context_label.SetChargeRule(ctx, matchedRule.id)
+	context_label.SetPriceUnit(ctx, matchedRule.billingMode)
 	context_label.SetExprCost(ctx, matchedRule.costExpr.String())
 	context_label.SetExprSale(ctx, matchedRule.saleExpr.String())
 	context_label.SetExprOfficial(ctx, matchedRule.officialExpr.String())
@@ -340,6 +341,7 @@ func (c *Calculator) CalculateFromChunk(ctx eocontext.EoContext, enableBalance b
 		}
 		mr = matchedRule.(*ProcessedRule)
 		context_label.SetChargeRule(ctx, mr.id)
+		context_label.SetPriceUnit(ctx, mr.billingMode)
 		context_label.SetExprCost(ctx, mr.costExpr.String())
 		context_label.SetExprSale(ctx, mr.saleExpr.String())
 		context_label.SetExprOfficial(ctx, mr.officialExpr.String())
@@ -391,6 +393,13 @@ func (c *Calculator) generateParams(ctx eocontext.EoContext, vars map[string]int
 	context_label.SetPriceSale(ctx, plan.Sale)
 	context_label.SetPriceOfficial(ctx, plan.Official)
 	context_label.SetPriceMarked(ctx, plan.Marked)
+	context_label.SetPriceUnit(ctx, matchedRule.billingMode)
+	if matchedRule.costExpr != nil {
+		context_label.SetNumExprCost(ctx, matchedRule.costExpr.NumExpr(params))
+	}
+	if matchedRule.saleExpr != nil {
+		context_label.SetNumExprSale(ctx, matchedRule.saleExpr.NumExpr(params))
+	}
 	return params, nil
 }
 
@@ -475,6 +484,13 @@ func (c *Calculator) CalculateByRule(ctx eocontext.EoContext, pricingData *Prici
 	context_label.SetPriceSale(ctx, plan.Sale)
 	context_label.SetPriceOfficial(ctx, plan.Official)
 	context_label.SetPriceMarked(ctx, plan.Marked)
+	context_label.SetPriceUnit(ctx, matchedRule.billingMode)
+	if matchedRule.costExpr != nil {
+		context_label.SetNumExprCost(ctx, matchedRule.costExpr.NumExpr(params))
+	}
+	if matchedRule.saleExpr != nil {
+		context_label.SetNumExprSale(ctx, matchedRule.saleExpr.NumExpr(params))
+	}
 
 	// 4. 执行公式计算
 	return c.CalculateFromVariables(params, matchedRule)

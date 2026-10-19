@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	context_label "github.com/eolinker/apinto/common/context-label"
 	http_context "github.com/eolinker/eosc/eocontext/http-context"
 )
 
@@ -281,5 +282,17 @@ func TestCalculator_GeminiUsageBilling(t *testing.T) {
 	}
 	if res.Sale != expectedSale {
 		t.Errorf("Sale got %f, want %f", res.Sale, expectedSale)
+	}
+
+	if gotUnit := context_label.GetPriceUnit(ctx); gotUnit != BillingModeToken {
+		t.Errorf("price_unit got %q, want %q", gotUnit, BillingModeToken)
+	}
+	wantCostNumExpr := "(41 * 1 + 0 * 0.5 + (0 + 879) * 2 + 1120 * 10) / 1000000"
+	if gotCostNumExpr := context_label.GetNumExprCost(ctx); gotCostNumExpr != wantCostNumExpr {
+		t.Errorf("cost_num_expr got %q, want %q", gotCostNumExpr, wantCostNumExpr)
+	}
+	wantSaleNumExpr := "(41 * 2 + 0 * 1 + (0 + 879) * 4 + 1120 * 20) / 1000000"
+	if gotSaleNumExpr := context_label.GetNumExprSale(ctx); gotSaleNumExpr != wantSaleNumExpr {
+		t.Errorf("sale_num_expr got %q, want %q", gotSaleNumExpr, wantSaleNumExpr)
 	}
 }

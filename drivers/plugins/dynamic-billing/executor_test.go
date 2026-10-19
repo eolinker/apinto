@@ -369,12 +369,6 @@ func TestDynamicBilling_ImmediateSettle(t *testing.T) {
 		t.Fatalf("DoHttpFilter failed: %v", err)
 	}
 
-	// 触发响应结束结算
-	proxy := ctx.Proxy().(*mockProxy)
-	for _, fn := range proxy.bodyFinishFns {
-		fn(ctx)
-	}
-
 	// cost_per_call*1.0 = 2.0；sale_per_call*1.1 = 22.0；official 表达式实际复用 sale 表达式 => 22.0
 	if got := context_label.GetAmountCost(ctx); got != "2.000000" {
 		t.Errorf("expected cost_amount 2.000000, got %q", got)
@@ -383,7 +377,7 @@ func TestDynamicBilling_ImmediateSettle(t *testing.T) {
 		t.Errorf("expected sale_amount 22.000000, got %q", got)
 	}
 
-	// 两阶段下：1次预扣（PreDeduct）+ 1次结算（Settle）
+	// 非流式请求在 DoHttpFilter 中已完成：1次预扣（PreDeduct）+ 1次同步结算（Settle）
 	if len(cache.runCalls) != 2 {
 		t.Fatalf("expected 2 deduction calls (pre-deduct + settle), got %d", len(cache.runCalls))
 	}
@@ -1960,6 +1954,9 @@ func TestEndToEnd_Credit_PartialPreDeduct_CreditToZeroAndCashRemainder(t *testin
 	creditKey := "demo_prod:credit:user:user_partial"
 	// 券余额仅 10 元 (< 22 元)
 	cache.setCreditBalance(creditKey, "coupon_part", 10*1000000)
+
+	// 设为流式响应，使得 DoHttpFilter 仅完成阶段一预扣，阶段二由 triggerSettle 触发
+	ctx.Response().(*mockResponse).isStream = true
 
 	if err := plugin.DoHttpFilter(ctx, &mockChain{}); err != nil {
 		t.Fatalf("DoHttpFilter failed: %v", err)

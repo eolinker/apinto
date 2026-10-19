@@ -569,11 +569,11 @@ func (e *executor) DoHttpFilter(ctx http_context.IHttpContext, next eocontext.IC
 		return nil
 	}
 
-	if billingMode == context_label.BillingModeImmediate || ctx.Response().IsBodyStream() {
+	if ctx.Response().IsBodyStream() {
 		return nil
 	}
 
-	// 同步结算非流式响应（如 TaskQuery 阶段）
+	// 同步结算非流式响应（Immediate 非流式请求 & TaskQuery 阶段）
 	return e.settleBilling(ctx, calc, priceData, creditKey, balanceKey, candidateCreditIDs, preDeductKey, preDeductType, preCreditID, preEstCost, resourceID, app, cache, billingMode, isCharged, enableBilling)
 }
 
