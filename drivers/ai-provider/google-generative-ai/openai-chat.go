@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -621,25 +622,224 @@ func lookupExtraSignature(sigs map[int]map[int]string, msgIdx, tcIdx int) string
 	return ""
 }
 
-// mimeTypeFromURL infers the image MIME type from the URL extension.
+// cleanMediaURL trims surrounding whitespace and backticks from a media URL.
+func cleanMediaURL(u string) string {
+	return strings.Trim(u, " \t\n\r`")
+}
+
+// mimeTypeByExt maps lowercase file extensions to their corresponding MIME types.
+var mimeTypeByExt = map[string]string{
+	// Image formats
+	".png":  "image/png",
+	".gif":  "image/gif",
+	".webp": "image/webp",
+	".jpg":  "image/jpeg",
+	".jpeg": "image/jpeg",
+	".jpe":  "image/jpeg",
+	".jfif": "image/jpeg",
+	".heic": "image/heic",
+	".heif": "image/heif",
+	".bmp":  "image/bmp",
+	".svg":  "image/svg+xml",
+	".ico":  "image/x-icon",
+	".tif":  "image/tiff",
+	".tiff": "image/tiff",
+	".avif": "image/avif",
+
+	// Video formats
+	".mp4":    "video/mp4",
+	".m4v":    "video/mp4",
+	".mp4v":   "video/mp4",
+	".mpg4":   "video/mp4",
+	".mpeg":   "video/mpeg",
+	".mpg":    "video/mpeg",
+	".mpe":    "video/mpeg",
+	".m1v":    "video/mpeg",
+	".m2v":    "video/mpeg",
+	".mp2v":   "video/mpeg",
+	".mpv2":   "video/mpeg",
+	".mpegps": "video/mpeg",
+	".vob":    "video/mpeg",
+	".mov":    "video/mov",
+	".qt":     "video/mov",
+	".avi":    "video/avi",
+	".flv":    "video/x-flv",
+	".f4v":    "video/x-flv",
+	".webm":   "video/webm",
+	".wmv":    "video/wmv",
+	".asf":    "video/wmv",
+	".3gp":    "video/3gpp",
+	".3gpp":   "video/3gpp",
+	".3g2":    "video/3gpp2",
+	".3gp2":   "video/3gpp2",
+	".mkv":    "video/x-matroska",
+	".mk3d":   "video/x-matroska",
+	".mks":    "video/x-matroska",
+	".ts":     "video/mp2t",
+	".mts":    "video/mp2t",
+	".m2ts":   "video/mp2t",
+	".ogv":    "video/ogg",
+	".ogm":    "video/ogg",
+	".rm":     "application/vnd.rn-realmedia",
+	".rmvb":   "application/vnd.rn-realmedia-vbr",
+	".m3u8":   "application/x-mpegURL",
+
+	// Audio formats
+	".wav":  "audio/wav",
+	".mp3":  "audio/mp3",
+	".aac":  "audio/aac",
+	".ogg":  "audio/ogg",
+	".oga":  "audio/ogg",
+	".opus": "audio/ogg",
+	".flac": "audio/flac",
+	".m4a":  "audio/mp4",
+	".mp4a": "audio/mp4",
+	".wma":  "audio/x-ms-wma",
+	".amr":  "audio/amr",
+	".aiff": "audio/aiff",
+	".aif":  "audio/aiff",
+
+	// Document formats
+	".pdf": "application/pdf",
+}
+
+// mimeTypeFromURL infers the media MIME type from the URL extension, query parameters, or host.
 // Returns empty string when unknown, letting Gemini infer it.
 func mimeTypeFromURL(u string) string {
-	lower := strings.ToLower(u)
-	if idx := strings.IndexAny(lower, "?#"); idx != -1 {
-		lower = lower[:idx]
+	cleaned := cleanMediaURL(u)
+	lower := strings.ToLower(cleaned)
+	if strings.Contains(lower, "youtube.com/watch") || strings.Contains(lower, "youtu.be/") || strings.Contains(lower, "youtube.com/shorts/") {
+		return "video/mp4"
 	}
-	switch {
-	case strings.HasSuffix(lower, ".png"):
-		return "image/png"
-	case strings.HasSuffix(lower, ".gif"):
-		return "image/gif"
-	case strings.HasSuffix(lower, ".webp"):
-		return "image/webp"
-	case strings.HasSuffix(lower, ".jpg"), strings.HasSuffix(lower, ".jpeg"):
-		return "image/jpeg"
-	default:
-		return ""
+	pathPart := lower
+	if idx := strings.IndexAny(pathPart, "?#"); idx != -1 {
+		pathPart = pathPart[:idx]
 	}
+	if ext := path.Ext(pathPart); ext != "" {
+		if mimeType, ok := mimeTypeByExt[ext]; ok {
+			return mimeType
+		}
+	}
+	// Fallback: inspect query parameters for embedded filenames or explicit content-type
+	// (e.g., OSS/S3 signed URLs with response-content-type or ?filename=xxx.mov).
+	if parsed, err := url.Parse(cleaned); err == nil && parsed.RawQuery != "" {
+		q := parsed.Query()
+		for _, ctKey := range []string{"response-content-type", "content-type", "mime", "mimetype"} {
+			if ct := strings.TrimSpace(q.Get(ctKey)); ct != "" {
+				if semi := strings.Index(ct, ";"); semi != -1 {
+					ct = strings.TrimSpace(ct[:semi])
+				}
+				return strings.ToLower(ct)
+			}
+		}
+		for _, vals := range q {
+			for _, v := range vals {
+				if ext := path.Ext(strings.ToLower(v)); ext != "" {
+					if mimeType, ok := mimeTypeByExt[ext]; ok {
+						return mimeType
+					}
+				}
+			}
+		}
+	}
+	return ""
+}
+
+// convertMediaURLToGeminiPart converts a data URI or remote URL into a GeminiPart.
+func convertMediaURLToGeminiPart(rawURL string, defaultMimeType string) (GeminiPart, bool) {
+	u := cleanMediaURL(rawURL)
+	if u == "" {
+		return GeminiPart{}, false
+	}
+	if strings.HasPrefix(u, "data:") {
+		commaIdx := strings.Index(u, ",")
+		if commaIdx == -1 {
+			return GeminiPart{}, false
+		}
+		meta := u[:commaIdx]
+		data := u[commaIdx+1:]
+		// meta format: data:<mimeType>;base64
+		mimeType := defaultMimeType
+		if mimeType == "" {
+			mimeType = "image/jpeg"
+		}
+		if semiIdx := strings.Index(meta, ";"); semiIdx > len("data:") {
+			mimeType = meta[len("data:"):semiIdx]
+		} else if len(meta) > len("data:") {
+			mimeType = meta[len("data:"):]
+		}
+		return GeminiPart{
+			InlineData: &GeminiInlineData{
+				MimeType: mimeType,
+				Data:     data,
+			},
+		}, true
+	}
+
+	mimeType := mimeTypeFromURL(u)
+	if mimeType == "" && defaultMimeType == "video/mp4" {
+		mimeType = "video/mp4"
+	}
+	return GeminiPart{
+		FileData: &GeminiFileData{
+			MimeType: mimeType,
+			FileURI:  u,
+		},
+	}, true
+}
+
+// extractExtraVideoURLs extracts video URLs from non-standard OpenAI multimodal content parts
+// (such as {"type": "video_url", "video_url": {"url": "..."}} or {"type": "video_url", "video_url": "..."})
+// that go-openai's ChatMessagePart does not natively deserialize.
+// Returns a map: message index -> (part index -> url).
+func extractExtraVideoURLs(body []byte) map[int]map[int]string {
+	var raw struct {
+		Messages []struct {
+			Content json.RawMessage `json:"content"`
+		} `json:"messages"`
+	}
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return nil
+	}
+	var result map[int]map[int]string
+	for msgIdx, msg := range raw.Messages {
+		if len(msg.Content) == 0 || msg.Content[0] != '[' {
+			continue
+		}
+		var parts []struct {
+			Type     string          `json:"type"`
+			VideoURL json.RawMessage `json:"video_url"`
+		}
+		if err := json.Unmarshal(msg.Content, &parts); err != nil {
+			continue
+		}
+		for partIdx, p := range parts {
+			if len(p.VideoURL) == 0 {
+				continue
+			}
+			var extractedURL string
+			if p.VideoURL[0] == '"' {
+				_ = json.Unmarshal(p.VideoURL, &extractedURL)
+			} else if p.VideoURL[0] == '{' {
+				var obj struct {
+					URL string `json:"url"`
+				}
+				if err := json.Unmarshal(p.VideoURL, &obj); err == nil {
+					extractedURL = obj.URL
+				}
+			}
+			if extractedURL != "" {
+				if result == nil {
+					result = make(map[int]map[int]string)
+				}
+				if result[msgIdx] == nil {
+					result[msgIdx] = make(map[int]string)
+				}
+				result[msgIdx][partIdx] = extractedURL
+			}
+		}
+	}
+	return result
 }
 
 func (o *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
@@ -668,6 +868,7 @@ func (o *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string
 	// round-trip format for Gemini's OpenAI-compatible layer and survives clients
 	// that rewrite tool_call IDs. Indexed by message position -> tool_call position.
 	extraSignatures := extractExtraContentSignatures(body)
+	extraVideoURLs := extractExtraVideoURLs(body)
 
 	// Transform request to Gemini format
 	geminiReq := &GeminiRequest{}
@@ -685,38 +886,16 @@ func (o *OpenAIChat) RequestConvert(ctx eocontext.EoContext, extender map[string
 		case "user":
 			content.Role = "user"
 			if len(msg.MultiContent) > 0 {
-				for _, part := range msg.MultiContent {
+				for partIdx, part := range msg.MultiContent {
 					if part.Type == openai.ChatMessagePartTypeText {
 						content.Parts = append(content.Parts, GeminiPart{Text: part.Text})
 					} else if part.Type == openai.ChatMessagePartTypeImageURL && part.ImageURL != nil {
-						if strings.HasPrefix(part.ImageURL.URL, "data:") {
-							// Inline base64 image
-							commaIdx := strings.Index(part.ImageURL.URL, ",")
-							if commaIdx != -1 {
-								meta := part.ImageURL.URL[:commaIdx]
-								data := part.ImageURL.URL[commaIdx+1:]
-								// meta format: data:<mimeType>;base64
-								mimeType := "image/jpeg"
-								if semiIdx := strings.Index(meta, ";"); semiIdx > len("data:") {
-									mimeType = meta[len("data:"):semiIdx]
-								} else if len(meta) > len("data:") {
-									mimeType = meta[len("data:"):]
-								}
-								content.Parts = append(content.Parts, GeminiPart{
-									InlineData: &GeminiInlineData{
-										MimeType: mimeType,
-										Data:     data,
-									},
-								})
-							}
-						} else if part.ImageURL.URL != "" {
-							// Remote URL: pass through as fileData reference
-							content.Parts = append(content.Parts, GeminiPart{
-								FileData: &GeminiFileData{
-									MimeType: mimeTypeFromURL(part.ImageURL.URL),
-									FileURI:  part.ImageURL.URL,
-								},
-							})
+						if geminiPart, ok := convertMediaURLToGeminiPart(part.ImageURL.URL, "image/jpeg"); ok {
+							content.Parts = append(content.Parts, geminiPart)
+						}
+					} else if videoURL := lookupExtraSignature(extraVideoURLs, msgIdx, partIdx); videoURL != "" {
+						if geminiPart, ok := convertMediaURLToGeminiPart(videoURL, "video/mp4"); ok {
+							content.Parts = append(content.Parts, geminiPart)
 						}
 					}
 				}

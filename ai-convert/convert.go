@@ -32,6 +32,8 @@ const (
 	ModelTypeImageTaskCommit = "image-task-commit"
 	//ModelTypeImageTaskQuery 查询图片
 	ModelTypeImageTaskQuery = "image-task-query"
+	//ModelTypeVideoGeneration 视频生成
+	ModelTypeVideoGeneration ModelType = "video-generation"
 	//ModelTypeVideoTaskCommit 提交视频生成任务
 	ModelTypeVideoTaskCommit ModelType = "video-task-commit"
 	//ModelTypeVideoTaskQuery 查询视频

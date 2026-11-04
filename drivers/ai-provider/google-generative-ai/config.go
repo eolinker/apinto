@@ -6,8 +6,9 @@ import (
 )
 
 type Config struct {
-	APIKey  string `json:"api_key"`
-	BaseUrl string `json:"base_url"`
+	APIKey            string `json:"api_key"`
+	BaseUrl           string `json:"base_url"`
+	ServiceAccountKey string `json:"service_account_key"`
 }
 
 // checkConfig validates the provided configuration.

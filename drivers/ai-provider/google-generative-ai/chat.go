@@ -7,7 +7,7 @@ import (
 	"time"
 
 	ai_convert "github.com/eolinker/apinto/ai-convert"
-	context_label2 "github.com/eolinker/apinto/common/context-label"
+	context_label "github.com/eolinker/apinto/common/context-label"
 	"github.com/eolinker/apinto/encoder"
 	"github.com/eolinker/eosc/eocontext"
 	http_service "github.com/eolinker/eosc/eocontext/http-context"
@@ -73,7 +73,7 @@ func (c *Chat) ModelType() ai_convert.ModelType {
 }
 
 func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]interface{}) error {
-	context_label2.SetBillingMode(ctx, context_label2.BillingModeImmediate)
+	context_label.SetBillingMode(ctx, context_label.BillingModeImmediate)
 	httpContext, err := http_service.Assert(ctx)
 	if err != nil {
 		return err
@@ -90,14 +90,14 @@ func (c *Chat) RequestConvert(ctx eocontext.EoContext, extender map[string]inter
 		path = fmt.Sprintf("%s/%s:%s", c.path, model, requestPath[index+1:])
 	}
 	if strings.Contains(requestPath, "generateContent") {
-		context_label2.SetDisableStream(ctx, true)
+		context_label.SetDisableStream(ctx, true)
 	}
 	httpContext.Proxy().URI().SetPath(path)
 	if c.balanceHandler != nil {
 		ctx.SetBalance(c.balanceHandler)
 	}
 	//httpContext.Proxy().SetStreamBodyParse(StreamBodyParse)
-	context_label2.SetResponseChunkFunc(ctx, func(ctx eocontext.EoContext) ([]byte, error) {
+	context_label.SetResponseChunkFunc(ctx, func(ctx eocontext.EoContext) ([]byte, error) {
 		hCtx, err := http_service.Assert(ctx)
 		if err != nil {
 			return nil, err

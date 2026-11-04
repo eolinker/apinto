@@ -282,6 +282,37 @@ func TestMimeTypeFromURL(t *testing.T) {
 		{"https://example.com/image.jpeg", "image/jpeg"},
 		{"https://example.com/image.gif", "image/gif"},
 		{"https://example.com/image.webp", "image/webp"},
+		{"https://game.cyxinglian.com/static/oss/scriptPm/file/2026-11-04/c9b2fe4242865a164906b9799a600880.mp4", "video/mp4"},
+		{"`https://game.cyxinglian.com/static/oss/scriptPm/file/2026-11-04/c9b2fe4242865a164906b9799a600880.mp4`", "video/mp4"},
+		{"https://example.com/video.m4v", "video/mp4"},
+		{"https://example.com/video.mp4v", "video/mp4"},
+		{"https://example.com/video.mpg4", "video/mp4"},
+		{"https://example.com/video.mpeg", "video/mpeg"},
+		{"https://example.com/video.mpg", "video/mpeg"},
+		{"https://example.com/video.mpe", "video/mpeg"},
+		{"https://example.com/video.vob", "video/mpeg"},
+		{"https://example.com/video.mov?token=abc", "video/mov"},
+		{"https://example.com/video.qt", "video/mov"},
+		{"https://example.com/video.avi", "video/avi"},
+		{"https://example.com/video.flv", "video/x-flv"},
+		{"https://example.com/video.f4v", "video/x-flv"},
+		{"https://example.com/video.webm", "video/webm"},
+		{"https://example.com/video.wmv", "video/wmv"},
+		{"https://example.com/video.asf", "video/wmv"},
+		{"https://example.com/video.3gp", "video/3gpp"},
+		{"https://example.com/video.3gpp", "video/3gpp"},
+		{"https://example.com/video.3g2", "video/3gpp2"},
+		{"https://example.com/video.mkv", "video/x-matroska"},
+		{"https://example.com/video.ts", "video/mp2t"},
+		{"https://example.com/video.mts", "video/mp2t"},
+		{"https://example.com/video.m2ts", "video/mp2t"},
+		{"https://example.com/video.ogv", "video/ogg"},
+		{"https://example.com/video.rm", "application/vnd.rn-realmedia"},
+		{"https://example.com/video.rmvb", "application/vnd.rn-realmedia-vbr"},
+		{"https://example.com/video.m3u8", "application/x-mpegURL"},
+		{"https://example.com/download?filename=clip.mkv", "video/x-matroska"},
+		{"https://example.com/oss/object?response-content-type=video%2Fmp4", "video/mp4"},
+		{"https://www.youtube.com/watch?v=dQw4w9WgXcQ", "video/mp4"},
 		{"https://example.com/image.unknown", ""},
 	}
 
@@ -1183,5 +1214,105 @@ func TestRequestConvertToolCallIDWithSignature(t *testing.T) {
 	}
 	if part.ThoughtSignature != injectedSig {
 		t.Fatalf("expected thoughtSignature '%s' parsed directly from ToolCall ID, got '%s'", injectedSig, part.ThoughtSignature)
+	}
+}
+
+func TestRequestConvertVideoContent(t *testing.T) {
+	chat, err := NewOpenAIChat("google", "test-key", "", ai_convert.ModelTypeOpenAIChat, 5*time.Second)
+	if err != nil {
+		t.Fatalf("failed to create OpenAIChat: %v", err)
+	}
+
+	rawReq := []byte(`{
+		"model": "gemini-2.5-flash",
+		"messages": [
+			{
+				"role": "user",
+				"content": [
+					{
+						"type": "text",
+						"text": "解析这个视频"
+					},
+					{
+						"type": "image_url",
+						"image_url": {
+							"url": "` + "`https://game.cyxinglian.com/static/oss/scriptPm/file/2026-11-04/c9b2fe4242865a164906b9799a600880.mp4`" + `"
+						}
+					},
+					{
+						"type": "video_url",
+						"video_url": {
+							"url": "https://example.com/demo.mov"
+						}
+					},
+					{
+						"type": "image_url",
+						"image_url": {
+							"url": "data:video/mp4;base64,AAAAIGZ0eXBpc29t"
+						}
+					}
+				]
+			}
+		]
+	}`)
+
+	mCtx := &mockHttpContext{
+		proxy: &mockRequest{
+			header: &mockHeader{},
+			body: &mockBody{
+				body: rawReq,
+			},
+			uri: &mockURI{},
+		},
+		requestId: "req-video-convert-test",
+	}
+	ai_convert.SetAIModel(mCtx, "gemini-2.5-flash")
+
+	if err := chat.RequestConvert(mCtx, map[string]interface{}{}); err != nil {
+		t.Fatalf("RequestConvert failed: %v", err)
+	}
+
+	var geminiReq GeminiRequest
+	if err := json.Unmarshal(mCtx.proxy.body.body, &geminiReq); err != nil {
+		t.Fatalf("failed to unmarshal GeminiRequest: %v", err)
+	}
+
+	if len(geminiReq.Contents) != 1 || len(geminiReq.Contents[0].Parts) != 4 {
+		t.Fatalf("expected 1 content with 4 parts, got %+v", geminiReq.Contents)
+	}
+
+	parts := geminiReq.Contents[0].Parts
+
+	// Part 0: text
+	if parts[0].Text != "解析这个视频" {
+		t.Errorf("expected part[0] text '解析这个视频', got %q", parts[0].Text)
+	}
+
+	// Part 1: image_url carrying backtick-wrapped mp4 URL -> FileData with cleaned URI & video/mp4
+	expectedURI := "https://game.cyxinglian.com/static/oss/scriptPm/file/2026-11-04/c9b2fe4242865a164906b9799a600880.mp4"
+	if parts[1].FileData == nil {
+		t.Fatalf("expected part[1] FileData to be non-nil")
+	}
+	if parts[1].FileData.FileURI != expectedURI {
+		t.Errorf("expected part[1] FileURI %q, got %q", expectedURI, parts[1].FileData.FileURI)
+	}
+	if parts[1].FileData.MimeType != "video/mp4" {
+		t.Errorf("expected part[1] MimeType 'video/mp4', got %q", parts[1].FileData.MimeType)
+	}
+
+	// Part 2: video_url carrying .mov URL -> FileData with video/mov
+	if parts[2].FileData == nil {
+		t.Fatalf("expected part[2] FileData to be non-nil")
+	}
+	if parts[2].FileData.FileURI != "https://example.com/demo.mov" || parts[2].FileData.MimeType != "video/mov" {
+		t.Errorf("unexpected part[2] FileData: %+v", parts[2].FileData)
+	}
+
+	// Part 3: data:video/mp4;base64,... -> InlineData
+	if parts[3].InlineData == nil {
+		t.Fatalf("expected part[3] InlineData to be non-nil")
+	}
+	if parts[3].InlineData.MimeType != "video/mp4" || parts[3].InlineData.Data != "AAAAIGZ0eXBpc29t" {
+		t.Errorf("unexpected part[3] InlineData: %+v", parts[3].InlineData)
 	}
 }
