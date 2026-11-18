@@ -239,7 +239,8 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 	}
 	response.Header.CopyTo(&ctx.response.Response.Header)
 	ctx.response.ResponseHeader.refresh()
-	if response.IsBodyStream() && response.Header.ContentLength() < 0 {
+	isStream := strings.HasPrefix(string(response.Header.ContentType()), "text/event-stream") || ctx.GetLabel("stream") == "true"
+	if isStream && response.IsBodyStream() && response.Header.ContentLength() < 0 {
 		disableStream := ctx.GetLabel("disable_stream")
 		if response.StatusCode() == 200 && disableStream != "true" {
 			// 流式传输，非200状态码不考虑流式传输
@@ -278,7 +279,6 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 						response.SetConnectionClose()
 						break
 					}
-					ctx.Response().SetBody(chunk)
 
 					err = w.Flush() // 实时发送数据
 					if err != nil {
