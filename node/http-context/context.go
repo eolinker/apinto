@@ -248,6 +248,7 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 			ctx.response.Response.SetBodyStreamWriter(func(w *bufio.Writer) {
 				reader := response.BodyStream()
 				defer func() {
+					ctx.proxyRequest.ProxyBodyFinish(ctx)
 					response.SetConnectionClose()
 					ctx.SetLabel("stream_running", "false")
 					ctx.FastFinish()
@@ -287,23 +288,18 @@ func (ctx *HttpContext) SendTo(scheme string, node eoscContext.INode, timeout ti
 						break
 					}
 				}
-				ctx.proxyRequest.ProxyBodyFinish(ctx)
 			})
 
 			agent.setResponseLength(-1)
 			ctx.proxyRequests = append(ctx.proxyRequests, agent)
 			return nil
 		}
-		body := response.Body()
-		ctx.response.SetBody(body)
-		agent.setResponseLength(len(body))
-		ctx.proxyRequests = append(ctx.proxyRequests, agent)
-		fasthttp.ReleaseResponse(response)
-		return ctx.response.responseError
 	}
-	response.CopyTo(ctx.response.Response)
-	agent.responseBody.Write(ctx.response.Response.Body())
-	agent.setResponseLength(ctx.response.Response.Header.ContentLength())
+
+	body := response.Body()
+	ctx.response.SetBody(body)
+	agent.responseBody.Write(body)
+	agent.setResponseLength(len(body))
 	ctx.proxyRequests = append(ctx.proxyRequests, agent)
 	fasthttp.ReleaseResponse(response)
 	return ctx.response.responseError
